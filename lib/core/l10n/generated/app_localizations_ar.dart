@@ -566,6 +566,13 @@ class LAr extends L {
   String get lockReason => 'افتح Ather';
 
   @override
+  String get lockRefused => 'مفتحش — جرّب تاني';
+
+  @override
+  String get lockLockedOut =>
+      'حاولت كتير. استنى شوية وجرّب تاني، أو افتح بكود القفل بتاع التليفون.';
+
+  @override
   String get lockUnavailable => 'الجهاز ده مفيهوش بصمة متسجلة';
 
   @override

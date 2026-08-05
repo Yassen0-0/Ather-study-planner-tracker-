@@ -238,7 +238,41 @@ is a real contradiction, and it was resolved rather than ignored:
   student. Wrong password and unknown account collapse into one case on purpose; telling an
   attacker which emails are registered is a gift, and the student's next action is identical.
 
-### 3.18 The biometric lock releases rather than traps
+### 3.18 The biometric lock releases rather than traps — **but only when the device cannot answer**
+*Rewritten 2026-08-05. The original rule was too broad and made the lock decorative.*
+
+The lock was skippable two ways, both reported from a real phone:
+
+1. **Every failure released it.** One `catch` around `authenticate` set `unlocked = true`, so a
+   cancelled prompt, a refusal, and a too-many-attempts lockout all opened the app. The rule
+   below was written for "the sensor can never say yes" and was being applied to "the student
+   did not say yes".
+2. **The back button walked straight past it.** The lock is a gate above the router rather than
+   a route (§3.19's sheets and the wizard are why), so a back press had nothing to pop and fell
+   through to the router underneath.
+
+The rule now: **only codes that mean this device can never authenticate release the lock** —
+`noBiometricHardware`, `noBiometricsEnrolled`, `noCredentialsSet` — and nothing else.
+`LocalAuthExceptionCode` documents itself as open to new values, so a `default` that released
+would hand every future code a way in. `uiUnavailable`, the modern spelling of §3.18's original
+`no_fragment_activity` bug, is deliberately **not** on the list: releasing on it is exactly how
+that misconfiguration hid for a whole release.
+
+The student is still not trapped, which was the original point: `biometricOnly: false` means the
+OS offers the device PIN or pattern on the same prompt, and a lockout says so in words.
+
+Back is swallowed by `LockAwareBackButtonDispatcher` in `app.dart`. Neither usual guard works
+from above the router — `PopScope` needs a `ModalRoute`, `BackButtonListener` needs a `Router`
+ancestor and throws without one — so the dispatcher, the one thing above the router that sees
+the press, is where it is enforced. That is also why `MaterialApp.router` is now given the
+router's three parts individually instead of `routerConfig`: GoRouter hard-codes its own
+`RootBackButtonDispatcher`, and a config and a dispatcher cannot both be supplied.
+
+`test/widget/lock_test.dart` covers all seven paths against a `FakeLocalAuth`. None of this was
+assertable before, because the lock only ever talked to the real platform — which is how it
+shipped bypassable.
+
+### 3.18a The original reasoning, still true for the release case
 The fingerprint lock is a privacy convenience over data that is already behind the device's
 own lock — it is not a security boundary. So when the sensor cannot answer (no enrolled print,
 hardware failure, a restored device), `LockScreen` **unlocks**. The alternative is holding a
@@ -890,6 +924,20 @@ produced those numbers is untouched by the redesign.
 ---
 
 ## 10. Work Log
+
+**The biometric lock was skippable (2026-08-05).**
+Reported from a real phone: the back button walked past the lock. Investigating turned up a
+second, worse bypass in the same screen — a lockout, a cancellation and a refusal all ran the
+same `unlocked = true` branch, so the lock opened for anyone who failed it. Both are fixed and
+§3.18 is rewritten; the release-on-unusable-device rule survives, narrowed to the three codes
+that actually mean the device can never answer.
+
+`MaterialApp.router` now takes the router's parts individually rather than `routerConfig`, so a
+`LockAwareBackButtonDispatcher` can sit where the press is actually seen. New
+`test/widget/lock_test.dart` (7 cases) and `test/support/fake_local_auth.dart` — the lock had
+never been testable, having only ever talked to the real platform.
+
+**155/155 tests pass**, `flutter analyze` clean.
 
 **Cloud backup (2026-08-05).**
 The app's record now leaves the phone. Full reasoning in §3.26; §3.17's "no study data moved" is

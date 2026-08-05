@@ -565,6 +565,13 @@ class LEn extends L {
   String get lockReason => 'Unlock Ather';
 
   @override
+  String get lockRefused => 'That didn\'t unlock — try again';
+
+  @override
+  String get lockLockedOut =>
+      'Too many attempts. Wait a moment and try again, or use your phone\'s passcode.';
+
+  @override
   String get lockUnavailable => 'This device has no enrolled fingerprint';
 
   @override

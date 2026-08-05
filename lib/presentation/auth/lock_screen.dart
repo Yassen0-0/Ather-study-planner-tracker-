@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:local_auth/local_auth.dart';
 
 import '../../core/branding/ather_logo.dart';
 import '../../core/l10n/generated/app_localizations.dart';
@@ -9,17 +10,25 @@ import '../../core/theme/app_typography.dart';
 import '../../core/widgets/buttons.dart';
 import '../providers/auth_providers.dart';
 
-/// Covers the app until a fingerprint is presented.
+/// Covers the app until a fingerprint — or the device's own PIN — is presented.
 ///
-/// Two things this screen deliberately does **not** do:
+/// ## What the lock does and does not release on
 ///
-/// * It never traps the student. If biometrics stop working — sensor failure, a
-///   wipe of enrolled prints, a device restore — the lock releases rather than
-///   holding their study data hostage behind a sensor that will not answer.
-///   The lock is a privacy convenience, not a security boundary; the data is
-///   already behind the OS's own device lock.
-/// * It shows nothing of the app behind it. The prompt is raised on the first
-///   frame, so the dashboard is never briefly visible.
+/// The lock is a privacy convenience over data already behind the device's own
+/// lock, so it must not trap a student behind a sensor that can never answer.
+/// **That is not the same as releasing whenever an attempt fails**, which is
+/// what this screen used to do: every exception, including a cancelled prompt
+/// and a too-many-attempts lockout, ran the same `unlocked = true` branch. A
+/// student could press back on the system prompt and land on the dashboard, so
+/// the lock was decorative.
+///
+/// The rule now: **only a device that can never authenticate releases the
+/// lock**, and that is decided from the platform's own capability codes rather
+/// than inferred from a failed attempt. A refusal, a cancellation or a lockout
+/// keeps the lock on and offers the button again.
+///
+/// A student is still not trapped: [biometricOnly] is false, so the OS offers
+/// the device PIN or pattern as a fallback on the same prompt.
 class LockScreen extends ConsumerStatefulWidget {
   const LockScreen({super.key});
 
@@ -30,46 +39,88 @@ class LockScreen extends ConsumerStatefulWidget {
 class _LockScreenState extends ConsumerState<LockScreen> {
   bool _prompting = false;
 
+  /// Null until an attempt has actually failed, so the screen does not accuse
+  /// the student of anything before they have done it.
+  String? Function(L)? _message;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _prompt());
   }
 
+  /// The codes that mean *this device can never answer*, and nothing else.
+  ///
+  /// Deliberately a short allow-list rather than "anything unexpected". The enum
+  /// documents itself as open to new values, so a `default` that released would
+  /// hand every future failure code a way past the lock. `uiUnavailable` — the
+  /// modern spelling of the `no_fragment_activity` misconfiguration in §3.18 —
+  /// is deliberately absent: releasing on it is exactly how it stayed hidden.
+  static bool _cannotEverAuthenticate(LocalAuthExceptionCode code) =>
+      code == LocalAuthExceptionCode.noBiometricHardware ||
+      code == LocalAuthExceptionCode.noBiometricsEnrolled ||
+      code == LocalAuthExceptionCode.noCredentialsSet;
+
   Future<void> _prompt() async {
     if (_prompting || !mounted) return;
-    setState(() => _prompting = true);
+    setState(() {
+      _prompting = true;
+      _message = null;
+    });
 
     final auth = ref.read(localAuthProvider);
     final reason = L.of(context).lockReason;
 
     var unlocked = false;
+    String? Function(L)? message;
+
     try {
       unlocked = await auth.authenticate(
         localizedReason: reason,
+        // False on purpose: the device PIN or pattern is an acceptable answer,
+        // and it is what keeps "never release on failure" from trapping anyone.
         biometricOnly: false,
         // Survives the system backgrounding the app to show the sensor sheet;
         // without it the attempt fails the moment the prompt appears on some
         // Android builds.
         persistAcrossBackgrounding: true,
       );
-    } catch (error, stack) {
-      // No sensor, no enrolled print, or the platform refused. Releasing the
-      // lock is the honest outcome -- see the class comment.
-      //
-      // Logged rather than swallowed: this same branch once hid a real
-      // misconfiguration (the activity was not a FragmentActivity, so the
-      // prompt could never appear) behind behaviour that looked exactly like
-      // "this device has no fingerprint".
-      debugPrint('Ather lock: biometric prompt unavailable -- $error\n$stack');
-      unlocked = true;
+      // A plain `false` is a refusal or a cancellation -- including the back
+      // button on the system prompt. The lock stays on.
+      if (!unlocked) message = (l) => l.lockRefused;
+    } on LocalAuthException catch (error) {
+      if (_cannotEverAuthenticate(error.code)) {
+        // No sensor, nothing enrolled, no device passcode. Holding a student's
+        // own study record hostage behind a sensor that will never say yes is
+        // the one outcome worse than not locking.
+        debugPrint('Ather lock: device cannot authenticate -- ${error.code}');
+        unlocked = true;
+      } else {
+        // Cancelled, locked out, misconfigured, or something the enum gained
+        // after this was written. Stay locked and say so.
+        //
+        // Logged rather than swallowed: this branch once hid a real
+        // misconfiguration (the activity was not a FragmentActivity, so the
+        // prompt could never appear) behind behaviour that looked exactly like
+        // "this device has no fingerprint".
+        debugPrint('Ather lock: attempt failed -- $error');
+        unlocked = false;
+        message =
+            error.code == LocalAuthExceptionCode.temporaryLockout ||
+                error.code == LocalAuthExceptionCode.biometricLockout
+            ? (l) => l.lockLockedOut
+            : (l) => l.lockRefused;
+      }
     }
 
     if (!mounted) return;
     if (unlocked) {
       ref.read(lockStateProvider.notifier).unlock();
     } else {
-      setState(() => _prompting = false);
+      setState(() {
+        _prompting = false;
+        _message = message;
+      });
     }
   }
 
@@ -77,6 +128,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   Widget build(BuildContext context) {
     final l = L.of(context);
 
+    // The system back button is swallowed by LockAwareBackButtonDispatcher in
+    // app.dart, not here. This screen is a gate rather than a route, so it has
+    // neither a ModalRoute for a PopScope nor a Router ancestor for a
+    // BackButtonListener -- both were tried; the second throws outright.
     return Scaffold(
       backgroundColor: context.colors.pageBackground,
       body: SafeArea(
@@ -99,6 +154,18 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   textAlign: TextAlign.center,
                   style: context.text.secondary.copyWith(height: 1.6),
                 ),
+                if (_message != null) ...<Widget>[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    _message!(l)!,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.style(
+                      size: 14,
+                      weight: AppTypography.semiBold,
+                      color: context.colors.wrong,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.xxxl),
                 SizedBox(
                   width: 240,

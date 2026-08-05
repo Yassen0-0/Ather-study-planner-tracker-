@@ -191,6 +191,8 @@
   "lockBody": "Unlock with your fingerprint to continue",
   "lockUnlock": "Unlock",
   "lockReason": "Unlock Ather",
+  "lockRefused": "That didn't unlock — try again",
+  "lockLockedOut": "Too many attempts. Wait a moment and try again, or use your phone's passcode.",
   "lockUnavailable": "This device has no enrolled fingerprint",
   "lockSetting": "Fingerprint lock",
   "lockSettingBody": "Ask for a fingerprint every time the app opens",

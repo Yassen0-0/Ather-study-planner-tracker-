@@ -1069,6 +1069,18 @@ abstract class L {
   /// **'افتح Ather'**
   String get lockReason;
 
+  /// No description provided for @lockRefused.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفتحش — جرّب تاني'**
+  String get lockRefused;
+
+  /// No description provided for @lockLockedOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاولت كتير. استنى شوية وجرّب تاني، أو افتح بكود القفل بتاع التليفون.'**
+  String get lockLockedOut;
+
   /// No description provided for @lockUnavailable.
   ///
   /// In ar, this message translates to:

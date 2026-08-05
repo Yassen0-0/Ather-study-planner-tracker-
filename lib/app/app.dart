@@ -28,6 +28,41 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// Swallows the system back button while the lock screen is up.
+///
+/// The lock is a gate above the router rather than a route (see [_LockGate]),
+/// which is what lets it cover bottom sheets and the exam wizard — but it also
+/// means a back press has nothing to pop *it*, so the press fell straight
+/// through to the router underneath and the student landed on the dashboard.
+/// The lock was decorative.
+///
+/// Neither of the usual guards works from up there: `PopScope` needs a
+/// `ModalRoute` and `BackButtonListener` needs a `Router` ancestor. The
+/// dispatcher is the one place above the router that sees the press, so it is
+/// where the lock is enforced.
+class LockAwareBackButtonDispatcher extends RootBackButtonDispatcher {
+  LockAwareBackButtonDispatcher(this._isLocked);
+
+  final bool Function() _isLocked;
+
+  @override
+  Future<bool> didPopRoute() async {
+    // `true` means "handled" -- the press stops here and pops nothing.
+    if (_isLocked()) return true;
+    return super.didPopRoute();
+  }
+}
+
+/// Built once and kept: a [BackButtonDispatcher] that is swapped out mid-flight
+/// loses the callbacks the router registered on it.
+final backButtonDispatcherProvider = Provider<BackButtonDispatcher>((ref) {
+  return LockAwareBackButtonDispatcher(
+    // Read, not watched: this is asked at the moment of the press, so it must
+    // reflect the state then rather than whenever the provider was last built.
+    () => ref.read(lockStateProvider) && ref.read(isSignedInProvider),
+  );
+});
+
 class AtherApp extends ConsumerWidget {
   const AtherApp({super.key});
 
@@ -56,7 +91,15 @@ class AtherApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      routerConfig: router,
+      // The router's three parts are passed individually rather than as
+      // `routerConfig`, because GoRouter hard-codes its own
+      // `RootBackButtonDispatcher` and MaterialApp.router forbids supplying a
+      // dispatcher alongside a config. Swallowing the back press while locked
+      // needs our own — see LockAwareBackButtonDispatcher.
+      routeInformationProvider: router.routeInformationProvider,
+      routeInformationParser: router.routeInformationParser,
+      routerDelegate: router.routerDelegate,
+      backButtonDispatcher: ref.watch(backButtonDispatcherProvider),
       builder: (context, child) => MediaQuery.withClampedTextScaling(
         // Caps runaway system font scaling. The design's dense number rows
         // (a 30px figure beside a 16px "/ 100") break apart past ~1.3x, and a
