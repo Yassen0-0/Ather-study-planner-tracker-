@@ -613,6 +613,56 @@ class LEn extends L {
   String get settingsAbout => 'About';
 
   @override
+  String get backupTitle => 'Cloud backup';
+
+  @override
+  String get backupBody =>
+      'Your work is saved to your account, so a new phone finds it waiting.';
+
+  @override
+  String get backupNever => 'Not saved yet';
+
+  @override
+  String backupSavedAt(String date) {
+    return 'Last saved: $date';
+  }
+
+  @override
+  String get backupSaving => 'Saving…';
+
+  @override
+  String get backupSaveNow => 'Save now';
+
+  @override
+  String get backupRestore => 'Restore from cloud';
+
+  @override
+  String get backupRestoreConfirm =>
+      'Everything on this phone will be replaced by the cloud copy.';
+
+  @override
+  String get backupRestoreDone => 'Your data is back';
+
+  @override
+  String get backupRestoreEmpty => 'No cloud backup yet';
+
+  @override
+  String get backupErrorOffline =>
+      'No connection — it will save when you\'re back online';
+
+  @override
+  String get backupErrorPermission => 'The server permissions aren\'t set up';
+
+  @override
+  String get backupErrorTooLarge => 'Your data is too large to save in one go';
+
+  @override
+  String get backupErrorUnreadable => 'The cloud copy can\'t be read';
+
+  @override
+  String get backupErrorUnknown => 'Saving didn\'t work';
+
+  @override
   String get tasksTitle => 'Today\'s tasks';
 
   @override

@@ -310,6 +310,25 @@
   "settingsNotificationsBody": "ذكّرني لما يجي وقت مراجعة درس",
   "settingsAbout": "عن التطبيق",
 
+  "backupTitle": "النسخة السحابية",
+  "backupBody": "بياناتك بتتحفظ على حسابك، فلو غيّرت التليفون تلاقيها زي ما هي.",
+  "backupNever": "لسه متحفظتش",
+  "backupSavedAt": "آخر حفظ: {date}",
+  "@backupSavedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "backupSaving": "بيحفظ…",
+  "backupSaveNow": "احفظ دلوقتي",
+  "backupRestore": "استرجع النسخة السحابية",
+  "backupRestoreConfirm": "اللي على التليفون ده هيتمسح ويتحط مكانه اللي في النسخة السحابية.",
+  "backupRestoreDone": "رجّعنا بياناتك",
+  "backupRestoreEmpty": "مفيش نسخة سحابية لسه",
+  "backupErrorOffline": "مفيش نت — هيتحفظ أول ما النت يرجع",
+  "backupErrorPermission": "الصلاحيات مظبوطتش على السيرفر",
+  "backupErrorTooLarge": "بياناتك أكبر من إن نحفظها مرة واحدة",
+  "backupErrorUnreadable": "النسخة السحابية مش مقروءة",
+  "backupErrorUnknown": "الحفظ مظبطش",
+
   "tasksTitle": "مهام النهارده",
   "tasksDoneOf": "{done} من {total} خلصتهم",
   "@tasksDoneOf": {

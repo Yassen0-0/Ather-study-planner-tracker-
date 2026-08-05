@@ -3,15 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ather/app/app.dart';
 import 'package:ather/core/clock/clock.dart';
+import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/domain/repositories/auth_repository.dart';
 import 'package:ather/presentation/common/settings_button.dart';
 import 'package:ather/presentation/dashboard/dashboard_screen.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
+import 'package:ather/presentation/providers/backup_providers.dart';
+import 'package:ather/presentation/providers/task_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/fake_backup.dart';
 import '../support/fake_auth.dart';
 
 /// The account gate.
@@ -44,9 +48,16 @@ Future<Widget> boot(FakeAuthRepository auth, {bool lockOn = false}) async {
   return ProviderScope(
     overrides: [
       authRepositoryProvider.overrideWithValue(auth),
+      backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
       sharedPreferencesProvider.overrideWithValue(preferences),
       snapshotProvider.overrideWith(
         (ref) => Stream<StudySnapshot>.value(emptySnapshot()),
+      ),
+      // Same reason as the snapshot override: these tests keep drift out, and
+      // the backup gate reads tasks -- which would otherwise build a real
+      // database and leave its stream timers pending past the test.
+      tasksProvider.overrideWith(
+        (ref) => Stream<List<DailyTask>>.value(const <DailyTask>[]),
       ),
       clockProvider.overrideWithValue(MutableClock(kNow)),
       nowProvider.overrideWith((ref) => Stream<DateTime>.value(kNow)),
@@ -172,6 +183,16 @@ void main() {
         of: find.byType(DashboardScreen),
         matching: find.byType(SettingsButton),
       ),
+    );
+    await tester.pumpAndSettle();
+
+    // Settings is a scrolling list and the cloud-backup card now sits above the
+    // account card, so sign-out starts below the fold on this surface. Scrolling
+    // to it is the same thing a student does.
+    await tester.scrollUntilVisible(
+      find.text('تسجيل الخروج'),
+      300,
+      scrollable: find.byType(Scrollable).last,
     );
     await tester.pumpAndSettle();
 

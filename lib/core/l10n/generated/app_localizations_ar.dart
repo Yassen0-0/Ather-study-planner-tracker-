@@ -612,6 +612,55 @@ class LAr extends L {
   String get settingsAbout => 'عن التطبيق';
 
   @override
+  String get backupTitle => 'النسخة السحابية';
+
+  @override
+  String get backupBody =>
+      'بياناتك بتتحفظ على حسابك، فلو غيّرت التليفون تلاقيها زي ما هي.';
+
+  @override
+  String get backupNever => 'لسه متحفظتش';
+
+  @override
+  String backupSavedAt(String date) {
+    return 'آخر حفظ: $date';
+  }
+
+  @override
+  String get backupSaving => 'بيحفظ…';
+
+  @override
+  String get backupSaveNow => 'احفظ دلوقتي';
+
+  @override
+  String get backupRestore => 'استرجع النسخة السحابية';
+
+  @override
+  String get backupRestoreConfirm =>
+      'اللي على التليفون ده هيتمسح ويتحط مكانه اللي في النسخة السحابية.';
+
+  @override
+  String get backupRestoreDone => 'رجّعنا بياناتك';
+
+  @override
+  String get backupRestoreEmpty => 'مفيش نسخة سحابية لسه';
+
+  @override
+  String get backupErrorOffline => 'مفيش نت — هيتحفظ أول ما النت يرجع';
+
+  @override
+  String get backupErrorPermission => 'الصلاحيات مظبوطتش على السيرفر';
+
+  @override
+  String get backupErrorTooLarge => 'بياناتك أكبر من إن نحفظها مرة واحدة';
+
+  @override
+  String get backupErrorUnreadable => 'النسخة السحابية مش مقروءة';
+
+  @override
+  String get backupErrorUnknown => 'الحفظ مظبطش';
+
+  @override
   String get tasksTitle => 'مهام النهارده';
 
   @override

@@ -1,5 +1,6 @@
 import '../entities/exam_entry.dart';
 import '../entities/lesson.dart';
+import '../entities/study_backup.dart';
 import '../entities/study_snapshot.dart';
 
 /// Everything the app can read or change.
@@ -72,4 +73,20 @@ abstract interface class StudyRepository {
   });
 
   Future<void> deleteHomework(int homeworkId);
+
+  // --- Restore ---------------------------------------------------------------
+  /// Replaces every chapter, lesson, exam and homework entry with [backup].
+  ///
+  /// **Must be one transaction, and must preserve the original ids.** Ids are
+  /// what every `chapterId`/`lessonId`/`examId` relationship is made of, so
+  /// letting autoincrement reassign them would silently reattach exams to the
+  /// wrong lessons -- a corruption no error message would ever report.
+  ///
+  /// A half-applied restore is the most destructive thing in this app, so it is
+  /// all-or-nothing: on any failure the student's existing database is left
+  /// exactly as it was.
+  ///
+  /// The four seeded subjects are untouched: they are not part of a backup, and
+  /// the receiving install has already created them.
+  Future<void> restore(StudyBackup backup);
 }

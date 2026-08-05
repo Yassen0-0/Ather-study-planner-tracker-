@@ -2,16 +2,20 @@ import 'package:ather/app/app.dart';
 import 'package:ather/core/clock/clock.dart';
 import 'package:ather/core/theme/app_colors.dart';
 import 'package:ather/core/widgets/ather_scaffold.dart';
+import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/presentation/common/settings_button.dart';
 import 'package:ather/presentation/dashboard/dashboard_screen.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
+import 'package:ather/presentation/providers/backup_providers.dart';
+import 'package:ather/presentation/providers/task_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/fake_backup.dart';
 import '../support/fake_auth.dart';
 
 /// The theme switch, end to end.
@@ -38,9 +42,16 @@ void main() {
     return ProviderScope(
       overrides: [
         authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
+        backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
         sharedPreferencesProvider.overrideWithValue(preferences),
         snapshotProvider.overrideWith(
           (ref) => Stream<StudySnapshot>.value(const StudySnapshot.empty()),
+        ),
+        // Same reason as the snapshot override: these tests keep drift out, and
+        // the backup gate reads tasks -- which would otherwise build a real
+        // database and leave its stream timers pending past the test.
+        tasksProvider.overrideWith(
+          (ref) => Stream<List<DailyTask>>.value(const <DailyTask>[]),
         ),
         clockProvider.overrideWithValue(MutableClock(now)),
         nowProvider.overrideWith((ref) => Stream<DateTime>.value(now)),

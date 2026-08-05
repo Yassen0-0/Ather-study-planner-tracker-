@@ -35,4 +35,11 @@ abstract interface class TaskRepository {
     required DateTime day,
     required List<int> orderedIds,
   });
+
+  /// Replaces every task with [tasks], in one transaction, keeping ids.
+  ///
+  /// Separate from `StudyRepository.restore` because tasks are a separate table
+  /// with no foreign key into the study data -- the same separation that keeps
+  /// them out of mastery. Both are called from the same restore flow.
+  Future<void> restoreTasks(List<DailyTask> tasks);
 }

@@ -6,6 +6,7 @@ import '../../domain/entities/chapter.dart';
 import '../../domain/entities/exam_entry.dart';
 import '../../domain/entities/homework_entry.dart';
 import '../../domain/entities/lesson.dart';
+import '../../domain/entities/study_backup.dart';
 import '../../domain/entities/study_snapshot.dart';
 import '../../domain/entities/subject.dart';
 import '../../domain/repositories/study_repository.dart';
@@ -289,6 +290,91 @@ class DriftStudyRepository implements StudyRepository {
     await (_db.delete(
       _db.homeworkEntries,
     )..where((t) => t.id.equals(homeworkId))).go();
+  }
+
+  // --- Restore --------------------------------------------------------------
+
+  @override
+  Future<void> restore(StudyBackup backup) {
+    // One transaction around the delete and every insert. drift rolls the whole
+    // thing back if any statement throws, which is the only reason it is safe to
+    // delete the student's data before knowing the inserts will succeed.
+    return _db.transaction(() async {
+      // Chapters cascade to lessons, exams, groups and homework, so this one
+      // delete empties everything a backup owns -- and only what it owns. The
+      // seeded subjects are deliberately left alone. Daily tasks have no foreign
+      // key and are handled by DriftTaskRepository.restore.
+      await _db.delete(_db.chapters).go();
+
+      await _db.batch((Batch batch) {
+        batch.insertAll(_db.chapters, <ChaptersCompanion>[
+          for (final c in backup.chapters)
+            ChaptersCompanion.insert(
+              // Explicit id on an autoincrement column: the relationships in the
+              // rows below are made of these numbers.
+              id: Value(c.id),
+              subjectId: c.subjectId,
+              name: c.name,
+              createdAt: c.createdAt,
+              masteredAt: Value(c.masteredAt),
+            ),
+        ]);
+
+        batch.insertAll(_db.lessons, <LessonsCompanion>[
+          for (final l in backup.lessons)
+            LessonsCompanion.insert(
+              id: Value(l.id),
+              chapterId: l.chapterId,
+              name: l.name,
+              createdAt: l.createdAt,
+              lastReviewedAt: Value(l.lastReviewedAt),
+              lastNotifiedAt: Value(l.lastNotifiedAt),
+              watchedLesson: Value(l.checklist.watchedLesson),
+              readNotes: Value(l.checklist.readNotes),
+              didHomework: Value(l.checklist.didHomework),
+              didExam: Value(l.checklist.didExam),
+              reviewedNotes: Value(l.checklist.reviewedNotes),
+            ),
+        ]);
+
+        batch
+          ..insertAll(_db.examEntries, <ExamEntriesCompanion>[
+            for (final e in backup.exams)
+              ExamEntriesCompanion.insert(
+                id: Value(e.id),
+                lessonId: e.lessonId,
+                isReviewExam: Value(e.isReviewExam),
+                totalPossiblePoints: e.totalPossiblePoints,
+                correctPoints: e.correctPoints,
+                // Carried, never recomputed: a past exam's score must stay
+                // historically stable.
+                percentage: e.percentage,
+                createdAt: e.createdAt,
+              ),
+          ])
+          ..insertAll(_db.examQuestionGroups, <ExamQuestionGroupsCompanion>[
+            for (final e in backup.exams)
+              for (final g in e.groups)
+                ExamQuestionGroupsCompanion.insert(
+                  id: Value(g.id),
+                  examId: e.id,
+                  pointsPerQuestion: g.pointsPerQuestion,
+                  questionCount: g.questionCount,
+                  correctCount: g.correctCount,
+                ),
+          ])
+          ..insertAll(_db.homeworkEntries, <HomeworkEntriesCompanion>[
+            for (final h in backup.homework)
+              HomeworkEntriesCompanion.insert(
+                id: Value(h.id),
+                lessonId: h.lessonId,
+                score: h.score,
+                maxScore: h.maxScore,
+                createdAt: h.createdAt,
+              ),
+          ]);
+      });
+    });
   }
 
   // --- Mappers --------------------------------------------------------------

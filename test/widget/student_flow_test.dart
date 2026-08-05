@@ -7,8 +7,10 @@ import 'package:ather/core/clock/clock.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ather/presentation/providers/backup_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 
+import '../support/fake_backup.dart';
 import '../support/fake_auth.dart';
 
 /// Numbers are rendered wrapped in Unicode isolates so they read correctly
@@ -36,6 +38,7 @@ void main() {
     return ProviderScope(
       overrides: [
         authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
+        backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
         sharedPreferencesProvider.overrideWithValue(preferences),
         databaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(MutableClock(now)),

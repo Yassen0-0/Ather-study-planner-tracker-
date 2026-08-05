@@ -10,6 +10,7 @@ import '../core/widgets/reduced_motion.dart';
 import '../presentation/auth/lock_screen.dart';
 import '../presentation/providers/app_providers.dart';
 import '../presentation/providers/auth_providers.dart';
+import '../presentation/providers/backup_gate.dart';
 import '../presentation/providers/notification_providers.dart';
 import 'router.dart';
 
@@ -67,7 +68,9 @@ class AtherApp extends ConsumerWidget {
         // lock screen for its prompt.
         child: AppLockObserver(
           child: ReviewScheduler(
-            child: _LockGate(child: child ?? const SizedBox.shrink()),
+            child: BackupSyncGate(
+              child: _LockGate(child: child ?? const SizedBox.shrink()),
+            ),
           ),
         ),
       ),

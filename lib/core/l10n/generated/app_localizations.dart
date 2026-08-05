@@ -1159,6 +1159,96 @@ abstract class L {
   /// **'عن التطبيق'**
   String get settingsAbout;
 
+  /// No description provided for @backupTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخة السحابية'**
+  String get backupTitle;
+
+  /// No description provided for @backupBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك بتتحفظ على حسابك، فلو غيّرت التليفون تلاقيها زي ما هي.'**
+  String get backupBody;
+
+  /// No description provided for @backupNever.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه متحفظتش'**
+  String get backupNever;
+
+  /// No description provided for @backupSavedAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر حفظ: {date}'**
+  String backupSavedAt(String date);
+
+  /// No description provided for @backupSaving.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيحفظ…'**
+  String get backupSaving;
+
+  /// No description provided for @backupSaveNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ دلوقتي'**
+  String get backupSaveNow;
+
+  /// No description provided for @backupRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرجع النسخة السحابية'**
+  String get backupRestore;
+
+  /// No description provided for @backupRestoreConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي على التليفون ده هيتمسح ويتحط مكانه اللي في النسخة السحابية.'**
+  String get backupRestoreConfirm;
+
+  /// No description provided for @backupRestoreDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّعنا بياناتك'**
+  String get backupRestoreDone;
+
+  /// No description provided for @backupRestoreEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نسخة سحابية لسه'**
+  String get backupRestoreEmpty;
+
+  /// No description provided for @backupErrorOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نت — هيتحفظ أول ما النت يرجع'**
+  String get backupErrorOffline;
+
+  /// No description provided for @backupErrorPermission.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحيات مظبوطتش على السيرفر'**
+  String get backupErrorPermission;
+
+  /// No description provided for @backupErrorTooLarge.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك أكبر من إن نحفظها مرة واحدة'**
+  String get backupErrorTooLarge;
+
+  /// No description provided for @backupErrorUnreadable.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخة السحابية مش مقروءة'**
+  String get backupErrorUnreadable;
+
+  /// No description provided for @backupErrorUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحفظ مظبطش'**
+  String get backupErrorUnknown;
+
   /// No description provided for @tasksTitle.
   ///
   /// In ar, this message translates to:

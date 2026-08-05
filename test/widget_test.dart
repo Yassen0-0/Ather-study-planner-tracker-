@@ -11,14 +11,18 @@ import 'package:ather/domain/entities/chapter.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
+import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/presentation/common/settings_button.dart';
 import 'package:ather/presentation/dashboard/dashboard_screen.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ather/presentation/providers/backup_providers.dart';
+import 'package:ather/presentation/providers/task_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 
+import 'support/fake_backup.dart';
 import 'support/fake_auth.dart';
 
 final DateTime kNow = DateTime(2026, 6, 1);
@@ -58,9 +62,16 @@ Future<Widget> bootApp({StudySnapshot? snapshot}) async {
       // Signed in from the start: these tests are about the study screens,
       // and the auth gate is covered on its own in test/widget/auth_test.dart.
       authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
+      backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
       sharedPreferencesProvider.overrideWithValue(preferences),
       snapshotProvider.overrideWith(
         (ref) => Stream<StudySnapshot>.value(snapshot ?? snapshotWith()),
+      ),
+      // Same reason as the snapshot override: these tests keep drift out, and
+      // the backup gate reads tasks -- which would otherwise build a real
+      // database and leave its stream timers pending past the test.
+      tasksProvider.overrideWith(
+        (ref) => Stream<List<DailyTask>>.value(const <DailyTask>[]),
       ),
       // The production clock ticks every minute to keep "days overdue" honest;
       // in a widget test that periodic timer outlives the tree and trips

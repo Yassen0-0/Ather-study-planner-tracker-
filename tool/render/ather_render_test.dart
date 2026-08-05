@@ -27,8 +27,10 @@ import 'package:ather/presentation/tasks/tasks_screen.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/task_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ather/presentation/providers/backup_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 
+import '../../test/support/fake_backup.dart';
 import '../../test/support/fake_auth.dart';
 
 /// Renders every screen to a PNG so the design can be eyeballed without a
@@ -119,6 +121,7 @@ Future<Widget> boot() async {
   return ProviderScope(
     overrides: [
       authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
+      backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
       sharedPreferencesProvider.overrideWithValue(preferences),
       snapshotProvider.overrideWith((ref) => Stream<StudySnapshot>.value(seeded())),
       // Overridden for the same reason as the snapshot: this harness has no

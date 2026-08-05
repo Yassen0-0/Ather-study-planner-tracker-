@@ -227,9 +227,12 @@ is a real contradiction, and it was resolved rather than ignored:
   app in airplane mode and everything works — verified by pulling the network, not assumed.
 - **`Firebase.initializeApp` is wrapped in a try/catch.** Initialisation must never be the
   thing standing between a student and study data that is sitting on their own phone.
-- **No study data moved.** Chapters, lessons and exams stay in local SQLite with no owner
-  column and nothing syncs. The account identifies the student; it does not host their work.
-  A future migration to per-account cloud sync is a separate decision, not implied by this one.
+- ~~**No study data moved.**~~ **This is no longer true — see §3.26.** It was true when
+  accounts were added, and the "future migration to per-account cloud sync" it named as a
+  separate decision was taken on 2026-08-05. What survives unchanged is the part that
+  mattered: **local SQLite is still the source of truth, the network is never on a read path,
+  and the app is fully usable with the backup layer failing on every call** (asserted in
+  `test/widget/backup_test.dart`). The cloud holds a mirror, not a second master.
 - **`AuthFailure` is a structured enum, never a message string** — same reason as `Insight`:
   the data layer has no localisation, so an English Firebase error could never reach an Arabic
   student. Wrong password and unknown account collapse into one case on purpose; telling an
@@ -424,6 +427,68 @@ hand-typed points, so the tooth count and depth stay adjustable.
 The three-dot `more` glyph went with the tab that used it. Settings is now the cog in **every**
 root screen's header (`SettingsButton`), which is a place it always belonged more than a tab did.
 
+### 3.26 Cloud backup: a mirror, not a second source of truth
+The product's whole value is a record kept over two years, and until now that record existed on
+exactly one phone with no way to get it off. A lost phone was a lost curriculum.
+
+**The shape.** One Firestore document per student at `users/{uid}/backup/snapshot`, holding the
+whole record as a gzipped JSON blob plus plain `updatedAt`, `chapterCount`, `examCount` and
+`formatVersion` fields — plain so "is the cloud copy newer than mine?" costs one metadata read
+rather than a download and a decompress.
+
+**Deliberately not row-level sync.** A student uses one phone at a time; the problem is "my
+phone died", not "my tablet disagrees with my phone about lesson 12". Row-level merge would mean
+an `updatedAt` and a tombstone on every table plus a conflict policy per entity — a large amount
+of machinery for a case that does not arise, and every piece of it a new way to lose data.
+
+**Firestore rather than Firebase Storage** because Storage now requires a billing account on new
+projects. A practical constraint, not a preference.
+
+**The upload refuses rather than truncates.** Firestore's ceiling is 1 MiB per document and the
+budget is 900 KiB. A backup silently missing the last two years is worse than no backup, because
+the student believes they have one.
+
+**Restore is all-or-nothing and keeps ids.** Ids are what every `chapterId`/`lessonId`/`examId`
+relationship is made of, so letting autoincrement reassign them would silently reattach exams to
+the wrong lessons — a corruption nothing would ever report. One transaction, so a failure leaves
+the student's existing database exactly as it was; `test/data/backup_restore_test.dart` forces a
+mid-restore failure and asserts precisely that.
+
+**Two bugs the tests caught, both of the same shape: a safe default answering a question it
+should not have.**
+
+1. The auto-restore asked `snapshotValueProvider` whether the device was empty. That provider
+   falls back to `StudySnapshot.empty()` while its stream is loading — deliberately, so a
+   transient frame cannot crash a screen — so at sign-in it answered "empty" for a phone that
+   already held a full curriculum, and the cloud copy replaced it. It now awaits
+   `snapshotProvider.future`, which is a real answer and is still the seam tests stub.
+2. `FirestoreBackupRepository` resolved `FirebaseFirestore.instance` in its constructor. `main()`
+   tolerates a failed `Firebase.initializeApp` on purpose (§3.17); this turned that tolerated
+   failure into a crash the moment Settings built. Both handles are resolved lazily inside the
+   guard now.
+
+**Auto-restore happens only onto an empty database**, where there is nothing to lose. Everything
+else — local data present, cloud copy newer — is the student's choice, behind the explicit button
+in Settings and the same `confirmDestructive` sheet the rest of the app uses.
+
+**Uploads are debounced 20s and flushed on `AppLifecycleState.paused`**, which is when a student
+closes the app after recording an exam. Offline, the upload is skipped and retried on the next
+trigger: "لسه محفوظش" is a state, not an error, and colouring it red would teach students to
+ignore red.
+
+Failures cross the boundary as a `BackupFailure` enum, never a message string — the same rule as
+`AuthFailure`. `permissionDenied` is distinguished from `offline` because unpublished security
+rules otherwise look exactly like "sync quietly does nothing".
+
+**Firestore security rules** (published 2026-08-05, `eur3`, and load-bearing — the default is
+deny-all, so without these the feature silently never works):
+
+```
+match /users/{uid}/backup/{document} {
+  allow read, write: if request.auth != null && request.auth.uid == uid;
+}
+```
+
 ---
 
 ## 4. Data Model
@@ -502,6 +567,7 @@ a chapter needs review, the whole chapter is red.
 | Biometric app lock | Complete |
 | Celebration (white screen + green disc) | Complete |
 | Notification service + lifecycle reconciliation | Complete |
+| Cloud backup + restore (Firestore) | Complete — not yet exercised against live Firestore |
 | Daily tasks tab (add / tick / edit / reorder / delete, per day) | Complete |
 | Floating glass tab bar | Complete |
 | Android build + on-device verification | Complete — full journey run on emulator |
@@ -824,6 +890,34 @@ produced those numbers is untouched by the redesign.
 ---
 
 ## 10. Work Log
+
+**Cloud backup (2026-08-05).**
+The app's record now leaves the phone. Full reasoning in §3.26; §3.17's "no study data moved" is
+struck through rather than quietly contradicted.
+
+- `StudyBackup` (pure Dart serialisation), `BackupRepository` + `BackupFailure`,
+  `FirestoreBackupRepository` — the only file importing `cloud_firestore` — plus `restore()` on
+  both drift repositories, `BackupSyncNotifier` (debounce + manual flush) and `BackupSyncGate`
+  (lifecycle flush + auto-restore onto an empty device). One new dependency.
+- A Settings card: last-saved line, "احفظ دلوقتي", and a confirmed "استرجع النسخة السحابية".
+- **Two real bugs found by the new tests, not by reading the code** — the auto-restore
+  overwriting an existing curriculum, and Firestore being resolved in a constructor. Both are
+  written up in §3.26 because they share a root cause worth recognising again: a deliberately
+  safe default being asked a question it could not answer honestly.
+- Firebase console work done in-session: `com.ather.app` registered, the debug SHA-1 added,
+  Firestore created in `eur3` (permanent), and the rules above published.
+
+**Verification.** `flutter analyze` clean; **148/148 tests pass** (131 before). New:
+`test/domain/study_backup_test.dart` (round-trip, empty case, exact instants, and a
+newer-format backup refused rather than half-read), `test/data/backup_restore_test.dart` (ids
+preserved, replace-not-merge, seeded subjects untouched, and a mid-restore failure rolling back),
+`test/widget/backup_test.dart` (the app fully usable with every backup call failing, a named
+permission failure, auto-restore onto empty, **no** auto-restore onto populated, and the manual
+restore both confirmed and cancelled). Every existing widget test now injects
+`FakeBackupRepository.failing()`.
+
+**Not verified:** nothing has been written to or read from live Firestore. The rules, the
+document shape and the size ceiling are all untested against the real service.
 
 **Release signing wired (2026-08-05).**
 A debug-signed release APK was built for testers, which surfaced the §9 signing item. The build

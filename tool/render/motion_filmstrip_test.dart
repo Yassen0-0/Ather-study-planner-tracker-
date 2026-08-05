@@ -12,8 +12,10 @@ import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ather/presentation/providers/backup_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 
+import '../../test/support/fake_backup.dart';
 import '../../test/support/fake_auth.dart';
 import 'ather_render_test.dart' show loadFont, seeded, kNow;
 
@@ -33,6 +35,7 @@ Future<Widget> boot() async {
   return ProviderScope(
     overrides: [
       authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
+      backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
       sharedPreferencesProvider.overrideWithValue(preferences),
       snapshotProvider
           .overrideWith((ref) => Stream<StudySnapshot>.value(seeded())),

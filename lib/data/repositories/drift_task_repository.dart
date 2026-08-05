@@ -97,6 +97,26 @@ class DriftTaskRepository implements TaskRepository {
     });
   }
 
+  @override
+  Future<void> restoreTasks(List<DailyTask> tasks) {
+    return _db.transaction(() async {
+      await _db.delete(_db.dailyTasks).go();
+      await _db.batch((Batch batch) {
+        batch.insertAll(_db.dailyTasks, <DailyTasksCompanion>[
+          for (final t in tasks)
+            DailyTasksCompanion.insert(
+              id: Value(t.id),
+              day: t.day,
+              title: t.title,
+              done: Value(t.done),
+              sortOrder: t.sortOrder,
+              createdAt: t.createdAt,
+            ),
+        ]);
+      });
+    });
+  }
+
   DailyTask _toTask(DailyTaskRow r) => DailyTask(
     id: r.id,
     day: r.day,

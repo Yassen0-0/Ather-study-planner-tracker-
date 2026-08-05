@@ -12,12 +12,14 @@ import 'package:ather/presentation/common/settings_button.dart';
 import 'package:ather/presentation/tasks/tasks_screen.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/task_providers.dart';
+import 'package:ather/presentation/providers/backup_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../test/support/fake_backup.dart';
 import '../../test/support/fake_auth.dart';
 import 'ather_render_test.dart' show kNow, loadFont, seeded, seededTasks;
 
@@ -42,6 +44,7 @@ Future<Widget> bootDark() async {
   return ProviderScope(
     overrides: [
       authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
+      backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
       sharedPreferencesProvider.overrideWithValue(preferences),
       snapshotProvider.overrideWith(
         (ref) => Stream<StudySnapshot>.value(seeded()),
