@@ -1,5 +1,8 @@
 # Copy this file to `android/key.properties` and fill in your own values.
 #
+# Full procedure, including registering the key's SHA-1 with Firebase:
+#   RELEASING.md (in the repository root)
+#
 # `key.properties` is git-ignored and must stay that way: it holds the keystore
 # passwords in plain text. The keystore file itself belongs OUTSIDE this
 # repository -- keep it, and a backup of it, somewhere you will still have in a

@@ -801,6 +801,10 @@ flutter run -d <emulator-id>                      # Android
 flutter run -d windows                            # Windows desktop
 ```
 
+**Producing a distributable build is documented separately in `RELEASING.md`** —
+where the signing key lives, why neither it nor its passwords are in this repository,
+registering its SHA-1 with Firebase, and how to verify what you actually built.
+
 ### Environment status on the current dev machine
 
 | Item | Status |
