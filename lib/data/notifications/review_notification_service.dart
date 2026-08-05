@@ -40,7 +40,7 @@ class ReviewNotificationService {
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       windows: WindowsInitializationSettings(
         appName: 'Ather',
-        appUserModelId: 'com.sahm.sahm',
+        appUserModelId: 'com.ather.app',
         guid: 'f2a7c4d1-9b3e-4c8a-8f6d-1e5b7a9c2d40',
       ),
     );

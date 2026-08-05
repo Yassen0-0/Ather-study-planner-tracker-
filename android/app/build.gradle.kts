@@ -52,7 +52,7 @@ plugins {
 }
 
 android {
-    namespace = "com.sahm.sahm"
+    namespace = "com.ather.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -66,8 +66,14 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.sahm.sahm"
+        // Permanent from the day this is published: Play keys the listing, the
+        // store URL and every install off it, and it cannot be changed
+        // afterwards. Renamed from the pre-rebrand `com.sahm.sahm` while the
+        // only installs in the world were test ones.
+        //
+        // The SQLite file is deliberately NOT renamed with it -- see
+        // AppDatabase, where it is still `sahm`.
+        applicationId = "com.ather.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
