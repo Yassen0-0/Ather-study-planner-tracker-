@@ -54,7 +54,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBn2dad3ZUNTPcZuST0XpHtZlE1r-SomPA',
-    appId: '1:882606725720:android:9f14effc7ebfcedd20c82d',
+    // The com.ather.app client. The old com.sahm.sahm app id
+    // (...:9f14effc7ebfcedd20c82d) still exists in the Firebase project and in
+    // google-services.json, but nothing points at it any more.
+    appId: '1:882606725720:android:f7e9109d4620e84420c82d',
     messagingSenderId: '882606725720',
     projectId: 'ather-49705',
     storageBucket: 'ather-49705.firebasestorage.app',
