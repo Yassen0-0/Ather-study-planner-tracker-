@@ -1,0 +1,1086 @@
+# Ather (أثر) — Mastery-Based Learning Platform
+
+> Formerly "سهم / Sahm". The product is unchanged; the brand, the entire visual
+> design and the navigation were replaced in the Ather redesign — see the work log in §10.
+
+> ## Standing rule for any AI agent working on this project
+>
+> **Any AI agent (you or another one) working on this project must:**
+> 1. **Read `PROJECT.md` first, before anything else**
+> 2. **Update `PROJECT.md` with new details immediately after finishing any work — this is not optional**
+
+---
+
+## 1. Description and Purpose
+
+Sahm is an offline-first Flutter application for Egyptian Thanaweya Amma students on the
+**علمي علوم** track.
+
+It is **not** a to-do app, a habit tracker, or a study timer. It is a mastery-measurement
+tool built on one claim:
+
+> «إنت مش بتخلص الدروس... إنت بتتقنها»
+
+Mastery is derived **exclusively from real exam performance**. Time spent studying,
+checklist completion, and homework scores never influence it. The student builds their own
+curriculum — chapters (أبواب) and lessons (دروس) they name themselves — inside four fixed
+subjects, then proves understanding by entering actual exam results question by question.
+
+Mastery **decays**: 30 days after a lesson was last proven, it turns red and must be
+re-earned with a fresh exam. There is no "mark as reviewed" button anywhere in the app.
+
+### Target users
+Egyptian Thanaweya Amma (علمي علوم) students. Exactly four subjects, fixed and seeded, with
+no subject-management UI: أحياء / فيزياء / كيمياء / إنجليزي.
+
+---
+
+## 2. Architecture and Tech Stack
+
+**Clean Architecture**, three layers, dependencies point inward only
+(`presentation → domain ← data`).
+
+```
+lib/
+  main.dart
+  app/            app.dart (MaterialApp, theme, locale)   router.dart
+  core/
+    clock/        clock.dart              injectable time source
+    l10n/         app_ar.arb  app_en.arb  generated/
+    layout/       breakpoints.dart        window size classes
+    theme/        app_colors  app_spacing  app_typography
+                  mastery_palette  app_theme
+    widgets/      shared presentation primitives
+  domain/
+    entities/     pure Dart models (no drift, no Flutter)
+    services/     mastery_calculator  review_cycle_service  insights_generator
+    repositories/ abstract interfaces
+  data/
+    db/           drift database, tables, DAOs
+    repositories/ drift-backed implementations
+    seed/         the four fixed subjects
+  presentation/   one folder per screen: *_screen.dart, widgets/, *_providers.dart
+test/
+  domain/  data/  widget/
+```
+
+### Stack
+
+| Package | Version | Role |
+|---|---|---|
+| Flutter / Dart | 3.44.6 / 3.12.2 | SDK |
+| `flutter_riverpod` | 3.4.2 | state management |
+| `drift` / `drift_flutter` | 2.34.3 / 0.3.1 | SQLite, reactive `.watch()` streams |
+| `drift_dev` + `build_runner` | 2.34.0 / 2.15.1 | database codegen |
+| `go_router` | 17.3.0 | navigation |
+| `fl_chart` | 1.2.0 | analytics charts |
+| `flutter_local_notifications` | 22.2.0 | review reminders |
+| `timezone` | 0.11.1 | zoned notification scheduling |
+| `flutter_localizations` + `intl` | SDK / 0.20.2 | ar + en |
+| `shared_preferences` | 2.5.5 | locale and notification prefs |
+
+**Targets:** Android (phone) and Windows (desktop). Not one UI stretched across both — see
+§6 Adaptive Layout.
+
+---
+
+## 3. Key Technical Decisions
+
+Decisions are recorded as **chose X over Y because Z**, not as a changelog.
+
+### 3.1 Drift over sqflite
+Drift gives compile-time-checked SQL, typed row classes, and `.watch()` streams that push
+updates into Riverpod automatically. With sqflite every write would need manual cache
+invalidation across the dashboard, subject, chapter and analytics screens — the exact class
+of bug where a recorded exam updates one screen but not another.
+
+### 3.2 Exam questions stored as **groups**, not one row per question
+*Deviation from the original spec, which typed questions as `List<{points:int}>`.*
+
+The entry flow the spec itself describes is group-shaped: *"5 أسئلة بدرجة واحدة، 3 أسئلة
+بدرجتين"*, then *"كام سؤال صح من كل مجموعة"*. Storing one row per question would write N rows
+to represent two numbers the student typed, and no screen in the app ever needs an individual
+question's identity. `exam_question_groups` holds
+`(pointsPerQuestion, questionCount, correctCount)` and is the source of truth.
+
+### 3.3 `needsReview` is **derived**, not stored
+*Deviation from the spec's "mark the lesson as `needsReview = true`".*
+
+A stored boolean is only as fresh as the last time the app ran its daily check. If the
+student does not open the app for a week, a stored flag is wrong for that entire week.
+Derived from `lastReviewedAt` it is correct the instant any widget reads it:
+
+```dart
+bool needsReview(Lesson l, DateTime now) =>
+    l.lastReviewedAt != null && now.difference(l.lastReviewedAt!).inDays >= 30;
+```
+
+`lastNotifiedAt` *is* stored — but that is notification bookkeeping to prevent duplicate
+reminders, not review state.
+
+A lesson with `lastReviewedAt == null` (never examined) is **not** red. Red means *decayed*,
+not *untouched*.
+
+### 3.4 The celebration is one green disc, not a particle system
+The previous build hand-simulated ~120 confetti particles over a black screen. The Ather
+design replaced it with a full white screen, a single green disc that pops once, and the
+percentage earned. Removed rather than toned down: the moment is about the number the student
+proved, and an animation competing with it is the app celebrating itself.
+
+### 3.5 Readex Pro bundled as a **variable** font asset, not `google_fonts`
+Two decisions in one:
+
+- **Bundled, not `google_fonts`:** the app is fully offline. `google_fonts` fetches over the
+  network on first use and silently falls back to a Latin default when offline — unacceptable
+  for an Arabic-first UI.
+- **Variable, not static weights:** one file carries the whole 200–700 `wght` axis.
+  **Consequence:** Flutter will not synthesise weights for a variable font from
+  `TextStyle.fontWeight` alone — the axis must be driven via `TextStyle.fontVariations`, or
+  the entire type hierarchy silently renders at one weight. `AppTypography.style()` sets both
+  and is the only place allowed to construct a text style.
+- **Never above 700.** The axis stops there; asking for 800 makes Flutter fake a weight, which
+  reads coarse beside real 700.
+
+### 3.6 Riverpod without code generation
+`riverpod_generator` 4.x requires `analyzer ^13.0.0`; `drift_dev` requires an older analyzer.
+They cannot coexist in one pubspec — pub version solving fails outright. `drift_dev` is
+non-negotiable (it generates the database), so Riverpod providers are written manually.
+Riverpod 3.x supports this fully; the only cost is a little boilerplate.
+
+Related: `build_runner 2.16.0` needs `meta ^1.18.3` while the Flutter SDK pins `meta 1.18.0`,
+so `build_runner` is held at 2.15.1.
+
+### 3.7 Riverpod 3.x removed `StateProvider`
+Simple mutable state uses `Notifier` + `NotifierProvider` instead (see `LocaleNotifier`).
+
+### 3.8 Injectable `Clock`
+The 30-day decay cycle is the core mechanic. A hard-coded `DateTime.now()` would make it
+untestable without waiting a month. Everything that asks the time goes through `Clock`, so
+tests pin the date and a debug tool fast-forwards it.
+
+### 3.9 Checklist as five boolean columns, not a child table
+The spec fixes exactly five study steps with no add/remove. A child table would add a join
+and an ordering problem for zero flexibility gained.
+
+### 3.10 Two themes from one description, and no shadows anywhere
+The app ships light and dark (§7b). They are **one theme built twice**: `AppTheme._build` is the
+only description of what an Ather surface looks like, and `light`/`dark` differ solely by the
+`AppColors` handed to it, so a radius or a button height can only ever be changed in one place.
+
+The depth system survives the second scheme intact. Depth is "a card on a page of a different
+value" — in light a white card on `#EFEFF2`, in dark a `#1C1C1E` card on black — and nothing
+else. `shadowColor` is transparent at theme level and Material's ink splash is switched off, so
+a stray `Card` or `InkWell` cannot reintroduce either. The one shadow in the app is the switch
+knob — without a lift it reads as a painted dot rather than a control.
+
+*(This reverses the earlier decision to delete the dark theme. The claim then was that a second
+surface scheme would have nothing to build depth from; that turned out to be wrong — inverting
+the value ramp while keeping its **ordering** preserves every "quieter than" relationship the
+design relies on, so the dark theme is a re-mapping rather than a redesign.)*
+
+The palette is white + grey + black plus exactly **one red** (`#FF3B30`, wrong / weak /
+overdue / delete) and **one green** (`#34C759`, right / mastered). No subject colours, no
+four-step mastery spectrum, no gradients, no blur. A score in the middle is simply a number;
+inventing a colour for it dilutes the two that mean something.
+
+### 3.11 Unproven is not the same as weak
+Mastery is 0 for anything unexamined, so the naive mapping paints a brand-new install
+alarm-red across all four subjects — telling a student who has done nothing wrong that they
+are failing. `MasteryPalette.resolve` therefore takes `hasData`, and renders neutral grey with
+an em-dash instead of `0%` wherever no exam exists. Precedence is: **no data → grey**, then
+**decayed → red**, then the mastery band. *(Found by looking at the first real screenshot on
+the emulator, not by reading the code.)*
+
+### 3.12 Hand-drawn icons instead of the Material set
+The design allows one icon family: outline strokes at 1.7–2.2, black or grey, 15–26px. The
+Material set is a different family with a different optical weight, and mixing the two was one
+of the things the redesign set out to remove. `AtherIcon` draws the seventeen glyphs the
+product actually needs from the design's own path data.
+
+### 3.13 `Spacer` beside a `Flexible` splits the leftover width
+On the summary cards, `Spacer` (an `Expanded`, flex 1) next to a `Flexible` (flex 1) shared
+the leftover space evenly, wrapping "1 من 4 باب اتقنتها" onto two cramped lines. The layout is
+a fixed number plus a single `Expanded` aligned to the end. *(Found by rendering the screen,
+not by reading the code.)*
+
+### 3.14 Core library desugaring enabled
+`flutter_local_notifications` uses `java.time` APIs absent below API 26. Without
+`isCoreLibraryDesugaringEnabled` plus `desugar_jdk_libs`, the Android build fails outright at
+`:app:checkDebugAarMetadata`.
+
+### 3.15 Inexact notification scheduling
+`AndroidScheduleMode.inexactAllowWhileIdle`, and `SCHEDULE_EXACT_ALARM` is deliberately not
+declared. Play treats exact alarms as a restricted permission, and a study reminder does not
+justify it — delivery within the hour is fine for a 30-day cycle.
+
+### 3.16 Western digits (0123) in both locales
+Egyptian students read exam scores in Western numerals. Mixing digit systems between ar and en
+would make the same score look like two different numbers.
+
+### 3.17 Accounts, without giving up offline-first
+Adding Firebase Auth to an app documented as "no accounts, no server, no network requests"
+is a real contradiction, and it was resolved rather than ignored:
+
+- **The gate is asked once.** A student signs in the first time and never again. Firebase
+  caches the session on disk, `Firebase.initializeApp` restores it with no network call, and
+  the router's redirect reads that cached answer synchronously. A signed-in student opens the
+  app in airplane mode and everything works — verified by pulling the network, not assumed.
+- **`Firebase.initializeApp` is wrapped in a try/catch.** Initialisation must never be the
+  thing standing between a student and study data that is sitting on their own phone.
+- **No study data moved.** Chapters, lessons and exams stay in local SQLite with no owner
+  column and nothing syncs. The account identifies the student; it does not host their work.
+  A future migration to per-account cloud sync is a separate decision, not implied by this one.
+- **`AuthFailure` is a structured enum, never a message string** — same reason as `Insight`:
+  the data layer has no localisation, so an English Firebase error could never reach an Arabic
+  student. Wrong password and unknown account collapse into one case on purpose; telling an
+  attacker which emails are registered is a gift, and the student's next action is identical.
+
+### 3.18 The biometric lock releases rather than traps
+The fingerprint lock is a privacy convenience over data that is already behind the device's
+own lock — it is not a security boundary. So when the sensor cannot answer (no enrolled print,
+hardware failure, a restored device), `LockScreen` **unlocks**. The alternative is holding a
+student's own study record hostage behind a sensor that will never say yes.
+
+For the same reason the switch is only offered where `getAvailableBiometrics()` reports an
+enrolled print, and the lock re-arms on `paused` rather than `resumed`: by the time an app is
+resumed its content has already been composited into the task-switcher thumbnail.
+
+**`MainActivity` must extend `FlutterFragmentActivity`.** `local_auth` raises the prompt via
+AndroidX `BiometricPrompt`, which needs a `FragmentActivity` host; the default
+`FlutterActivity` is not one, and the plugin throws `no_fragment_activity` the moment it is
+called. That combined badly with the release-on-failure rule above: the app opened normally,
+so a completely broken integration looked exactly like "this device has no fingerprint". The
+catch now logs before releasing — a safe fallback that hides its own cause is a trap.
+
+### 3.19 The tab bar is glass — a bounded exception to §3.10's blur ban
+§3.10 rules out blur along with gradients and a second surface scheme. That ban still holds
+everywhere except one surface: the bottom tab bar, approved explicitly by the owner. It is the
+only place a student's own content passes *underneath* a chrome element, so it is the only
+place depth carries information rather than decoration.
+
+The exception is deliberately narrow, and every bound is enforced in `app_shell.dart`:
+
+- **Exactly one `BackdropFilter` in the app.** Never inside a list item — a blur per row is a
+  blur per frame per row.
+- **`ClipRect` is mandatory.** Unbounded, a `BackdropFilter` blurs the entire layer tree.
+- **The sigma is never animated** (`AppMotion.glassSigma = 24`). Animating a blur radius drops
+  frames on the phones these students own. If the bar ever needs to react to scroll, the tint
+  alpha is the thing to animate, not the blur.
+- **The FAB stays fully opaque black.** It is the primary action; it does not go translucent.
+- **Platform-gated, never reduce-motion-gated.** `canBlur` is Android/iOS only. Blur is a
+  *visual effect*, not motion: `disableAnimations` owns fades, scales, slides and pops, and a
+  student who turns reduce-motion on because scrolling makes them ill has no reason to lose a
+  frosted bar. Everywhere else, the opaque bar the app shipped with.
+
+**Contrast, measured rather than assumed.** The inactive tab label is `#9A9AA0`. On today's
+opaque white bar that is **2.80 : 1**; through the 0.72 white tint over a page or a card it is
+**2.55 – 2.80 : 1**, because everything that passes under the bar in the light theme is
+lighter than the tint. In the dark theme the bar tints toward the dark card instead, so the same
+relationship holds inverted. Glass does not make it worse. The one real failure would be the black
+toast passing underneath at **1.5 : 1** — which cannot happen, because the toast is pinned at
+`bottom: 104`, clear of the bar. That constant is now load-bearing and says so in a comment.
+
+Separately, and out of this work's scope: 2.80 : 1 at 11px already fails WCAG AA. That is a
+pre-existing token decision, unchanged here, but it is written down now.
+
+`AppShell` sets `extendBody: true` so the list actually scrolls under the bar — otherwise
+there is nothing to blur — and `AtherScreen` adds the bar's height back as list padding, plus
+real space under any pinned bottom button. A button may not sit behind glass.
+
+### 3.20 A deleted row collapses — the one place height animates
+§3.4 removed the confetti; the standing rule that came with it is that motion animates
+`transform` and `opacity` only, never layout. Animating `height`, `padding` or flex weights in
+a scrolling list is what causes jank on a mid-range Android.
+
+One exception, approved with the motion spec: **a row leaving a list fades while its height
+shrinks**, so the rows below settle into the gap instead of teleporting up. It lives in
+`core/widgets/collapsing_removal.dart`, built on `AnimatedList` because the collapse has to be
+*rendered* — the widget must outlive its record by 200ms.
+
+It is data-driven, not button-driven: nothing in this app deletes a row from inside the list. A
+student opens the chapter, deletes it there and pops back, so the removal arrives as a shorter
+list on the next build. `CollapsingList` is what turns that into a collapse.
+
+Everything else still animates transform and opacity only. No shrinking headers, no expanding
+cards, no animated padding. An unrecorded exception becomes a licence for the next one.
+
+### 3.21 Motion tokens, and why they are all under 300ms
+`AppMotion` carries every duration and curve; no widget declares its own. The spec added one
+curve — `standard = Cubic(0.23, 1, 0.32, 1)` — and twelve durations/distances on top of the
+five that already existed.
+
+Three rules the numbers encode:
+
+1. **Under 300ms for interface motion.** 180ms reads as more responsive than 400ms. Only three
+   things are allowed past it: the 600ms value settle, the 500ms celebration, and the 280ms
+   sheet. This app is opened twenty times a day; every millisecond is paid twenty times.
+2. **Never `ease-in`.** It starts slow and delays the exact moment the student is watching.
+   Two curves overshoot on purpose — `pressCurve` and `celebrationCurve` — and nothing else.
+3. **Frequency decides intensity.** A tab switch happens fifty times a day, so it is the
+   shortest thing in the app (150ms) and the only one that is pure opacity. A chapter report is
+   read once a week.
+
+The nineteen animations, by ID:
+
+| ID | Surface | Trigger | What moves | Duration | Curve |
+|---|---|---|---|---|---|
+| M-01 | Dashboard / subject / chapter lists | first build | fade + rise 12px, 40ms stagger, cap 6 | 260ms | standard |
+| M-02 | Any mastery % | value changes | counts to the new number; colour switches instantly | 600ms | easeOutCubic |
+| M-03 | Week strip | a day becomes complete | tick scales 0.6 → 1; the circle fills instantly | 220ms | standard |
+| M-04 | Tab bar | tab tap | branch cross-fade + icon/label colour tween | 150ms | standard |
+| M-05 | Review badge | count appears / changes | scale 0.6 → 1 with opacity, no bounce | 200ms | standard |
+| M-06 | Toast | exam / homework saved | fade + rise 12px in, fade out; 2200ms dwell | 180 / 150ms | standard |
+| M-07 | Push routes | navigation | incoming fades + rises 8px; outgoing fades out | 220ms | standard |
+| M-08 | Chapter / lesson row | added / deleted | fades + rises in place / collapses + fades (§3.20) | 260 / 200ms | standard |
+| M-09 | Every tappable | press down | `scale(.97)` — `Pressable`, unchanged | 140ms | pressCurve |
+| M-10 | Checklist | tap a step | tick scales in, label colour tweens; disc fills instantly | 180ms | standard |
+| M-11 | Bottom sheets | open / close | slide up + scrim fade — unchanged | 280ms | sheetCurve |
+| M-12 | Error banners | validation fails | fade + rise 6px. **No shake.** | 180ms | standard |
+| M-13 | Wizard body | next / back | current fades out, next fades in + rises 10px | 200ms | standard |
+| M-14 | Wizard segments | step advances | `scaleX` from the leading edge, forced LTR | 250ms | standard |
+| M-15 | Wizard result | step 4 appears | counts up from 0, once per flow; before → arrow → after at 0/60/120ms | 600ms | easeOutCubic |
+| M-16 | Wizard route | open / close | slides up from the bottom, direction-agnostic | 280ms | sheetCurve |
+| M-17 | Review rows | first build | `ListEntrance`. No pulse, no flash on overdue. | 260ms | standard |
+| M-18 | Celebration | chapter mastered | one green disc, scale 0.6 → 1 — unchanged | 500ms | celebrationCurve |
+| M-19 | Lock → app / login → dashboard | unlock / sign-in | fade only | 200 / 220ms | standard |
+
+**Nothing animates on scroll position** — no parallax, no shrinking header, no fading app bar,
+no shimmer (this app reads local SQLite; there is nothing to wait for). The four subject glyphs
+are static marks. Body copy being read never moves. And the mastery **colour** switches on the
+frame the value changes rather than tweening: a red score fading through black briefly tells
+the student something untrue.
+
+**Reduced motion is fewer and gentler, not none.** Every animated widget checks
+`prefersReducedMotion`. Movement and scale are dropped entirely, short fades stay, count-ups
+and bar settles go to `Duration.zero` at their final value, and stagger delays go to 0. Glass,
+blur and transparency are untouched — see §3.19.
+
+Entrances are expressed as an `Interval` on one `AnimationController`, never a
+`Future.delayed`. A widget test's `pumpAndSettle` can settle a ticker; it hangs on a timer.
+
+### 3.22 Daily tasks exist, and they are kept away from mastery on purpose
+§1 says this is **not** a to-do app, and adding a task list is a real widening of the
+product — so the rule that keeps §1 true is enforced structurally rather than by intention:
+
+- **`daily_tasks` is not in `StudySnapshot`.** The snapshot exists because every *mastery*
+  screen is cross-cutting; tasks are read by exactly one screen and must never be read by a
+  calculation. Widening `_combineLatest6` to seven would have bought nothing and quietly
+  seated tasks at the same table as the evidence.
+- **A second, narrow `TaskRepository`** beside `StudyRepository`, on its own `.watch()`
+  stream. Nothing in `lib/domain/services/` imports `daily_task.dart`.
+- **The tasks screen shows no percentage and no `MasteryBar`.** Its only figure is a count in
+  the app's existing "X من Y" grammar. A progress bar under a task list would tell the student
+  the app scores them on their to-do list, which is the exact claim the product denies.
+
+A task belongs to a **day**, not to a lesson, so the table has no foreign key at all. Unfinished
+tasks deliberately do **not** roll over: a day's plan is a record of that day.
+
+`sortOrder` is a dense integer rewritten wholesale in one transaction on a drag. A day holds a
+handful of rows, so fractional indices would be cleverness bought with nothing.
+
+### 3.23 The tab bar floats — a change of shape, not a new exception
+§3.19's blur exception is unchanged and every one of its bounds still holds: exactly one
+`BackdropFilter`, a mandatory clip, a sigma that is never animated, an opaque FAB, and a
+platform gate rather than a reduce-motion gate. What moved is the bar's geometry — it is now a
+pill inset by `AppSpacing.pageMargin` on the sides and `AppSizes.barLift` from the bottom, with
+the black "+" raised `AppSizes.fabOverhang` above its top edge.
+
+Three consequences, all of which are the reason this is written down:
+
+1. **The hairline goes all the way round.** A full-bleed bar was separated from the page by one
+   line along its top. A floating one has content on all four sides and there is no shadow
+   anywhere in this app to lift it, so `Border.all` is the only thing holding it off the page.
+2. **The "+" is drawn outside the pill**, positioned by the bar rather than sitting in the tab
+   `Row`. Inside, it would be clipped by the `ClipRRect` and blurred by the filter — and the
+   primary action does not go translucent. Its slot in the `Row` is reserved by a bare
+   `SizedBox`.
+3. **The toast's offset is derived, not typed.** `AppSizes.toastBottom` is
+   `barLift + barHeight + fabOverhang + 16`, plus the system inset resolved at build time. The
+   old hard-coded `104` happened to clear a full-bleed bar and would now land behind a floating
+   one; a black toast under the 0.72 tint drops the inactive tab label to 1.5:1, and against the
+   opaque black FAB it is black on black.
+
+**The bar does not react to scroll.** Shopify's collapses; this one does not, because §3.21
+rules out scroll-driven motion outright and a listener rebuilding the bar every scroll frame was
+already rejected once.
+
+### 3.24 The first schema migration, and why `onUpgrade` is not optional
+`schemaVersion` went 1 → 2 for `daily_tasks`. Every student on an earlier build already has a v1
+file named `sahm` on disk, and **`onCreate` does not run for them** — without an `onUpgrade` the
+app would open against a database missing a table it is about to read and throw on the first
+frame. The migration is additive only: one `createTable`, nothing dropped and nothing rewritten,
+because a student's curriculum is the one thing in this repo that cannot be regenerated.
+
+`test/data/task_migration_test.dart` builds a genuine v1 image on a real file — drift creates the
+current schema, then the test removes exactly what v2 added and resets `user_version` — rather
+than hand-writing v1 DDL from memory, which would have tested a schema no student ever had.
+
+### 3.25 The settings icon was a sun for the whole life of the app
+`AtherGlyph.settings` was a circle with eight straight radial spokes. That is a sun, and it read
+as one at every size it was used at — found by looking at a phone, not at the code. It is now a
+cog: an eight-tooth outline walked in polar coordinates by `_cogPath()`, rather than forty
+hand-typed points, so the tooth count and depth stay adjustable.
+
+The three-dot `more` glyph went with the tab that used it. Settings is now the cog in **every**
+root screen's header (`SettingsButton`), which is a place it always belonged more than a tab did.
+
+---
+
+## 4. Data Model
+
+All foreign keys are `ON DELETE CASCADE`.
+
+| Table | Columns |
+|---|---|
+| `subjects` | `id, nameAr, nameEn, iconCodePoint, colorValue, sortOrder` — 4 seeded rows, no add/edit UI |
+| `chapters` | `id, subjectId, name, masteredAt?, createdAt` |
+| `lessons` | `id, chapterId, name, lastReviewedAt?, lastNotifiedAt?, createdAt` + 5 checklist bools |
+| `homework_entries` | `id, lessonId, score, maxScore, createdAt` |
+| `exam_entries` | `id, lessonId, isReviewExam, totalPossiblePoints, correctPoints, percentage, createdAt` |
+| `exam_question_groups` | `id, examId, pointsPerQuestion, questionCount, correctCount` |
+| `daily_tasks` | `id, day, title, done, sortOrder, createdAt` — **feeds nothing** (§3.22) |
+
+`daily_tasks` is the only table with no foreign key: a task belongs to a date, not to a lesson,
+and nothing in `domain/services/` reads it. It is deliberately absent from `StudySnapshot`.
+
+`percentage` is denormalised onto `exam_entries`: mastery is read on every dashboard and chart
+query, and a past exam's score must stay historically stable.
+
+### Mastery rules
+
+```
+lessonMastery:
+  0 exams  -> 0
+  1 exam   -> that exam's percentage
+  n exams  -> last.percentage * 0.7 + mean(all others).percentage * 0.3
+
+chapterMastery = mean(mastery of every lesson in the chapter)
+                 (lessons with no exams contribute 0 — never excluded)
+```
+
+Bands: `<50` ضعيف · `50–69` متوسط · `70–89` كويس · `≥90` متفوق.
+
+**Homework never enters this calculation.** It renders only as a readiness line:
+`<60%` → «لسه محتاج تذاكر أكتر قبل ما تدخل الامتحان», otherwise «تمام، جاهز تدخل الامتحان».
+
+`lastReviewedAt` is set on (a) a successful "أتقنت الباب" for every lesson in the chapter, and
+(b) every exam submission, first or review.
+
+**Chapter red rule** — exactly as specified, no averaging, no threshold: if even one lesson in
+a chapter needs review, the whole chapter is red.
+
+---
+
+## 5. Features
+
+| Feature | Status |
+|---|---|
+| Project scaffold, deps, git | Complete |
+| Design tokens (colours, type, spacing, radii, motion) | Complete |
+| Readex Pro variable font wired with `fontVariations` | Complete |
+| ar/en ARB localization + generated delegate | Complete |
+| Window size classes / adaptive breakpoints | Complete |
+| Injectable `Clock` | Complete |
+| Light theme (dark removed) | Complete |
+| Drift schema, seed, repository, cascades | Complete |
+| Mastery calculator (pure, tested) | Complete |
+| Review cycle service (pure, tested) | Complete |
+| Insights generator (pure, tested) | Complete |
+| Riverpod providers + screen summaries | Complete |
+| go_router shell + five-slot tab bar with centre FAB | Complete |
+| Dashboard | Complete |
+| Subject screen (chapter cards) | Complete |
+| Chapter screen + "أتقنت الباب" gate | Complete |
+| Lesson screen (checklist, homework, history) | Complete |
+| Exam entry wizard (4 steps) | Complete |
+| Chapter report | Complete |
+| Review Center | Complete |
+| Analytics dashboard + charts + insights | Complete |
+| Settings (ar/en toggle, reminders, account, lock) | Complete |
+| Firebase Auth: email/password + Google | Complete |
+| Login screen in the Ather design language | Complete |
+| Biometric app lock | Complete |
+| Celebration (white screen + green disc) | Complete |
+| Notification service + lifecycle reconciliation | Complete |
+| Daily tasks tab (add / tick / edit / reorder / delete, per day) | Complete |
+| Floating glass tab bar | Complete |
+| Android build + on-device verification | Complete — full journey run on emulator |
+| Windows desktop verification | **Blocked** — see §8, needs two user actions |
+
+---
+
+## 6. Adaptive Layout
+
+Ather is a phone design, and the honest desktop answer is the same single-column layout with
+room around it — not a second layout the handoff never specified.
+
+| Class | Width | Shape |
+|---|---|---|
+| `compact` | `<600` | full width |
+| `roomy` | `≥600` | same layout, capped at 520 and centred |
+
+The previous build branched here into a side rail, desktop dialogs and a two-pane
+master/detail. All three contradicted the five-slot tab bar and the single modal shape, so
+they were deleted rather than kept switched off.
+
+---
+
+## 7. Localization and RTL
+
+Arabic is the default locale and the fallback; English is a runtime toggle. All strings live in
+`lib/core/l10n/*.arb` — no string literals in widgets. Layout uses `EdgeInsetsDirectional` and
+`start`/`end`, never `left`/`right`. Direction-implying icons mirror explicitly.
+
+Every screen must be verified in **both** directions. `test/widget_test.dart` asserts the
+actual `TextDirection` flips, because a non-mirroring bug is invisible to a string-only check.
+
+**Numbers are the hard part.** Every number is Western digits, laid out LTR and *isolated*
+from the Arabic around it with `U+2066 … U+2069` (`core/l10n/formatting.dart`). Isolate the
+number alone, never a phrase: `iso('1') + ' من ' + iso('4')` is correct, `iso('1 من 4')`
+renders as "من 4 1". A literal `70%` inside an ARB string renders as `%70` — thresholds are
+passed in as isolated placeholders instead. Progress bars are forced LTR too: a bar filling
+from the right makes 20% look like 80%.
+
+Arabic plurals go through ICU `plural` in the ARB (`=1` درس واحد · `=2` درسين · `few` N دروس ·
+`many`/`other` N درس), so "1 دروس" cannot happen. The "X من Y درس" construction deliberately
+uses the singular counting form and is a separate key.
+
+---
+
+## 7a. Brand Identity
+
+The authored identity is three SVGs, shipped in `assets/branding/`:
+
+| File | Role |
+|---|---|
+| `icon-mastery-light.svg` | The official launcher icon, and the in-app mark on a light surface |
+| `icon-mastery-dark.svg` | The same mark on a dark surface |
+| `glyph-mastery.svg` | The mark with no background plate — standalone symbol |
+
+All three are one geometry (a grey track ring, a 324° green mastery arc from twelve o'clock, a
+solid centre dot) differing only in four colours. So the geometry is transcribed **once**, into
+`lib/core/branding/ather_brand.dart`, and every surface is painted from it:
+
+* In-app — `AtherLogo` (plated) and `AtherGlyph` (transparent), both in
+  `lib/core/branding/ather_logo.dart`. Neither takes a light/dark argument: they resolve the
+  variant through `AtherBrandPalette.of(context)`, which reads the ambient `Brightness`. That is
+  the whole of the theme switch — no call site branches, and there is no second widget tree.
+  Placed on the login screen, the lock screen (which is what a cold start actually shows) and the
+  Settings → About card.
+* Android bitmaps — generated by `tool/branding/export_branding_test.dart`, which paints with the
+  same `AtherMarkPainter`. Nothing is hand-exported, so the launcher icon and the in-app logo
+  cannot drift apart.
+
+A `CustomPainter` rather than an SVG renderer because the mark is four primitives: it stays vector
+at every size, costs no dependency and no decode, and is what lets the icon export and the UI share
+one drawing. The SVGs remain the authored artefact.
+
+Regenerate every Android bitmap after any change to the geometry or palettes:
+
+```bash
+flutter test tool/branding/export_branding_test.dart
+```
+
+That writes `mipmap-*/ic_launcher.png` (48dp), `mipmap-*/ic_launcher_foreground.png` (108dp),
+`drawable-*/splash_glyph.png` + `drawable-night-*/splash_glyph.png` (120dp) and
+`android/app/src/main/ic_launcher-playstore.png` (1024², for the Play listing — outside `res/`, so
+it is not packaged into the APK).
+
+Three rules that are easy to break by accident:
+
+1. **The launcher icon is always the light variant.** The installed icon belongs to the home
+   screen, not to the app's theme, so it is never resolved from brightness. There is deliberately
+   no `<monochrome>` layer in `mipmap-anydpi-v26/ic_launcher.xml` — a themed icon would let the
+   launcher recolour the mark to the wallpaper palette and drop the green.
+2. **The adaptive foreground is drawn at the artwork's authored scale.** The mark spans
+   `(2×290 + 46) / 1024 ≈ 0.6113` of its canvas, which on the 108dp adaptive canvas is 66.0dp —
+   exactly the guaranteed-visible safe zone. It needs no nudging to fit, and it is centred by
+   construction.
+3. **The mark is only ever scaled uniformly.** `AtherMarkPainter` works in the SVG's own 1024
+   coordinates and applies one scale on both axes, letterboxing a non-square box rather than
+   stretching. No rounded corners, no shadow, no gradient, no crop.
+
+The in-app mark follows the app's theme (§7b): `AtherBrandPalette.of(context)` reads the ambient
+`Brightness`, so Light shows the light artwork, Dark shows the dark, and "follow system" needs no
+special case — the framework has already resolved the OS setting into the ambient brightness by
+the time the mark is painted. That one call is the *only* thing that chooses a logo anywhere in
+the app.
+
+The **launcher icon is not part of that** and never changes: it is the light artwork baked into
+the Android resources, and it stays light whatever theme the student picks, because the icon lives
+on the home screen rather than on the app's own surface. The Android launch window is the one
+place the dark glyph is chosen by the OS rather than by the app — it follows the system night
+setting via the `-night` resource bucket, which is also why the splash needs no second
+`launch_background.xml`.
+
+---
+
+## 7b. Theming (light / dark / system)
+
+The student picks **فاتح / داكن / النظام** in Settings → المظهر. `ThemeMode.system` is the
+default and is what an unset preference reads back as: someone who never opens the setting gets
+the app in whatever mode their phone is already in.
+
+### How a colour reaches a widget
+
+`AppColors` is a **`ThemeExtension`**, not a bag of constants. It is attached to `ThemeData` in
+`AppTheme._build`, and every colour in the app is read back out of it:
+
+```dart
+final c = context.colors;      // AppColors for the ambient theme
+... color: c.textSecondary
+... style: context.text.secondary   // the colour-bearing text styles
+```
+
+**This indirection is load-bearing and must not be shortcut back to statics.** Reading through
+the context registers the widget as a dependent of `Theme`, so it rebuilds the instant the theme
+changes. A static constant — or a global "current brightness" variable — cannot do this: screens
+parked in the `Navigator` are *not* rebuilt when `MaterialApp` rebuilds, so they would keep
+painting the previous theme's colours until they happened to be rebuilt for some other reason.
+That was tried first and is why it was abandoned.
+
+### The type scale is split by whether a style owns a colour
+
+* **Static, in `AppTypography`** — every style whose colour is just "the primary text colour".
+  These leave `TextStyle.color` **null** and inherit it. `Text` merges its style over the ambient
+  `DefaultTextStyle`, which `AppTheme` seeds from `textTheme.bodyMedium` = `textPrimary`, so an
+  uncoloured style is black in light and white in dark with nothing at the call site. A null
+  colour here is not an omission — it is how the style stays correct in both themes.
+* **`AppTextStyles`, via `context.text`** — the handful that deliberately sit at a different
+  colour: the secondary greys, the weekday label, the fine print, and the two that print onto a
+  filled button.
+
+### Two tokens that do *not* invert
+
+`wrong` (#FF3B30) and `right` (#34C759) are identical in both palettes — they are the red pen and
+the green tick, and the brand mark keeps the same green on both its plates. Two tokens exist
+because of that:
+
+* **`onState`** — what prints *onto* those two fills. White in both themes. Using `onPrimary`
+  there would turn a sign-out button's label black on red, and the tick inside a green disc black
+  on green.
+* **`switchKnob`** — light in both themes. The knob rides the green track when on, and a knob the
+  colour of the card is nearly invisible against `switchOff` on a dark page.
+
+Anything else that sits on a fixed fill belongs on `onState`, not `onPrimary`.
+
+### Persistence and first frame
+
+`themeModeProvider` (a `Notifier`, matching `localeProvider`) stores the choice in
+`SharedPreferences` under `theme_mode`, as the enum's **`name`** rather than its index — so
+reordering `ThemeMode`, a framework enum we do not control, cannot silently reinterpret every
+student's saved choice. `main()` already awaits `SharedPreferences` before `runApp`, so the
+preference is read synchronously on the first frame: the app opens in the right theme rather than
+flashing light and correcting itself.
+
+### Verifying it
+
+```bash
+flutter test tool/render/ather_render_test.dart        # light, compares against goldens
+flutter test tool/render/ather_dark_render_test.dart   # dark
+```
+
+The light suite is the regression net for "the redesign did not disturb the existing theme" — it
+compares pixel-for-pixel against committed goldens. The dark suite boots the app with
+`theme_mode: dark` already in `SharedPreferences` rather than overriding a provider, so it also
+proves the preference survives a cold start and is applied on the first frame.
+
+---
+
+## 8. How to Run and Test
+
+```bash
+flutter pub get
+flutter gen-l10n                                  # regenerate after editing any .arb
+dart run build_runner build --delete-conflicting-outputs   # after editing drift tables
+
+flutter analyze
+flutter test                                      # host VM — needs no device
+
+flutter run -d <emulator-id>                      # Android
+flutter run -d windows                            # Windows desktop
+```
+
+### Environment status on the current dev machine
+
+| Item | Status |
+|---|---|
+| Flutter 3.44.6 / Dart 3.12.2 | OK |
+| Android SDK `android-36.1`, build-tools `36.0.0`, licence accepted | OK |
+| `JAVA_HOME` → Microsoft JDK 17 | OK |
+| `flutter analyze` / `flutter test` | OK — no device required |
+| Android `cmdline-tools` + `system-images;android-35;google_apis;x86_64` | Installed |
+| Android emulator `nasaq_pixel_390` | Working — boots as `emulator-5554`, Android 15 (API 35) |
+| `flutter build apk --debug` | Passing |
+| Visual Studio C++ toolchain | **Missing** — required for `flutter run -d windows` |
+| Windows Developer Mode | **Off** — plugin symlink support; blocks the desktop build first |
+
+**To unblock Windows desktop, two user actions are needed:**
+1. `start ms-settings:developers` → enable **Developer Mode** (symlink support for plugins).
+2. Install the Visual Studio **Desktop development with C++** workload.
+
+Until both are done, Windows desktop is **untested** and is reported as such — never as working.
+
+---
+
+## 9. Known Issues / Follow-ups
+
+- **Google sign-in has not been exercised on a device.** Email/password, sign-out, the
+  fingerprint lock and the airplane-mode relaunch were all run on the emulator (see §10); the
+  Google account sheet was not, because it needs a Google account signed in on the device.
+- **A test account exists in Firebase.** `test@ather.app` was created to verify the flow and
+  can be deleted from the Authentication console. There is also a stray empty Google Cloud
+  project, `ather-app-2026`, left over from a failed first attempt.
+- **The redesign was run on the emulator (API 35) but not on a real phone.** The app installs,
+  boots with no exceptions in `logcat`, and navigates; every screen was also rendered and
+  reviewed via `tool/render/`. That is not a phone in a student's hand.
+- **Windows desktop cannot be built on this machine.** `flutter doctor` reports Visual Studio
+  absent, and plugin builds additionally need Developer Mode enabled. Both are user actions.
+- **Notification delivery has never been observed firing.** The scheduling code runs and the
+  resume-time reconciliation is wired, but no reminder has actually been seen arriving after 30
+  days; verifying that needs a device clock change or a long-running install.
+- **The exam wizard discards input on exit, by design.** The × and the system back both leave
+  without saving, which is what the handoff specifies ("الخروج بالـ × من غير حفظ"). If real
+  students report losing entries to a stray back gesture, a discard confirmation is the fix —
+  it would need new copy, which is why it was not added unilaterally.
+- **A deleted task does not collapse.** Every other row in the app leaves via `CollapsingList`
+  (§3.20), but a list cannot be both reorderable and collapsing, and the drag is what the
+  feature was asked for. The cost is bounded: the delete happens in a sheet over that very
+  screen, so the row's departure is already explained, whereas the collapse exists for removals
+  that arrive from *another* screen as a shorter list.
+- **The v1 → v2 migration has been exercised on a real file, but not on a real phone.**
+  `test/data/task_migration_test.dart` builds an actual v1 image on disk and reopens it, which is
+  the mechanism; it is not the same as relaunching an APK over an install that has been there for
+  weeks.
+- **The floating bar's contrast has not been re-measured.** §3.19's 2.55–2.80:1 for the inactive
+  label was measured against a full-bleed bar. The pill exposes content on four sides instead of
+  one; both light and dark renders were reviewed and read fine, but no numbers were taken. If it
+  ever fails, the rule is already written: raise the tint alpha, never darken the label.
+- 20 transitive packages are held back by the Flutter SDK's `meta 1.18.0` pin. Benign.
+- **The release signing config is wired, but no keystore exists yet.**
+  `android/app/build.gradle.kts` reads `android/key.properties` (git-ignored, alongside `*.jks`
+  and `*.keystore`) and signs `release` from it. Until that file exists, a **release build fails
+  outright** with instructions — it does *not* fall back to the debug key. That fallback is what
+  shipped a `CN=Android Debug` APK once already, and Gradle's `logger.warn` is useless here
+  because `flutter build` swallows it, so the warning would never have been read. Same principle
+  as §3.18: a safe default that hides its own cause is a trap. `flutter build apk --debug` and
+  `flutter run` are unaffected. Creating the keystore is a credential step and is deliberately
+  left to a human — see `android/key.properties.example`.
+- **The motion work has not been profiled on real hardware.** §3.21's durations were chosen
+  from the spec, not measured, and no raster time in this repo was observed on a mid-range
+  Android. What is true instead: every animation touches `transform` or `opacity` only except
+  the collapsing row (§3.20), nothing animates on scroll position, and there is exactly one
+  `BackdropFilter` — which is what makes the profile run likely to be boring. Run it anyway, on
+  the dashboard and the progress screen, and record the numbers here.
+- **The animated icon layer (Lordicon / Lottie) was attempted and abandoned. The package cannot
+  express the spec's central rule.** The handoff proposes eleven monochrome Lottie icons for
+  positions the motion system already animates, fitted to two duration tiers: an icon that *is*
+  the response to a tap lands in 240ms and may be sped up to ×3; a decorative draw gets 600ms
+  and ×2; artwork that still overruns ships static. `lordicon 1.0.3` **exposes neither a speed
+  setter nor a duration getter** — `_controller` and `_composition` are private, and the only
+  playback API is `play` / `pause` / `playFromBeginning` / `goToFirstFrame` / `goToLastFrame`.
+  There is no way to read a state's natural length or to play it faster.
+
+  The measured asset durations make that fatal rather than inconvenient. Every state is authored
+  at 683–2000ms: `in-check` is **683ms** against a 240ms feedback budget, `in-home` is
+  **1000ms** against a 150ms tab response, and `in-growth` is **1500ms** against a 600ms
+  decorative cap. Without a multiplier every one of the eleven overruns its tier, so by the
+  spec's own fallback rule all eleven would ship *static* — 487 KB of JSON rendering still
+  frames, strictly worse than the hand-drawn `AtherIcon` glyphs already there (§3.12).
+
+  Secondary concerns, for whoever revisits this: `MOTION_BRIEF.md` §6 bans Lottie outright and
+  allows at most one new dependency; the package is two years old with 16 likes; it resolves
+  only by pulling `lottie 2.7.0` while the ecosystem is on 3.x; and `IconViewerState.dispose()`
+  disposes a controller it does not own, which double-disposes any controller a caller also
+  manages. The dependency **does** resolve against Flutter 3.44 / Dart 3.12 — that was verified,
+  then reverted — so the blocker is the API surface, not the constraint solver.
+
+  The only route to shipping this as specified is vendoring or forking the controller to expose
+  `duration` and `speed`. That is a maintained fork for eleven icons a student mostly sees once
+  each, and the motion system underneath does not depend on any of it. If it is ever taken up,
+  the free licence requires a visible credit in Settings → About — a licence condition, not a
+  follow-up.
+
+### Found by rendering every screen (Ather redesign)
+Six real defects, none of which a compiler or a passing test would have caught:
+1. `Spacer` beside a `Flexible` split the leftover width, wrapping the summary context line
+   onto two cramped lines (§3.13).
+2. The week strip had no dot over today, so "today" was signalled by text colour alone.
+3. `70%` sat un-isolated inside an Arabic sentence in the not-ready sheet and rendered `%70` —
+   exactly the bug the design's checklist calls out.
+4. Bottom sheets were presented on the branch navigator, so the tab bar stayed lit on top of
+   the scrim instead of being covered by it.
+5. Two `RenderFlex` overflows (the before/after row and the lesson status chip) that only
+   appear at wide font metrics.
+6. Review rows opened the lesson screen instead of the exam wizard the design asks for.
+
+### Verified on device before the redesign (Android emulator, API 35)
+Full journey run through the old UI: create chapter → add lesson → exam wizard (8 questions,
+groups 5×1 and 3×2, 4 and 2 correct) → **73%**, matching the unit test's `closeTo(72.7272)`
+exactly → saved → countdown started and the exam checklist item auto-ticked → language switched
+to English → whole tree mirrored to LTR with Western digits intact. The mastery engine that
+produced those numbers is untouched by the redesign.
+
+---
+
+## 10. Work Log
+
+**Release signing wired (2026-08-05).**
+A debug-signed release APK was built for testers, which surfaced the §9 signing item. The build
+now reads `android/key.properties` for a real `release` signing config, and **refuses to build a
+release at all** when that file is missing rather than falling back to the debug key. The
+fallback was removed on purpose: it is silent (`flutter build` swallows Gradle warnings), and it
+produces an APK that can never be upgraded in place by a properly signed one — so the failure
+mode was strictly worse than a build error. `key.properties`, `*.jks` and `*.keystore` are
+git-ignored; `android/key.properties.example` documents the shape. Both paths were verified:
+`--release` refuses with its instructions, `--debug` still builds. **No keystore was created and
+no password was chosen here** — that is the owner's to do and to back up, because a lost upload
+key cannot be replaced.
+
+**Daily tasks, a real gear, and a floating tab bar (2026-08-05).**
+Three owner requests in one pass. The mastery engine, the wizard and `lib/domain/services/` were
+not touched; the decisions worth reading are §3.22 (why tasks are kept structurally away from
+mastery), §3.23 (the bar's new shape *inside* §3.19's existing bounds), §3.24 (the first
+migration) and §3.25 (the sun that was supposed to be a cog).
+
+- **The settings glyph was a sun.** Eight straight spokes round a circle, since the redesign
+  shipped. Redrawn as an eight-tooth cog. `AtherGlyph.more` deleted with the tab that used it.
+- **«المزيد» removed, «مهامك» added** in its slot — a fourth `StatefulShellBranch` at `/tasks`.
+  Settings moved to a `SettingsButton` cog in every root header, which is a better home than a
+  tab was: it is now one tap from anywhere rather than one tap from the dashboard.
+- **The tasks screen**: the week strip on top as a **day picker**, then a plain count, then a
+  `ReorderableListView`. Add via the same `showNamePrompt` as a chapter, rename/delete via the
+  same `showEditSheet` and `confirmDestructive`, tick by tapping the row, reorder by long press.
+  No new visual pattern was invented and no new dependency was added.
+  - `WeekStrip` gained two optional parameters (`selectedDay`, `onSelect`). The dashboard passes
+    neither, so its strip is byte-identical — not tappable, no third state.
+  - `DayHeader` extracted from the dashboard so the two day-shaped screens cannot drift apart.
+  - `proxyDecorator` is **overridden**, because Material lifts a dragged row on an elevation and
+    this app has no shadows (§3.10). It returns the child on a transparent `Material` with a
+    1.02 scale that collapses to 1.0 under reduced motion.
+- **The bar floats**: a `ClipRRect` pill inset 16 at the sides and 12 from the bottom, the FAB
+  raised 20 above it and drawn outside the clip. `AppSizes` gained `barLift`, `barHeight`,
+  `fabOverhang`, a derived `fabLift` and a derived `toastBottom` — the toast's old hard-coded
+  `104` would now sit behind the bar.
+- **`daily_tasks`**, `schemaVersion` 2, and the app's first `onUpgrade`.
+
+**Verification.** `flutter analyze` clean; **131/131 tests pass** (123 before), including a new
+`test/widget/tasks_test.dart` — six cases driving the real screen against real in-memory SQLite:
+add, tick and untick, rename, delete, a genuine long-press-and-drag whose new order is asserted
+**on disk** rather than in the widget tree, per-day isolation in both directions, and a
+reduced-motion case asserting the row renders with no fade layer at all — plus
+`test/data/task_migration_test.dart` for v1 → v2 on a real file. Both render suites regenerated
+and reviewed in light and dark, Arabic and English: the cog reads as a cog at 19px, the pill
+lines up with the cards above it, content passes under it, and nothing mirrors the wrong way.
+
+Three things worth knowing for whoever writes the next widget test against a database:
+`await` on a drift future inside a `testWidgets` body **never completes** (the fake-async zone
+never advances) — it must go through `tester.runAsync`; drift schedules a zero-duration timer
+when a `.watch()` stream is cancelled, so the tree has to be torn down *inside* the body and
+pumped twice or the binding fails with "A Timer is still pending"; and `close()` on a connection
+whose streams are still unwinding does not return under the fake clock. Each of those presents as
+a ten-minute hang rather than a failure, which is why they are recorded here.
+
+**Final review and first release build (2026-08-04).**
+A full pass over the motion work before cutting an APK. Findings, all fixed:
+
+- **The before → after arrow pointed the wrong way in English.** Pre-existing, and only visible
+  once the wizard was rendered in a mirrored layout for the first time. The glyph is drawn
+  pointing left, which reads correctly in Arabic (before on the right, after on the left) and
+  backwards in English, where it pointed from "after" back to "before". It is now mirrored when
+  the ambient direction is LTR. It is deliberately **not** one of the three forced-LTR elements
+  (§3.16): those are numbers and bars, where mirroring would misstate a score. An arrow is a
+  direction, and direction is exactly what should flip.
+- **`BranchCrossFade` used a loose `Stack`.** Replaced `IndexedStack`, which gives its children
+  tight constraints; a bare `Stack` does not, so a branch could shrink-wrap instead of filling
+  the screen. Now `fit: StackFit.expand`. Renders confirmed byte-identical before and after.
+- **The overdue badge was mounted on all five tabs.** Four of them never carry a count, so they
+  were each paying for a fade layer and a laid-out container forever to buy the review tab a
+  150ms exit. It now returns `SizedBox.shrink()` until it has something to show.
+- Two one-off wizard offsets (60ms, 120ms) moved into `AppMotion`. Nothing outside
+  `app_spacing.dart` declares a duration now, with one documented exception: `AtherSwitch` keeps
+  its pre-existing `Curves.easeOut`, which the motion spec's own table records as "existing".
+- **New `test/widget/motion_test.dart`** — 16 tests covering what `pumpAndSettle` cannot prove:
+  that entrances actually start from transparent, that a delayed entrance is an interval and not
+  a timer, that `PopIn` never overshoots 1.0, that a count-up passes through intermediate values
+  and lands exactly, that the em-dash is never counted to, and six `CollapsingList` cases
+  (remove, add, add-and-remove in one rebuild, rename, empty). Suite is now **120 green**.
+- A stricter lint pass (16 rules beyond `flutter_lints`, including `cancel_subscriptions`,
+  `close_sinks`, `unawaited_futures`, `prefer_const_constructors`) reported **zero issues in any
+  motion file**. The four hits elsewhere are pre-existing and benign — notably `close_sinks` on
+  `_combineLatest6`, a false positive: the controller cancels every subscription in `onCancel`.
+
+**Motion and the glass tab bar (2026-08-04).**
+Nineteen animations (M-01…M-19) added to the finished app, plus one sanctioned glass surface.
+Nothing was redesigned: no layout, colour, spacing, typography, copy, icon or navigation change,
+and `lib/domain/` was not touched. The three decisions worth reading are §3.19 (the blur
+exception and its measured contrast), §3.20 (the one place height animates), and §3.21 (the
+tokens and why every interface duration is under 300ms).
+
+- **Twelve new `AppMotion` tokens and one curve**, all in `core/theme/app_spacing.dart`. No
+  widget declares its own duration or rise distance.
+- **Six new widgets in `core/widgets/`**: `list_entrance.dart` (`ListEntrance` + `RiseIn` — the
+  whole entrance vocabulary, reused by the error banner and the wizard's before/after card),
+  `pop_in.dart`, `animated_percentage.dart` (`AnimatedPercentage` + `CountUpFromZero`),
+  `error_banner.dart`, `collapsing_removal.dart`.
+- **Route transitions live in `app/router.dart`**, defined once as `atherPage` and
+  `atherModalPage`. Every `GoRoute` moved from `builder:` to `pageBuilder:`. Nothing slides
+  horizontally anywhere in the app, which is how we know nothing can slide the wrong way in RTL.
+- **`StatefulShellRoute.indexedStack` became the base `StatefulShellRoute`** so
+  `navigatorContainerBuilder` could hand every branch to `BranchCrossFade` at once. A faded-out
+  branch stays mounted — it keeps its stack and scroll position — but is wrapped in
+  `IgnorePointer` + `ExcludeSemantics` + `TickerMode`: it does not stay alive.
+- **Three duplicate private `_ErrorBanner` classes** (wizard, homework sheet, login) collapsed
+  into one `ErrorBanner`. Three copies was three chances for one of them to start shaking.
+- **`MasteryNumber` now takes `value` + `hasData`** rather than a pre-formatted string, so the
+  number can count. Formatting still goes through `percentLabel`, so the LRI/PDI isolates and
+  Western digits survive every frame — see §3.16.
+- Two small proposals from the spec were taken: the empty review queue's disc pops (220ms, the
+  same as a week-strip tick), and the overdue badge fades out at zero instead of vanishing
+  mid-frame. A third — animating the bar's tint alpha on scroll — was rejected: a listener that
+  rebuilds the bar on every scroll frame is not the "costs nothing" the brief allows.
+- **Not** done: the eleven Lordicon Lottie icons the handoff proposes as a further layer. It was
+  attempted, not waved away — the dependency resolves, but `lordicon 1.0.3` exposes no speed
+  setter and no duration getter, so the spec's two-tier "fit the draw to 240ms or 600ms"
+  rule cannot be built at all, and every icon would ship static. Full reasoning and the measured
+  asset durations are in §9.
+
+**Accounts and the biometric lock (2026-08-03).**
+Firebase Auth (email/password + Google) and a `local_auth` app lock, added on top of the Ather
+redesign. The offline-first contradiction this creates is resolved and recorded in §3.17 — the
+short version is that the gate is asked **once** and answers from a session cached on disk, so
+a signed-in student still opens the app with no network at all.
+
+- `AuthRepository` in the domain layer, `FirebaseAuthRepository` the only file in the app that
+  imports `firebase_auth`. Failures cross the boundary as an `AuthFailure` enum, never a
+  message string.
+- Login screen built from the existing kit only — no new visual pattern, no coloured Google
+  mark (the design allows no coloured icons, and a monochrome redraw of a brand logo is worse
+  than none).
+- Router gate via `redirect` + a `refreshListenable` bridged from the account stream.
+- The lock is a gate above the router, not a route, so it also covers sheets and the wizard.
+- Settings gained an account card with sign-out and the fingerprint switch; the switch only
+  appears where the device reports an enrolled print.
+
+Firebase project `ather-49705`, wired with `flutterfire configure` (Android only).
+`firebase login`, accepting the Firebase terms, and enabling the two providers were left to
+the user — signing into their Google account and accepting a legal agreement are not mine to
+do on their behalf.
+
+**Verification.** `flutter analyze` clean; **103/103 tests pass**, including a new
+`test/widget/auth_test.dart` covering the gate in both directions, sign-in, sign-out, wrong
+password, the offline message, local validation and the lock covering the first frame. Every
+widget test runs against `FakeAuthRepository` — a suite that needs live credentials is a suite
+that stops being run.
+
+Then run on the emulator (API 35), which is the only reason the lock works at all:
+
+1. Registered `test@ather.app` — Firebase created the user, the gate let it through.
+2. **Force-stopped the app, enabled airplane mode, relaunched → the dashboard opened
+   immediately.** This is the claim §3.17 rests on, and it is now observed rather than argued.
+3. Settings showed the account and signed out correctly, still with no network.
+4. Enrolled a fingerprint on the emulator and switched the lock on — and the app opened
+   straight to the dashboard with no prompt. That turned out to be the `FragmentActivity` bug
+   in §3.18, found only because the lock was actually exercised. After the fix the system
+   `BiometricPrompt` appears on launch and `adb emu finger touch 1` unlocks it.
+
+The lock is also the reason to be sceptical of "the tests pass": the widget test asserting the
+lock covers the first frame passed the entire time the feature was broken on device.
+
+**Ather redesign (2026-08-03) — the entire presentation layer replaced.**
+Implemented `ATHER_HANDOFF.md` and its interactive reference `Ather App.dc.html` to the letter.
+**Product logic untouched**: the mastery formula, the 30-day decay, the chapter gate and every
+domain test are byte-identical. What changed:
+
+- **Brand and package** renamed `sahm` → `ather`. The SQLite file keeps its old name on
+  purpose — renaming it would orphan every database already on a student's phone.
+- **Tokens**: the two-colour rule (§3.10), Readex Pro replacing Cairo, the
+  4/8/10/12/14/16/18/22/24 spacing ladder and concentric radii.
+- **Widgets**: `GlassCard` and `MasteryRing` deleted. Mastery now reads as a large number plus
+  a horizontal bar — there are no rings anywhere. New kit: `AtherCard`, `MasteryBar`,
+  `MasteryNumber`, `StatusChip`, `WeekStrip`, `PrimaryButton` (5 tones), `DashedAddButton`,
+  `AtherCheckbox`, `AtherSwitch`, `SegmentedControl`, `NumberField`, `AtherSheet`,
+  `AtherToast`, `AtherIcon` (§3.12), `Pressable` (the single `scale(.97)` press response).
+- **Navigation**: three tabs → five slots (الرئيسية · مراجعة · black FAB · تقدمك · المزيد —
+  the last of which became مهامك on 2026-08-05).
+  Settings moved above the shell; the exam wizard is a full-screen route on the root navigator
+  with no tab bar. Sheets present on the root navigator so the scrim covers the tab bar.
+- **Screens**: all nine rebuilt. New on the dashboard: the week strip and the "اللي بعده" card.
+  Review rows now open the wizard directly. The chapter report's trend line tells the truth in
+  three states instead of always saying "improved". Saving an exam or a homework score raises a
+  black confirmation toast.
+- **Copy**: both ARB files rewritten from the handoff's §9 dictionary, plus real ICU plurals
+  and isolated numbers (§7).
+
+**Verification.** `flutter analyze` clean; **95/95 tests pass**, including a new
+`test/widget/student_flow_test.dart` that drives an empty app through chapter → lesson → the
+four wizard steps (with both validation refusals) → save, against real in-memory SQLite, and
+asserts the toast, the 75% the app derived, the restarted review clock and the auto-ticked
+"حليت الامتحان". Android debug APK builds. Every screen was rendered to PNG and reviewed
+(`tool/render/`), which is how the `Spacer`/`Flexible` bug (§3.13), the missing "today" dot on
+the week strip, the `%70` in the not-ready sheet, the tab bar sitting on top of a modal sheet
+and two `RenderFlex` overflows were found.
+
+**Not verified on a device.** Windows needs Visual Studio (absent) and Developer Mode; the
+Android emulator was not launched this session. The APK builds and the widget layer is
+covered, but nothing here replaces a run on a real phone.
+
+**Redesign documentation pass (2026-08-02, analysis only — zero code changes).**
+Created `Redesign/` containing the full design documentation for a future Figma redesign:
+App_Overview, Screens (all 9 screens + system UI), UserFlow (Mermaid), Components,
+DesignSystem (extracted tokens), UX_Audit, UI_Audit, Redesign_Plan, and `Screenshots/`
+(36 emulator captures incl. Arabic RTL variants, indexed in `Screenshots/INDEX.md`).
+Live-confirmed defects recorded in UX_Audit: exam wizard loses input on system back;
+chapter report says "Improved from X% to Y%" even when mastery declined; empty subject
+app bar shows `0%` instead of the no-data em-dash; saving an exam pops to the dashboard
+instead of the lesson. Side effects on the emulator's app data only: a homework entry
+(4/10), a second exam (69%), and the Biology chapter marked mastered.
+
+**Phases E–H — screens, notifications, polish, verification (complete except Windows).**
+All nine screens built in the spec's order behind a `go_router` `StatefulShellRoute`, with
+adaptive bottom-bar/rail navigation. Custom `CustomPainter` celebration (~120 particles with
+per-particle mass, drag, spin and staggered launch; reduced-motion aware). Notification service
+with resume-time reconciliation. **91/91 tests pass; `flutter analyze` clean.** Android build,
+install and full manual journey verified on the emulator — see §9 for what that found.
+
+Toolchain work needed along the way: installed Android `cmdline-tools` and the
+`android-35;google_apis;x86_64` system image (the AVD pointed at an image that was never
+installed), and enabled core-library desugaring (§3.14). Three extraction attempts were needed
+for `cmdline-tools` — PowerShell `Expand-Archive` dies on the archive's >260-char guava path and
+Git Bash's GNU `tar` cannot read zips; Windows' bundled `bsdtar` handles both.
+
+**Phase C — pure domain services (complete).** `MasteryCalculator`,
+`ReviewCycleService` and `InsightsGenerator`, all pure and clock-injected, with the full
+unit suite written *before* any screen exists. **79/79 tests pass.** Coverage includes the
+70/30 formula at 1/2/n exams, deterministic tie-breaking on identical timestamps, band
+boundaries at 49.999/50/69.999/70/89.999/90, the review boundary at 29/30/31 days, chapter
+red propagation from a single lesson, and an explicit assertion that perfect homework cannot
+lift a weak exam score.
+
+Two decisions taken here:
+- **Insights are structured sealed classes, not formatted strings.** The domain layer has no
+  localisation access; emitting variants lets presentation render them via ARB, so insights
+  translate with the language toggle instead of being frozen at computation time.
+- **`overallMastery` averages all four subjects including untouched ones.** An earlier draft
+  excluded empty subjects; that was reverted as it contradicts the spec and would tell a
+  student who has only touched Biology that they are 85% ready for Thanaweya Amma.
+
+**Phase B — persistence (complete).** Drift schema with all six tables, `ON DELETE CASCADE`
+throughout, idempotent four-subject seed, and `DriftStudyRepository`. **14/14 tests pass**
+against real in-memory SQLite — cascades, seed idempotency, exam arithmetic and live stream
+re-emission.
+
+Two decisions taken here:
+- **A single `StudySnapshot` stream instead of per-entity queries.** Every headline screen is
+  cross-cutting (the dashboard averages all four subjects, Review Center scans every lesson),
+  so separate repositories would mean hand-written joins in the UI and screens disagreeing
+  because they read at different moments. Data volume makes it free: a maximal student is a
+  few hundred lessons.
+- **`_combineLatest6` hand-rolled** rather than adding rxdart for one operator.
+
+**Phase A — scaffold and foundation (complete).**
+`flutter create` (`sahm`, `com.sahm`, android + windows), git init, all dependencies pinned,
+design tokens, Cairo variable font, ar/en ARB + generated delegate, breakpoints, `Clock`,
+dark theme, bootstrap screen. Resolved three dependency conflicts (see §3.6) and the Cairo
+static-TTF 404 (see §3.5). `flutter analyze` clean; 2/2 tests pass including the RTL→LTR
+direction assertion.

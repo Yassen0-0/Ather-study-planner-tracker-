@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The window the OS paints while the Flutter engine starts. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/white" />
+
+    <!-- The mark, centred, at its natural density size. gravity="center" places
+         the bitmap rather than fitting it to the window, so it cannot stretch
+         or crop on any screen shape.
+
+         @drawable/splash_glyph resolves to the drawable-night-*dpi copy when
+         the OS is in dark mode, which is how the splash gets the dark logo with
+         no second layer-list and no code. -->
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/splash_glyph" />
+    </item>
+</layer-list>

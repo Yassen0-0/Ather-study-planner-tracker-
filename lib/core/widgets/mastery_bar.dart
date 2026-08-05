@@ -1,0 +1,113 @@
+import 'package:flutter/widgets.dart';
+
+import '../l10n/formatting.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import 'animated_percentage.dart';
+import 'reduced_motion.dart';
+
+/// The horizontal progress bar that replaced the old mastery ring.
+///
+/// Always laid out left-to-right, in both languages. A bar that filled from the
+/// right under RTL would make a 20% score read as 80% at a glance -- the number
+/// beside it says otherwise, but the bar is what the eye reads first.
+class MasteryBar extends StatelessWidget {
+  const MasteryBar({
+    super.key,
+    required this.fraction,
+    required this.color,
+    this.height = AppSizes.barTrack,
+    this.trackColor,
+  });
+
+  /// 0..1. Callers pass `MasteryPalette.barFraction` so an unexamined item is
+  /// an empty track rather than a hairline of colour.
+  final double fraction;
+  final Color color;
+  final double height;
+
+  /// Null means the theme's track colour.
+  final Color? trackColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(height / 2);
+    final reduced = prefersReducedMotion(context);
+
+    return Ltr(
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Container(
+          height: height,
+          color: trackColor ?? context.colors.track,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: fraction, end: fraction.clamp(0, 1)),
+              duration: reduced ? Duration.zero : AppMotion.value,
+              curve: AppMotion.valueCurve,
+              builder: (context, value, _) => FractionallySizedBox(
+                widthFactor: value,
+                child: Container(
+                  decoration: BoxDecoration(color: color, borderRadius: radius),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The dominant number on a summary card: `87` `/ 100`.
+///
+/// The "/ 100" is part of the composition, not decoration -- it is what makes a
+/// bare number read as a score out of a hundred without the word "percent"
+/// appearing anywhere.
+class MasteryNumber extends StatelessWidget {
+  const MasteryNumber({
+    super.key,
+    required this.value,
+    required this.hasData,
+    required this.color,
+    required this.style,
+  });
+
+  /// The raw percentage. Formatting stays inside [AnimatedPercentage] so the
+  /// number can count to its new value instead of being handed a finished
+  /// string -- the change is the thing worth showing.
+  final double value;
+  final bool hasData;
+  final Color color;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Ltr(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: <Widget>[
+          AnimatedPercentage(
+            value: value,
+            hasData: hasData,
+            color: color,
+            style: style,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '/ 100',
+            style: AppTypography.style(
+              size: 16,
+              weight: AppTypography.semiBold,
+              color: context.colors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

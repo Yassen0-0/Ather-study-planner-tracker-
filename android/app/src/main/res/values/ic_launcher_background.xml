@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The adaptive icon's background layer: the plate from
+         icon-mastery-light.svg, flat. A colour rather than a bitmap because the
+         plate is one flat fill — there is nothing to rasterise, and a solid
+         colour cannot band or resample at any mask shape the launcher applies.
+
+         The launcher icon is the light identity at all times. It deliberately
+         does not follow the app's theme: the icon lives on the home screen,
+         which is not the app's surface. -->
+    <color name="ic_launcher_background">#EFEFF2</color>
+</resources>

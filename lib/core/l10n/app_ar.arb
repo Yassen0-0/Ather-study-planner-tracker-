@@ -1,0 +1,337 @@
+{
+  "@@locale": "ar",
+
+  "appName": "Ather",
+  "appTagline": "إنت مش بتخلص الدروس… إنت بتتقنها",
+
+  "navHome": "الرئيسية",
+  "navReview": "مراجعة",
+  "navProgress": "تقدمك",
+  "navTasks": "مهامك",
+
+  "subjectBiology": "أحياء",
+  "subjectPhysics": "فيزياء",
+  "subjectChemistry": "كيمياء",
+  "subjectEnglish": "إنجليزي",
+
+  "weekdaySaturday": "س",
+  "weekdaySunday": "ح",
+  "weekdayMonday": "ن",
+  "weekdayTuesday": "ث",
+  "weekdayWednesday": "ر",
+  "weekdayThursday": "خ",
+  "weekdayFriday": "ج",
+
+  "dashboardTitle": "النهارده",
+  "overallMastery": "الإتقان العام",
+  "statLessonsRemaining": "دروس فاضلة",
+  "statNeedsReview": "محتاج مراجعة",
+  "statMastered": "متقن",
+  "sectionSubjects": "المواد",
+  "sectionNext": "اللي بعده",
+  "actionExam": "امتحن",
+  "notStartedYet": "لسه مبدأتش",
+  "subjectHasOverdueLesson": "فات ميعاد مراجعة درس",
+  "addContentBeforeExam": "ضيف باب ودرس الأول عشان تسجل امتحان",
+
+  "lessonCount": "{count, plural, =1{درس واحد} =2{درسين} few{{count} دروس} many{{count} درس} other{{count} درس}}",
+  "@lessonCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "chapterCount": "{count, plural, =1{باب واحد} =2{بابين} few{{count} أبواب} many{{count} باب} other{{count} باب}}",
+  "@chapterCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "chaptersMasteredOf": "{mastered} من {total} باب اتقنتها",
+  "@chaptersMasteredOf": {
+    "placeholders": {
+      "mastered": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+  "chaptersOfShort": "{mastered} من {total} باب",
+  "@chaptersOfShort": {
+    "placeholders": {
+      "mastered": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+  "lessonsExaminedOf": "{examined} من {total} درس متمتحن",
+  "@lessonsExaminedOf": {
+    "placeholders": {
+      "examined": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+  "lessonsOnTimeOf": "{onTime} من {total} درس في وقتها",
+  "@lessonsOnTimeOf": {
+    "placeholders": {
+      "onTime": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+
+  "sectionChapters": "الأبواب",
+  "sectionLessons": "الدروس",
+  "addChapter": "+ إضافة باب",
+  "addLesson": "+ إضافة درس",
+  "noChaptersYet": "مفيش أبواب لسه",
+  "noLessonsYet": "مفيش دروس لسه",
+  "chapterName": "اسم الباب",
+  "lessonName": "اسم الدرس",
+  "chapterNameHint": "مثلاً: الباب الأول — الخلية",
+  "lessonNameHint": "مثلاً: تركيب الغشاء البلازمي",
+  "renameChapter": "تعديل اسم الباب",
+  "renameLesson": "تعديل اسم الدرس",
+  "deleteChapter": "حذف الباب",
+  "deleteLesson": "حذف الدرس",
+  "deleteChapterConfirm": "هيتحذف الباب وكل الدروس والامتحانات اللي جواه. مش هينفع ترجع فيها.",
+  "deleteLessonConfirm": "هيتحذف الدرس وكل امتحاناته. مش هينفع ترجع فيها.",
+
+  "averageExamScore": "متوسط الامتحانات",
+  "chapterNeedsReview": "محتاج مراجعة",
+  "chapterMasteredAt": "اتقنته في {date}",
+  "@chapterMasteredAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "masterChapter": "أتقنت الباب",
+  "viewChapterReport": "شوف تقرير الباب",
+  "notReadyGate": "لسه مش جاهز — اعرف ليه",
+  "notReadyTitle": "لسه مش جاهز",
+  "notReadyBody": "عشان تتقن الباب لازم كل الدروس تتمتحن والإتقان يوصل {threshold} على الأقل.",
+  "@notReadyBody": {
+    "placeholders": { "threshold": { "type": "String" } }
+  },
+  "noExamShort": "مفيش امتحان",
+
+  "lessonNoExamYet": "لسه مفيش امتحان",
+  "dueInDays": "باقي {days} يوم",
+  "@dueInDays": {
+    "placeholders": { "days": { "type": "String" } }
+  },
+  "dueInDaysLong": "باقي {days} يوم على المراجعة",
+  "@dueInDaysLong": {
+    "placeholders": { "days": { "type": "String" } }
+  },
+  "overdueByDays": "متأخر {days} يوم",
+  "@overdueByDays": {
+    "placeholders": { "days": { "type": "String" } }
+  },
+  "masteryCaptionWithExams": "الإتقان محسوب من آخر امتحان {last} ومتوسط اللي قبله {rest}",
+  "@masteryCaptionWithExams": {
+    "placeholders": {
+      "last": { "type": "String" },
+      "rest": { "type": "String" }
+    }
+  },
+  "masteryCaptionNoExams": "الإتقان بيتحسب من الامتحانات بس — سجّل أول امتحان عشان تبدأ",
+
+  "checklistTitle": "خطوات المذاكرة",
+  "checklistWatched": "شاهدت الدرس",
+  "checklistReadNotes": "قريت الملازم",
+  "checklistDidHomework": "حليت الواجب",
+  "checklistDidExam": "حليت الامتحان",
+  "checklistReviewedNotes": "راجعت الملازم",
+
+  "homeworkTitle": "الواجب",
+  "homeworkAdd": "سجل درجة واجب",
+  "homeworkScore": "الدرجة",
+  "homeworkMax": "من",
+  "homeworkNotReady": "لسه محتاج تذاكر أكتر قبل ما تدخل الامتحان",
+  "homeworkReady": "تمام، جاهز تدخل الامتحان",
+  "homeworkNone": "مفيش واجبات متسجلة",
+  "homeworkNote": "الواجب مش بيدخل في حساب الإتقان — ده مؤشر استعداد بس",
+  "homeworkInvalid": "الدرجة لازم تكون من صفر لـ «من»، و«من» أكبر من صفر",
+
+  "examHistory": "الامتحانات السابقة",
+  "examNoHistory": "مفيش امتحانات لسه",
+  "examReviewBadge": "مراجعة",
+  "examStart": "ابدأ الامتحان",
+  "examRecordResult": "سجل نتيجة امتحان",
+  "examRecordReview": "سجل امتحان المراجعة",
+
+  "examStep1Title": "عدد الأسئلة الكلي",
+  "examStep1Hint": "الامتحان فيه كام سؤال؟",
+  "examStep2Title": "درجات الأسئلة",
+  "examStep2Hint": "اقسم الأسئلة: كام سؤال بكام درجة",
+  "examStep3Title": "إجاباتك الصح",
+  "examStep3Hint": "كام سؤال جاوبته صح في كل مجموعة",
+  "examStep4Title": "النتيجة",
+  "examGroupQuestions": "عدد الأسئلة",
+  "examGroupPoints": "درجة السؤال",
+  "examAddGroup": "+ إضافة مجموعة",
+  "examGroupLabel": "{count} أسئلة × {points} درجة",
+  "@examGroupLabel": {
+    "placeholders": {
+      "count": { "type": "String" },
+      "points": { "type": "String" }
+    }
+  },
+  "examPointsLine": "{points} درجة",
+  "@examPointsLine": {
+    "placeholders": { "points": { "type": "String" } }
+  },
+  "examMasteryBefore": "الإتقان قبل",
+  "examMasteryAfter": "الإتقان بعد",
+  "examSave": "احفظ النتيجة",
+  "examSaveReview": "احفظ امتحان المراجعة",
+
+  "examErrorNeedAtLeastOneQuestion": "لازم سؤال واحد على الأقل",
+  "examErrorGroupInvalid": "كل مجموعة لازم يكون فيها عدد أسئلة ودرجة أكبر من صفر",
+  "examErrorSumMismatch": "مجموع الأسئلة ({assigned}) لازم يساوي العدد الكلي ({total})",
+  "@examErrorSumMismatch": {
+    "placeholders": {
+      "assigned": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+  "examErrorCorrectExceeds": "عدد الصح مينفعش يزيد عن عدد الأسئلة",
+
+  "toastExamSaved": "اتسجّل الامتحان — عداد المراجعة بدأ من جديد",
+  "toastHomeworkSaved": "اتسجّلت درجة الواجب",
+
+  "reviewTitle": "محتاج مراجعة",
+  "reviewEmptyTitle": "مفيش حاجة محتاجة مراجعة",
+  "reviewEmptyBody": "كل دروسك في وقتها. استمر.",
+  "reviewReasonWeak": "مستوى ضعيف",
+  "reviewReasonDeclining": "مستواك بينزل",
+  "reviewNotificationTitle": "وقت المراجعة",
+  "reviewNotificationBody": "وقت مراجعة درس {lesson} في {chapter}",
+  "@reviewNotificationBody": {
+    "placeholders": {
+      "lesson": { "type": "String" },
+      "chapter": { "type": "String" }
+    }
+  },
+
+  "analyticsTitle": "تقدمك",
+  "analyticsInsights": "ملاحظات",
+  "analyticsAllSubjects": "كل المواد",
+  "analyticsMasteryBySubject": "الإتقان حسب المادة",
+  "analyticsMasteryByChapter": "الإتقان حسب الباب",
+  "analyticsWeakestLessons": "أضعف الدروس",
+  "analyticsReviewDiscipline": "الالتزام بالمراجعة",
+  "analyticsNotEnoughData": "لسه مفيش بيانات كفاية",
+
+  "insightStrongestSubject": "{subject} أقوى مادة عندك دلوقتي — {value}",
+  "@insightStrongestSubject": {
+    "placeholders": {
+      "subject": { "type": "String" },
+      "value": { "type": "String" }
+    }
+  },
+  "insightChapterWeak": "«{chapter}» لسه ضعيف — {value}",
+  "@insightChapterWeak": {
+    "placeholders": {
+      "chapter": { "type": "String" },
+      "value": { "type": "String" }
+    }
+  },
+  "insightLessonNotReviewed": "مراجعتش «{lesson}» من {days} يوم",
+  "@insightLessonNotReviewed": {
+    "placeholders": {
+      "lesson": { "type": "String" },
+      "days": { "type": "String" }
+    }
+  },
+  "insightSubjectImproved": "{subject} اتحسنت {delta} الشهر ده",
+  "@insightSubjectImproved": {
+    "placeholders": {
+      "subject": { "type": "String" },
+      "delta": { "type": "String" }
+    }
+  },
+
+  "chapterReportTitle": "تقرير الباب",
+  "trendUp": "اتحسنت من {from} لـ {to}",
+  "@trendUp": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "trendDown": "نزلت من {from} لـ {to}",
+  "@trendDown": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "trendFlat": "محتاج امتحانات أكتر عشان نقيس التقدم",
+  "weakestLessonBadge": "أضعف درس",
+
+  "celebrationTitle": "أتقنت الباب!",
+  "celebrationBody": "شغل محترم. كمّل على كده.",
+  "celebrationHint": "دوس في أي حتة تكمّل",
+
+  "authSignInTitle": "تسجيل الدخول",
+  "authRegisterTitle": "حساب جديد",
+  "authSubtitle": "سجّل دخولك مرة واحدة بس — بعد كده التطبيق هيشتغل من غير نت",
+  "authEmail": "الإيميل",
+  "authPassword": "الباسورد",
+  "authEmailHint": "you@example.com",
+  "authSignIn": "دخول",
+  "authRegister": "إنشاء حساب",
+  "authGoogle": "كمّل بحساب Google",
+  "authToRegister": "لسه مش عامل حساب؟ اعمل واحد",
+  "authToSignIn": "عندك حساب؟ سجّل دخول",
+  "authForgotPassword": "نسيت الباسورد؟",
+  "authResetSent": "بعتنالك رابط على الإيميل تغيّر بيه الباسورد",
+  "authErrorEmailInvalid": "الإيميل مش مظبوط",
+  "authErrorPasswordShort": "الباسورد لازم 6 حروف على الأقل",
+  "authErrorWrongCredentials": "الإيميل أو الباسورد غلط",
+  "authErrorEmailInUse": "الإيميل ده مستخدم قبل كده",
+  "authErrorNoNetwork": "مفيش اتصال بالنت. تسجيل الدخول أول مرة بس محتاج نت — بعد كده التطبيق بيشتغل أوفلاين.",
+  "authErrorTooManyAttempts": "محاولات كتير. استنى شوية وجرّب تاني",
+  "authErrorGeneric": "مقدرناش نكمّل. جرّب تاني",
+  "authSignOut": "تسجيل الخروج",
+  "authSignOutConfirm": "هتحتاج نت عشان تسجّل دخول تاني. بياناتك محفوظة على الجهاز ومش هتتمسح.",
+  "authAccount": "الحساب",
+
+  "lockTitle": "التطبيق مقفول",
+  "lockBody": "افتح بالبصمة عشان تكمّل",
+  "lockUnlock": "افتح بالبصمة",
+  "lockReason": "افتح Ather",
+  "lockUnavailable": "الجهاز ده مفيهوش بصمة متسجلة",
+  "lockSetting": "قفل بالبصمة",
+  "lockSettingBody": "اطلب بصمة كل ما تفتح التطبيق",
+
+  "settingsTitle": "الإعدادات",
+  "settingsLanguage": "اللغة",
+  "settingsLanguageArabic": "العربية",
+  "settingsLanguageEnglish": "English",
+  "settingsTheme": "المظهر",
+  "settingsThemeLight": "فاتح",
+  "settingsThemeDark": "داكن",
+  "settingsThemeSystem": "النظام",
+  "settingsThemeBody": "اختار مظهر التطبيق، أو سيبه يمشي مع إعدادات الموبايل",
+  "settingsNotifications": "إشعارات المراجعة",
+  "settingsNotificationsBody": "ذكّرني لما يجي وقت مراجعة درس",
+  "settingsAbout": "عن التطبيق",
+
+  "tasksTitle": "مهام النهارده",
+  "tasksDoneOf": "{done} من {total} خلصتهم",
+  "@tasksDoneOf": {
+    "placeholders": {
+      "done": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+  "addTask": "+ إضافة مهمة",
+  "addTaskTitle": "مهمة جديدة",
+  "taskNameHint": "هتعمل إيه النهارده؟",
+  "renameTask": "تعديل المهمة",
+  "deleteTask": "حذف المهمة",
+  "deleteTaskConfirm": "هتتشال من مهام اليوم ده خالص.",
+  "noTasksYet": "مفيش مهام لليوم ده",
+  "tasksEmptyBody": "اكتب اللي ناوي تعمله، وشيله لما تخلصه.",
+
+  "commonSave": "حفظ",
+  "commonCancel": "إلغاء",
+  "commonDelete": "حذف",
+  "commonNext": "التالي",
+  "commonBack": "رجوع",
+  "commonEdit": "تعديل",
+  "commonClose": "إغلاق"
+}

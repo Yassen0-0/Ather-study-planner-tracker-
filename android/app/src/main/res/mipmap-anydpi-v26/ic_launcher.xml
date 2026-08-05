@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The adaptive icon, used from API 26. Below that, the launcher falls back to
+     the ic_launcher.png bitmaps in the mipmap-*dpi buckets.
+
+     The foreground is the mark alone on a 108dp canvas. It is exported at the
+     artwork's authored scale, which puts it at 66.0dp across — precisely
+     Android's guaranteed-visible safe zone — perfectly centred and never
+     cropped by any mask the launcher chooses.
+
+     There is deliberately no <monochrome> layer. A themed icon lets the
+     launcher recolour the mark to the wallpaper palette, which would replace
+     the green arc and drop the black core; the installed icon is meant to stay
+     the light identity as authored. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>

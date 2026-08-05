@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "882606725720",
+    "project_id": "ather-49705",
+    "storage_bucket": "ather-49705.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:882606725720:android:9f14effc7ebfcedd20c82d",
+        "android_client_info": {
+          "package_name": "com.sahm.sahm"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "882606725720-lqahmg6c2m27q62siva1fmhol5n8d695.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sahm.sahm",
+            "certificate_hash": "6f69a69ee9b3b2a7717c083a833636b9e6e8e86e"
+          }
+        },
+        {
+          "client_id": "882606725720-1cl2sqasgoal9bqpcf26nsmcn5a2v3n6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBn2dad3ZUNTPcZuST0XpHtZlE1r-SomPA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "882606725720-1cl2sqasgoal9bqpcf26nsmcn5a2v3n6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
