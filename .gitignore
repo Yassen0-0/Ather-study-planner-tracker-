@@ -30,8 +30,12 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
 /coverage/
+
+# Build output. Not just the root one: Gradle writes android/build/ and
+# android/app/build/, and the Windows desktop build writes windows/build/.
+build/
+.gradle/
 
 # Symbolication related
 app.*.symbols
