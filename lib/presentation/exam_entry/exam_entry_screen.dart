@@ -45,8 +45,8 @@ class ExamEntryScreen extends ConsumerStatefulWidget {
   final int lessonId;
 
   /// True when the wizard was pushed from the lesson screen, so popping lands
-  /// back on it. False from the review list or the tab-bar "+", where the
-  /// wizard has to navigate to the lesson itself on save.
+  /// back on it. False from the review list and the dashboard's "Exam" pill,
+  /// where the wizard has to navigate to the lesson itself on save.
   final bool openedFromLesson;
 
   @override
@@ -281,7 +281,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
                       : l.examSave,
                   nextTone: _step == _stepCount && isReview
                       ? PrimaryButtonTone.wrong
-                      : PrimaryButtonTone.black,
+                      : PrimaryButtonTone.primary,
                   onBack: _back,
                   onNext: _next,
                 ),
@@ -448,7 +448,10 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
                 percentage: _resultPercentage,
                 hasData: true,
               ),
-              color: resultColor,
+              // The bar is a fill, so a mid-range result is the accent even
+              // though the number above it is plain text. See
+              // MasteryPalette.fill.
+              color: MasteryPalette.fill(context.colors, resultColor),
             ),
             const SizedBox(height: 6),
           ],
@@ -606,7 +609,8 @@ class _WizardHeader extends StatelessWidget {
                               alignment: Alignment.centerLeft,
                               child: Container(
                                 height: 4,
-                                color: context.colors.actionPrimary,
+                                // A step bar is a progress fill like any other.
+                                color: context.colors.accent,
                               ),
                             ),
                           ),

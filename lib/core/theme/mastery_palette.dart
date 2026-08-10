@@ -19,6 +19,10 @@ import 'app_colors.dart';
 ///
 /// There is no "medium" or "good" colour. A score in the middle is simply a
 /// number; inventing a colour for it would dilute the two that mean something.
+/// The one exception is [fill]: a *bar* in the middle of the range is the brand
+/// accent, because a bar has to be filled with something and black reads as
+/// switched off. That is a fill, not a fifth verdict — the number beside it is
+/// still plain text.
 /// The rule takes a palette rather than reading constants, so the same five
 /// branches serve both themes. Red and green are identical in each -- only the
 /// "no data" grey and the neutral text colour move.
@@ -39,6 +43,40 @@ abstract final class MasteryPalette {
   /// Colour for a single exam result, which can never be "overdue" or absent.
   static Color ofScore(AppColors colors, double percentage) =>
       resolve(colors: colors, percentage: percentage, hasData: true);
+
+  /// The same colour, for anything **filled** rather than written: a progress
+  /// bar, a chart column, a sliver under a count.
+  ///
+  /// One substitution, in one direction: **the neutral branch becomes the
+  /// accent.** A number in the middle of the range is simply text, but the bar
+  /// under it is a filled shape, and an unfilled-looking black bar is the one
+  /// thing in this interface that could be mistaken for a disabled control.
+  ///
+  /// Red and green pass straight through — a bar for an overdue or a weak
+  /// lesson is red whatever colour the brand is — and so does the no-data grey,
+  /// which is the empty state the design deliberately keeps colourless.
+  ///
+  /// Written as a mapping over an already-resolved colour rather than a second
+  /// copy of the five branches: the number and the bar are read one line apart
+  /// at every call site, and two rules that have to agree are one rule.
+  static Color fill(AppColors colors, Color resolved) =>
+      resolved == colors.textPrimary ? colors.accent : resolved;
+
+  /// [resolve] and [fill] in one call, for a bar with no number beside it.
+  static Color bar({
+    required AppColors colors,
+    required double percentage,
+    required bool hasData,
+    bool needsReview = false,
+  }) => fill(
+    colors,
+    resolve(
+      colors: colors,
+      percentage: percentage,
+      hasData: hasData,
+      needsReview: needsReview,
+    ),
+  );
 
   /// The fraction a progress bar should fill: 0 with no data, and never less
   /// than 2% once there is, so a real-but-tiny score is still visible.

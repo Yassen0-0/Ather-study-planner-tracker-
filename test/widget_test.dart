@@ -305,7 +305,9 @@ void main() {
     final ar = await L.delegate.load(const Locale('ar'));
     final en = await L.delegate.load(const Locale('en'));
 
-    expect(ar.appName, 'Ather');
+    // The wordmark is written in each language's own script -- it is the brand
+    // name, and on the lock screen it is the only word on the page.
+    expect(ar.appName, 'أثر');
     expect(en.appName, 'Ather');
     expect(ar.dashboardTitle, 'النهارده');
     expect(ar.masterChapter, 'أتقنت الباب');

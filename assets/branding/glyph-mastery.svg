@@ -1,5 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <circle cx="512" cy="512" r="290" fill="none" stroke="#DCDCE1" stroke-width="46"></circle>
-  <circle cx="512" cy="512" r="290" fill="none" stroke="#34C759" stroke-width="46" stroke-linecap="round" stroke-dasharray="1640 1822" transform="rotate(-90 512 512)"></circle>
-  <circle cx="512" cy="512" r="66" fill="#000000"></circle>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1024" height="1024">
+  <title>Ather</title>
+
+  <g fill="none" stroke-width="8" stroke-linejoin="round">
+    <path d="M50 22.48 C58.46 22.05 72.24 22.77 77.02 28.45 C81.80 34.13 80.56 47.48 78.7 56.55 C76.84 65.62 72.65 79.73 65.83 82.87 C59.01 86.01 46.14 79.54 37.78 75.37 C29.42 71.20 17.61 65.22 15.68 57.83 C13.75 50.44 20.51 36.94 26.23 31.05 C31.95 25.16 41.54 22.91 50 22.48 Z" stroke="#000000"/>
+    <path d="M50 22.48 C58.46 22.05 72.24 22.77 77.02 28.45 C81.80 34.13 80.56 47.48 78.7 56.55 C76.84 65.62 72.65 79.73 65.83 82.87 C59.01 86.01 46.14 79.54 37.78 75.37 C29.42 71.20 17.61 65.22 15.68 57.83 C13.75 50.44 20.51 36.94 26.23 31.05 C31.95 25.16 41.54 22.91 50 22.48 Z" stroke="#1B6EF3" stroke-linecap="round" pathLength="100" stroke-dasharray="27 100"/>
+  </g>
 </svg>

@@ -140,5 +140,8 @@ testing:
 - In-app **account deletion** — mandatory for any app with sign-in.
 - A **privacy policy URL**, and the Data safety form (the app collects an email
   address through Firebase Auth).
-- The app has still **never run on a real phone**.
-- Cloud backup has never been exercised against live Firestore.
+- ~~The app has still never run on a real phone.~~ Done 2026-08-05 — a debug build was
+  driven end to end on a Nothing Phone (Android 16). See PROJECT.md §10.
+- ~~Cloud backup has never been exercised against live Firestore.~~ Done 2026-08-05:
+  a signed release build was installed on a wiped device, signed in with Google, and the
+  curriculum came back from Firestore on its own. See PROJECT.md §10.

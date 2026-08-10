@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 
 /// Colour tokens for the Ather design system, in a light and a dark set.
 ///
-/// The whole palette is white + grey + black, plus **one** red for wrong/overdue
-/// and **one** green for right/mastered. There are deliberately no subject
-/// colours, no four-step mastery spectrum, no gradients and no glows: the only
-/// colours a student sees on a real exam paper are the red pen and the green
-/// tick, and the app borrows exactly those two.
+/// The palette is white + grey + black, **one** brand blue ([accent]), **one**
+/// red for wrong/overdue and **one** green for right/mastered. There are
+/// deliberately no subject colours, no four-step mastery spectrum, no gradients
+/// and no glows.
+///
+/// [wrong] and [right] are *state* colours borrowed from a real exam paper — the
+/// red pen and the green tick — and the visual refresh did not touch them. What
+/// it added is [accent]: the one brand colour, used wherever something is
+/// **active** rather than *correct* (selected tab, progress fill, ticked
+/// checkbox, primary button, the mark's arc). The two vocabularies never mix:
+/// blue never means "right", green never means "selected".
 ///
 /// Nothing anywhere else in the app writes `Color(0x...)` inline.
 ///
@@ -54,6 +60,9 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.weekLabel,
     required this.actionPrimary,
     required this.onPrimary,
+    required this.accent,
+    required this.onAccent,
+    required this.accentSoft,
     required this.actionDisabled,
     required this.wrong,
     required this.wrongTint,
@@ -110,6 +119,26 @@ class AppColors extends ThemeExtension<AppColors> {
   // --- Actions --------------------------------------------------------------
   final Color actionPrimary;
   final Color onPrimary;
+
+  /// The brand blue. Everything "active" is this colour: the selected tab icon
+  /// and label, every progress fill that is not already red or green, the ticked
+  /// checkbox and task disc, the selected filter chip, the "Exam" pill, the
+  /// primary button, the lock screen's unlock button and the mark's arc.
+  ///
+  /// It is a *brand* colour, not a state colour — see the class doc. Never use
+  /// it to say something is correct, mastered or on time; that is [right]'s job.
+  final Color accent;
+
+  /// Text and icons printed **onto** [accent].
+  ///
+  /// Unlike [onState] this does flip with the theme, because [accent] itself
+  /// does: the dark accent is a light blue that needs near-black on it, the
+  /// light accent a saturated blue that needs white.
+  final Color onAccent;
+
+  /// A wash of [accent] for tints — today's ring on the week strip, a chip's
+  /// resting background. Low enough to sit under body text.
+  final Color accentSoft;
 
   /// Fill of a button whose action is not yet earned. The button stays tappable
   /// -- it explains why instead of doing nothing.
@@ -171,6 +200,9 @@ class AppColors extends ThemeExtension<AppColors> {
     weekLabel: Color(0xFF8A8A8E),
     actionPrimary: Color(0xFF000000),
     onPrimary: Color(0xFFFFFFFF),
+    accent: Color(0xFF1B6EF3),
+    onAccent: Color(0xFFFFFFFF),
+    accentSoft: Color(0x1F1B6EF3), // 12%
     actionDisabled: Color(0xFFE9E9EC),
     wrong: Color(0xFFFF3B30),
     wrongTint: Color(0x1AFF3B30), // 10%
@@ -212,6 +244,9 @@ class AppColors extends ThemeExtension<AppColors> {
     weekLabel: Color(0xFF8E8E94),
     actionPrimary: Color(0xFFFFFFFF),
     onPrimary: Color(0xFF000000),
+    accent: Color(0xFF4D9BFF),
+    onAccent: Color(0xFF04203F),
+    accentSoft: Color(0x2E4D9BFF), // 18%
     actionDisabled: Color(0xFF2C2C2E),
     wrong: Color(0xFFFF3B30),
     wrongTint: Color(0x26FF3B30), // 15%
@@ -249,6 +284,9 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? weekLabel,
     Color? actionPrimary,
     Color? onPrimary,
+    Color? accent,
+    Color? onAccent,
+    Color? accentSoft,
     Color? actionDisabled,
     Color? wrong,
     Color? wrongTint,
@@ -277,6 +315,9 @@ class AppColors extends ThemeExtension<AppColors> {
       weekLabel: weekLabel ?? this.weekLabel,
       actionPrimary: actionPrimary ?? this.actionPrimary,
       onPrimary: onPrimary ?? this.onPrimary,
+      accent: accent ?? this.accent,
+      onAccent: onAccent ?? this.onAccent,
+      accentSoft: accentSoft ?? this.accentSoft,
       actionDisabled: actionDisabled ?? this.actionDisabled,
       wrong: wrong ?? this.wrong,
       wrongTint: wrongTint ?? this.wrongTint,
@@ -313,6 +354,9 @@ class AppColors extends ThemeExtension<AppColors> {
       weekLabel: mix(weekLabel, other.weekLabel),
       actionPrimary: mix(actionPrimary, other.actionPrimary),
       onPrimary: mix(onPrimary, other.onPrimary),
+      accent: mix(accent, other.accent),
+      onAccent: mix(onAccent, other.onAccent),
+      accentSoft: mix(accentSoft, other.accentSoft),
       actionDisabled: mix(actionDisabled, other.actionDisabled),
       wrong: mix(wrong, other.wrong),
       wrongTint: mix(wrongTint, other.wrongTint),

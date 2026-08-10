@@ -178,10 +178,16 @@ surface scheme would have nothing to build depth from; that turned out to be wro
 the value ramp while keeping its **ordering** preserves every "quieter than" relationship the
 design relies on, so the dark theme is a re-mapping rather than a redesign.)*
 
-The palette is white + grey + black plus exactly **one red** (`#FF3B30`, wrong / weak /
-overdue / delete) and **one green** (`#34C759`, right / mastered). No subject colours, no
-four-step mastery spectrum, no gradients, no blur. A score in the middle is simply a number;
-inventing a colour for it dilutes the two that mean something.
+The palette is white + grey + black plus exactly **one blue** (`AppColors.accent` — `#4D9BFF`
+dark / `#1B6EF3` light), **one red** (`#FF3B30`, wrong / weak / overdue / delete) and **one
+green** (`#34C759`, right / mastered). No subject colours, no four-step mastery spectrum, no
+gradients, no blur.
+
+**The blue and the two state colours are different vocabularies, and they never mix** (§3.27).
+Blue means *active*: the selected tab, a progress fill, a ticked box, a primary button, the
+mark's arc. Red and green are verdicts about the work. A score in the middle is still simply a
+number — blue is a fill, not a fifth mastery band, and `MasteryPalette.resolve` (the number)
+and `MasteryPalette.fill` (the bar under it) are what keep those apart.
 
 ### 3.11 Unproven is not the same as weak
 Mastery is 0 for anything unexamined, so the naive mapping paints a brand-new install
@@ -192,7 +198,8 @@ an em-dash instead of `0%` wherever no exam exists. Precedence is: **no data →
 the emulator, not by reading the code.)*
 
 ### 3.12 Hand-drawn icons instead of the Material set
-The design allows one icon family: outline strokes at 1.7–2.2, black or grey, 15–26px. The
+The design allows one icon family: outline strokes at 1.7–2.2, black, grey or accent, 15–26px.
+The
 Material set is a different family with a different optical weight, and mixing the two was one
 of the things the redesign set out to remove. `AtherIcon` draws the seventeen glyphs the
 product actually needs from the design's own path data.
@@ -303,7 +310,8 @@ The exception is deliberately narrow, and every bound is enforced in `app_shell.
 - **The sigma is never animated** (`AppMotion.glassSigma = 24`). Animating a blur radius drops
   frames on the phones these students own. If the bar ever needs to react to scroll, the tint
   alpha is the thing to animate, not the blur.
-- **The FAB stays fully opaque black.** It is the primary action; it does not go translucent.
+- **Nothing is drawn outside the clip.** The raised "+" was the only thing that ever was, and
+  it is gone (§3.28); the bar is now exactly the pill.
 - **Platform-gated, never reduce-motion-gated.** `canBlur` is Android/iOS only. Blur is a
   *visual effect*, not motion: `disableAnimations` owns fades, scales, slides and pops, and a
   student who turns reduce-motion on because scrolling makes them ill has no reason to lose a
@@ -433,31 +441,93 @@ tasks deliberately do **not** roll over: a day's plan is a record of that day.
 `sortOrder` is a dense integer rewritten wholesale in one transaction on a drag. A day holds a
 handful of rows, so fractional indices would be cleverness bought with nothing.
 
-### 3.23 The tab bar floats — a change of shape, not a new exception
+### 3.23 The tab bar floats, and has four slots — not five
 §3.19's blur exception is unchanged and every one of its bounds still holds: exactly one
-`BackdropFilter`, a mandatory clip, a sigma that is never animated, an opaque FAB, and a
-platform gate rather than a reduce-motion gate. What moved is the bar's geometry — it is now a
-pill inset by `AppSpacing.pageMargin` on the sides and `AppSizes.barLift` from the bottom, with
-the black "+" raised `AppSizes.fabOverhang` above its top edge.
+`BackdropFilter`, a mandatory clip, a sigma that is never animated, and a platform gate rather
+than a reduce-motion gate. What changed, in two passes: the bar became a pill inset by
+`AppSpacing.pageMargin` on the sides and `AppSizes.barLift` top and bottom, and then the raised
+"+" was removed from it entirely.
 
-Three consequences, all of which are the reason this is written down:
+Four consequences, all of which are the reason this is written down:
 
 1. **The hairline goes all the way round.** A full-bleed bar was separated from the page by one
    line along its top. A floating one has content on all four sides and there is no shadow
    anywhere in this app to lift it, so `Border.all` is the only thing holding it off the page.
-2. **The "+" is drawn outside the pill**, positioned by the bar rather than sitting in the tab
-   `Row`. Inside, it would be clipped by the `ClipRRect` and blurred by the filter — and the
-   primary action does not go translucent. Its slot in the `Row` is reserved by a bare
-   `SizedBox`.
-3. **The toast's offset is derived, not typed.** `AppSizes.toastBottom` is
-   `barLift + barHeight + fabOverhang + 16`, plus the system inset resolved at build time. The
-   old hard-coded `104` happened to clear a full-bleed bar and would now land behind a floating
-   one; a black toast under the 0.72 tint drops the inactive tab label to 1.5:1, and against the
-   opaque black FAB it is black on black.
+2. **There is no "+", and no reserved slot for one.** The four tabs are `Expanded`, so each
+   takes a quarter of the bar and the touch target runs edge to edge. See §3.28 for why the
+   button went.
+3. **The selected tab is the accent, not the foreground colour.** On a bar where every other
+   pixel is grey, hue carries "you are here" further than value does — and it is the same blue
+   the progress bars fill with, so there is one colour to learn rather than two.
+4. **The toast's offset is derived, not typed.** `AppSizes.toastBottom` is
+   `barLift * 2 + barHeight + 16`, plus the system inset resolved at build time. A black toast
+   under the 0.72 tint drops the inactive tab label to 1.5:1, so it has to clear the whole bar.
 
 **The bar does not react to scroll.** Shopify's collapses; this one does not, because §3.21
 rules out scroll-driven motion outright and a listener rebuilding the bar every scroll frame was
 already rejected once.
+
+### 3.27 One brand blue, and it is not a state colour
+*Added by the visual refresh; it supersedes the "white, grey, black and two states" reading of
+§3.10.*
+
+The app now has an accent: `AppColors.accent`, `#4D9BFF` on dark and `#1B6EF3` on light, with
+`onAccent` and a low-alpha `accentSoft` beside it. It is used **everywhere something is active**:
+the selected tab icon and label, every progress fill, the ticked checkbox and task disc, the
+selected filter chip, the "Exam" pill, `PrimaryButton`'s default tone, the lock screen's Unlock
+button, the week strip's completed and today rings, and the brand mark's 27% arc.
+
+Chose one accent over the previous monochrome because the monochrome version had no way to say
+"this one" without also saying "this is correct" — every emphasis had to borrow green, and green
+is a verdict about a real exam. A brand colour that means *active* frees the two state colours to
+mean only what they mean.
+
+Two rules follow, and both are load-bearing:
+
+* **`wrong` and `right` never move.** They are the red pen and the green tick; the refresh did
+  not touch either value. Blue never means correct, green never means selected.
+* **A number and the bar under it resolve separately.** `MasteryPalette.resolve` gives the
+  number — neutral in the middle of the range, because a mid score is text and not a verdict —
+  and `MasteryPalette.fill` maps exactly that neutral case, and no other, to the accent. Red,
+  green and the no-data grey pass through untouched. One mapping in one direction, so the two
+  can never disagree.
+
+### 3.28 The "+" button was removed
+*Reverses the earlier decision that the "+" deserved the most reachable pixel on the screen.*
+
+The raised centre button and its "Log exam / Add task" popup are gone. The reasoning that put it
+there — logging an exam is the only action the product exists to capture, so it gets the best
+target — was true about the *action* and wrong about the *button*. Reached from the tab bar, "log
+an exam" has no lesson attached, so the flow had to open by asking which lesson was meant; and
+before a student has built any curriculum there is no answer, so the button's own affordance was
+dead exactly when a new student was most likely to press it.
+
+Logging an exam is now reachable only from a place that already knows the lesson: the "Exam" pill
+on the dashboard's up-next card, and the sticky CTA on a lesson screen. Two entry points, both
+carrying their subject with them, and no route that opens with "which one?".
+
+### 3.29 The week strip carries three weeks, and signposts the way home
+The strip is flat in-page content — no card, no pill, no blur; the glass exception stays spent on
+the tab bar alone (§3.19). Today is marked by a dot, a darker letter and a 1.5px rule under it,
+**never a filled cell**: a filled cell already means "this day is done" three pixels below, and
+using one fill for both made the two unreadable together.
+
+It holds the previous, current and next week and drags between them, snapping past a ±45px
+release. Two things about that are worth writing down:
+
+1. **The neighbours only exist while it is moving.** At rest the strip builds one week. An
+   off-screen cell that stays in the tree answers hit tests and `find.text` alike, and a tap
+   meant for Saturday would land on a Saturday three weeks ago.
+2. **Direction is computed exactly once.** The drag is accumulated in *logical* start-to-end
+   pixels and multiplied by a single `sign` at the point it becomes a physical offset. The HTML
+   prototype had the sign flipped per direction at three separate call sites and broke under LTR;
+   everything positional here is `PositionedDirectional` / `AlignmentDirectional` instead.
+
+Off today's week, a 34px green edge glow appears on the side the student would drag toward to get
+back, and tapping it returns in one move. Green rather than the accent on purpose: it is
+wayfinding, not brand. Its pulse controller **runs only while the glow is mounted** — the design
+layer left an opacity keyframe looping on a hidden element forever, which is also why
+`pumpAndSettle` is a valid assertion in `test/widget/week_strip_test.dart`.
 
 ### 3.24 The first schema migration, and why `onUpgrade` is not optional
 `schemaVersion` went 1 → 2 for `daily_tasks`. Every student on an earlier build already has a v1
@@ -604,7 +674,7 @@ a chapter needs review, the whole chapter is red.
 | Review cycle service (pure, tested) | Complete |
 | Insights generator (pure, tested) | Complete |
 | Riverpod providers + screen summaries | Complete |
-| go_router shell + five-slot tab bar with centre FAB | Complete |
+| go_router shell + four-slot tab bar | Complete |
 | Dashboard | Complete |
 | Subject screen (chapter cards) | Complete |
 | Chapter screen + "أتقنت الباب" gate | Complete |
@@ -619,7 +689,7 @@ a chapter needs review, the whole chapter is red.
 | Biometric app lock | Complete |
 | Celebration (white screen + green disc) | Complete |
 | Notification service + lifecycle reconciliation | Complete |
-| Cloud backup + restore (Firestore) | Complete — not yet exercised against live Firestore |
+| Cloud backup + restore (Firestore) | Complete — verified against live Firestore 2026-08-05 |
 | Daily tasks tab (add / tick / edit / reorder / delete, per day) | Complete |
 | Floating glass tab bar | Complete |
 | Android build + on-device verification | Complete — full journey run on emulator |
@@ -675,8 +745,12 @@ The authored identity is three SVGs, shipped in `assets/branding/`:
 | `icon-mastery-dark.svg` | The same mark on a dark surface |
 | `glyph-mastery.svg` | The mark with no background plate — standalone symbol |
 
-All three are one geometry (a grey track ring, a 324° green mastery arc from twelve o'clock, a
-solid centre dot) differing only in four colours. So the geometry is transcribed **once**, into
+All three are one geometry — a single **organic, hand-wobbled ring**: a closed curve through
+seven points at irregular radii, stroked twice, once whole in the foreground colour and once over
+its first **27%** in the brand accent (§3.27). *(This replaced the original concentric track ring,
+324° green arc and solid centre dot in the visual refresh. The meaning did not change — the ring
+is the syllabus, the coloured run is the part that has been proven — only the drawing.)* The three
+variants differ only in three colours, so the geometry is transcribed **once**, into
 `lib/core/branding/ather_brand.dart`, and every surface is painted from it:
 
 * In-app — `AtherLogo` (plated) and `AtherGlyph` (transparent), both in
@@ -689,9 +763,9 @@ solid centre dot) differing only in four colours. So the geometry is transcribed
   same `AtherMarkPainter`. Nothing is hand-exported, so the launcher icon and the in-app logo
   cannot drift apart.
 
-A `CustomPainter` rather than an SVG renderer because the mark is four primitives: it stays vector
-at every size, costs no dependency and no decode, and is what lets the icon export and the UI share
-one drawing. The SVGs remain the authored artefact.
+A `CustomPainter` rather than an SVG renderer because the mark is one path stroked twice: it stays
+vector at every size, costs no dependency and no decode, and is what lets the icon export and the
+UI share one drawing. The SVGs remain the authored artefact.
 
 Regenerate every Android bitmap after any change to the geometry or palettes:
 
@@ -709,14 +783,19 @@ Three rules that are easy to break by accident:
 1. **The launcher icon is always the light variant.** The installed icon belongs to the home
    screen, not to the app's theme, so it is never resolved from brightness. There is deliberately
    no `<monochrome>` layer in `mipmap-anydpi-v26/ic_launcher.xml` — a themed icon would let the
-   launcher recolour the mark to the wallpaper palette and drop the green.
-2. **The adaptive foreground is drawn at the artwork's authored scale.** The mark spans
-   `(2×290 + 46) / 1024 ≈ 0.6113` of its canvas, which on the 108dp adaptive canvas is 66.0dp —
-   exactly the guaranteed-visible safe zone. It needs no nudging to fit, and it is centred by
-   construction.
-3. **The mark is only ever scaled uniformly.** `AtherMarkPainter` works in the SVG's own 1024
-   coordinates and applies one scale on both axes, letterboxing a non-square box rather than
+   launcher recolour the mark to the wallpaper palette and drop the accent.
+2. **The adaptive foreground is drawn at the artwork's authored scale.** `AtherMarkGeometry.extent`
+   is 0.6113 — carried over from the old mark deliberately — which on the 108dp adaptive canvas
+   is 66.0dp, exactly the guaranteed-visible safe zone.
+3. **The mark is centred on its own bounds, not on the viewBox.** The old mark was a circle and
+   the two were the same thing. The organic ring is deliberately lopsided, so centring it by
+   viewBox would leave it visibly off inside a launcher mask.
+4. **The mark is only ever scaled uniformly.** `AtherMarkPainter` works in the design's own
+   100-unit grid and applies one scale on both axes, letterboxing a non-square box rather than
    stretching. No rounded corners, no shadow, no gradient, no crop.
+   *(`Path.transform` returns a new path rather than mutating one — a cascade onto it silently
+   discards the result, which is exactly how the first port of this shipped a stroke wide enough
+   to fill the ring solid.)*
 
 The in-app mark follows the app's theme (§7b): `AtherBrandPalette.of(context)` reads the ambient
 `Brightness`, so Light shows the light artwork, Dark shows the dark, and "follow system" needs no
@@ -853,9 +932,13 @@ Until both are done, Windows desktop is **untested** and is reported as such —
 - **A test account exists in Firebase.** `test@ather.app` was created to verify the flow and
   can be deleted from the Authentication console. There is also a stray empty Google Cloud
   project, `ather-app-2026`, left over from a failed first attempt.
-- **The redesign was run on the emulator (API 35) but not on a real phone.** The app installs,
-  boots with no exceptions in `logcat`, and navigates; every screen was also rendered and
-  reviewed via `tool/render/`. That is not a phone in a student's hand.
+- ~~**The redesign was run on the emulator but not on a real phone.**~~ **Done (2026-08-05).**
+  The visual refresh was driven end to end on a Nothing Phone (A015, Android 16, 1080×2400):
+  add chapter → add lesson → tick study steps → both exam entry points → save → Progress,
+  Tasks, Review; light/dark; Arabic/RTL and English/LTR; the week-strip drag in both directions;
+  and the lock screen. `logcat` was clean — no Flutter exception, no overflow, no
+  setState-after-dispose. Two things were found on the device that the render goldens had not
+  caught; both are fixed and written up in the work log.
 - **Windows desktop cannot be built on this machine.** `flutter doctor` reports Visual Studio
   absent, and plugin builds additionally need Developer Mode enabled. Both are user actions.
 - **Notification delivery has never been observed firing.** The scheduling code runs and the
@@ -947,6 +1030,82 @@ produced those numbers is untouched by the redesign.
 
 ## 10. Work Log
 
+**Visual refresh: one brand blue, a new mark, and no "+" (2026-08-05).**
+Ported the `design_handoff_visual_refresh` handoff into the Flutter app. Where it contradicted a
+standing rule, **the design won and the rule was rewritten** — §3.10 no longer claims a
+two-colour palette, §3.23 no longer describes a five-slot bar, and §7a no longer describes a
+concentric ring. The new rules are §3.27 (one accent, and why it is not a state colour), §3.28
+(why the "+" went) and §3.29 (the three-week strip).
+
+- **Accent tokens** `accent` / `onAccent` / `accentSoft` on `AppColors`, and the accent applied
+  everywhere "active" is meant: tab bar, `PrimaryButton` (its `black` tone renamed `primary`,
+  which is the point — the tone is named for meaning, not colour), `PillButton`, checkboxes,
+  task discs, filter chips, the segmented control, every progress bar and chart column.
+  `MasteryPalette.fill` is the one mapping from the neutral number colour to the accent.
+- **New brand mark.** Organic seven-point ring, stroked whole plus a 27% accent run.
+  `AtherBrandPalette` lost `core` and renamed `track` → `ring`. All three SVGs in
+  `assets/branding/` rewritten and every Android bitmap re-exported.
+- **New subject icons**: a knee joint for Biology, a horseshoe magnet for Physics, an open book
+  for English. Chemistry's flask is unchanged.
+- **Week strip rewritten**: flat, underline-marked today, accent rings, a three-week drag buffer
+  and the directional "return to today" glow. Both bugs the handoff flagged in the design layer
+  are covered by `test/widget/week_strip_test.dart` (5 cases).
+- **Lock screen**: 108px mark, 38px wordmark, no standing body copy. `lockTitle` and `lockBody`
+  are deleted from both ARBs; the wordmark is `appName`, which in Arabic is now **أثر** rather
+  than the Latin "Ather".
+- `AppSizes` lost `fab`, `fabOverhang` and `fabLift`; `toastBottom` re-derived.
+
+**160/160 tests pass**, `dart analyze` clean.
+
+**Driven on a real phone (2026-08-05).** A Nothing Phone (A015, Android 16), debug build, the
+whole flow. Two gaps the render goldens had missed, both the same mistake — a fill that was
+never routed through `MasteryPalette.fill`:
+
+1. **The exam wizard's result bar stayed white.** A mid-range score resolves to the neutral
+   text colour, and the bar took it verbatim. It is the one bar a student stares at.
+2. **Material's own `ColorScheme.primary`, `FilledButton`, focused input border, progress
+   indicator, and the wizard's four step bars were still the foreground colour.** Every
+   framework widget that has not been replaced by a hand-built one now tints itself the accent,
+   which is what stops a stray `FilledButton` from looking like it belongs to the old design.
+
+Neither is visible in a widget test — both are colour, and the goldens for those screens were
+regenerated from the same code that had the bug. That is the honest limit of a golden: it
+proves nothing changed, not that anything is right.
+
+One consequence of the design worth knowing about, kept because the handoff is explicit that
+the glow is tappable: **the return-to-today glow overlays the strip's first day cell**, so on
+the Tasks screen (where the strip is a picker) that one day cannot be tapped while another
+week is on screen. Narrowing the glow or making its inner half inert would fix it.
+
+**First signed release, and the first live Firestore round-trip (2026-08-05).**
+An upload key now exists (procedure and warnings: RELEASING.md). Its SHA-1 and SHA-256 are
+registered against `com.ather.app` in Firebase and `android/app/google-services.json` was
+re-downloaded — it now carries two certificate hashes for the package, the debug key and
+`f3eaec08…`.
+
+Verified on the device, in this order, because each step only proves the next one is worth
+trying:
+
+1. `apksigner verify` reports `CN=yassen, OU=per, O=ather, L=giza, ST=giza, C=eg` — not
+   `CN=Android Debug`. 22.8 MB on arm64, AOT.
+2. The debug build was **uninstalled** — a signing key cannot be changed in place — and the
+   release APK installed onto an empty package.
+3. Google Sign-In completed. This is what the SHA-1 registration buys: without it the account
+   picker still opens and then fails with `ApiException: 10`. *(`DEVELOPER_ERROR` does appear in
+   `logcat` around sign-in, but from Play Services' own Phenotype/FlagStore processes, not from
+   the app's pid. Sign-in succeeding is the proof that it is unrelated.)*
+4. **The curriculum came back on its own** from Firestore onto the wiped install — chapter,
+   lesson and the 90% exam. `BackupSyncGate`'s auto-restore-onto-an-empty-device path had never
+   run against a real backend before.
+
+Two numbers on that restored dashboard look wrong at a glance and are not:
+`overallMastery` showed 23% while Biology showed 90%, because untouched subjects deliberately
+count as 0 (§ the calculator's own comment: a figure that ignored three empty subjects would
+tell a student they are 85% ready for Thanaweya Amma); and "0 of 1 chapters mastered" is right
+because `Chapter.isMastered` is `masteredAt != null` — an explicit press of the mastery gate,
+never derived from a score.
+
+
 **The biometric lock was skippable (2026-08-05).**
 Reported from a real phone: the back button walked past the lock. Investigating turned up a
 second, worse bypass in the same screen — a lockout, a cancellation and a refusal all ran the
@@ -986,8 +1145,10 @@ permission failure, auto-restore onto empty, **no** auto-restore onto populated,
 restore both confirmed and cancelled). Every existing widget test now injects
 `FakeBackupRepository.failing()`.
 
-**Not verified:** nothing has been written to or read from live Firestore. The rules, the
-document shape and the size ceiling are all untested against the real service.
+~~**Not verified:** nothing has been written to or read from live Firestore.~~ **Verified
+2026-08-05** — a signed release build on a wiped device signed in with Google and the whole
+curriculum was restored from Firestore with no manual step. The size ceiling is still untested
+against a large real curriculum; the round trip itself is not.
 
 **Release signing wired (2026-08-05).**
 A debug-signed release APK was built for testers, which surfaced the §9 signing item. The build

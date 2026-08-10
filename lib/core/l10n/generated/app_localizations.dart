@@ -100,7 +100,7 @@ abstract class L {
   /// No description provided for @appName.
   ///
   /// In ar, this message translates to:
-  /// **'Ather'**
+  /// **'أثر'**
   String get appName;
 
   /// No description provided for @appTagline.
@@ -1045,22 +1045,10 @@ abstract class L {
   /// **'الحساب'**
   String get authAccount;
 
-  /// No description provided for @lockTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'التطبيق مقفول'**
-  String get lockTitle;
-
-  /// No description provided for @lockBody.
-  ///
-  /// In ar, this message translates to:
-  /// **'افتح بالبصمة عشان تكمّل'**
-  String get lockBody;
-
   /// No description provided for @lockUnlock.
   ///
   /// In ar, this message translates to:
-  /// **'افتح بالبصمة'**
+  /// **'افتح'**
   String get lockUnlock;
 
   /// No description provided for @lockReason.

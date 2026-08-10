@@ -153,7 +153,7 @@ class _ExamCta extends StatelessWidget {
             : l.examRecordResult,
         tone: summary.needsReview
             ? PrimaryButtonTone.wrong
-            : PrimaryButtonTone.black,
+            : PrimaryButtonTone.primary,
         onTap: () =>
             context.push(Routes.exam(summary.lesson.id, fromLesson: true)),
       ),
@@ -216,7 +216,7 @@ class _MasteryCard extends StatelessWidget {
               percentage: summary.mastery,
               hasData: summary.hasExam,
             ),
-            color: color,
+            color: MasteryPalette.fill(context.colors, color),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(

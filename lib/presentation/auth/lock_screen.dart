@@ -145,17 +145,18 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                 // with the lock on -- the Android launch window hands straight
                 // over to it -- so the mark carries through from the splash
                 // rather than disappearing at the handover.
-                const AtherGlyph(size: 56),
-                const SizedBox(height: AppSpacing.xxxl),
-                Text(l.lockTitle, style: AppTypography.today),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  l.lockBody,
-                  textAlign: TextAlign.center,
-                  style: context.text.secondary.copyWith(height: 1.6),
-                ),
+                const AtherGlyph(size: 108),
+                const SizedBox(height: AppSpacing.xl),
+                // The wordmark, and nothing under it. Two lines of standing
+                // instructional text used to sit here explaining that the app
+                // is locked; the mark, the word "Ather" and a button labelled
+                // "Unlock" already say that, and a lock screen is read for a
+                // quarter of a second on every cold start. Only a *failed*
+                // attempt has anything left to tell the student, and that
+                // message takes the space the instructions used to hold.
+                Text(l.appName, style: AppTypography.lockWordmark),
                 if (_message != null) ...<Widget>[
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.lg),
                   Text(
                     _message!(l)!,
                     textAlign: TextAlign.center,
@@ -168,7 +169,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                 ],
                 const SizedBox(height: AppSpacing.xxxl),
                 SizedBox(
-                  width: 240,
+                  width: 220,
                   child: PrimaryButton(
                     label: l.lockUnlock,
                     onTap: _prompting ? null : _prompt,

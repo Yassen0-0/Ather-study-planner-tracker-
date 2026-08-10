@@ -52,9 +52,6 @@ abstract final class AppRadius {
   /// A 36x36 circular header button.
   static const double headerButton = 18;
 
-  /// The 56x56 floating action button.
-  static const double fab = 28;
-
   /// Chips, pills, day circles, the switch.
   static const double pill = 999;
 }
@@ -64,38 +61,29 @@ abstract final class AppRadius {
 abstract final class AppSizes {
   static const double primaryButton = 52;
   static const double headerButton = 36;
-  static const double fab = 56;
 
   // --- The floating tab bar -------------------------------------------------
-  // Four numbers with one relationship between them. They are written once and
+  // Two numbers with one relationship between them. They are written once and
   // derived from each other rather than typed at each call site, because the
   // toast's position and the body's bottom padding both depend on where the top
   // of this bar actually lands.
 
   /// How far the pill sits clear of the bottom of the screen, on top of
-  /// whatever system inset is already there.
+  /// whatever system inset is already there. Applied above the pill as well, so
+  /// the bar's reserved height is symmetric around it.
   static const double barLift = 12;
 
   /// The pill's own height: a ~47px tab (25 icon + 4 gap + label) with room
   /// around it.
   static const double barHeight = 64;
 
-  /// How far the "+" rises above the pill's top edge. Enough to read as raised;
-  /// not so much that the pill stops looking like it is holding it.
-  static const double fabOverhang = 20;
-
-  /// The FAB's offset above the pill's bottom edge — derived, so the overhang
-  /// above is what is actually being chosen.
-  static const double fabLift = barHeight + fabOverhang - fab;
-
   /// Where the black confirmation toast is pinned, **above the system inset**.
   ///
   /// Load-bearing rather than a taste decision. The toast is the one black
-  /// surface in the app; under the bar's 0.72 white tint it would drop the
-  /// inactive tab label to 1.5:1, and against the opaque black FAB it would be
-  /// black on black. So it clears the whole assembly. The 16 is breathing room:
-  /// the toast must not kiss the FAB.
-  static const double toastBottom = barLift + barHeight + fabOverhang + 16;
+  /// surface in the app, and under the bar's 0.72 white tint it would drop the
+  /// inactive tab label to 1.5:1. So it clears the whole assembly. The 16 is
+  /// breathing room: the toast must not kiss the bar.
+  static const double toastBottom = barLift * 2 + barHeight + 16;
 
   static const double input = 46;
   static const double inputTall = 50;
@@ -105,6 +93,12 @@ abstract final class AppSizes {
   static const double barTrackSmall = 6;
 
   static const double weekCircle = 34;
+
+  /// The week strip's own height, fixed because it clips: three weeks share the
+  /// box and the two off-screen ones must not stretch it. 4 dot + 3 + ~18
+  /// underlined letter + 6 + the circle.
+  static const double weekStrip = 4 + 3 + 21 + 6 + weekCircle;
+
   static const double checkbox = 24;
 }
 
@@ -129,6 +123,15 @@ abstract final class AppMotion {
 
   /// How long the confirmation toast stays on screen.
   static const Duration toast = Duration(milliseconds: 2200);
+
+  /// The week strip snapping to a week after a drag is released. Shares the
+  /// sheet's spring: both are "a surface you were holding finding its rest".
+  static const Duration weekSnap = sheet;
+  static const Curve weekSnapCurve = sheetCurve;
+
+  /// One half-cycle of the week strip's "come back to today" glow. Slow on
+  /// purpose — it is a standing cue, not an alert.
+  static const Duration weekGlowPulse = Duration(milliseconds: 1800);
 
   // ---------------------------------------------------------------------------
   // Motion system v1.1. Everything below is one ease-out and a set of durations

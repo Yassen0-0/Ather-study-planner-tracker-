@@ -9,7 +9,7 @@ class LAr extends L {
   LAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appName => 'Ather';
+  String get appName => 'أثر';
 
   @override
   String get appTagline => 'إنت مش بتخلص الدروس… إنت بتتقنها';
@@ -554,13 +554,7 @@ class LAr extends L {
   String get authAccount => 'الحساب';
 
   @override
-  String get lockTitle => 'التطبيق مقفول';
-
-  @override
-  String get lockBody => 'افتح بالبصمة عشان تكمّل';
-
-  @override
-  String get lockUnlock => 'افتح بالبصمة';
+  String get lockUnlock => 'افتح';
 
   @override
   String get lockReason => 'افتح Ather';

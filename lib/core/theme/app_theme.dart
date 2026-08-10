@@ -26,10 +26,13 @@ abstract final class AppTheme {
   static ThemeData _build(AppColors c, Brightness brightness) {
     final ColorScheme scheme = ColorScheme(
       brightness: brightness,
-      primary: c.actionPrimary,
-      onPrimary: c.onPrimary,
-      secondary: c.actionPrimary,
-      onSecondary: c.onPrimary,
+      // Material's "primary" is the accent, not the foreground colour: every
+      // framework widget that has not been replaced by an Ather one should tint
+      // itself the same blue the hand-built controls do.
+      primary: c.accent,
+      onPrimary: c.onAccent,
+      secondary: c.accent,
+      onSecondary: c.onAccent,
       surface: c.card,
       onSurface: c.textPrimary,
       error: c.wrong,
@@ -84,8 +87,8 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: c.actionPrimary,
-          foregroundColor: c.onPrimary,
+          backgroundColor: c.accent,
+          foregroundColor: c.onAccent,
           textStyle: AppTextStyles(c).button,
           elevation: 0,
           minimumSize: const Size.fromHeight(AppSizes.primaryButton),
@@ -119,7 +122,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.input),
-          borderSide: BorderSide(color: c.actionPrimary, width: 1.5),
+          borderSide: BorderSide(color: c.accent, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.input),
@@ -150,9 +153,7 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.card),
         ),
       ),
-      progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: c.actionPrimary,
-      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: c.accent),
       // The design hides scrollbars entirely; the white cards already show that
       // a list continues.
       scrollbarTheme: const ScrollbarThemeData(

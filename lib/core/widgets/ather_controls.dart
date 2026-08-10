@@ -36,6 +36,8 @@ class AtherCheckbox extends StatelessWidget {
             // would read as a step half-done is a fill that *rises*; this one
             // never shows a level.
             DecoratedBox(
+              // The empty box's own background. The accent fill is painted by
+              // the disc itself, as it closes.
               decoration: BoxDecoration(
                 color: context.colors.card,
                 shape: BoxShape.circle,
@@ -43,11 +45,11 @@ class AtherCheckbox extends StatelessWidget {
               child: CompletionDisc(
                 done: checked,
                 size: AppSizes.checkbox,
-                fill: context.colors.actionPrimary,
+                fill: context.colors.accent,
                 ring: context.colors.checkboxBorder,
                 ringWidth: 1.8,
                 tickSize: 14,
-                tickColor: context.colors.onPrimary,
+                tickColor: context.colors.onAccent,
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -164,7 +166,7 @@ class SegmentedControl extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: i == selectedIndex
-                        ? context.colors.actionPrimary
+                        ? context.colors.accent
                         : null,
                     borderRadius: BorderRadius.circular(9),
                   ),
@@ -175,7 +177,7 @@ class SegmentedControl extends StatelessWidget {
                       size: 14,
                       weight: AppTypography.bold,
                       color: i == selectedIndex
-                          ? context.colors.onPrimary
+                          ? context.colors.onAccent
                           : context.colors.textSecondary,
                     ),
                   ),

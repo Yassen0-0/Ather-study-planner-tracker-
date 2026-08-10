@@ -4,26 +4,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/router.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/ather_icons.dart';
-import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/pop_in.dart';
 import '../../core/widgets/pressable.dart';
 import '../../core/widgets/reduced_motion.dart';
-import '../providers/navigation_providers.dart';
 import '../providers/summary_providers.dart';
 
-/// The five-slot tab bar.
+/// The four-slot tab bar.
 ///
-/// Four destinations plus a raised black "+" in the middle. The "+" is not a
-/// fifth tab: it is the shortest path from "I just sat a paper" to "it is
-/// recorded", which is the only action the whole product exists to capture, so
-/// it gets the most reachable pixel on the screen.
+/// Four destinations, evenly distributed across the full width of the bar. There
+/// is **no "+"**: the visual refresh removed the raised centre button and its
+/// popup menu entirely.
+///
+/// The "+" was defended as the shortest path from "I sat a paper" to "it is
+/// recorded". What it actually did was ask the student which lesson they meant,
+/// after the fact, from a context that had none — and it was dead whenever no
+/// lesson existed yet, which is the state a new student is in. Logging an exam
+/// is now reachable only from somewhere that already knows the lesson: the
+/// "Exam" pill on the dashboard's up-next card, and the CTA on a lesson screen.
+/// One fewer control, and no route that can start with the question "which one?".
 ///
 /// Hand-built rather than a `NavigationBar` because Material insists on an
 /// indicator pill, a ripple and a tint on scroll — all three of which this
@@ -37,7 +41,6 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = L.of(context);
     final overdue = ref.watch(dashboardProvider).overdueCount;
-    final target = ref.watch(quickExamTargetProvider);
 
     return Scaffold(
       backgroundColor: context.colors.pageBackground,
@@ -49,50 +52,46 @@ class AppShell extends ConsumerWidget {
       body: navigationShell,
       bottomNavigationBar: _floatingBar(
         context,
+        // Expanded, not spaceAround: with the centre slot gone the four tabs
+        // take an equal quarter of the bar each, so the touch target runs edge
+        // to edge and no tab is nearer the middle than another.
         tabs: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            _Tab(
-              glyph: AtherGlyph.home,
-              label: l.navHome,
-              selected: navigationShell.currentIndex == 0,
-              onTap: () => _goBranch(0),
+            Expanded(
+              child: _Tab(
+                glyph: AtherGlyph.home,
+                label: l.navHome,
+                selected: navigationShell.currentIndex == 0,
+                onTap: () => _goBranch(0),
+              ),
             ),
-            _Tab(
-              glyph: AtherGlyph.review,
-              label: l.navReview,
-              selected: navigationShell.currentIndex == 1,
-              badge: overdue,
-              onTap: () => _goBranch(1),
+            Expanded(
+              child: _Tab(
+                glyph: AtherGlyph.review,
+                label: l.navReview,
+                selected: navigationShell.currentIndex == 1,
+                badge: overdue,
+                onTap: () => _goBranch(1),
+              ),
             ),
-            // The "+" is drawn above the pill rather than inside it, so this
-            // only reserves its slot. Putting the real button in the Row would
-            // put it inside the ClipRRect, where it would be both clipped and
-            // blurred -- and the primary action does not go translucent.
-            const SizedBox(width: AppSizes.fab),
-            _Tab(
-              glyph: AtherGlyph.chart,
-              label: l.navProgress,
-              selected: navigationShell.currentIndex == 2,
-              onTap: () => _goBranch(2),
+            Expanded(
+              child: _Tab(
+                glyph: AtherGlyph.chart,
+                label: l.navProgress,
+                selected: navigationShell.currentIndex == 2,
+                onTap: () => _goBranch(2),
+              ),
             ),
-            _Tab(
-              glyph: AtherGlyph.tasks,
-              label: l.navTasks,
-              selected: navigationShell.currentIndex == 3,
-              onTap: () => _goBranch(3),
+            Expanded(
+              child: _Tab(
+                glyph: AtherGlyph.tasks,
+                label: l.navTasks,
+                selected: navigationShell.currentIndex == 3,
+                onTap: () => _goBranch(3),
+              ),
             ),
           ],
-        ),
-        fab: _QuickExamButton(
-          onTap: () {
-            if (target == null) {
-              showAtherToast(context, l.addContentBeforeExam);
-              return;
-            }
-            context.push(Routes.exam(target.lesson.id, fromLesson: false));
-          },
         ),
       ),
     );
@@ -108,57 +107,40 @@ class AppShell extends ConsumerWidget {
   }
 }
 
-/// The bar floats: a glass pill inset from all four edges, with the black "+"
-/// raised over its top edge.
+/// The bar floats: a glass pill inset from all four edges.
 ///
 /// **The glass is still the app's one sanctioned exception** (PROJECT.md §3.10
 /// bans blur, §3.19 bounds the exception to this surface). Nothing about those
-/// bounds moved when the shape did: exactly one [BackdropFilter], a mandatory
-/// clip, a sigma that is never animated, an opaque FAB, and a platform gate
-/// rather than a reduce-motion gate.
+/// bounds moved when the "+" left: exactly one [BackdropFilter], a mandatory
+/// clip, a sigma that is never animated, and a platform gate rather than a
+/// reduce-motion gate.
 ///
-/// What did change: a full-bleed bar was separated from the page by one hairline
-/// along its top. A floating one has content on all four sides and no shadow to
-/// lift it -- this app has none anywhere -- so the hairline goes all the way
-/// round. That border is the only thing holding the pill off the page.
-Widget _floatingBar(
-  BuildContext context, {
-  required Widget tabs,
-  required Widget fab,
-}) {
+/// Losing the "+" also lost the only thing that ever overhung the pill, so the
+/// bar is now exactly its own height plus its lift — no [Stack], and nothing
+/// drawn outside the clip.
+Widget _floatingBar(BuildContext context, {required Widget tabs}) {
   final safeBottom = MediaQuery.paddingOf(context).bottom;
 
   return SizedBox(
     // The whole thing, inset included, so Scaffold hands this height down as
     // the body's bottom padding and AtherScreen can add it back as list travel.
-    height:
-        AppSizes.fabOverhang +
-        AppSizes.barHeight +
-        AppSizes.barLift +
-        safeBottom,
-    child: Stack(
-      alignment: Alignment.bottomCenter,
-      children: <Widget>[
-        Positioned(
-          // The same page margin every card uses, so the pill lines up with the
-          // content it is floating over rather than nearly lining up with it.
-          left: AppSpacing.pageMargin,
-          right: AppSpacing.pageMargin,
-          bottom: AppSizes.barLift + safeBottom,
-          height: AppSizes.barHeight,
-          child: _glassPill(
-            context,
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
-              child: tabs,
-            ),
-          ),
+    height: AppSizes.barHeight + AppSizes.barLift * 2 + safeBottom,
+    child: Padding(
+      // The same page margin every card uses, so the pill lines up with the
+      // content it is floating over rather than nearly lining up with it.
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.pageMargin,
+        AppSizes.barLift,
+        AppSpacing.pageMargin,
+        AppSizes.barLift + safeBottom,
+      ),
+      child: _glassPill(
+        context,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+          child: tabs,
         ),
-        Positioned(
-          bottom: AppSizes.barLift + safeBottom + AppSizes.fabLift,
-          child: fab,
-        ),
-      ],
+      ),
     ),
   );
 }
@@ -283,6 +265,10 @@ class _Tab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Selected is the brand accent now, not the foreground colour. On a bar
+    // where every other pixel is grey, hue carries "you are here" further than
+    // value does -- and it is the same blue the progress bars fill with, so the
+    // student learns one colour rather than two.
     return Pressable(
       onTap: onTap,
       // One tween drives the glyph's weight, the glyph's colour and the label
@@ -291,31 +277,38 @@ class _Tab extends StatelessWidget {
       child: TabGlyph(
         glyph: glyph,
         selected: selected,
-        selectedColor: context.colors.textPrimary,
+        selectedColor: context.colors.accent,
         unselectedColor: context.colors.textTertiary,
-        builder: (context, tint, glyphWidget) => SizedBox(
-          width: 62,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
+        builder: (context, tinted, glyphWidget) => SizedBox(
+          // Width comes from the Expanded above -- the bar divides itself into
+          // four equal columns rather than centring four fixed-width ones.
+          width: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              // The badge hangs off the icon, not off the tab: a tab is a
+              // quarter of the bar wide now, and anchoring to its edge would
+              // float the count somewhere out in the gap beside the glyph.
+              Stack(
+                clipBehavior: Clip.none,
                 children: <Widget>[
                   glyphWidget,
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.tabLabel.copyWith(color: tint),
+                  PositionedDirectional(
+                    top: -5,
+                    end: -8,
+                    child: _OverdueBadge(count: badge),
                   ),
                 ],
               ),
-              PositionedDirectional(
-                top: -3,
-                end: 8,
-                child: _OverdueBadge(count: badge),
+              const SizedBox(height: AppSpacing.xxs),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.tabLabel.copyWith(color: tinted),
+                ),
               ),
             ],
           ),
@@ -402,32 +395,3 @@ Widget _badge(BuildContext context, int count) {
   );
 }
 
-class _QuickExamButton extends StatelessWidget {
-  const _QuickExamButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        // Positioned by the bar itself now: it is lifted clear of the pill so
-        // it reads as an action sitting on top of the navigation rather than
-        // one of the destinations.
-        width: AppSizes.fab,
-        height: AppSizes.fab,
-        decoration: BoxDecoration(
-          color: context.colors.actionPrimary,
-          shape: BoxShape.circle,
-        ),
-        alignment: Alignment.center,
-        child: AtherIcon(
-          AtherGlyph.plus,
-          size: 26,
-          color: context.colors.onPrimary,
-        ),
-      ),
-    );
-  }
-}

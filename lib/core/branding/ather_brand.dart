@@ -1,136 +1,138 @@
 /// The Ather identity, drawn rather than rasterised.
 ///
-/// The shipped source of truth is the three SVGs in `assets/branding/`:
+/// ## The mark
 ///
-/// * `icon-mastery-light.svg` — the official app icon, and the in-app mark on a
-///   light surface.
-/// * `icon-mastery-dark.svg`  — the same mark on a dark surface.
-/// * `glyph-mastery.svg`      — the mark with no background plate, for anywhere
-///   a standalone symbol is wanted.
+/// A single **organic, hand-wobbled ring**: a closed curve through seven points
+/// around a circle at irregular radii, so it reads as drawn rather than
+/// constructed. It replaced the previous concentric-ring-and-dot mark in the
+/// visual refresh.
 ///
-/// All three are the *same geometry* differing only in four colours, so this
-/// file holds the geometry once ([AtherMarkGeometry]) and the colours three
-/// times ([AtherBrandPalette]). Nothing here re-implements a second mark: the
-/// launcher PNGs, the Android splash bitmaps and every in-app placement are all
-/// painted by [AtherMarkPainter] from these numbers, which is what keeps them
-/// from drifting apart.
+/// It is one path, stroked twice:
 ///
-/// It is a painter and not an `AssetImage` because the mark is four primitives.
-/// A `CustomPainter` stays vector at any size — no stretching, no resampling,
-/// no density bucket that is subtly soft — and costs no dependency and no
-/// decode. The SVGs remain the authored artefact; this is their transcription.
+/// 1. the whole ring in the foreground colour ([AtherBrandPalette.ring] —
+///    black on light surfaces, white on dark), and
+/// 2. the **first 27% of it** again in the brand [AtherBrandPalette.accent],
+///    round-capped.
+///
+/// That 27% is the old mark's mastery arc, carried forward: the ring is the
+/// whole syllabus, the coloured run is the part that has been proven. Drawing it
+/// as a segment of a wobbling line rather than a perfect arc is the entire
+/// difference between the two marks — the meaning did not change, the drawing
+/// did.
+///
+/// ## Why a painter
+///
+/// A [CustomPainter] stays vector at any size — no stretching, no resampling, no
+/// density bucket that is subtly soft — and costs no dependency and no decode.
+/// The launcher PNGs, the Android splash bitmaps and every in-app placement are
+/// all painted by [AtherMarkPainter] from the numbers below, which is what keeps
+/// them from drifting apart.
 library;
 
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-/// The mark's proportions, verbatim from the 1024×1024 SVG viewBox.
+/// The mark's proportions, verbatim from the design's `0 0 100 100` viewBox.
 ///
-/// Every consumer works in these coordinates and applies one uniform scale, so
-/// the mark can never stretch, distort or crop.
+/// Everything here is in that 100-unit grid, and [AtherMarkPainter] applies one
+/// uniform scale at paint time — so the mark can never stretch, distort or crop,
+/// and these numbers stay directly comparable with the handoff's SVG.
 abstract final class AtherMarkGeometry {
-  /// The SVG viewBox is square; so is every surface the mark is drawn onto.
-  static const double canvas = 1024;
+  /// The design's viewBox is square; so is every surface the mark is drawn onto.
+  static const double grid = 100;
 
-  /// `cx` and `cy` on all three circles.
-  static const double center = canvas / 2;
+  /// `stroke-width` on both strokes.
+  static const double strokeWidth = 8;
 
-  /// `r` on the track and the progress arc.
-  static const double radius = 290;
+  /// How much of the ring the accent covers, as a fraction of the path's own
+  /// length. The design expresses it as `stroke-dasharray: 27 100` against a
+  /// `pathLength="100"` normalisation, which is exactly 27%.
+  static const double sweepFraction = 0.27;
 
-  /// `stroke-width` on both rings.
-  static const double strokeWidth = 46;
-
-  /// `r` on the solid centre dot.
-  static const double coreRadius = 66;
-
-  /// The `stroke-dasharray` "on" length. The SVG pairs it with a 1822 gap,
-  /// which is the ring's own circumference — that is what makes the dash a
-  /// single arc rather than a repeating pattern.
-  static const double dashLength = 1640;
-
-  /// How much of the ring the green arc covers: 1640 / 2πr ≈ 0.900.
-  static double get sweepFraction => dashLength / (2 * math.pi * radius);
-
-  /// The arc's sweep in radians, ≈ 324°.
-  static double get sweepRadians => sweepFraction * 2 * math.pi;
-
-  /// The arc starts at twelve o'clock — the SVG's `rotate(-90 512 512)`.
-  static const double startRadians = -math.pi / 2;
-
-  /// Outer diameter of the drawn mark as a fraction of the canvas.
+  /// Outer diameter of the drawn mark as a fraction of the square it is
+  /// centred in.
   ///
-  /// `(2 × 290 + 46) / 1024 ≈ 0.6113`. On Android's 108dp adaptive-icon canvas
-  /// that lands the mark at 66.0dp — exactly the guaranteed-visible safe zone —
-  /// which is why the foreground layer can use the artwork at its authored
-  /// scale instead of being nudged to fit.
-  static const double extent = (2 * radius + strokeWidth) / canvas;
+  /// Unchanged from the previous mark on purpose. On Android's 108dp
+  /// adaptive-icon canvas it lands the artwork at 66.0dp — exactly the
+  /// guaranteed-visible safe zone — so the foreground layer still uses the
+  /// artwork at its authored scale instead of being nudged to fit, and the
+  /// in-app glyph is the same optical size it always was.
+  static const double extent = 0.6113;
+
+  /// The ring, in 100-grid coordinates. Seven points, Catmull-Rom, closed.
+  ///
+  /// Built fresh on each call rather than cached: a [Path] is mutable, and one
+  /// shared instance handed to two painters is one `transform` away from a bug
+  /// that only shows on the second frame.
+  static Path ringPath() {
+    return Path()
+      ..moveTo(50, 22.48)
+      ..cubicTo(58.46, 22.05, 72.24, 22.77, 77.02, 28.45)
+      ..cubicTo(81.80, 34.13, 80.56, 47.48, 78.7, 56.55)
+      ..cubicTo(76.84, 65.62, 72.65, 79.73, 65.83, 82.87)
+      ..cubicTo(59.01, 86.01, 46.14, 79.54, 37.78, 75.37)
+      ..cubicTo(29.42, 71.20, 17.61, 65.22, 15.68, 57.83)
+      ..cubicTo(13.75, 50.44, 20.51, 36.94, 26.23, 31.05)
+      ..cubicTo(31.95, 25.16, 41.54, 22.91, 50, 22.48)
+      ..close();
+  }
 }
 
-/// The four colours that separate one shipped variant from another.
+/// The three colours that separate one shipped variant from another.
 @immutable
 class AtherBrandPalette {
   const AtherBrandPalette({
     required this.plate,
-    required this.track,
-    required this.progress,
-    required this.core,
+    required this.ring,
+    required this.accent,
   });
 
   /// The background square. Null on the glyph, which has none.
   final Color? plate;
 
-  /// The full unfilled ring.
-  final Color track;
+  /// The full ring — the app's foreground colour, not a muted track. Black on a
+  /// light surface, white on a dark one.
+  final Color ring;
 
-  /// The mastery arc. Deliberately identical across variants — it is the one
-  /// colour of the brand.
-  final Color progress;
-
-  /// The solid centre dot.
-  final Color core;
+  /// The 27% mastery run. This is the brand blue, and it is the same value as
+  /// `AppColors.accent` for the matching theme — the mark and the interface use
+  /// one blue, not two that nearly match.
+  final Color accent;
 
   /// `icon-mastery-light.svg`.
   static const AtherBrandPalette light = AtherBrandPalette(
     plate: Color(0xFFEFEFF2),
-    track: Color(0xFFDCDCE1),
-    progress: Color(0xFF34C759),
-    core: Color(0xFF000000),
+    ring: Color(0xFF000000),
+    accent: Color(0xFF1B6EF3),
   );
 
   /// `icon-mastery-dark.svg`.
   static const AtherBrandPalette dark = AtherBrandPalette(
     plate: Color(0xFF000000),
-    track: Color(0xFF2A2A2E),
-    progress: Color(0xFF34C759),
-    core: Color(0xFFFFFFFF),
+    ring: Color(0xFFFFFFFF),
+    accent: Color(0xFF4D9BFF),
   );
 
   /// `glyph-mastery.svg` — the light mark with the plate removed.
   static const AtherBrandPalette glyph = AtherBrandPalette(
     plate: null,
-    track: Color(0xFFDCDCE1),
-    progress: Color(0xFF34C759),
-    core: Color(0xFF000000),
+    ring: Color(0xFF000000),
+    accent: Color(0xFF1B6EF3),
   );
 
   /// The glyph's dark-surface counterpart: the same subtraction applied to
   /// [dark]. Not a fourth authored asset — the plate is simply dropped.
   static const AtherBrandPalette glyphDark = AtherBrandPalette(
     plate: null,
-    track: Color(0xFF2A2A2E),
-    progress: Color(0xFF34C759),
-    core: Color(0xFFFFFFFF),
+    ring: Color(0xFFFFFFFF),
+    accent: Color(0xFF4D9BFF),
   );
 
   /// The same palette with no background plate.
-  AtherBrandPalette get withoutPlate => AtherBrandPalette(
-    plate: null,
-    track: track,
-    progress: progress,
-    core: core,
-  );
+  AtherBrandPalette get withoutPlate =>
+      AtherBrandPalette(plate: null, ring: ring, accent: accent);
 
   /// Resolves light vs dark from the ambient theme.
   ///
@@ -153,18 +155,20 @@ class AtherBrandPalette {
   bool operator ==(Object other) =>
       other is AtherBrandPalette &&
       other.plate == plate &&
-      other.track == track &&
-      other.progress == progress &&
-      other.core == core;
+      other.ring == ring &&
+      other.accent == accent;
 
   @override
-  int get hashCode => Object.hash(plate, track, progress, core);
+  int get hashCode => Object.hash(plate, ring, accent);
 }
 
 /// Paints the mark from [AtherMarkGeometry] into whatever box it is given.
 ///
-/// The scale is uniform on both axes and the artwork is centred, so a
-/// non-square box letterboxes rather than distorting.
+/// The scale is uniform on both axes and the artwork is centred **on its own
+/// bounds**, not on the viewBox. The old mark was a circle and the two were the
+/// same thing; the organic ring is deliberately lopsided, so centring it by
+/// viewBox would leave it visibly off in a launcher mask. A non-square box
+/// letterboxes rather than distorting.
 class AtherMarkPainter extends CustomPainter {
   const AtherMarkPainter({required this.palette});
 
@@ -172,58 +176,61 @@ class AtherMarkPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    const double c = AtherMarkGeometry.canvas;
-    final double scale = size.shortestSide / c;
-    if (scale <= 0) return;
-
-    canvas.save();
-    canvas.translate(
-      (size.width - c * scale) / 2,
-      (size.height - c * scale) / 2,
-    );
-    canvas.scale(scale);
+    final double side = size.shortestSide;
+    if (side <= 0) return;
 
     final Color? plate = palette.plate;
     if (plate != null) {
-      canvas.drawRect(const Rect.fromLTWH(0, 0, c, c), Paint()..color = plate);
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Paint()..color = plate,
+      );
     }
 
-    const Offset middle = Offset(
-      AtherMarkGeometry.center,
-      AtherMarkGeometry.center,
-    );
+    final Path path = AtherMarkGeometry.ringPath();
 
-    final Paint ring = Paint()
+    // The drawn extent includes the stroke, which straddles the path: half of
+    // it falls outside the geometric bounds on every side.
+    final Rect bounds = path.getBounds().inflate(
+      AtherMarkGeometry.strokeWidth / 2,
+    );
+    final double fit =
+        (side * AtherMarkGeometry.extent) / math.max(bounds.longestSide, 1);
+
+    canvas
+      ..save()
+      ..translate(size.width / 2, size.height / 2)
+      ..scale(fit)
+      ..translate(-bounds.center.dx, -bounds.center.dy);
+
+    final Paint stroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = AtherMarkGeometry.strokeWidth
-      ..isAntiAlias = true;
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true
+      ..color = palette.ring;
 
-    canvas.drawCircle(
-      middle,
-      AtherMarkGeometry.radius,
-      ring..color = palette.track,
-    );
+    canvas.drawPath(path, stroke);
 
-    canvas.drawArc(
-      Rect.fromCircle(center: middle, radius: AtherMarkGeometry.radius),
-      AtherMarkGeometry.startRadians,
-      AtherMarkGeometry.sweepRadians,
-      false,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = AtherMarkGeometry.strokeWidth
-        ..strokeCap = StrokeCap.round
-        ..isAntiAlias = true
-        ..color = palette.progress,
-    );
-
-    canvas.drawCircle(
-      middle,
-      AtherMarkGeometry.coreRadius,
-      Paint()
-        ..isAntiAlias = true
-        ..color = palette.core,
-    );
+    // The accent run, measured along the path itself rather than swept through
+    // an angle: the ring is not a circle, so there is no angle to sweep.
+    for (final ui.PathMetric metric in path.computeMetrics()) {
+      canvas.drawPath(
+        metric.extractPath(
+          0,
+          metric.length * AtherMarkGeometry.sweepFraction,
+        ),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = AtherMarkGeometry.strokeWidth
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..isAntiAlias = true
+          ..color = palette.accent,
+      );
+      // One subpath. Anything after the first would be a second ring.
+      break;
+    }
 
     canvas.restore();
   }

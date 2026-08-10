@@ -331,7 +331,7 @@ class _ChapterSummaryCard extends StatelessWidget {
               percentage: summary.mastery,
               hasData: hasData,
             ),
-            color: color,
+            color: MasteryPalette.fill(context.colors, color),
           ),
           const SizedBox(height: AppSpacing.md),
           Text.rich(

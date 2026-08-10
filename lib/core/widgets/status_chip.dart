@@ -90,14 +90,14 @@ class AtherFilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? context.colors.actionPrimary : context.colors.card,
+          color: selected ? context.colors.accent : context.colors.card,
           borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
         child: Text(
           label,
           style: AppTypography.chipLabel.copyWith(
             color: selected
-                ? context.colors.onPrimary
+                ? context.colors.onAccent
                 : context.colors.textPrimary,
           ),
         ),

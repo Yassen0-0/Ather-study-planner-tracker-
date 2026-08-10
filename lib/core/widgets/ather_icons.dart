@@ -319,35 +319,89 @@ class _GlyphPainter extends CustomPainter {
             stroke,
           );
 
+      // A knee joint: the femur's condyles above, the tibia and fibula below,
+      // each with a rounded notch facing the other. Biology on this syllabus is
+      // human biology, and a joint is the one structure a student meets in every
+      // chapter of it -- more specific than a generic cell or leaf.
       case AtherGlyph.biology:
-        stroke.strokeWidth = strokeWidth ?? 1.9;
+        stroke.strokeWidth = strokeWidth ?? 1.8;
         canvas
-          ..drawCircle(const Offset(12, 12), 8.2, stroke)
+          // Femur, ending in two condyles.
           ..drawPath(
             Path()
-              ..moveTo(8.5, 12)
-              ..arcToPoint(
-                const Offset(15.5, 12),
-                radius: const Radius.circular(3.5),
-                clockwise: false,
-              ),
+              ..moveTo(8.8, 0.8)
+              ..lineTo(8.8, 4.9)
+              ..cubicTo(8.8, 6.2, 6, 7.4, 6, 9.6)
+              ..cubicTo(6, 11.5, 7.6, 12.6, 9, 12.6)
+              ..cubicTo(10.2, 12.6, 10.9, 11.6, 12, 11.6)
+              ..cubicTo(13.1, 11.6, 13.8, 12.6, 15, 12.6)
+              ..cubicTo(16.4, 12.6, 18, 11.5, 18, 9.6)
+              ..cubicTo(18, 7.4, 15.2, 6.2, 15.2, 4.9)
+              ..lineTo(15.2, 0.8),
             stroke,
-          );
+          )
+          // Tibia: the wider shaft, plateau first.
+          ..drawPath(
+            Path()
+              ..moveTo(6.2, 13.6)
+              ..cubicTo(7.4, 13.6, 8.2, 14.4, 9.3, 14.4)
+              ..cubicTo(10.4, 14.4, 11, 13.4, 12, 13.4)
+              ..cubicTo(13, 13.4, 13.6, 14.4, 14.7, 14.4)
+              ..cubicTo(15.8, 14.4, 16.6, 13.6, 17.8, 13.6)
+              ..cubicTo(18.5, 13.6, 18.6, 14.7, 18.2, 15.9)
+              ..cubicTo(17.7, 17.4, 15.2, 18.4, 15.2, 19.8)
+              ..lineTo(15.2, 23.2),
+            stroke,
+          )
+          // Fibula, the slimmer bone beside it.
+          ..drawPath(
+            Path()
+              ..moveTo(6.2, 13.6)
+              ..cubicTo(5.5, 13.6, 5.4, 14.7, 5.8, 15.9)
+              ..cubicTo(6.3, 17.4, 8.8, 18.4, 8.8, 19.8)
+              ..lineTo(8.8, 23.2),
+            stroke,
+          )
+          ..drawLine(const Offset(12.9, 20.5), const Offset(12.9, 23.2), stroke);
 
+      // A horseshoe magnet with two pole tips. Rotated 205 degrees about the
+      // icon's centre so it tilts up-and-to-the-right rather than sitting flat,
+      // which is what stops it reading as a plain "U".
       case AtherGlyph.physics:
-        stroke.strokeWidth = strokeWidth ?? 1.7;
-        for (final degrees in <double>[25, -25]) {
-          canvas
-            ..save()
-            ..translate(12, 12)
-            ..rotate(degrees * 3.1415926535 / 180)
-            ..drawOval(
-              Rect.fromCenter(center: Offset.zero, width: 18, height: 7.4),
-              stroke,
-            )
-            ..restore();
-        }
-        canvas.drawCircle(const Offset(12, 12), 1.6, fill);
+        stroke.strokeWidth = strokeWidth ?? 1.8;
+        canvas
+          ..save()
+          ..translate(12, 12)
+          ..rotate(205 * math.pi / 180)
+          ..translate(-12, -12)
+          // Outer arm.
+          ..drawPath(
+            Path()
+              ..moveTo(4, 20)
+              ..lineTo(4, 11.5)
+              ..arcToPoint(
+                const Offset(20, 11.5),
+                radius: const Radius.circular(8),
+              )
+              ..lineTo(20, 20),
+            stroke,
+          )
+          // Inner arm.
+          ..drawPath(
+            Path()
+              ..moveTo(9, 20)
+              ..lineTo(9, 11.5)
+              ..arcToPoint(
+                const Offset(15, 11.5),
+                radius: const Radius.circular(3),
+              )
+              ..lineTo(15, 20),
+            stroke,
+          )
+          // The two pole tips.
+          ..drawLine(const Offset(4, 16), const Offset(9, 16), stroke)
+          ..drawLine(const Offset(15, 16), const Offset(20, 16), stroke)
+          ..restore();
 
       case AtherGlyph.chemistry:
         stroke.strokeWidth = strokeWidth ?? 1.9;
@@ -374,21 +428,26 @@ class _GlyphPainter extends CustomPainter {
             stroke,
           );
 
+      // An open book: a spine with a leaf falling away on each side. The old
+      // chevrons read as a code bracket, which is the wrong subject entirely.
       case AtherGlyph.english:
-        stroke.strokeWidth = strokeWidth ?? 1.9;
+        stroke.strokeWidth = strokeWidth ?? 1.8;
         canvas
+          ..drawLine(const Offset(12, 7.6), const Offset(12, 20.2), stroke)
           ..drawPath(
             Path()
-              ..moveTo(8, 8)
-              ..lineTo(4.5, 12)
-              ..lineTo(8, 16),
+              ..moveTo(12, 7.6)
+              ..cubicTo(10, 6, 7, 5.4, 3.6, 5.7)
+              ..lineTo(3.6, 17.5)
+              ..cubicTo(7, 17.2, 10, 18.4, 12, 20.2),
             stroke,
           )
           ..drawPath(
             Path()
-              ..moveTo(16, 8)
-              ..lineTo(19.5, 12)
-              ..lineTo(16, 16),
+              ..moveTo(12, 7.6)
+              ..cubicTo(14, 6, 17, 5.4, 20.4, 5.7)
+              ..lineTo(20.4, 17.5)
+              ..cubicTo(17, 17.2, 14, 18.4, 12, 20.2),
             stroke,
           );
     }

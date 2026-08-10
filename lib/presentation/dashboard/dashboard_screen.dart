@@ -129,7 +129,7 @@ class _OverallCard extends StatelessWidget {
               percentage: dashboard.overallMastery,
               hasData: hasData,
             ),
-            color: color,
+            color: MasteryPalette.fill(context.colors, color),
           ),
         ],
       ),
@@ -245,8 +245,11 @@ class _Stat extends StatelessWidget {
         ),
         const SizedBox(height: 9),
         MasteryBar(
+          // The sliver is a fill, so a stat with nothing to be red or green
+          // about gets the accent rather than the black its count is written
+          // in. See MasteryPalette.fill.
           fraction: fraction,
-          color: color,
+          color: MasteryPalette.fill(context.colors, color),
           height: AppSizes.barTrackSmall,
         ),
       ],

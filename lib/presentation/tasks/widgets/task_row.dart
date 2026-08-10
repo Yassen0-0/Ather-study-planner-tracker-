@@ -48,7 +48,7 @@ class TaskRow extends StatelessWidget {
             height: AppSizes.checkbox,
             decoration: BoxDecoration(
               color: task.done
-                  ? context.colors.actionPrimary
+                  ? context.colors.accent
                   : context.colors.card,
               shape: BoxShape.circle,
               border: task.done
@@ -62,7 +62,7 @@ class TaskRow extends StatelessWidget {
                     child: AtherIcon(
                       AtherGlyph.check,
                       size: 14,
-                      color: context.colors.onPrimary,
+                      color: context.colors.onAccent,
                       strokeWidth: 3,
                     ),
                   )

@@ -44,3 +44,45 @@ Before producing any APK, state which of the four you checked. If you cannot sat
 most often because a release build needs a keystore you do not have — **build nothing and say
 why.** Do not generate a signing key to get past it: the key is the app's identity on Play, and
 a wrong or lost one means the app can never be updated again. A human creates it, once.
+
+---
+
+## Rule 2 — find the current design before you build on it
+
+This repository is worked on through **git worktrees**, several at once, and work in them is
+often left uncommitted for a long time. `master` is therefore **not** reliably the newest design.
+A worktree branched from `master` can be months behind what the app actually looks like, and
+nothing inside that worktree will tell you so.
+
+That has already cost a build. The icon-motion work was written against a `master` that predated
+the visual refresh — no brand blue, and a `+` button in the tab bar that the refresh had removed.
+The refresh was finished, correct, and sitting as 62 uncommitted files in another worktree, so it
+was invisible to git and to the agent. An APK went out with the old design.
+
+**Before writing code, and again before building anything:**
+
+```bash
+git worktree list
+for w in .claude/worktrees/*/; do echo "== $w"; git -C "$w" status --short -- lib | head; done
+```
+
+If another worktree has uncommitted changes under `lib/`, **assume it is newer than yours** and
+stop. Ask which one is current. Do not merge it in silently and do not build past it.
+
+**When a design document disagrees with the code in front of you, doubt the code first.** A
+handoff or spec is usually written against the newest build; your checkout may not be it. The
+handoff said plainly that the `+` had been removed from the tab bar, the code still had one, and
+treating the code as the truth is precisely how the stale APK got built. A contradiction like
+that is a signal that you are on the wrong base — not a mistake in the document.
+
+---
+
+## Rule 3 — finished work gets committed
+
+**Do not leave completed work as uncommitted files in a worktree.** Commit it on that worktree's
+branch as soon as it stands on its own.
+
+Uncommitted work is invisible work. It cannot be found by anyone else, cannot be branched from,
+cannot be reviewed, cannot be built, and is one `git checkout` or one crash away from being gone.
+Every problem in Rule 2 came from a finished, good piece of work that existed only as loose files
+in a directory. The commit is what makes work exist.

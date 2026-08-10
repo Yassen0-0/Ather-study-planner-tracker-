@@ -75,6 +75,11 @@ abstract final class AppTypography {
   static TextStyle get today =>
       style(size: 32, weight: bold, letterSpacing: -0.5, height: 1.2);
 
+  /// The wordmark on the lock and splash screen. Bigger than any title in the
+  /// app, because it is the only thing on the screen besides the mark.
+  static TextStyle get lockWordmark =>
+      style(size: 38, weight: bold, letterSpacing: -0.6, height: 1.1);
+
   /// The dominant number on the wizard result and the chapter report.
   static TextStyle get resultNumber =>
       style(size: 56, weight: bold, letterSpacing: -2, height: 1);
@@ -242,11 +247,13 @@ class AppTextStyles {
     color: colors.onPrimary,
   );
 
+  /// The label on an accent pill — the "Exam" button. Coloured for the accent
+  /// fill it always sits on, not for the page.
   TextStyle get pillLabel => AppTypography.style(
     size: 14.5,
     weight: AppTypography.bold,
     height: 1.2,
-    color: colors.onPrimary,
+    color: colors.onAccent,
   );
 }
 

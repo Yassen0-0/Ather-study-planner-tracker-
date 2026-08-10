@@ -7,8 +7,10 @@ import 'pressable.dart';
 
 /// What a full-width primary button means, not what colour it is.
 enum PrimaryButtonTone {
-  /// The normal action.
-  black,
+  /// The normal action. Named for what it means, not what colour it is — it
+  /// was black before the visual refresh and is the brand accent now, and no
+  /// call site had to change for that.
+  primary,
 
   /// A review exam — the action that clears decay.
   wrong,
@@ -30,7 +32,7 @@ class PrimaryButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onTap,
-    this.tone = PrimaryButtonTone.black,
+    this.tone = PrimaryButtonTone.primary,
     this.leading,
   });
 
@@ -40,7 +42,7 @@ class PrimaryButton extends StatelessWidget {
   final Widget? leading;
 
   Color _background(AppColors c) => switch (tone) {
-    PrimaryButtonTone.black => c.actionPrimary,
+    PrimaryButtonTone.primary => c.accent,
     PrimaryButtonTone.wrong => c.wrong,
     PrimaryButtonTone.right => c.right,
     PrimaryButtonTone.unearned => c.actionDisabled,
@@ -51,9 +53,9 @@ class PrimaryButton extends StatelessWidget {
     PrimaryButtonTone.unearned => c.textSecondary,
     PrimaryButtonTone.secondary => c.textPrimary,
     // The red and green fills do not change between themes, so their label
-    // cannot either -- onPrimary would flip it to black on red in the dark.
+    // cannot either -- onAccent would flip it to black on red in the dark.
     PrimaryButtonTone.wrong || PrimaryButtonTone.right => c.onState,
-    PrimaryButtonTone.black => c.onPrimary,
+    PrimaryButtonTone.primary => c.onAccent,
   };
 
   @override
@@ -91,7 +93,11 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
-/// The small black "امتحن" pill that sits at the end of a row.
+/// The small accent "امتحن" pill that sits at the end of a row.
+///
+/// One of exactly two ways into the exam sheet, now that the "+" is gone — the
+/// other being the lesson screen's CTA. Both start from a row that already
+/// knows which lesson is meant.
 class PillButton extends StatelessWidget {
   const PillButton({super.key, required this.label, required this.onTap});
 
@@ -108,7 +114,7 @@ class PillButton extends StatelessWidget {
           vertical: 9,
         ),
         decoration: BoxDecoration(
-          color: context.colors.actionPrimary,
+          color: context.colors.accent,
           borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
         child: Text(label, style: context.text.pillLabel),

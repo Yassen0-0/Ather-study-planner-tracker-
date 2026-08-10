@@ -131,7 +131,7 @@ class _ReportCard extends StatelessWidget {
               percentage: summary.mastery,
               hasData: hasData,
             ),
-            color: color,
+            color: MasteryPalette.fill(context.colors, color),
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(

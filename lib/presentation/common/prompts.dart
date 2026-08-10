@@ -113,7 +113,7 @@ class _NamePromptSheetState extends State<_NamePromptSheet> {
             // Stays tappable while empty and simply does nothing, matching the
             // rest of the app: no greyed-out control ever silently swallows a
             // tap without the student learning why.
-            tone: _valid ? PrimaryButtonTone.black : PrimaryButtonTone.unearned,
+            tone: _valid ? PrimaryButtonTone.primary : PrimaryButtonTone.unearned,
             onTap: _submit,
           ),
         ],

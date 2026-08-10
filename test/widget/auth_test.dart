@@ -217,7 +217,7 @@ void main() {
     await tester.pump();
 
     // The very first frame is the lock, never a glimpse of the dashboard.
-    expect(find.text('التطبيق مقفول'), findsOneWidget);
+    expect(find.text('أثر'), findsOneWidget);
     expect(find.text('النهارده'), findsNothing);
   });
 }

@@ -1,7 +1,7 @@
 {
   "@@locale": "ar",
 
-  "appName": "Ather",
+  "appName": "أثر",
   "appTagline": "إنت مش بتخلص الدروس… إنت بتتقنها",
 
   "navHome": "الرئيسية",
@@ -289,9 +289,7 @@
   "authSignOutConfirm": "هتحتاج نت عشان تسجّل دخول تاني. بياناتك محفوظة على الجهاز ومش هتتمسح.",
   "authAccount": "الحساب",
 
-  "lockTitle": "التطبيق مقفول",
-  "lockBody": "افتح بالبصمة عشان تكمّل",
-  "lockUnlock": "افتح بالبصمة",
+  "lockUnlock": "افتح",
   "lockReason": "افتح Ather",
   "lockRefused": "مفتحش — جرّب تاني",
   "lockLockedOut": "حاولت كتير. استنى شوية وجرّب تاني، أو افتح بكود القفل بتاع التليفون.",

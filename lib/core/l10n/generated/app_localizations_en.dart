@@ -15,7 +15,7 @@ class LEn extends L {
   String get appTagline => 'You don\'t finish lessons… you master them';
 
   @override
-  String get navHome => 'Home';
+  String get navHome => 'Today';
 
   @override
   String get navReview => 'Review';
@@ -551,12 +551,6 @@ class LEn extends L {
 
   @override
   String get authAccount => 'Account';
-
-  @override
-  String get lockTitle => 'Ather is locked';
-
-  @override
-  String get lockBody => 'Unlock with your fingerprint to continue';
 
   @override
   String get lockUnlock => 'Unlock';

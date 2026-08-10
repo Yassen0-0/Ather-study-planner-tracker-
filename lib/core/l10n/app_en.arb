@@ -4,7 +4,7 @@
   "appName": "Ather",
   "appTagline": "You don't finish lessons… you master them",
 
-  "navHome": "Home",
+  "navHome": "Today",
   "navReview": "Review",
   "navProgress": "Progress",
   "navTasks": "Tasks",
@@ -187,8 +187,6 @@
   "authSignOutConfirm": "You will need a connection to sign in again. Your data stays on this device and is not deleted.",
   "authAccount": "Account",
 
-  "lockTitle": "Ather is locked",
-  "lockBody": "Unlock with your fingerprint to continue",
   "lockUnlock": "Unlock",
   "lockReason": "Unlock Ather",
   "lockRefused": "That didn't unlock — try again",

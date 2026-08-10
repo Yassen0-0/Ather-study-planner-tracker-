@@ -66,7 +66,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  bool locked(WidgetTester tester) => find.text('التطبيق مقفول').evaluate().isNotEmpty;
+  bool locked(WidgetTester tester) => find.text('أثر').evaluate().isNotEmpty;
 
   testWidgets('the back button does not get past the lock', (tester) async {
     // The prompt refuses, as it does when a student cancels it.
@@ -159,7 +159,7 @@ void main() {
     expect(locked(tester), isTrue);
 
     localAuth.result = true;
-    await tester.tap(find.text('افتح بالبصمة'));
+    await tester.tap(find.text('افتح'));
     await tester.pumpAndSettle();
 
     expect(locked(tester), isFalse);

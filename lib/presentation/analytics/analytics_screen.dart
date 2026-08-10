@@ -325,6 +325,9 @@ class _VerticalBar extends StatelessWidget {
       hasData: hasData,
       needsReview: needsReview,
     );
+    // The column is a fill, so its neutral case is the accent while the number
+    // printed above it stays plain text. See MasteryPalette.fill.
+    final fill = MasteryPalette.fill(context.colors, color);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -355,7 +358,7 @@ class _VerticalBar extends StatelessWidget {
                       : 0,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: color,
+                      color: fill,
                       borderRadius: BorderRadius.circular(AppSpacing.xs),
                     ),
                   ),
@@ -417,7 +420,7 @@ class _ChapterBarsCard extends StatelessWidget {
                         percentage: chapter.mastery,
                         hasData: chapter.hasAnyExam,
                       ),
-                      color: MasteryPalette.resolve(
+                      color: MasteryPalette.bar(
                         colors: context.colors,
                         percentage: chapter.mastery,
                         hasData: chapter.hasAnyExam,
@@ -564,11 +567,11 @@ class _DisciplineCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           MasteryBar(
-            // Black, not the mastery colour: this measures habit, not
+            // The accent, not the mastery colour: this measures habit, not
             // understanding, and colouring it green would let a student read
-            // "on time" as "mastered".
+            // "on time" as "mastered". Blue says only "this much of it".
             fraction: hasData ? (rate / 100).clamp(0, 1).toDouble() : 0,
-            color: context.colors.actionPrimary,
+            color: context.colors.accent,
           ),
         ],
       ),
