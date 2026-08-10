@@ -1075,10 +1075,16 @@ Until both are done, Windows desktop is **untested** and is reported as such —
   caught; both are fixed and written up in the work log.
 - **Windows desktop cannot be built on this machine.** `flutter doctor` reports Visual Studio
   absent, and plugin builds additionally need Developer Mode enabled. Both are user actions.
-- **Notification delivery has never been observed firing** — and §3.15a explains why it could
-  not have: nothing requested the permission and the receivers were undeclared. Both are fixed
-  and neither fix has been watched working on a device. This is now the single most important
-  thing to verify on real hardware, because the feature has never once run end to end.
+- ~~**Notification delivery has never been observed firing.**~~ **Observed 2026-08-10**, on a
+  Nothing Phone A015 (Android 16, API 36), end to end for the first time in the app's history:
+  recording the first exam raised the permission prompt; `dumpsys alarm` showed a pending
+  `RTC_WAKEUP` for `ScheduledNotificationReceiver` at 30 days; moving the device clock past that
+  date posted the reminder with the right Arabic title and body; and tapping it opened the lesson
+  it was about. Deleting the exam withdrew the clock and the alarm came back
+  `Reason=alarm_cancelled` with zero pending.
+
+  Not covered by that run: a reminder surviving a **reboot** (the boot receiver is declared and
+  registered, but was not exercised), and a real thirty-day wait rather than a clock jump.
 - ~~**The exam wizard discards input on exit, by design.**~~ **Changed 2026-08-10.** The × and
   the system back both left without saving, which is what the handoff specified, but the on-screen
   Back stepped *back through the wizard* — so the three exits disagreed and a stray back gesture
@@ -1109,6 +1115,16 @@ Until both are done, Windows desktop is **untested** and is reported as such —
   as §3.18: a safe default that hides its own cause is a trap. `flutter build apk --debug` and
   `flutter run` are unaffected. Creating the keystore is a credential step and is deliberately
   left to a human — see `android/key.properties.example`.
+- **A day-granular clock needs a resume trigger, not just a timer** — found on the phone, and
+  worth remembering as a shape rather than a one-off. `nowProvider` was changed from a
+  sixty-second poll to a single emission per midnight, which is right: everything downstream is
+  whole days. But a `Timer` measures *elapsed* time, and the wall clock moves without any time
+  elapsing — a device waking from doze, the network correcting the clock, a timezone crossed, a
+  date changed by hand. The optimisation silently removed the only thing that noticed. On device
+  the app rendered "باقي ⁦62⁩ يوم" against the date it had booted on, thirty days stale.
+  `AppLifecycleListener(onResume:)` is the second trigger, and it emits only when the day really
+  differs so an ordinary switch-away-and-back still costs nothing.
+
 - **The motion work has not been profiled on real hardware.** §3.21's durations were chosen
   from the spec, not measured, and no raster time in this repo was observed on a mid-range
   Android. What is true instead: every animation touches `transform` or `opacity` only except

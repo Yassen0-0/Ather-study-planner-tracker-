@@ -55,6 +55,23 @@ final clockProvider = Provider<Clock>((ref) => const SystemClock());
 /// can change is a date boundary. The timer therefore sleeps until just after
 /// the next midnight and re-arms from there — one emission a day rather than
 /// 1,440.
+/// **A timer alone is not enough, and this was found on a real phone.** A
+/// [Timer] measures *elapsed* time; the wall clock can move without any time
+/// elapsing at all — the device wakes from doze, the network corrects the clock,
+/// the student crosses a timezone or changes the date by hand. The timer sleeps
+/// straight through every one of those. Moving a test device thirty days forward
+/// left the app still rendering "باقي 62 يوم" against the date it had booted on,
+/// because nothing had told it the day had changed.
+///
+/// So there are two triggers: the midnight timer, and **app resume** — which is
+/// the moment a device that was asleep, or a clock that was corrected, comes
+/// back. Resume only emits when the *day* actually differs, so the ordinary case
+/// of switching away and back costs nothing.
+///
+/// (The sixty-second poll this replaced had no such hole, because it re-read the
+/// clock constantly. That is the trade: one emission a day instead of 1,440, at
+/// the price of having to name every moment the day can change.)
+///
 /// A real [Timer] behind a controller rather than `async*` with a delay: a
 /// generator's pending `Future.delayed` cannot be cancelled, so it would
 /// outlive the provider and trip "a Timer is still pending" in any widget test
@@ -63,22 +80,45 @@ final nowProvider = StreamProvider<DateTime>((ref) {
   final clock = ref.watch(clockProvider);
   late final StreamController<DateTime> controller;
   Timer? timer;
+  DateTime? lastDay;
+
+  DateTime dayOnly(DateTime t) => DateTime(t.year, t.month, t.day);
+
+  void emit() {
+    if (controller.isClosed) return;
+    final now = clock.now();
+    lastDay = dayOnly(now);
+    controller.add(now);
+  }
 
   void scheduleNextDay() {
     final now = clock.now();
     // One second past midnight, so the value that arrives is unambiguously the
     // new day even if the timer fires a hair early.
     final nextDay = DateTime(now.year, now.month, now.day + 1, 0, 0, 1);
+    timer?.cancel();
     timer = Timer(nextDay.difference(now), () {
       if (controller.isClosed) return;
-      controller.add(clock.now());
+      emit();
       scheduleNextDay();
     });
   }
 
+  // Cheap: one check per resume, and an emission only if the date really moved.
+  final lifecycle = AppLifecycleListener(
+    onResume: () {
+      if (controller.isClosed) return;
+      if (lastDay != null && dayOnly(clock.now()) == lastDay) return;
+      emit();
+      // The remaining wait was measured against the old day; re-arm from the
+      // new one or the next midnight lands in the wrong place.
+      scheduleNextDay();
+    },
+  );
+
   controller = StreamController<DateTime>(
     onListen: () {
-      controller.add(clock.now());
+      emit();
       scheduleNextDay();
     },
     onCancel: () {
@@ -88,6 +128,7 @@ final nowProvider = StreamProvider<DateTime>((ref) {
   );
 
   ref.onDispose(() {
+    lifecycle.dispose();
     timer?.cancel();
     if (!controller.isClosed) controller.close();
   });
