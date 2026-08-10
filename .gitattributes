@@ -1,0 +1,36 @@
+# Line endings, settled once.
+#
+# This repository is worked on from Windows, where `core.autocrlf=true` rewrites
+# checked-out text to CRLF. Anything a tool *regenerates* comes back with LF —
+# `flutter gen-l10n`, `build_runner`, `dart format` — so after every regeneration
+# git reported the l10n and drift output as modified when not one character had
+# changed. Phantom diffs on generated files are worse than untidy: they train
+# whoever reads `git status` to skip past those paths, which is exactly where a
+# real regeneration difference would hide.
+#
+# `text=auto` normalises to LF in the repository and lets each checkout use
+# whatever the platform wants, so the working tree can be CRLF and the stored
+# blob stable.
+* text=auto
+
+# Dart, and the config that travels with it, are always text.
+*.dart   text
+*.arb    text eol=lf
+*.yaml   text
+*.yml    text
+*.json   text
+*.md     text
+*.gradle text
+*.kts    text
+*.xml    text
+*.svg    text
+
+# Binary, so git never tries to normalise or diff them as lines. The golden
+# renders are ignored rather than tracked (see .gitignore), but the branding
+# bitmaps and the bundled font are here and must survive byte-for-byte.
+*.png    binary
+*.ico    binary
+*.jpg    binary
+*.ttf    binary
+*.jks    binary
+*.keystore binary
