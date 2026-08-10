@@ -183,6 +183,11 @@ abstract final class AppMotion {
   static const Duration pop = Duration(milliseconds: 200);
   static const Duration tick = Duration(milliseconds: 220);
 
+  /// A ring closing to a solid disc, before the tick lands on it. Shorter than
+  /// [tick] because it is the first half of one gesture, not an event of its
+  /// own — the two run in sequence and total 340ms.
+  static const Duration flood = Duration(milliseconds: 120);
+
   /// The wizard's before → arrow → after card, read as a sentence rather than
   /// three numbers landing at once. The "before" value starts at 0.
   static const Duration beforeAfterArrowDelay = Duration(milliseconds: 60);

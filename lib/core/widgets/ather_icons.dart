@@ -59,6 +59,7 @@ class AtherIcon extends StatelessWidget {
     this.size = 24,
     this.color,
     this.strokeWidth,
+    this.selection = 1,
   });
 
   final AtherGlyph glyph;
@@ -67,6 +68,18 @@ class AtherIcon extends StatelessWidget {
   /// Null means the theme's primary text colour.
   final Color? color;
   final double? strokeWidth;
+
+  /// How selected this glyph is, 0..1 — the bottom bar's weight axis.
+  ///
+  /// Only the four tab glyphs read it; everything else is drawn the same at
+  /// every value. It is a *paint* property, never a path change: [AtherGlyph.home]
+  /// fades its fill in over the outline it always carries, and `review`, `chart`
+  /// and `tasks` thicken their stroke. Defaults to 1 so the dozens of static call
+  /// sites keep the weight they were authored at.
+  ///
+  /// An explicit [strokeWidth] wins: the caller has then asked for a specific
+  /// weight and the axis has nothing left to say.
+  final double selection;
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +93,7 @@ class AtherIcon extends StatelessWidget {
           glyph: glyph,
           color: color ?? context.colors.textPrimary,
           strokeWidth: strokeWidth,
+          selection: selection.clamp(0.0, 1.0),
         ),
       ),
     );
@@ -91,11 +105,18 @@ class _GlyphPainter extends CustomPainter {
     required this.glyph,
     required this.color,
     this.strokeWidth,
+    this.selection = 1,
   });
 
   final AtherGlyph glyph;
   final Color color;
   final double? strokeWidth;
+  final double selection;
+
+  /// The weight axis: [from] unselected, [to] selected, unless the caller pinned
+  /// a width of their own.
+  double _weight(double from, double to) =>
+      strokeWidth ?? from + (to - from) * selection;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -122,25 +143,41 @@ class _GlyphPainter extends CustomPainter {
 
     switch (glyph) {
       case AtherGlyph.home:
-        canvas.drawPath(
-          Path()
-            ..moveTo(3, 10.5)
-            ..lineTo(12, 3)
-            ..lineTo(21, 10.5)
-            ..lineTo(21, 20)
-            ..lineTo(20, 21)
-            ..lineTo(15, 21)
-            ..lineTo(15, 15)
-            ..lineTo(9, 15)
-            ..lineTo(9, 21)
-            ..lineTo(4, 21)
-            ..lineTo(3, 20)
-            ..close(),
-          fill,
-        );
+        // The one glyph whose selected state is a fill rather than a weight, so
+        // it carries its outline at every value and fades the fill in over it.
+        // Painting the fill under the stroke (not instead of it) is what keeps
+        // the silhouette from growing by half a stroke as it selects.
+        final house = Path()
+          ..moveTo(3, 10.5)
+          ..lineTo(12, 3)
+          ..lineTo(21, 10.5)
+          ..lineTo(21, 20)
+          ..lineTo(20, 21)
+          ..lineTo(15, 21)
+          ..lineTo(15, 15)
+          ..lineTo(9, 15)
+          ..lineTo(9, 21)
+          ..lineTo(4, 21)
+          ..lineTo(3, 20)
+          ..close();
+        stroke.strokeWidth = strokeWidth ?? 1.9;
+        if (selection > 0) {
+          canvas.drawPath(house, fill..color = color.withValues(alpha: selection));
+        }
+        canvas.drawPath(house, stroke);
 
       case AtherGlyph.review:
-        stroke.strokeWidth = strokeWidth ?? 2;
+        stroke.strokeWidth = _weight(2, 3);
+        final heads = <Path>[
+          Path()
+            ..moveTo(17.5, 3)
+            ..lineTo(17.5, 7)
+            ..lineTo(13.5, 7),
+          Path()
+            ..moveTo(6.5, 21)
+            ..lineTo(6.5, 17)
+            ..lineTo(10.5, 17),
+        ];
         canvas
           ..drawPath(
             Path()
@@ -159,21 +196,19 @@ class _GlyphPainter extends CustomPainter {
                 radius: const Radius.circular(8),
               ),
             stroke,
-          )
-          ..drawPath(
-            Path()
-              ..moveTo(17.5, 3)
-              ..lineTo(17.5, 7)
-              ..lineTo(13.5, 7),
-            stroke,
-          )
-          ..drawPath(
-            Path()
-              ..moveTo(6.5, 21)
-              ..lineTo(6.5, 17)
-              ..lineTo(10.5, 17),
-            stroke,
           );
+        // The arrowheads are the same two authored polylines either way: the
+        // selected state fills the corner they already enclose, it does not add
+        // a triangle. Fill first, stroke over it, same as the house above.
+        if (selection > 0) {
+          fill.color = color.withValues(alpha: selection);
+          for (final head in heads) {
+            canvas.drawPath(head, fill);
+          }
+        }
+        for (final head in heads) {
+          canvas.drawPath(head, stroke);
+        }
 
       case AtherGlyph.plus:
         stroke.strokeWidth = strokeWidth ?? 2.6;
@@ -182,7 +217,7 @@ class _GlyphPainter extends CustomPainter {
           ..drawLine(const Offset(5, 12), const Offset(19, 12), stroke);
 
       case AtherGlyph.chart:
-        stroke.strokeWidth = strokeWidth ?? 2.1;
+        stroke.strokeWidth = _weight(2.1, 3.4);
         canvas
           ..drawLine(const Offset(4, 19), const Offset(4, 11), stroke)
           ..drawLine(const Offset(9.3, 19), const Offset(9.3, 5), stroke)
@@ -190,7 +225,7 @@ class _GlyphPainter extends CustomPainter {
           ..drawLine(const Offset(20, 19), const Offset(20, 8), stroke);
 
       case AtherGlyph.tasks:
-        stroke.strokeWidth = strokeWidth ?? 1.9;
+        stroke.strokeWidth = _weight(1.9, 2.9);
         canvas
           // The tick sits over the first line, so the glyph reads as "a list
           // being worked through" rather than as three unrelated rules.
@@ -414,7 +449,8 @@ class _GlyphPainter extends CustomPainter {
   bool shouldRepaint(_GlyphPainter old) =>
       old.glyph != glyph ||
       old.color != color ||
-      old.strokeWidth != strokeWidth;
+      old.strokeWidth != strokeWidth ||
+      old.selection != selection;
 }
 
 /// A white tick inside a solid disc — the one place a filled icon is allowed.

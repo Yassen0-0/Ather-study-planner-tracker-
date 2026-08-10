@@ -357,20 +357,20 @@ Three rules the numbers encode:
    shortest thing in the app (150ms) and the only one that is pure opacity. A chapter report is
    read once a week.
 
-The nineteen animations, by ID:
+The twenty-three animations, by ID:
 
 | ID | Surface | Trigger | What moves | Duration | Curve |
 |---|---|---|---|---|---|
 | M-01 | Dashboard / subject / chapter lists | first build | fade + rise 12px, 40ms stagger, cap 6 | 260ms | standard |
 | M-02 | Any mastery % | value changes | counts to the new number; colour switches instantly | 600ms | easeOutCubic |
-| M-03 | Week strip | a day becomes complete | tick scales 0.6 → 1; the circle fills instantly | 220ms | standard |
+| M-03 | Week strip | a day becomes complete | the ring floods inward to a disc, then the tick scales 0.6 → 1 | 120 + 220ms | standard |
 | M-04 | Tab bar | tab tap | branch cross-fade + icon/label colour tween | 150ms | standard |
 | M-05 | Review badge | count appears / changes | scale 0.6 → 1 with opacity, no bounce | 200ms | standard |
 | M-06 | Toast | exam / homework saved | fade + rise 12px in, fade out; 2200ms dwell | 180 / 150ms | standard |
 | M-07 | Push routes | navigation | incoming fades + rises 8px; outgoing fades out | 220ms | standard |
 | M-08 | Chapter / lesson row | added / deleted | fades + rises in place / collapses + fades (§3.20) | 260 / 200ms | standard |
 | M-09 | Every tappable | press down | `scale(.97)` — `Pressable`, unchanged | 140ms | pressCurve |
-| M-10 | Checklist | tap a step | tick scales in, label colour tweens; disc fills instantly | 180ms | standard |
+| M-10 | Checklist | tap a step | the same flood at 24px, then the tick; label colour tweens over 180ms | 120 + 220ms | standard |
 | M-11 | Bottom sheets | open / close | slide up + scrim fade — unchanged | 280ms | sheetCurve |
 | M-12 | Error banners | validation fails | fade + rise 6px. **No shake.** | 180ms | standard |
 | M-13 | Wizard body | next / back | current fades out, next fades in + rises 10px | 200ms | standard |
@@ -380,6 +380,24 @@ The nineteen animations, by ID:
 | M-17 | Review rows | first build | `ListEntrance`. No pulse, no flash on overdue. | 260ms | standard |
 | M-18 | Celebration | chapter mastered | one green disc, scale 0.6 → 1 — unchanged | 500ms | celebrationCurve |
 | M-19 | Lock → app / login → dashboard | unlock / sign-in | fade only | 200 / 220ms | standard |
+| M-20 | Tab bar | tab tap | the glyph's own weight: `home` fades its fill in, `review`/`chart`/`tasks` thicken — one tween with M-04's tint | 150ms | standard |
+| M-21 | Settings cog | header tap | rotates 45°, accumulating. Eight teeth, so the turn lands the glyph exactly on itself | 180ms | standard |
+| M-22 | Back chevron | reading direction changes | reflects `scaleX` 1 → −1 about its own centre, stroke 2.4 → 2.2 with it | 180ms | standard |
+| M-23 | Overdue mark | lesson stops being overdue | ring floods to a disc (radius down, stroke up) and its dashes land as a tick; **colour switches instantly**; then the mark fades and collapses out of the row | 220 + 150ms | standard |
+
+**M-03 and M-10 flood; they no longer snap.** Both used to fill on one frame, on the reasoning
+that a partly-filled circle reads as a day half-proved. That holds for a fill that *rises* — a
+level, which this app already uses to mean partial progress — and not for one that closes inward
+from the rim, which never shows a level at all. The rising variant was built, looked at, and
+rejected; this is the other one. The two halves run in sequence and total 340ms, which is over
+the `tick` token on purpose: two things happen, one after the other.
+
+**M-23 outlives the state it reports.** A row cannot drop the overdue glyph on the frame the
+lesson stops being overdue — that is the frame the flood starts on. `OverdueMark` stays mounted
+through the completion and takes itself out afterwards, gap included. It **leaves** rather than
+holding the green tick: the mark answers "does this need review", and once the answer is no, a
+permanent tick beside a healthy subject is a second claim the row never meant to make. A subject
+that was never overdue builds no controller and occupies no space.
 
 **Nothing animates on scroll position** — no parallax, no shrinking header, no fading app bar,
 no shimmer (this app reads local SQLite; there is nothing to wait for). The four subject glyphs

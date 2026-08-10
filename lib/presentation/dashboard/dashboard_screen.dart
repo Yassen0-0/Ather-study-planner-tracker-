@@ -15,6 +15,7 @@ import '../../core/widgets/ather_icons.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/day_header.dart';
+import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/mastery_bar.dart';
 import '../../core/widgets/week_strip.dart';
@@ -303,16 +304,14 @@ class _SubjectRow extends StatelessWidget {
                         style: AppTypography.rowTitle,
                       ),
                     ),
-                    if (summary.needsReview) ...<Widget>[
-                      const SizedBox(width: 6),
-                      // Decay is always an icon *and* a colour. Colour alone
-                      // fails for a colour-blind student and in bright sun.
-                      AtherIcon(
-                        AtherGlyph.overdue,
-                        size: 15,
-                        color: context.colors.wrong,
-                      ),
-                    ],
+                    // Decay is always an icon *and* a colour. Colour alone
+                    // fails for a colour-blind student and in bright sun.
+                    //
+                    // The mark outlives the state it reports by one animation:
+                    // it floods to a tick and then collapses out of the row,
+                    // so the student sees the thing they just fixed being
+                    // marked done instead of silently vanishing.
+                    OverdueMark(needsReview: summary.needsReview),
                   ],
                 ),
                 const SizedBox(height: 3),

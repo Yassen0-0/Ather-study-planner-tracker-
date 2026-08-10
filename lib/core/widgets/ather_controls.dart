@@ -5,8 +5,7 @@ import '../l10n/formatting.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import 'ather_icons.dart';
-import 'pop_in.dart';
+import 'icon_motion.dart';
 import 'pressable.dart';
 import 'reduced_motion.dart';
 
@@ -33,35 +32,23 @@ class AtherCheckbox extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 11),
         child: Row(
           children: <Widget>[
-            Container(
-              width: AppSizes.checkbox,
-              height: AppSizes.checkbox,
-              // Deliberately not animated: a disc that fills gradually reads as
-              // a step half-done.
+            // The disc closes inward from the rim, then takes the tick. What
+            // would read as a step half-done is a fill that *rises*; this one
+            // never shows a level.
+            DecoratedBox(
               decoration: BoxDecoration(
-                color: checked
-                    ? context.colors.actionPrimary
-                    : context.colors.card,
+                color: context.colors.card,
                 shape: BoxShape.circle,
-                border: checked
-                    ? null
-                    : Border.all(
-                        color: context.colors.checkboxBorder,
-                        width: 1.8,
-                      ),
               ),
-              alignment: Alignment.center,
-              child: checked
-                  ? PopIn(
-                      duration: AppMotion.micro,
-                      child: AtherIcon(
-                        AtherGlyph.check,
-                        size: 14,
-                        color: context.colors.onPrimary,
-                        strokeWidth: 3,
-                      ),
-                    )
-                  : null,
+              child: CompletionDisc(
+                done: checked,
+                size: AppSizes.checkbox,
+                fill: context.colors.actionPrimary,
+                ring: context.colors.checkboxBorder,
+                ringWidth: 1.8,
+                tickSize: 14,
+                tickColor: context.colors.onPrimary,
+              ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(

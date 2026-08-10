@@ -100,6 +100,27 @@ APK is ~93 MB and runs on the JIT, against ~22 MB and AOT for release. The
 students this is for are on mid-range phones, where that difference is the whole
 impression.
 
+### Bump the build number — every time
+
+`versionCode` comes from the `+N` in [`pubspec.yaml`](pubspec.yaml)'s `version: 1.0.0+1`.
+Android refuses to install an APK whose `versionCode` is not **higher** than the one
+already on the phone, so a build that forgets this cannot be installed over its
+predecessor at all — the tester's only way forward is to uninstall, which deletes
+their local database.
+
+```yaml
+version: 1.0.1+2   # name students see + the number Android compares
+```
+
+Bump `+N` on **every** build that leaves this machine, including ones you think are
+throwaway. They are not throwaway once they are on someone's phone. Bump the `1.0.0`
+part as well when the change is worth a name.
+
+The full rule, and the two other things that break an in-place upgrade (the signing
+key and the database migration), are in [CLAUDE.md](CLAUDE.md) — it is Rule 1 there
+because it is the one mistake in this repository that destroys a student's data
+rather than merely wasting time.
+
 ### Verify what you built
 
 ```bash

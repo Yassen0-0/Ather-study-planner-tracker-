@@ -4,26 +4,25 @@ import '../layout/breakpoints.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import 'ather_icons.dart';
 import 'buttons.dart';
+import 'icon_motion.dart';
 
 /// The back chevron.
 ///
 /// Drawn pointing right, which is "backwards" in Arabic, and mirrored under
 /// LTR. The header places it on the leading edge, so it lands on the right in
 /// Arabic and the left in English without either screen knowing about it.
+///
+/// The reflection is a tween rather than a swap, so switching language in
+/// Settings turns the arrow over instead of blinking it. See
+/// [AnimatedBackChevron] for why the stroke moves with it.
 class BackChevron extends StatelessWidget {
   const BackChevron({super.key, this.size = 19});
 
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    final rtl = Directionality.of(context) == TextDirection.rtl;
-    final icon = AtherIcon(AtherGlyph.back, size: size);
-    if (rtl) return icon;
-    return Transform.scale(scaleX: -1, child: icon);
-  }
+  Widget build(BuildContext context) => AnimatedBackChevron(size: size);
 }
 
 /// Header for an inner screen: circular back button, title, optional context

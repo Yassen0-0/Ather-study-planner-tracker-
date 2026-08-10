@@ -4,8 +4,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import 'ather_icons.dart';
-import 'pop_in.dart';
+import 'icon_motion.dart';
 import 'pressable.dart';
 
 /// The seven-day strip at the top of the dashboard and the tasks screen.
@@ -146,39 +145,24 @@ class _Day extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 9),
-        Container(
-          width: AppSizes.weekCircle,
-          height: AppSizes.weekCircle,
-          decoration: BoxDecoration(
-            color: done ? context.colors.actionPrimary : null,
-            shape: BoxShape.circle,
-            // Selection adds no new shape — it darkens the ring the empty
-            // circle already has. A complete day is already a filled disc and
-            // needs no second marker; today keeps its dot above the letter, so
-            // the two signals never land on the same pixel.
-            border: done
-                ? null
-                : Border.all(
-                    color: selected
-                        ? context.colors.textPrimary
-                        : context.colors.dashedBorder,
-                    width: 1.6,
-                  ),
-          ),
-          alignment: Alignment.center,
-          // The fill is state and lands instantly; the tick is the animation.
-          // Filling the circle gradually would read as a half-proved day.
-          child: done
-              ? PopIn(
-                  duration: AppMotion.tick,
-                  child: AtherIcon(
-                    AtherGlyph.check,
-                    size: 16,
-                    color: context.colors.onPrimary,
-                    strokeWidth: 3,
-                  ),
-                )
-              : null,
+        // Selection adds no new shape — it darkens the ring the empty circle
+        // already has. A complete day is already a filled disc and needs no
+        // second marker; today keeps its dot above the letter, so the two
+        // signals never land on the same pixel.
+        //
+        // The fill closes inward from the rim and the tick lands after it. It
+        // is not a level rising, which is the thing that would read as a day
+        // half-proved.
+        CompletionDisc(
+          done: done,
+          size: AppSizes.weekCircle,
+          fill: context.colors.actionPrimary,
+          ring: selected
+              ? context.colors.textPrimary
+              : context.colors.dashedBorder,
+          ringWidth: 1.6,
+          tickSize: 16,
+          tickColor: context.colors.onPrimary,
         ),
       ],
     );

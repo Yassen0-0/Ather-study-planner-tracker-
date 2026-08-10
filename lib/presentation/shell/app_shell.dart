@@ -11,6 +11,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/ather_icons.dart';
 import '../../core/widgets/ather_toast.dart';
+import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/pop_in.dart';
 import '../../core/widgets/pressable.dart';
 import '../../core/widgets/reduced_motion.dart';
@@ -282,19 +283,17 @@ class _Tab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected
-        ? context.colors.textPrimary
-        : context.colors.textTertiary;
-
     return Pressable(
       onTap: onTap,
-      // One tween drives the icon and the label together, so they can never
-      // disagree about how selected this tab is.
-      child: TweenAnimationBuilder<Color?>(
-        tween: ColorTween(begin: color, end: color),
-        duration: prefersReducedMotion(context) ? Duration.zero : AppMotion.nav,
-        curve: AppMotion.standard,
-        builder: (context, tinted, _) => SizedBox(
+      // One tween drives the glyph's weight, the glyph's colour and the label
+      // together, so a tab can never sit at its final colour with its starting
+      // weight.
+      child: TabGlyph(
+        glyph: glyph,
+        selected: selected,
+        selectedColor: context.colors.textPrimary,
+        unselectedColor: context.colors.textTertiary,
+        builder: (context, tint, glyphWidget) => SizedBox(
           width: 62,
           child: Stack(
             clipBehavior: Clip.none,
@@ -303,13 +302,13 @@ class _Tab extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  AtherIcon(glyph, size: 25, color: tinted!),
+                  glyphWidget,
                   const SizedBox(height: AppSpacing.xxs),
                   Text(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTypography.tabLabel.copyWith(color: tinted),
+                    style: AppTypography.tabLabel.copyWith(color: tint),
                   ),
                 ],
               ),
