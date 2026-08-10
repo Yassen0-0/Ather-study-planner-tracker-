@@ -1,12 +1,17 @@
-# Ather — release build, 2026-08-05
+# Ather — release build, 2026-08-10 · 1.1.0+4
 
 **Visual refresh**: one brand blue, a redrawn brand mark, new subject icons, a week strip that
 drags between weeks, and the removal of the "+" button. Full reasoning in PROJECT.md §3.27,
 §3.28, §3.29 and §7a — where the design contradicted a standing rule, the design won and the
 rule was rewritten.
 
-**This is the first properly signed release.** See "Signing" below — it changes what testers
-have to do.
+**Plus icon motion** (M-20…M-23, and M-03/M-10 rebuilt): the tab glyphs now carry their own
+weight axis, the settings cog turns, the completion discs flood instead of snapping, and the
+overdue mark completes before it leaves. Nothing here changes a glyph's authored path — every
+transition is a tween over a paint property or a transform about the glyph's own centre.
+
+**This upgrades the 2026-08-05 release in place** (`versionCode` 2001 → 2004, same upload key).
+Nobody has to uninstall anything — with one exception, below.
 
 ## Which APK to install
 
@@ -25,19 +30,22 @@ adb install build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 Installing by hand instead: copy the APK to the phone and open it, allowing "install from
 unknown sources" for whichever app opens it.
 
-## ⚠️ Every existing tester must uninstall first
+## ⚠️ Only the profile builds need uninstalling
 
-The previous build was signed with the Android debug key. This one is signed with the real
-upload key, and **Android will not install one over the other** — the install fails with
-`INSTALL_FAILED_UPDATE_INCOMPATIBLE`.
+Anyone on the **2026-08-05 signed release** installs this straight over it. Same key, higher
+`versionCode`, data kept.
 
-So each tester has to uninstall Ather before installing this build, and **their local data goes
-with it**: chapters, lessons, exam history, tasks. There is no way around it; a signing key
-cannot be changed in place. It is a one-time cost — every build after this one upgrades
-normally.
+The exception is the two **profile** APKs handed out on 2026-08-10 (`1.1.0+2` and `1.1.0+3`,
+86 MB and 37 MB). Those were signed with the Android *debug* key while the upload key was
+temporarily unavailable to the build, which makes them a different app identity: Android refuses
+to install this release over them with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. **Uninstall the
+profile build first** — and if it holds data worth keeping, open Settings → النسخة السحابية →
+"احفظ دلوقتي" **before** uninstalling. Signing back in on the fresh install restores it.
 
-If a tester has data worth keeping, have them open Settings → النسخة السحابية → "احفظ دلوقتي"
-**before** uninstalling. Signing back in on the fresh install restores it.
+Those profile builds should not have gone out signed the way they did. `android/key.properties`
+is git-ignored, so it exists only in the working directory where it was created and does not
+follow a new worktree — which read, from inside that worktree, as "there is no signing key".
+There was one. See CLAUDE.md Rule 1.
 
 ## Signing
 
@@ -78,9 +86,25 @@ device:
    ring-and-dot, clear the launcher's icon cache or reboot.
 6. **English.** Settings → English. The whole layout mirrors; numbers and bars stay
    left-to-right on purpose.
-7. **This is the first AOT build of the refresh.** The debug build used for development runs on
-   the JIT at ~93 MB. This one is ~23 MB and compiled — scrolling and the glass bar should feel
-   noticeably better than anything you have seen so far.
+7. **The icons move now.** Four things to watch, all of them small on purpose:
+   - **Tab bar** — the selected glyph gains weight as it takes the blue: `home` fades a fill in
+     over its outline, the other three thicken. Tap between two tabs and watch the glyph, not
+     the colour.
+   - **Settings cog** — turns 45° every time you open it, and *accumulates*. Open it ten times
+     and it never unwinds. This is the one transition in the app that does not reverse on a
+     second tap; if it feels wrong, it is the easiest thing here to take back out.
+   - **Day circles and checklist boxes** — the fill no longer lands on one frame. The ring
+     closes inward from the rim over 120 ms, then the tick lands over 220 ms. It should never
+     look like a level rising: that would read as a day half-proved.
+   - **The overdue mark** — tick off the last overdue lesson in a subject and watch its row on
+     the dashboard. The red ring floods to a green disc, the dashes land as a tick, and only
+     then does the mark collapse out of the row.
+8. **Reduced motion.** Turn on "Remove animations" in Android's accessibility settings and go
+   round again. Every one of the above should land on its end state on the first frame — no
+   shortened animation, and nothing that becomes unreadable.
+9. **AOT, ~23 MB.** The debug build used for development runs on the JIT at ~93 MB. Scrolling,
+   the glass bar and all of the above should feel noticeably better than any profile or debug
+   APK you have been sent.
 
 ## Known limitations
 

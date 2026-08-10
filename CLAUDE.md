@@ -40,6 +40,18 @@ the release line: a profile APK cannot upgrade a release install, and a release 
 profile one. That is fine for handing a build around to try, but say so plainly when you hand one
 over — the person receiving it needs to know it is a side-load and not an update.
 
+**`android/key.properties` does not follow a new worktree.** It is git-ignored, so it exists only
+in the working directory where it was created, and a fresh worktree looks exactly like a machine
+with no signing key at all. It is not. Before concluding that a release cannot be signed, check
+the other worktrees:
+
+```bash
+ls .claude/worktrees/*/android/key.properties /c/Users/*/keys/*.jks 2>/dev/null
+```
+
+If a copy exists, copy it in — do not read its contents, it holds passwords — and build the
+release properly. Two profile APKs went out debug-signed because this check was not done.
+
 Before producing any APK, state which of the four you checked. If you cannot satisfy all four —
 most often because a release build needs a keystore you do not have — **build nothing and say
 why.** Do not generate a signing key to get past it: the key is the app's identity on Play, and
