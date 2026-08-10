@@ -5,45 +5,23 @@ import 'ather_brand.dart';
 
 /// The app logo, wherever the app shows itself.
 ///
-/// Two shapes, and the difference is the same one the SVGs draw:
+/// **One shape, not two.** There was an `AtherLogo` here as well — the plated
+/// icon, `icon-mastery-*` — and nothing ever placed it. Every surface that
+/// shows the mark (login, lock, Settings → About) sits on a card or a coloured
+/// page and therefore wants the plateless [AtherGlyph]; a second background
+/// square would only draw a box around the symbol. The plated artwork is still
+/// the launcher icon, which Android composites from the exported bitmaps rather
+/// than from a widget, so nothing in the app ever needed to draw it.
 ///
-/// * [AtherLogo] — the full icon, background plate included. `icon-mastery-*`.
-/// * [AtherGlyph] — the symbol alone, transparent behind it. `glyph-mastery`.
-///
-/// Neither takes a light/dark argument. Both read the ambient brightness
-/// through [AtherBrandPalette.of], so a screen places one widget and gets the
-/// right variant — there is no `if (dark)` at any call site and no second
-/// widget tree to keep in step.
+/// It takes no light/dark argument: it reads the ambient brightness through
+/// [AtherBrandPalette.of], so a screen places one widget and gets the right
+/// variant — no `if (dark)` at any call site and no second widget tree.
 ///
 /// Size is a single number because the mark is square. Passing one dimension
 /// makes it impossible to stretch it by accident.
-class AtherLogo extends StatelessWidget {
-  const AtherLogo({super.key, this.size = 64, this.palette});
-
-  /// Edge length of the square icon, in logical pixels.
-  final double size;
-
-  /// Forces a variant. Left null — the normal case — the theme decides.
-  ///
-  /// The one caller that should set this is anything rendering the *installed*
-  /// identity, which is always the light icon regardless of theme.
-  final AtherBrandPalette? palette;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Mark(
-      size: size,
-      palette: palette ?? AtherBrandPalette.of(context),
-      label: L.of(context).appName,
-    );
-  }
-}
-
-/// The standalone symbol: same mark, no plate.
 ///
-/// Use this anywhere the logo sits on a surface that already has a colour of
-/// its own — a card, a header, a list row — where a second background square
-/// would only draw a box around it.
+/// Use it anywhere the logo sits on a surface that already has a colour of its
+/// own — a card, a header, a list row.
 class AtherGlyph extends StatelessWidget {
   const AtherGlyph({super.key, this.size = 24});
 
@@ -60,7 +38,7 @@ class AtherGlyph extends StatelessWidget {
   }
 }
 
-/// The single painted implementation behind both public shapes.
+/// The painted implementation behind [AtherGlyph].
 class _Mark extends StatelessWidget {
   const _Mark({required this.size, required this.palette, required this.label});
 

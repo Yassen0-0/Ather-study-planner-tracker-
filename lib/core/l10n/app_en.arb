@@ -35,7 +35,6 @@
   "actionExam": "Log exam",
   "notStartedYet": "Not started yet",
   "subjectHasOverdueLesson": "A lesson is past its review date",
-  "addContentBeforeExam": "Add a chapter and a lesson before logging an exam",
 
   "lessonCount": "{count, plural, =1{1 lesson} other{{count} lessons}}",
   "@lessonCount": {
@@ -205,7 +204,6 @@
   "lockReason": "Unlock Ather",
   "lockRefused": "That didn't unlock — try again",
   "lockLockedOut": "Too many attempts. Wait a moment and try again, or use your phone's passcode.",
-  "lockUnavailable": "This device has no enrolled fingerprint",
   "lockSetting": "Fingerprint lock",
   "lockSettingBody": "Ask for a fingerprint every time the app opens",
 

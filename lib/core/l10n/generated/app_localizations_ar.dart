@@ -100,9 +100,6 @@ class LAr extends L {
   String get subjectHasOverdueLesson => 'فات ميعاد مراجعة درس';
 
   @override
-  String get addContentBeforeExam => 'ضيف باب ودرس الأول عشان تسجل امتحان';
-
-  @override
   String lessonCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -611,9 +608,6 @@ class LAr extends L {
   @override
   String get lockLockedOut =>
       'حاولت كتير. استنى شوية وجرّب تاني، أو افتح بكود القفل بتاع التليفون.';
-
-  @override
-  String get lockUnavailable => 'الجهاز ده مفيهوش بصمة متسجلة';
 
   @override
   String get lockSetting => 'قفل بالبصمة';

@@ -57,13 +57,15 @@ flutter:
 
   assets:
     - assets/fonts/
-    # The authored identity: icon-mastery-light.svg (the official launcher
-    # icon), icon-mastery-dark.svg, glyph-mastery.svg. Shipped as the source of
-    # truth. The app draws the mark with a CustomPainter rather than an SVG
-    # renderer -- see lib/core/branding/ather_brand.dart -- and the Android
+    # `assets/branding/` is deliberately NOT listed.
+    #
+    # The three SVGs there are the authored identity and they stay in the
+    # repository as the source of truth (PROJECT.md §7a) -- but nothing loads
+    # them at runtime. The app draws the mark with a CustomPainter transcribed
+    # from their geometry (lib/core/branding/ather_brand.dart), and the Android
     # bitmaps are exported from that same painter by
-    # tool/branding/export_branding_test.dart.
-    - assets/branding/
+    # tool/branding/export_branding_test.dart. Listing them here only packed
+    # three files into every APK for no reader.
 
   fonts:
     # Readex Pro variable font (weight axis 200-700).

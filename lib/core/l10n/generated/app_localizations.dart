@@ -277,12 +277,6 @@ abstract class L {
   /// **'فات ميعاد مراجعة درس'**
   String get subjectHasOverdueLesson;
 
-  /// No description provided for @addContentBeforeExam.
-  ///
-  /// In ar, this message translates to:
-  /// **'ضيف باب ودرس الأول عشان تسجل امتحان'**
-  String get addContentBeforeExam;
-
   /// No description provided for @lessonCount.
   ///
   /// In ar, this message translates to:
@@ -1152,12 +1146,6 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'حاولت كتير. استنى شوية وجرّب تاني، أو افتح بكود القفل بتاع التليفون.'**
   String get lockLockedOut;
-
-  /// No description provided for @lockUnavailable.
-  ///
-  /// In ar, this message translates to:
-  /// **'الجهاز ده مفيهوش بصمة متسجلة'**
-  String get lockUnavailable;
 
   /// No description provided for @lockSetting.
   ///

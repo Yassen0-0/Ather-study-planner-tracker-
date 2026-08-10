@@ -35,7 +35,6 @@
   "actionExam": "امتحن",
   "notStartedYet": "لسه مبدأتش",
   "subjectHasOverdueLesson": "فات ميعاد مراجعة درس",
-  "addContentBeforeExam": "ضيف باب ودرس الأول عشان تسجل امتحان",
 
   "lessonCount": "{count, plural, =1{درس واحد} =2{درسين} few{{count} دروس} many{{count} درس} other{{count} درس}}",
   "@lessonCount": {
@@ -307,7 +306,6 @@
   "lockReason": "افتح Ather",
   "lockRefused": "مفتحش — جرّب تاني",
   "lockLockedOut": "حاولت كتير. استنى شوية وجرّب تاني، أو افتح بكود القفل بتاع التليفون.",
-  "lockUnavailable": "الجهاز ده مفيهوش بصمة متسجلة",
   "lockSetting": "قفل بالبصمة",
   "lockSettingBody": "اطلب بصمة كل ما تفتح التطبيق",
 

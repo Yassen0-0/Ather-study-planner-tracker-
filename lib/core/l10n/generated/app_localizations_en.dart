@@ -100,10 +100,6 @@ class LEn extends L {
   String get subjectHasOverdueLesson => 'A lesson is past its review date';
 
   @override
-  String get addContentBeforeExam =>
-      'Add a chapter and a lesson before logging an exam';
-
-  @override
   String lessonCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -612,9 +608,6 @@ class LEn extends L {
   @override
   String get lockLockedOut =>
       'Too many attempts. Wait a moment and try again, or use your phone\'s passcode.';
-
-  @override
-  String get lockUnavailable => 'This device has no enrolled fingerprint';
 
   @override
   String get lockSetting => 'Fingerprint lock';

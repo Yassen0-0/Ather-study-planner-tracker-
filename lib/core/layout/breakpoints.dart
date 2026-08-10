@@ -9,8 +9,8 @@ import 'package:flutter/widgets.dart';
 /// (`AtherScreen`, to decide whether to cap the content width).
 ///
 /// The previous build branched here into a side rail, dialogs and a two-pane
-/// master/detail. All three contradicted the five-slot tab bar and the single
-/// modal shape, so they were removed rather than kept switched off.
+/// master/detail. All three contradicted the tab bar and the single modal
+/// shape, so they were removed rather than kept switched off.
 enum WindowSize {
   /// Phones. The design's native size.
   compact,
