@@ -15,10 +15,11 @@ import '../theme/app_colors.dart';
 /// The only filled glyphs are the ones the design explicitly fills: the home
 /// tab, the "more" dots, and a white tick inside a solid black or green disc.
 enum AtherGlyph {
-  // Tab bar
+  // Tab bar. Four destinations, and no "+" — the raised centre button was
+  // removed with the visual refresh (§3.28) and the glyph went with it, so
+  // there is nothing left to draw one from by habit.
   home,
   review,
-  plus,
   chart,
 
   /// The tasks tab: a tick beside three list lines.
@@ -209,12 +210,6 @@ class _GlyphPainter extends CustomPainter {
         for (final head in heads) {
           canvas.drawPath(head, stroke);
         }
-
-      case AtherGlyph.plus:
-        stroke.strokeWidth = strokeWidth ?? 2.6;
-        canvas
-          ..drawLine(const Offset(12, 5), const Offset(12, 19), stroke)
-          ..drawLine(const Offset(5, 12), const Offset(19, 12), stroke);
 
       case AtherGlyph.chart:
         stroke.strokeWidth = _weight(2.1, 3.4);

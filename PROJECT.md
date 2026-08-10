@@ -8,6 +8,40 @@
 > **Any AI agent (you or another one) working on this project must:**
 > 1. **Read `PROJECT.md` first, before anything else**
 > 2. **Update `PROJECT.md` with new details immediately after finishing any work — this is not optional**
+> 3. **Check you are on the current design before you touch a pixel** — see below.
+>
+> ### Before you touch a pixel: confirm the base
+>
+> The approved design has been reverted **twice** by agents who were following
+> instructions correctly. It is not a carelessness problem, it is a setup problem,
+> and the setup has now been repaired — but the check is cheap and the failure is
+> expensive, so do it anyway:
+>
+> ```bash
+> flutter test test/design_invariants_test.dart
+> ```
+>
+> Green means the tree carries the approved design: **one brand blue**
+> (`AppColors.accent`), a tab bar of **four slots with no raised "+"**, and the
+> icon-motion layer. Red almost never means the widget it names is broken — it
+> means the tree was built on a stale base, and everything you are about to write
+> will inherit that.
+>
+> **What went wrong the first two times, so it is recognisable:**
+>
+> * The refresh sat on an unmerged branch while `master` kept the design that came
+>   before it. Every new worktree was cut from `master` and started wrong.
+> * A worktree *directory* was named after the design branch with a *different*
+>   branch checked out inside it. The name said "visual refresh"; the code was
+>   pre-refresh. Never infer the branch from the directory — run `git branch --show-current`.
+> * **This file described the superseded design in detail**, and rule 1 above sends
+>   you straight to it. A document that is the source of truth is also the most
+>   effective way to teach the wrong thing; §3.27–§3.29 are now the authority on
+>   the visual language, and anything elsewhere that contradicts them is stale
+>   text that should be fixed rather than obeyed.
+>
+> The history is a single line with no branches, deliberately (2026-08-10). Keep it
+> that way: work on `master`, and if a branch is unavoidable, merge it the same day.
 
 ---
 
@@ -659,7 +693,7 @@ match /users/{uid}/backup/{document} {
 }
 ```
 
-### 3.27 The device belongs to one account at a time
+### 3.30 The device belongs to one account at a time
 Signing out left the student's whole curriculum on the phone, and nothing checked whose it was.
 A second student signing in on the same device opened the app to the first one's chapters — and
 the backup sync then mirrored those chapters into the *second* student's cloud document,
@@ -685,7 +719,7 @@ empty, so the new student's own cloud copy is pulled down by the ordinary path w
 code branch. `test/widget/backup_test.dart` covers both directions — a different account wipes,
 the same account keeps everything.
 
-### 3.28 Deleting an exam moves the clock that exam started
+### 3.31 Deleting an exam moves the clock that exam started
 `deleteExam` existed in the repository from the beginning and **no screen ever called it**, so a
 mistyped result — 3 out of 30 entered as 30 out of 3 — was permanent. In an app whose entire
 claim is that the number is trustworthy, an uncorrectable number is the worst defect available.
@@ -808,7 +842,7 @@ room around it — not a second layout the handoff never specified.
 | `roomy` | `≥600` | same layout, capped at 520 and centred |
 
 The previous build branched here into a side rail, desktop dialogs and a two-pane
-master/detail. All three contradicted the five-slot tab bar and the single modal shape, so
+master/detail. All three contradicted the four-slot tab bar and the single modal shape, so
 they were deleted rather than kept switched off.
 
 ---
@@ -1271,8 +1305,8 @@ hardware yet (§9 still stands):*
 - **The app had two `Semantics` widgets in total.** `Pressable` now declares `button` and takes a
   `semanticLabel`, which is effectively required for anything whose content is a bare `AtherIcon`
   — every icon here is a `CustomPaint` and carries no accessible name. Back, the cog, the pencil,
-  the wizard's ×, the group-remove × and the black "+" — *the app's primary action* — were all
-  announced as unnamed regions. The toast is a `liveRegion`; it was previously invisible.
+  the wizard's × and the group-remove × were all announced as unnamed regions. The toast is a
+  `liveRegion`; it was previously invisible.
 - **48dp hit areas** via `Pressable.minTarget`, opt-in so it cannot shrink-wrap a card. The drawn
   sizes are unchanged: the 36px header circle, the 34px day, the 17px pencil all look identical.
 - **`#34C759` is 2.2:1 on white** — under every threshold, including the 3:1 for large text — and
