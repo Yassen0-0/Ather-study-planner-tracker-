@@ -68,6 +68,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.wrongTint,
     required this.wrongChip,
     required this.right,
+    required this.rightText,
     required this.onState,
     required this.divider,
     required this.dividerStrong,
@@ -155,7 +156,23 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color wrongChip;
 
   /// Right, mastered (>= 90%), mastered chapter, switch on.
+  ///
+  /// A **fill**, not a text colour. See [rightText].
   final Color right;
+
+  /// [right], darkened enough to be read as text on a light surface.
+  ///
+  /// `#34C759` measures **2.2 : 1** on white — under every WCAG threshold there
+  /// is, including the 3 : 1 allowed for large text — and it was being used for
+  /// the mastery figure on every card at 90% and above, for "تمام، جاهز تدخل
+  /// الامتحان", and for the tally that turns green when the wizard's groups add
+  /// up. The green tick on a filled disc was never the problem; green *words* on
+  /// white were.
+  ///
+  /// In dark the same green already measures 7.7 : 1 on the card, so this is the
+  /// one token whose two values differ for a reason other than inversion: the
+  /// dark theme keeps the brand green exactly, and only light darkens it.
+  final Color rightText;
 
   /// Text and icons printed **onto** [wrong] or [right].
   ///
@@ -196,7 +213,11 @@ class AppColors extends ThemeExtension<AppColors> {
     textSecondary: Color(0xFF63636A),
     textTertiary: Color(0xFF9A9AA0),
     textMicro: Color(0xFF7C7C82),
-    textNoData: Color(0xFFC6C6CB),
+    // Was #C6C6CB, which is 1.7:1 on white -- effectively invisible in daylight,
+    // and it carries the "—" that means "never examined" plus every field hint.
+    // #70707A is 4.9:1, still a clear step quieter than textSecondary (5.9:1),
+    // so the ramp's ordering is untouched.
+    textNoData: Color(0xFF70707A),
     weekLabel: Color(0xFF8A8A8E),
     actionPrimary: Color(0xFF000000),
     onPrimary: Color(0xFFFFFFFF),
@@ -208,6 +229,9 @@ class AppColors extends ThemeExtension<AppColors> {
     wrongTint: Color(0x1AFF3B30), // 10%
     wrongChip: Color(0x1FFF3B30), // 12%
     right: Color(0xFF34C759),
+    // 4.6:1 on white, 4.3:1 on the page grey -- AA for body text, and still
+    // unmistakably the same green as the fill beside it.
+    rightText: Color(0xFF1B7F3B),
     onState: Color(0xFFFFFFFF),
     divider: Color(0x0F000000), // black @ 6%
     dividerStrong: Color(0x12000000), // black @ 7%
@@ -252,6 +276,9 @@ class AppColors extends ThemeExtension<AppColors> {
     wrongTint: Color(0x26FF3B30), // 15%
     wrongChip: Color(0x2EFF3B30), // 18%
     right: Color(0xFF34C759),
+    // Unchanged from [right]: 7.7:1 on the dark card already. Darkening it here
+    // would only make it harder to read.
+    rightText: Color(0xFF34C759),
     onState: Color(0xFFFFFFFF),
     divider: Color(0x14FFFFFF), // white @ 8%
     dividerStrong: Color(0x1AFFFFFF), // white @ 10%
@@ -292,6 +319,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? wrongTint,
     Color? wrongChip,
     Color? right,
+    Color? rightText,
     Color? onState,
     Color? divider,
     Color? dividerStrong,
@@ -323,6 +351,7 @@ class AppColors extends ThemeExtension<AppColors> {
       wrongTint: wrongTint ?? this.wrongTint,
       wrongChip: wrongChip ?? this.wrongChip,
       right: right ?? this.right,
+      rightText: rightText ?? this.rightText,
       onState: onState ?? this.onState,
       divider: divider ?? this.divider,
       dividerStrong: dividerStrong ?? this.dividerStrong,
@@ -362,6 +391,7 @@ class AppColors extends ThemeExtension<AppColors> {
       wrongTint: mix(wrongTint, other.wrongTint),
       wrongChip: mix(wrongChip, other.wrongChip),
       right: mix(right, other.right),
+      rightText: mix(rightText, other.rightText),
       onState: mix(onState, other.onState),
       divider: mix(divider, other.divider),
       dividerStrong: mix(dividerStrong, other.dividerStrong),

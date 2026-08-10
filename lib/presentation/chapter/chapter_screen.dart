@@ -25,6 +25,7 @@ import '../../domain/services/review_cycle_service.dart';
 import '../../domain/services/summaries.dart';
 import '../common/prompts.dart';
 import '../common/subject_presentation.dart';
+import '../common/write_guard.dart';
 import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
 
@@ -46,10 +47,17 @@ class ChapterScreen extends ConsumerWidget {
       title: l.addLesson,
       hint: l.lessonNameHint,
     );
-    if (name == null) return;
-    await ref
-        .read(studyRepositoryProvider)
-        .createLesson(chapterId: chapterId, name: name);
+    if (name == null || !context.mounted) return;
+    await runWrite(
+      context,
+      () => ref
+          .read(studyRepositoryProvider)
+          .createLesson(
+            chapterId: chapterId,
+            name: name,
+            at: ref.read(clockProvider).now(),
+          ),
+    );
   }
 
   Future<void> _edit(
@@ -70,10 +78,13 @@ class ChapterScreen extends ConsumerWidget {
           hint: l.chapterNameHint,
           initialValue: summary.chapter.name,
         );
-        if (name == null) return;
-        await ref
-            .read(studyRepositoryProvider)
-            .renameChapter(chapterId: chapterId, name: name);
+        if (name == null || !context.mounted) return;
+        await runWrite(
+          context,
+          () => ref
+              .read(studyRepositoryProvider)
+              .renameChapter(chapterId: chapterId, name: name),
+        );
       },
       onDelete: () async {
         final confirmed = await confirmDestructive(
@@ -81,9 +92,12 @@ class ChapterScreen extends ConsumerWidget {
           title: l.deleteChapter,
           message: l.deleteChapterConfirm,
         );
-        if (!confirmed) return;
-        await ref.read(studyRepositoryProvider).deleteChapter(chapterId);
-        if (context.mounted) context.pop();
+        if (!confirmed || !context.mounted) return;
+        final ok = await runWrite(
+          context,
+          () => ref.read(studyRepositoryProvider).deleteChapter(chapterId),
+        );
+        if (ok && context.mounted) context.pop();
       },
     );
   }
@@ -104,14 +118,19 @@ class ChapterScreen extends ConsumerWidget {
     }
 
     // Persisted before the celebration, not after: if the app is killed while
-    // the overlay is up, the student still mastered the chapter.
-    await ref
-        .read(studyRepositoryProvider)
-        .markChapterMastered(
-          chapterId: chapterId,
-          at: ref.read(clockProvider).now(),
-        );
-    if (!context.mounted) return;
+    // the overlay is up, the student still mastered the chapter. And if the
+    // write fails there is nothing to celebrate -- a green screen over a chapter
+    // the database never closed out is the worst possible lie to tell here.
+    final ok = await runWrite(
+      context,
+      () => ref
+          .read(studyRepositoryProvider)
+          .markChapterMastered(
+            chapterId: chapterId,
+            at: ref.read(clockProvider).now(),
+          ),
+    );
+    if (!ok || !context.mounted) return;
     await _celebrate(context, summary.mastery);
     if (!context.mounted) return;
     context.push(Routes.chapterReport(chapterId));
@@ -242,6 +261,7 @@ class ChapterScreen extends ConsumerWidget {
         actions: <Widget>[
           CircleHeaderButton(
             onTap: () => _edit(context, ref, summary),
+            semanticLabel: l.commonEdit,
             child: const AtherIcon(AtherGlyph.edit, size: 17),
           ),
         ],
@@ -357,7 +377,7 @@ class _ChapterSummaryCard extends StatelessWidget {
                     style: AppTypography.style(
                       size: 13.5,
                       weight: AppTypography.semiBold,
-                      color: context.colors.right,
+                      color: context.colors.rightText,
                     ),
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/l10n/generated/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
@@ -53,7 +54,10 @@ class TaskRow extends StatelessWidget {
               shape: BoxShape.circle,
               border: task.done
                   ? null
-                  : Border.all(color: context.colors.checkboxBorder, width: 1.8),
+                  : Border.all(
+                      color: context.colors.checkboxBorder,
+                      width: 1.8,
+                    ),
             ),
             alignment: Alignment.center,
             child: task.done
@@ -90,9 +94,12 @@ class TaskRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
           Pressable(
             onTap: onEdit,
+            semanticLabel: L.of(context).commonEdit,
+            // The pencil stays 17px like every other one. The padding used to
+            // be the whole story and reached 37px, short of the 48 a finger
+            // needs; `minTarget` now guarantees the rest without redrawing it.
+            minTarget: kMinTarget,
             child: Padding(
-              // Padding rather than a bigger icon: the pencil stays 17px like
-              // every other one, but the tap target reaches 40px.
               padding: const EdgeInsets.all(AppSpacing.sm),
               child: AtherIcon(
                 AtherGlyph.edit,

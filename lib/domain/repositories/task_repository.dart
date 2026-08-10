@@ -18,7 +18,14 @@ abstract interface class TaskRepository {
   Stream<List<DailyTask>> watchTasks();
 
   /// Appends to the end of [day]'s list.
-  Future<int> addTask({required DateTime day, required String title});
+  ///
+  /// [at] is the creation instant, from the injectable clock — see
+  /// `StudyRepository.createChapter` for why it is not `DateTime.now()` here.
+  Future<int> addTask({
+    required DateTime day,
+    required String title,
+    required DateTime at,
+  });
 
   Future<void> renameTask({required int taskId, required String title});
 
@@ -42,4 +49,7 @@ abstract interface class TaskRepository {
   /// with no foreign key into the study data -- the same separation that keeps
   /// them out of mastery. Both are called from the same restore flow.
   Future<void> restoreTasks(List<DailyTask> tasks);
+
+  /// Removes every task. See `StudyRepository.clear` for when and why.
+  Future<void> clearTasks();
 }

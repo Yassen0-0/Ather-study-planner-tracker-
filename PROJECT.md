@@ -220,6 +220,54 @@ not by reading the code.)*
 declared. Play treats exact alarms as a restricted permission, and a study reminder does not
 justify it — delivery within the hour is fine for a 30-day cycle.
 
+### 3.15a The reminders had never been switched on — two missing pieces, both silent
+*Found 2026-08-10 by the audit in §10, and this is the entry to read before touching
+notifications again.*
+
+Every reminder in the app's history failed for two independent reasons, neither of which produced
+an error anywhere:
+
+1. **Nothing ever asked for the permission.** `permissionGranted` started `false` and was only
+   ever set by `requestPermission()`, which **had no call site in `lib/` or `test/`**.
+   `reschedule()` opens with `cancelAll()` and then returns early on that flag, so every pass
+   cancelled the (empty) schedule and booked nothing. The manifest comment cheerfully described
+   the intended call site — "at the moment the student masters their first chapter" — for code
+   that was never written.
+2. **The receivers were not declared.** Since `flutter_local_notifications` 16 the plugin's own
+   manifest ships **permissions only** — verified against the copy in the pub cache, which
+   contains nothing but `POST_NOTIFICATIONS` and `VIBRATE`. Without
+   `ScheduledNotificationReceiver` in the app manifest, `zonedSchedule` succeeds, the alarm
+   fires, and nothing is shown. `ScheduledNotificationBootReceiver` is what makes
+   `RECEIVE_BOOT_COMPLETED` (declared since day one) mean anything; a 30-day cycle crosses at
+   least one reboot or app update.
+
+The fixes, and the rules that come with them:
+
+- **`refreshPermission()` reads the OS on every sync** rather than trusting a flag. That is what
+  lets a student who granted the permission months ago keep their reminders without being asked
+  again, and what notices one revoked in system settings. A boolean that can only be set by a
+  call that does not exist is indistinguishable from a feature that was never wired — so it is
+  no longer the only way the flag can become true.
+- **`requestPermission()` is called at two moments where the value is obvious**: the student
+  turning the switch on in Settings, and the first recorded exam — the moment the first 30-day
+  clock actually starts. Not on cold start, which is the original reasoning and still right.
+- **The switch and the OS can disagree, and the card says so.** `osNotificationsAllowedProvider`
+  is separate from `notificationsEnabledProvider`, and Settings shows a line when the preference
+  is on but Android refuses. It is suppressed until `hasScheduledReviewsProvider` is true: on a
+  fresh install nothing has a review clock yet, so the warning would describe a problem the
+  student does not have.
+- **Rescheduling is debounced 5s** (`ReviewScheduler`) with a re-entrancy guard. It is
+  `cancelAll()` plus one platform round trip *per lesson*, and it was firing on every snapshot
+  emission — so ticking one checklist box rebuilt a few hundred alarms. Two overlapping passes
+  could also interleave a `cancelAll()` with the other's writes; `_running`/`_dirty` prevent it.
+  The resume pass stays immediate: it is the one that has to be correct before the app is next
+  backgrounded.
+- **Tapping a reminder opens its lesson.** The payload was already written and parsed, then
+  handed to an empty callback.
+
+**Still unverified:** no reminder has been observed arriving on a device. Both defects above were
+found by reading, not by watching one fail, and the fix deserves the same scepticism — see §9.
+
 ### 3.16 Western digits (0123) in both locales
 Egyptian students read exam scores in Western numerals. Mixing digit systems between ar and en
 would make the same score look like two different numbers.
@@ -611,6 +659,53 @@ match /users/{uid}/backup/{document} {
 }
 ```
 
+### 3.27 The device belongs to one account at a time
+Signing out left the student's whole curriculum on the phone, and nothing checked whose it was.
+A second student signing in on the same device opened the app to the first one's chapters — and
+the backup sync then mirrored those chapters into the *second* student's cloud document,
+corrupting a backup that had done nothing wrong.
+
+**The wipe is keyed on a changed uid, not on sign-out.** `BackupSyncGate` stores
+`last_account_uid` and clears the local database only when the account that just signed in
+differs from it. Signing out destroys nothing: it is not a statement that the work is finished
+with, the phone may hold edits that never reached the cloud, and the same student signing back
+in — offline — must find everything where they left it. Data only becomes the *wrong* data when
+somebody else's account arrives.
+
+Two consequences worth knowing:
+
+- **The uid is written after the wipe, never before**, so a crash mid-wipe leaves the device
+  still claiming the old uid and the next launch tries again.
+- **`flush()` refuses to upload while the stored uid and the signed-in uid disagree.** That
+  closes the window between a sign-in and the wipe, which is the exact interval in which one
+  student's data could reach another's document.
+
+Clearing also feeds the existing auto-restore the answer it wants: the device is now genuinely
+empty, so the new student's own cloud copy is pulled down by the ordinary path with no second
+code branch. `test/widget/backup_test.dart` covers both directions — a different account wipes,
+the same account keeps everything.
+
+### 3.28 Deleting an exam moves the clock that exam started
+`deleteExam` existed in the repository from the beginning and **no screen ever called it**, so a
+mistyped result — 3 out of 30 entered as 30 out of 3 — was permanent. In an app whose entire
+claim is that the number is trustworthy, an uncorrectable number is the worst defect available.
+
+The delete is now reachable from the lesson's history card, behind the same `confirmDestructive`
+sheet as every other deletion, with a line above the list saying so. Rows stay information; the
+confirmation carries the weight.
+
+**The part that is not obvious:** mastery is *derived* and fixes itself, but `lastReviewedAt` is
+*stored* and does not. Removing the exam that stamped it would leave a lesson counting down from
+a date nothing in the database supports. So `deleteExam` recomputes it in the same transaction,
+from the newest remaining exam — or from `chapter.masteredAt` if that is later, because "أتقنت
+الباب" also restarts the cycle and is not an exam. With neither, the lesson is unexamined again
+and has no clock at all.
+
+There is deliberately **no `deleteHomework`**. One existed, equally unreachable, and was removed:
+only the most recent homework entry is ever read, so recording a new one supersedes a mistyped
+one, and homework never touches mastery. If a homework history is ever shown, the delete comes
+back with the UI that needs it.
+
 ---
 
 ## 4. Data Model
@@ -688,8 +783,13 @@ a chapter needs review, the whole chapter is red.
 | Login screen in the Ather design language | Complete |
 | Biometric app lock | Complete |
 | Celebration (white screen + green disc) | Complete |
+<<<<<<< HEAD
 | Notification service + lifecycle reconciliation | Complete |
 | Cloud backup + restore (Firestore) | Complete — verified against live Firestore 2026-08-05 |
+=======
+| Notification service + lifecycle reconciliation | Complete — **never once delivered a reminder before 2026-08-10**, see §3.15a; still unobserved on a device |
+| Cloud backup + restore (Firestore) | Complete — not yet exercised against live Firestore |
+>>>>>>> 4a9c8b6 (Audit fixes: notifications, account isolation, exam deletion, performance)
 | Daily tasks tab (add / tick / edit / reorder / delete, per day) | Complete |
 | Floating glass tab bar | Complete |
 | Android build + on-device verification | Complete — full journey run on emulator |
@@ -941,13 +1041,17 @@ Until both are done, Windows desktop is **untested** and is reported as such —
   caught; both are fixed and written up in the work log.
 - **Windows desktop cannot be built on this machine.** `flutter doctor` reports Visual Studio
   absent, and plugin builds additionally need Developer Mode enabled. Both are user actions.
-- **Notification delivery has never been observed firing.** The scheduling code runs and the
-  resume-time reconciliation is wired, but no reminder has actually been seen arriving after 30
-  days; verifying that needs a device clock change or a long-running install.
-- **The exam wizard discards input on exit, by design.** The × and the system back both leave
-  without saving, which is what the handoff specifies ("الخروج بالـ × من غير حفظ"). If real
-  students report losing entries to a stray back gesture, a discard confirmation is the fix —
-  it would need new copy, which is why it was not added unilaterally.
+- **Notification delivery has never been observed firing** — and §3.15a explains why it could
+  not have: nothing requested the permission and the receivers were undeclared. Both are fixed
+  and neither fix has been watched working on a device. This is now the single most important
+  thing to verify on real hardware, because the feature has never once run end to end.
+- ~~**The exam wizard discards input on exit, by design.**~~ **Changed 2026-08-10.** The × and
+  the system back both left without saving, which is what the handoff specified, but the on-screen
+  Back stepped *back through the wizard* — so the three exits disagreed and a stray back gesture
+  cost a fully described paper. All three now route through one path: back a step while there is
+  one, then a discard confirmation if anything has been typed. New copy
+  (`examDiscardTitle` / `examDiscardBody` / `examDiscardLeave` / `examDiscardStay`) is the part
+  that was holding this up; it is written and wants a read.
 - **A deleted task does not collapse.** Every other row in the app leaves via `CollapsingList`
   (§3.20), but a list cannot be both reorderable and collapsing, and the drag is what the
   feature was asked for. The cost is bounded: the delete happens in a sheet over that very
@@ -1030,6 +1134,7 @@ produced those numbers is untouched by the redesign.
 
 ## 10. Work Log
 
+<<<<<<< HEAD
 **Visual refresh: one brand blue, a new mark, and no "+" (2026-08-05).**
 Ported the `design_handoff_visual_refresh` handoff into the Flutter app. Where it contradicted a
 standing rule, **the design won and the rule was rewritten** — §3.10 no longer claims a
@@ -1104,6 +1209,94 @@ count as 0 (§ the calculator's own comment: a figure that ignored three empty s
 tell a student they are 85% ready for Thanaweya Amma); and "0 of 1 chapters mastered" is right
 because `Chapter.isMastered` is `masteredAt != null` — an explicit press of the mastery gate,
 never derived from a score.
+=======
+**Full audit, then five phases of fixes (2026-08-10).**
+A read of every file in `lib/` against this document, followed by the work below. `flutter
+analyze` clean, **163/163 tests pass** (155 before; four dead-code tests removed, twelve added),
+and all seven golden render suites pass against regenerated goldens.
+
+*Critical — each of these was silent, which is why none had been reported:*
+
+- **Review reminders had never worked, for two independent reasons.** §3.15a. No call site ever
+  requested the OS permission, and the plugin's receivers were not declared in the manifest.
+- **A second student on the same phone saw the first one's curriculum** — and uploaded it into
+  their own cloud document. §3.27.
+- **The exam wizard hung permanently on a failed save.** No `try/catch`, and `_saving` was never
+  cleared, so one failure left a fully entered paper behind a button that ignored every further
+  tap. It now stays on step 4 with the numbers intact and says what happened.
+- **A mistyped exam could never be corrected.** §3.28.
+- **Every database write was fire-and-forget** — checklist, homework, mastering a chapter, every
+  task operation. A failure changed nothing on screen and said nothing. All of them now go
+  through `runWrite` (`presentation/common/write_guard.dart`), which resolves its context before
+  the await and reports a failure as a toast in the app's own vocabulary.
+
+*High impact:*
+
+- **Turning the app lock on locked you out on the spot.** `LockStateNotifier.build` *watched* the
+  preference, so flipping the switch rebuilt the notifier, reset the state to `true`, dropped the
+  lock screen over Settings and fired a prompt — which, cancelled, left the student outside their
+  own app with the back button already swallowed. It reads the preference once now.
+- **The progress screen's filter reached two of its four cards.** The other two answered for all
+  four subjects without saying so. Now the discipline card filters too, and the subject-comparison
+  chart — which deliberately never filters, because comparing one subject with itself is not a
+  chart — says as much in a line under its title.
+- **The dashboard had no first-run state.** A new student saw "—", three zeroes and four rows,
+  with the four-step path to a first exam written down nowhere. A card now *replaces* the two
+  empty summary cards until there is a chapter — replacing, not stacking, because those two cards
+  are pure noise when everything in them is zero.
+- Real loading states on the two slow paths (exam save, cloud restore) via `PrimaryButton.busy`,
+  the app's only spinner. Restore also catches failures from the local half of the write, which
+  previously escaped unhandled.
+
+*Performance — all of it measured against the shapes in this file, none of it profiled on
+hardware yet (§9 still stands):*
+
+- **The clock ticked every 60 seconds and rebuilt the world.** `nowProvider` drove
+  `dashboardProvider`, which recomputes every summary for the whole curriculum, which rebuilt
+  every screen watching it *and* `AppShell` — the widget holding the app's one `BackdropFilter`.
+  Everything downstream is derived from whole days, so it now emits once per midnight.
+- **Each lesson's mastery was computed about four times per dashboard build**, each time copying
+  and re-sorting that lesson's exam list. `MasteryCalculator.lessonMasteries` computes the map
+  once and `Summaries` threads it down. `mastery_calculator_test.dart` pins the fast path to the
+  canonical one lesson-for-lesson, because a drift between them would silently falsify every
+  number in the app.
+- **List rows replayed their entrance on every scroll.** A row scrolled out is unmounted, and
+  scrolling it back mounted a fresh `RiseIn`. `ListEntranceScope` remembers, per screen visit,
+  which ids have already arrived.
+- **Backup gzip + JSON ran on the UI isolate**, on a 20-second debounce — i.e. while the student
+  was using the app. Both directions now go through `Isolate.run`.
+
+*Accessibility and contrast:*
+
+- **The app had two `Semantics` widgets in total.** `Pressable` now declares `button` and takes a
+  `semanticLabel`, which is effectively required for anything whose content is a bare `AtherIcon`
+  — every icon here is a `CustomPaint` and carries no accessible name. Back, the cog, the pencil,
+  the wizard's ×, the group-remove × and the black "+" — *the app's primary action* — were all
+  announced as unnamed regions. The toast is a `liveRegion`; it was previously invisible.
+- **48dp hit areas** via `Pressable.minTarget`, opt-in so it cannot shrink-wrap a card. The drawn
+  sizes are unchanged: the 36px header circle, the 34px day, the 17px pencil all look identical.
+- **`#34C759` is 2.2:1 on white** — under every threshold, including the 3:1 for large text — and
+  it coloured every mastery figure at 90%+. New `rightText` token (`#1B7F3B`, 4.6:1) for green
+  *words*; `right` stays the fill, and the two are the same value in dark, where the brand green
+  already measures 7.7:1. The toast's success mark became a `CheckDisc` so it carries its own
+  contrast onto a plate that inverts.
+- **`textNoData` was 1.7:1** — the "—" meaning "never examined", and every field hint. Now 4.9:1,
+  still a clear step quieter than `textSecondary`.
+
+*Cleanup:* the injectable `Clock` now covers `createChapter` / `createLesson` / `addTask`, the
+only three writes that still called `DateTime.now()` (§3.8); `lessonsAwaitingNotification` and
+its four tests removed as dead code from the abandoned polling design; an empty name in the name
+sheet says why instead of swallowing the tap; an overdue 0% lesson is red rather than "no data"
+grey; `int.parse` on a route parameter can no longer crash route building; the router and its
+auth subscription are disposed with the provider scope; two toasts can no longer stack on top of
+each other; and the password toggle's `'abc'` — untranslated Latin in an Arabic form — is gone.
+
+**Not done, and deliberately left for a decision:** account deletion (Play requires it for any
+app with accounts, and it is a product decision about what happens to the cloud copy), local
+file export, email verification, and Crashlytics. `flush()` still skips an upload when the local
+database is empty, so a student who deletes everything cannot clear their cloud copy — that is a
+real edge but the safe direction of the two.
+>>>>>>> 4a9c8b6 (Audit fixes: notifications, account isolation, exam deletion, performance)
 
 
 **The biometric lock was skippable (2026-08-05).**

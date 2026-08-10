@@ -18,6 +18,7 @@ import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/error_banner.dart';
 import '../../core/widgets/mastery_bar.dart';
+import '../../core/widgets/pressable.dart';
 import '../../core/widgets/status_chip.dart';
 import '../../domain/entities/exam_entry.dart';
 import '../../domain/entities/lesson.dart';
@@ -25,6 +26,7 @@ import '../../domain/entities/mastery.dart';
 import '../../domain/services/summaries.dart';
 import '../common/prompts.dart';
 import '../common/subject_presentation.dart';
+import '../common/write_guard.dart';
 import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
 
@@ -59,10 +61,13 @@ class LessonScreen extends ConsumerWidget {
           hint: l.lessonNameHint,
           initialValue: summary.lesson.name,
         );
-        if (name == null) return;
-        await ref
-            .read(studyRepositoryProvider)
-            .renameLesson(lessonId: lessonId, name: name);
+        if (name == null || !context.mounted) return;
+        await runWrite(
+          context,
+          () => ref
+              .read(studyRepositoryProvider)
+              .renameLesson(lessonId: lessonId, name: name),
+        );
       },
       onDelete: () async {
         final confirmed = await confirmDestructive(
@@ -70,9 +75,14 @@ class LessonScreen extends ConsumerWidget {
           title: l.deleteLesson,
           message: l.deleteLessonConfirm,
         );
-        if (!confirmed) return;
-        await ref.read(studyRepositoryProvider).deleteLesson(lessonId);
-        if (context.mounted) context.pop();
+        if (!confirmed || !context.mounted) return;
+        final ok = await runWrite(
+          context,
+          () => ref.read(studyRepositoryProvider).deleteLesson(lessonId),
+        );
+        // Only leave if the lesson actually went. Popping on a failed delete
+        // lands the student on a list that still contains it.
+        if (ok && context.mounted) context.pop();
       },
     );
   }
@@ -109,6 +119,7 @@ class LessonScreen extends ConsumerWidget {
         actions: <Widget>[
           CircleHeaderButton(
             onTap: () => _edit(context, ref, summary),
+            semanticLabel: l.commonEdit,
             child: const AtherIcon(AtherGlyph.edit, size: 17),
           ),
         ],
@@ -305,12 +316,15 @@ class _ChecklistCard extends ConsumerWidget {
             AtherCheckbox(
               checked: item.checked,
               label: item.label,
-              onTap: () => ref
-                  .read(studyRepositoryProvider)
-                  .updateChecklist(
-                    lessonId: summary.lesson.id,
-                    checklist: item.next(),
-                  ),
+              onTap: () => runWrite(
+                context,
+                () => ref
+                    .read(studyRepositoryProvider)
+                    .updateChecklist(
+                      lessonId: summary.lesson.id,
+                      checklist: item.next(),
+                    ),
+              ),
             ),
           ],
         ],
@@ -349,7 +363,7 @@ class _HomeworkCard extends ConsumerWidget {
       lineColor = context.colors.wrong;
     } else {
       line = l.homeworkReady;
-      lineColor = context.colors.right;
+      lineColor = context.colors.rightText;
     }
 
     return AtherCard.muted(
@@ -418,6 +432,7 @@ class _HomeworkSheetState extends ConsumerState<_HomeworkSheet> {
   final TextEditingController _score = TextEditingController();
   final TextEditingController _max = TextEditingController();
   bool _showError = false;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -427,6 +442,8 @@ class _HomeworkSheetState extends ConsumerState<_HomeworkSheet> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
+
     final score = int.tryParse(_score.text);
     final max = int.tryParse(_max.text);
 
@@ -437,15 +454,26 @@ class _HomeworkSheetState extends ConsumerState<_HomeworkSheet> {
       return;
     }
 
-    await ref
-        .read(studyRepositoryProvider)
-        .recordHomework(
-          lessonId: widget.lessonId,
-          score: score,
-          maxScore: max,
-          at: ref.read(clockProvider).now(),
-        );
-    if (mounted) Navigator.of(context).pop(true);
+    setState(() => _saving = true);
+    final ok = await runWrite(
+      context,
+      () => ref
+          .read(studyRepositoryProvider)
+          .recordHomework(
+            lessonId: widget.lessonId,
+            score: score,
+            maxScore: max,
+            at: ref.read(clockProvider).now(),
+          ),
+    );
+    if (!mounted) return;
+    // Staying open on a failure keeps the two numbers the student typed, which
+    // is the only place they exist.
+    if (!ok) {
+      setState(() => _saving = false);
+      return;
+    }
+    Navigator.of(context).pop(true);
   }
 
   @override
@@ -478,7 +506,7 @@ class _HomeworkSheetState extends ConsumerState<_HomeworkSheet> {
             ErrorBanner(message: l.homeworkInvalid),
           ],
           const SizedBox(height: AppSpacing.xxl),
-          PrimaryButton(label: l.commonSave, onTap: _save),
+          PrimaryButton(label: l.commonSave, busy: _saving, onTap: _save),
         ],
       ),
     );
@@ -520,13 +548,50 @@ class _Field extends StatelessWidget {
   }
 }
 
-class _HistoryCard extends StatelessWidget {
+/// The lesson's evidence, and the only place it can be taken back.
+///
+/// A mistyped exam used to be permanent: `deleteExam` existed in the repository
+/// and no screen ever called it, so a student who entered 3 out of 30 as 30 out
+/// of 3 carried a wrong mastery figure — and a review clock they had not earned
+/// — for the rest of the year. In an app whose entire claim is that the number
+/// is trustworthy, an uncorrectable number is the worst possible defect.
+///
+/// A tap opens the same `confirmDestructive` sheet as every other deletion in
+/// the app rather than putting a control on the row: the design's rows are
+/// information (see `showEditSheet`), so the row keeps its shape and the
+/// confirmation carries the weight.
+class _HistoryCard extends ConsumerWidget {
   const _HistoryCard({required this.exams});
 
   final List<ExamEntry> exams;
 
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    ExamEntry exam,
+  ) async {
+    final l = L.of(context);
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    final direction = Directionality.of(context);
+    final message = l.toastExamDeleted;
+
+    final confirmed = await confirmDestructive(
+      context,
+      title: l.examDelete,
+      message: l.examDeleteConfirm,
+    );
+    if (!confirmed) return;
+
+    if (!context.mounted) return;
+    final ok = await runWrite(
+      context,
+      () => ref.read(studyRepositoryProvider).deleteExam(exam.id),
+    );
+    if (ok && overlay != null) showAtherToastOn(overlay, direction, message);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = L.of(context);
 
     return AtherCard(
@@ -540,51 +605,60 @@ class _HistoryCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: Text(l.examNoHistory, style: context.text.secondary),
             )
-          else
+          else ...<Widget>[
+            const SizedBox(height: 2),
+            // Stated rather than left to be discovered: a destructive action
+            // hidden behind an unmarked tap is one a student only finds by
+            // accident.
+            Text(l.examHistoryHint, style: context.text.micro),
             for (final exam in exams) ...<Widget>[
               const SizedBox(height: 4),
               const CardDivider(),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 11),
-                child: Row(
-                  children: <Widget>[
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: MasteryPalette.ofScore(
-                          context.colors,
-                          exam.percentage,
+              Pressable(
+                onTap: () => _delete(context, ref, exam),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: MasteryPalette.ofScore(
+                            context.colors,
+                            exam.percentage,
+                          ),
+                          shape: BoxShape.circle,
                         ),
-                        shape: BoxShape.circle,
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        dateLabel(exam.createdAt),
-                        style: context.text.secondary,
-                      ),
-                    ),
-                    if (exam.isReviewExam) ...<Widget>[
-                      MiniBadge(label: l.examReviewBadge),
                       const SizedBox(width: AppSpacing.sm),
-                    ],
-                    Text(
-                      percent(exam.percentage),
-                      style: AppTypography.style(
-                        size: 16,
-                        weight: AppTypography.bold,
-                        color: MasteryPalette.ofScore(
-                          context.colors,
-                          exam.percentage,
+                      Expanded(
+                        child: Text(
+                          dateLabel(exam.createdAt),
+                          style: context.text.secondary,
                         ),
                       ),
-                    ),
-                  ],
+                      if (exam.isReviewExam) ...<Widget>[
+                        MiniBadge(label: l.examReviewBadge),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
+                      Text(
+                        percent(exam.percentage),
+                        style: AppTypography.style(
+                          size: 16,
+                          weight: AppTypography.bold,
+                          color: MasteryPalette.ofScore(
+                            context.colors,
+                            exam.percentage,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
+          ],
         ],
       ),
     );

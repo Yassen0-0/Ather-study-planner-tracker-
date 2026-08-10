@@ -22,10 +22,16 @@ const List<Locale> kSupportedLocales = <Locale>[Locale('ar'), Locale('en')];
 /// locale change — or on every auth event — would reset every navigation stack,
 /// so the auth gate is handed callbacks rather than a watched value.
 final routerProvider = Provider<GoRouter>((ref) {
-  return createRouter(
+  final router = createRouter(
     isSignedIn: () => ref.read(authRepositoryProvider).currentAccount != null,
     accountChanges: ref.read(authRepositoryProvider).watchAccount(),
   );
+  // Disposing the router disposes its refresh listenable, which is what cancels
+  // the account subscription underneath. The provider lives for the life of the
+  // app, so this only ever runs when a `ProviderScope` is torn down -- which is
+  // every widget test, and a stream left listening there leaks across tests.
+  ref.onDispose(router.dispose);
+  return router;
 });
 
 /// Swallows the system back button while the lock screen is up.

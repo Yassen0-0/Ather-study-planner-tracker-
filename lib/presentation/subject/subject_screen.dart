@@ -20,6 +20,7 @@ import '../../core/widgets/mastery_bar.dart';
 import '../../domain/services/summaries.dart';
 import '../common/prompts.dart';
 import '../common/subject_presentation.dart';
+import '../common/write_guard.dart';
 import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
 
@@ -38,10 +39,17 @@ class SubjectScreen extends ConsumerWidget {
       title: l.addChapter,
       hint: l.chapterNameHint,
     );
-    if (name == null) return;
-    await ref
-        .read(studyRepositoryProvider)
-        .createChapter(subjectId: subjectId, name: name);
+    if (name == null || !context.mounted) return;
+    await runWrite(
+      context,
+      () => ref
+          .read(studyRepositoryProvider)
+          .createChapter(
+            subjectId: subjectId,
+            name: name,
+            at: ref.read(clockProvider).now(),
+          ),
+    );
   }
 
   @override

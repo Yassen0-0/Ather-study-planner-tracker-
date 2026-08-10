@@ -78,6 +78,16 @@ class LAr extends L {
   String get sectionSubjects => 'المواد';
 
   @override
+  String get firstRunTitle => 'ابدأ من هنا';
+
+  @override
+  String get firstRunBody =>
+      'افتح مادة، ضيف فيها باب، وبعدين درس. الإتقان بيتحسب من امتحاناتك الحقيقية بس — مش من إنك خلصت الدرس.';
+
+  @override
+  String get firstRunAction => 'افتح أول مادة';
+
+  @override
   String get sectionNext => 'اللي بعده';
 
   @override
@@ -305,6 +315,19 @@ class LAr extends L {
   String get examReviewBadge => 'مراجعة';
 
   @override
+  String get examHistoryHint => 'دوس على امتحان عشان تشيله لو اتسجل غلط';
+
+  @override
+  String get examDelete => 'شيل الامتحان';
+
+  @override
+  String get examDeleteConfirm =>
+      'هيتشال الامتحان من السجل وإتقان الدرس هيتحسب من غيره. مش هينفع ترجع فيها.';
+
+  @override
+  String get toastExamDeleted => 'اتشال الامتحان — الإتقان اتحسب من الأول';
+
+  @override
   String get examStart => 'ابدأ الامتحان';
 
   @override
@@ -344,6 +367,9 @@ class LAr extends L {
   String get examAddGroup => '+ إضافة مجموعة';
 
   @override
+  String get examRemoveGroup => 'شيل المجموعة';
+
+  @override
   String examGroupLabel(String count, String points) {
     return '$count أسئلة × $points درجة';
   }
@@ -364,6 +390,22 @@ class LAr extends L {
 
   @override
   String get examSaveReview => 'احفظ امتحان المراجعة';
+
+  @override
+  String get examSaveFailed =>
+      'مقدرناش نحفظ الامتحان. أرقامك لسه موجودة — جرّب تاني.';
+
+  @override
+  String get examDiscardTitle => 'تسيب الامتحان؟';
+
+  @override
+  String get examDiscardBody => 'اللي كتبته هيروح ومش هيتسجل.';
+
+  @override
+  String get examDiscardLeave => 'سيبه';
+
+  @override
+  String get examDiscardStay => 'كمّل';
 
   @override
   String get examErrorNeedAtLeastOneQuestion => 'لازم سؤال واحد على الأقل';
@@ -417,6 +459,10 @@ class LAr extends L {
 
   @override
   String get analyticsAllSubjects => 'كل المواد';
+
+  @override
+  String get analyticsAlwaysAllSubjects =>
+      'الكارت ده بيقارن المواد الأربعة دايماً';
 
   @override
   String get analyticsMasteryBySubject => 'الإتقان حسب المادة';
@@ -610,6 +656,10 @@ class LAr extends L {
   String get settingsNotificationsBody => 'ذكّرني لما يجي وقت مراجعة درس';
 
   @override
+  String get settingsNotificationsBlocked =>
+      'التنبيهات مقفولة من إعدادات التليفون. افتحها من هناك عشان التذكير يوصلك.';
+
+  @override
   String get settingsAbout => 'عن التطبيق';
 
   @override
@@ -695,6 +745,18 @@ class LAr extends L {
 
   @override
   String get commonSave => 'حفظ';
+
+  @override
+  String get commonSomethingWentWrong => 'في حاجة مامشتش صح. جرّب تاني.';
+
+  @override
+  String get nameRequired => 'اكتب اسم الأول';
+
+  @override
+  String get authShowPassword => 'إظهار كلمة السر';
+
+  @override
+  String get authHidePassword => 'إخفاء كلمة السر';
 
   @override
   String get commonCancel => 'إلغاء';

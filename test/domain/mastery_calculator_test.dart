@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/instants.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/mastery.dart';
@@ -95,36 +97,66 @@ void main() {
       );
     });
 
-    test('unexamined lessons drag the average down instead of being excluded',
-        () async {
-      final snap = await buildSnapshot((repo) async {
-        final chapter = await repo.createChapter(subjectId: 1, name: 'باب');
-        final proven = await repo.createLesson(chapterId: chapter, name: 'مثبت');
-        await repo.createLesson(chapterId: chapter, name: 'لسه');
-        await repo.createLesson(chapterId: chapter, name: 'لسه ٢');
-        await recordPercentage(repo, proven, 90, DateTime(2026, 1, 1));
-      });
+    test(
+      'unexamined lessons drag the average down instead of being excluded',
+      () async {
+        final snap = await buildSnapshot((repo) async {
+          final chapter = await repo.createChapter(
+            subjectId: 1,
+            name: 'باب',
+            at: kSeedInstant,
+          );
+          final proven = await repo.createLesson(
+            chapterId: chapter,
+            name: 'مثبت',
+            at: kSeedInstant,
+          );
+          await repo.createLesson(
+            chapterId: chapter,
+            name: 'لسه',
+            at: kSeedInstant,
+          );
+          await repo.createLesson(
+            chapterId: chapter,
+            name: 'لسه ٢',
+            at: kSeedInstant,
+          );
+          await recordPercentage(repo, proven, 90, DateTime(2026, 1, 1));
+        });
 
-      final chapterId = snap.chapters.single.id;
-      // One lesson at 90, two at 0 -> 30. Not 90.
-      expect(
-        MasteryCalculator.chapterMasteryOf(snap, chapterId),
-        closeTo(30, 1e-9),
-      );
-    });
+        final chapterId = snap.chapters.single.id;
+        // One lesson at 90, two at 0 -> 30. Not 90.
+        expect(
+          MasteryCalculator.chapterMasteryOf(snap, chapterId),
+          closeTo(30, 1e-9),
+        );
+      },
+    );
   });
 
   group('subject and overall mastery', () {
     test('subject mastery averages chapters, not lessons', () async {
       final snap = await buildSnapshot((repo) async {
         // Chapter A: 1 lesson at 100. Chapter B: 3 lessons at 0.
-        final a = await repo.createChapter(subjectId: 1, name: 'أ');
-        final lesson = await repo.createLesson(chapterId: a, name: 'د');
+        final a = await repo.createChapter(
+          subjectId: 1,
+          name: 'أ',
+          at: kSeedInstant,
+        );
+        final lesson = await repo.createLesson(
+          chapterId: a,
+          name: 'د',
+          at: kSeedInstant,
+        );
         await recordPercentage(repo, lesson, 100, DateTime(2026, 1, 1));
 
-        final b = await repo.createChapter(subjectId: 1, name: 'ب');
+        final b = await repo.createChapter(
+          subjectId: 1,
+          name: 'ب',
+          at: kSeedInstant,
+        );
         for (var i = 0; i < 3; i++) {
-          await repo.createLesson(chapterId: b, name: 'د$i');
+          await repo.createLesson(chapterId: b, name: 'د$i', at: kSeedInstant);
         }
       });
 
@@ -133,16 +165,27 @@ void main() {
       expect(MasteryCalculator.subjectMasteryOf(snap, 1), closeTo(50, 1e-9));
     });
 
-    test('overall counts all four subjects, including untouched ones', () async {
-      final snap = await buildSnapshot((repo) async {
-        final chapter = await repo.createChapter(subjectId: 1, name: 'باب');
-        final lesson = await repo.createLesson(chapterId: chapter, name: 'درس');
-        await recordPercentage(repo, lesson, 100, DateTime(2026, 1, 1));
-      });
+    test(
+      'overall counts all four subjects, including untouched ones',
+      () async {
+        final snap = await buildSnapshot((repo) async {
+          final chapter = await repo.createChapter(
+            subjectId: 1,
+            name: 'باب',
+            at: kSeedInstant,
+          );
+          final lesson = await repo.createLesson(
+            chapterId: chapter,
+            name: 'درس',
+            at: kSeedInstant,
+          );
+          await recordPercentage(repo, lesson, 100, DateTime(2026, 1, 1));
+        });
 
-      // Biology at 100, the other three untouched at 0 -> 25, never 100.
-      expect(MasteryCalculator.overallMastery(snap), closeTo(25, 1e-9));
-    });
+        // Biology at 100, the other three untouched at 0 -> 25, never 100.
+        expect(MasteryCalculator.overallMastery(snap), closeTo(25, 1e-9));
+      },
+    );
 
     test('a completely empty database is 0, not NaN', () async {
       final snap = await buildSnapshot((_) async {});
@@ -168,8 +211,16 @@ void main() {
   group('homework is never part of mastery', () {
     test('perfect homework does not lift a weak exam score', () async {
       final snap = await buildSnapshot((repo) async {
-        final chapter = await repo.createChapter(subjectId: 1, name: 'باب');
-        final lesson = await repo.createLesson(chapterId: chapter, name: 'درس');
+        final chapter = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final lesson = await repo.createLesson(
+          chapterId: chapter,
+          name: 'درس',
+          at: kSeedInstant,
+        );
         await recordPercentage(repo, lesson, 30, DateTime(2026, 1, 1));
         // Full marks on homework, repeatedly.
         for (var i = 1; i <= 5; i++) {
@@ -239,7 +290,9 @@ void main() {
     test('needs at least two exams', () {
       expect(MasteryCalculator.isDeclining(const <ExamEntry>[]), isFalse);
       expect(
-        MasteryCalculator.isDeclining(<ExamEntry>[exam(id: 1, percentage: 10, day: 1)]),
+        MasteryCalculator.isDeclining(<ExamEntry>[
+          exam(id: 1, percentage: 10, day: 1),
+        ]),
         isFalse,
       );
     });
@@ -276,8 +329,16 @@ void main() {
   group('averageExamScore', () {
     test('is an unweighted mean, unlike mastery', () async {
       final snap = await buildSnapshot((repo) async {
-        final chapter = await repo.createChapter(subjectId: 1, name: 'باب');
-        final lesson = await repo.createLesson(chapterId: chapter, name: 'درس');
+        final chapter = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final lesson = await repo.createLesson(
+          chapterId: chapter,
+          name: 'درس',
+          at: kSeedInstant,
+        );
         await recordPercentage(repo, lesson, 40, DateTime(2026, 1, 1));
         await recordPercentage(repo, lesson, 100, DateTime(2026, 2, 1));
       });
@@ -303,7 +364,7 @@ void main() {
   group('everyLessonExamined', () {
     test('false for an empty chapter', () async {
       final snap = await buildSnapshot((repo) async {
-        await repo.createChapter(subjectId: 1, name: 'فاضي');
+        await repo.createChapter(subjectId: 1, name: 'فاضي', at: kSeedInstant);
       });
       expect(
         MasteryCalculator.everyLessonExamined(snap, snap.chapters.single.id),
@@ -314,17 +375,41 @@ void main() {
     test('false while any lesson is unexamined, true once all are', () async {
       late int chapterId;
       var snap = await buildSnapshot((repo) async {
-        chapterId = await repo.createChapter(subjectId: 1, name: 'باب');
-        final a = await repo.createLesson(chapterId: chapterId, name: 'أ');
-        await repo.createLesson(chapterId: chapterId, name: 'ب');
+        chapterId = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final a = await repo.createLesson(
+          chapterId: chapterId,
+          name: 'أ',
+          at: kSeedInstant,
+        );
+        await repo.createLesson(
+          chapterId: chapterId,
+          name: 'ب',
+          at: kSeedInstant,
+        );
         await recordPercentage(repo, a, 80, DateTime(2026, 1, 1));
       });
       expect(MasteryCalculator.everyLessonExamined(snap, chapterId), isFalse);
 
       snap = await buildSnapshot((repo) async {
-        final c = await repo.createChapter(subjectId: 1, name: 'باب');
-        final a = await repo.createLesson(chapterId: c, name: 'أ');
-        final b = await repo.createLesson(chapterId: c, name: 'ب');
+        final c = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final a = await repo.createLesson(
+          chapterId: c,
+          name: 'أ',
+          at: kSeedInstant,
+        );
+        final b = await repo.createLesson(
+          chapterId: c,
+          name: 'ب',
+          at: kSeedInstant,
+        );
         await recordPercentage(repo, a, 80, DateTime(2026, 1, 1));
         await recordPercentage(repo, b, 75, DateTime(2026, 1, 1));
       });
@@ -332,6 +417,64 @@ void main() {
         MasteryCalculator.everyLessonExamined(snap, snap.chapters.single.id),
         isTrue,
       );
+    });
+  });
+
+  // `lessonMasteries` is the fast path the dashboard uses, and it skips the
+  // defensive copy-and-sort that `lessonMastery` makes -- it relies on the
+  // snapshot having already sorted each lesson's exams newest-first. If those
+  // two ever disagree, every figure in the app quietly becomes wrong with no
+  // error anywhere, so they are pinned to each other here.
+  group('lessonMasteries agrees with lessonMastery, lesson for lesson', () {
+    test('across no exams, one exam and several', () async {
+      final snap = await buildSnapshot((repo) async {
+        final c = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+
+        // Never examined.
+        await repo.createLesson(chapterId: c, name: 'فاضي', at: kSeedInstant);
+
+        // Exactly one.
+        final one = await repo.createLesson(
+          chapterId: c,
+          name: 'واحد',
+          at: kSeedInstant,
+        );
+        await recordPercentage(repo, one, 64, DateTime(2026, 1, 1));
+
+        // Several, deliberately recorded out of chronological order so a
+        // mis-sorted "last exam" would change the answer.
+        final many = await repo.createLesson(
+          chapterId: c,
+          name: 'كتير',
+          at: kSeedInstant,
+        );
+        await recordPercentage(repo, many, 30, DateTime(2026, 3, 1));
+        await recordPercentage(repo, many, 90, DateTime(2026, 1, 1));
+        await recordPercentage(repo, many, 60, DateTime(2026, 2, 1));
+      });
+
+      final fast = MasteryCalculator.lessonMasteries(snap);
+
+      expect(fast, hasLength(snap.lessons.length));
+      for (final lesson in snap.lessons) {
+        expect(
+          fast[lesson.id],
+          closeTo(
+            MasteryCalculator.lessonMastery(snap.examsFor(lesson.id)),
+            1e-9,
+          ),
+          reason: 'lesson ${lesson.name} disagrees',
+        );
+      }
+
+      // And the arithmetic itself, spelled out rather than only compared:
+      // newest is 30, the other two average 75, so 30*0.7 + 75*0.3.
+      final many = snap.lessons.firstWhere((l) => l.name == 'كتير');
+      expect(fast[many.id], closeTo(30 * 0.7 + 75 * 0.3, 1e-9));
     });
   });
 }

@@ -92,14 +92,18 @@ class DriftStudyRepository implements StudyRepository {
   // --- Chapters -------------------------------------------------------------
 
   @override
-  Future<int> createChapter({required int subjectId, required String name}) {
+  Future<int> createChapter({
+    required int subjectId,
+    required String name,
+    required DateTime at,
+  }) {
     return _db
         .into(_db.chapters)
         .insert(
           ChaptersCompanion.insert(
             subjectId: subjectId,
             name: name.trim(),
-            createdAt: DateTime.now(),
+            createdAt: at,
           ),
         );
   }
@@ -145,14 +149,18 @@ class DriftStudyRepository implements StudyRepository {
   // --- Lessons --------------------------------------------------------------
 
   @override
-  Future<int> createLesson({required int chapterId, required String name}) {
+  Future<int> createLesson({
+    required int chapterId,
+    required String name,
+    required DateTime at,
+  }) {
     return _db
         .into(_db.lessons)
         .insert(
           LessonsCompanion.insert(
             chapterId: chapterId,
             name: name.trim(),
-            createdAt: DateTime.now(),
+            createdAt: at,
           ),
         );
   }
@@ -260,8 +268,71 @@ class DriftStudyRepository implements StudyRepository {
   }
 
   @override
-  Future<void> deleteExam(int examId) async {
-    await (_db.delete(_db.examEntries)..where((t) => t.id.equals(examId))).go();
+  Future<void> deleteExam(int examId) {
+    // Deleting the evidence has to move the clock that evidence started.
+    //
+    // `recordExam` stamps `lastReviewedAt` from the exam it just wrote. Removing
+    // that exam without touching the stamp leaves a lesson counting down from a
+    // date nothing in the database supports any more -- so a student who deletes
+    // a mistyped entry keeps a review clock they never earned, and mastery (which
+    // *is* derived) and the clock (which is not) start telling different stories.
+    return _db.transaction(() async {
+      final exam = await (_db.select(
+        _db.examEntries,
+      )..where((t) => t.id.equals(examId))).getSingleOrNull();
+      if (exam == null) return;
+
+      final lessonId = exam.lessonId;
+      await (_db.delete(
+        _db.examEntries,
+      )..where((t) => t.id.equals(examId))).go();
+
+      // The newest exam still standing, if any.
+      final remaining =
+          await (_db.select(_db.examEntries)
+                ..where((t) => t.lessonId.equals(lessonId))
+                ..orderBy(<OrderClauseGenerator<$ExamEntriesTable>>[
+                  (t) => OrderingTerm(
+                    expression: t.createdAt,
+                    mode: OrderingMode.desc,
+                  ),
+                  (t) =>
+                      OrderingTerm(expression: t.id, mode: OrderingMode.desc),
+                ])
+                ..limit(1))
+              .getSingleOrNull();
+
+      // "أتقنت الباب" also restarts the clock (see markChapterMastered), and it
+      // is not an exam -- so it has to be considered here too, or deleting one
+      // exam would quietly undo a chapter the student legitimately closed out.
+      final lesson = await (_db.select(
+        _db.lessons,
+      )..where((t) => t.id.equals(lessonId))).getSingleOrNull();
+      final chapter = lesson == null
+          ? null
+          : await (_db.select(
+              _db.chapters,
+            )..where((t) => t.id.equals(lesson.chapterId))).getSingleOrNull();
+
+      final DateTime? fromExam = remaining?.createdAt;
+      final DateTime? fromMastery = chapter?.masteredAt;
+      final DateTime? proven = switch ((fromExam, fromMastery)) {
+        (null, null) => null,
+        (final DateTime e, null) => e,
+        (null, final DateTime m) => m,
+        (final DateTime e, final DateTime m) => e.isAfter(m) ? e : m,
+      };
+
+      await (_db.update(
+        _db.lessons,
+      )..where((t) => t.id.equals(lessonId))).write(
+        LessonsCompanion(
+          lastReviewedAt: Value<DateTime?>(proven),
+          // The remaining cycle is a different one from the cancelled reminder's.
+          lastNotifiedAt: const Value<DateTime?>(null),
+        ),
+      );
+    });
   }
 
   // --- Homework -------------------------------------------------------------
@@ -283,13 +354,6 @@ class DriftStudyRepository implements StudyRepository {
             createdAt: at,
           ),
         );
-  }
-
-  @override
-  Future<void> deleteHomework(int homeworkId) async {
-    await (_db.delete(
-      _db.homeworkEntries,
-    )..where((t) => t.id.equals(homeworkId))).go();
   }
 
   // --- Restore --------------------------------------------------------------
@@ -375,6 +439,14 @@ class DriftStudyRepository implements StudyRepository {
           ]);
       });
     });
+  }
+
+  @override
+  Future<void> clear() {
+    // Chapters cascade to lessons, exams, groups and homework -- the same one
+    // delete `restore` opens with, and for the same reason: it empties exactly
+    // what a backup owns and leaves the seeded subjects alone.
+    return _db.delete(_db.chapters).go();
   }
 
   // --- Mappers --------------------------------------------------------------

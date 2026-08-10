@@ -69,7 +69,9 @@ void main() {
     return ProviderScope(
       overrides: [
         authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
-        backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
+        backupRepositoryProvider.overrideWithValue(
+          FakeBackupRepository.failing(),
+        ),
         sharedPreferencesProvider.overrideWithValue(preferences),
         databaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(MutableClock(now)),
@@ -217,9 +219,10 @@ void main() {
     await addTask(tester, 'الأولى');
     await addTask(tester, 'التانية');
 
-    expect(<String>[
-      for (final t in await tasksOn(tester, now)) t.title,
-    ], <String>['الأولى', 'التانية']);
+    expect(
+      <String>[for (final t in await tasksOn(tester, now)) t.title],
+      <String>['الأولى', 'التانية'],
+    );
 
     // Captured before the drag starts: once a row is picked up the others move.
     final target = tester.getCenter(find.text('الأولى'));

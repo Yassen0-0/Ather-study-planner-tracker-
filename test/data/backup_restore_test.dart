@@ -1,5 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/instants.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/data/repositories/drift_study_repository.dart';
 import 'package:ather/data/repositories/drift_task_repository.dart';
@@ -121,7 +123,7 @@ void main() {
   });
 
   test('restore replaces rather than merges', () async {
-    await study.createChapter(subjectId: 1, name: 'باب قديم');
+    await study.createChapter(subjectId: 1, name: 'باب قديم', at: kSeedInstant);
     expect((await study.readSnapshot()).chapters, hasLength(1));
 
     await study.restore(backup());
@@ -142,8 +144,13 @@ void main() {
     final chapterId = await study.createChapter(
       subjectId: 1,
       name: 'شغل الطالب',
+      at: kSeedInstant,
     );
-    await study.createLesson(chapterId: chapterId, name: 'درس مهم');
+    await study.createLesson(
+      chapterId: chapterId,
+      name: 'درس مهم',
+      at: kSeedInstant,
+    );
 
     // A lesson pointing at a chapter that is not in the backup: the foreign key
     // rejects it, part-way through the insert batch and after the delete.

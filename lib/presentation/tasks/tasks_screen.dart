@@ -15,6 +15,7 @@ import '../../core/widgets/week_strip.dart';
 import '../../domain/entities/daily_task.dart';
 import '../common/prompts.dart';
 import '../common/settings_button.dart';
+import '../common/write_guard.dart';
 import '../providers/app_providers.dart';
 import '../providers/task_providers.dart';
 import 'widgets/task_row.dart';
@@ -42,10 +43,17 @@ class TasksScreen extends ConsumerWidget {
       title: l.addTaskTitle,
       hint: l.taskNameHint,
     );
-    if (title == null) return;
-    // No toast. The toast is the acknowledgement for recording evidence, and
-    // spending it on "task added" is how it stops meaning anything.
-    await ref.read(taskRepositoryProvider).addTask(day: day, title: title);
+    if (title == null || !context.mounted) return;
+    // No success toast. The toast is the acknowledgement for recording evidence,
+    // and spending it on "task added" is how it stops meaning anything. A
+    // *failure* still speaks: a row that never appears with no explanation reads
+    // as a broken app.
+    await runWrite(
+      context,
+      () => ref
+          .read(taskRepositoryProvider)
+          .addTask(day: day, title: title, at: ref.read(clockProvider).now()),
+    );
   }
 
   Future<void> _edit(
@@ -66,10 +74,13 @@ class TasksScreen extends ConsumerWidget {
           hint: l.taskNameHint,
           initialValue: task.title,
         );
-        if (title == null) return;
-        await ref
-            .read(taskRepositoryProvider)
-            .renameTask(taskId: task.id, title: title);
+        if (title == null || !context.mounted) return;
+        await runWrite(
+          context,
+          () => ref
+              .read(taskRepositoryProvider)
+              .renameTask(taskId: task.id, title: title),
+        );
       },
       onDelete: () async {
         final confirmed = await confirmDestructive(
@@ -77,13 +88,17 @@ class TasksScreen extends ConsumerWidget {
           title: l.deleteTask,
           message: l.deleteTaskConfirm,
         );
-        if (!confirmed) return;
-        await ref.read(taskRepositoryProvider).deleteTask(task.id);
+        if (!confirmed || !context.mounted) return;
+        await runWrite(
+          context,
+          () => ref.read(taskRepositoryProvider).deleteTask(task.id),
+        );
       },
     );
   }
 
   Future<void> _reorder(
+    BuildContext context,
     WidgetRef ref,
     List<DailyTask> tasks,
     int oldIndex,
@@ -94,9 +109,15 @@ class TasksScreen extends ConsumerWidget {
     final ids = <int>[for (final task in tasks) task.id];
     ids.insert(newIndex, ids.removeAt(oldIndex));
 
-    return ref
-        .read(taskRepositoryProvider)
-        .reorderTasks(day: ref.read(selectedTaskDayProvider), orderedIds: ids);
+    return runWrite(
+      context,
+      () => ref
+          .read(taskRepositoryProvider)
+          .reorderTasks(
+            day: ref.read(selectedTaskDayProvider),
+            orderedIds: ids,
+          ),
+    );
   }
 
   @override
@@ -148,17 +169,17 @@ class TasksScreen extends ConsumerWidget {
           ),
           _TaskList(
             tasks: tasks,
-            onToggle: (task) => ref
-                .read(taskRepositoryProvider)
-                .setTaskDone(taskId: task.id, done: !task.done),
+            onToggle: (task) => runWrite(
+              context,
+              () => ref
+                  .read(taskRepositoryProvider)
+                  .setTaskDone(taskId: task.id, done: !task.done),
+            ),
             onEdit: (task) => _edit(context, ref, task),
             onReorder: (oldIndex, newIndex) =>
-                _reorder(ref, tasks, oldIndex, newIndex),
+                _reorder(context, ref, tasks, oldIndex, newIndex),
           ),
-          DashedAddButton(
-            label: l.addTask,
-            onTap: () => _add(context, ref),
-          ),
+          DashedAddButton(label: l.addTask, onTap: () => _add(context, ref)),
         ],
       ],
     );
@@ -225,6 +246,7 @@ class _TaskList extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSpacing.listGap),
         child: ListEntrance(
           index: i,
+          id: tasks[i].id,
           child: TaskRow(
             task: tasks[i],
             onToggle: () => onToggle(tasks[i]),

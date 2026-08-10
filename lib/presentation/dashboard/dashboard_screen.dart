@@ -53,15 +53,30 @@ class DashboardScreen extends ConsumerWidget {
         strip: WeekStrip(today: now, activeDays: examDays),
       ),
       children: <Widget>[
-        _OverallCard(dashboard: dashboard),
-        const SizedBox(height: AppSpacing.md),
-        _StatsCard(stats: stats),
+        // A brand-new student used to land on "—", three zeroes and four
+        // subject rows, with the actual first step -- open a subject, add a
+        // chapter, add a lesson, sit an exam -- written down nowhere. It is the
+        // longest path in the app and it was the only one with no signposting.
+        //
+        // The card **replaces** the two summary cards rather than sitting above
+        // them: with nothing recorded they show "—" and "0 / 0" three times, so
+        // they occupy the top of the screen to say nothing. Stacking a third
+        // card on top of them pushed the four subjects -- the only things worth
+        // tapping -- below the fold.
+        if (dashboard.isEmpty)
+          _FirstRunCard(subjects: dashboard.subjects)
+        else ...<Widget>[
+          _OverallCard(dashboard: dashboard),
+          const SizedBox(height: AppSpacing.md),
+          _StatsCard(stats: stats),
+        ],
         const SizedBox(height: AppSpacing.section),
         SectionTitle(l.sectionSubjects),
         const SizedBox(height: AppSpacing.md),
         for (final (i, subject) in dashboard.subjects.indexed) ...<Widget>[
           ListEntrance(
             index: i,
+            id: subject.subject.id,
             child: _SubjectRow(summary: subject),
           ),
           const SizedBox(height: AppSpacing.listGap),
@@ -73,6 +88,49 @@ class DashboardScreen extends ConsumerWidget {
           _NextCard(target: next),
         ],
       ],
+    );
+  }
+}
+
+/// Shown only while the student has built nothing at all.
+///
+/// It disappears the moment a first chapter exists, so it is a starting point
+/// rather than a tutorial to dismiss — there is no "got it" button, because a
+/// card that has to be got rid of is a card that will be got rid of unread.
+///
+/// The copy also states the product's one claim up front. A student arriving
+/// from any other study app expects ticking things off to move a number, and
+/// finding out otherwise three screens in is finding out too late.
+class _FirstRunCard extends StatelessWidget {
+  const _FirstRunCard({required this.subjects});
+
+  final List<SubjectSummary> subjects;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.of(context);
+
+    return AtherCard(
+      padding: AppSpacing.cardPaddingLarge,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(l.firstRunTitle, style: AppTypography.cardTitle),
+          const SizedBox(height: 6),
+          Text(
+            l.firstRunBody,
+            style: context.text.secondary.copyWith(height: 1.6),
+          ),
+          if (subjects.isNotEmpty) ...<Widget>[
+            const SizedBox(height: AppSpacing.lg),
+            PrimaryButton(
+              label: l.firstRunAction,
+              onTap: () =>
+                  context.push(Routes.subject(subjects.first.subject.id)),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -181,7 +239,7 @@ class _StatsCard extends StatelessWidget {
               total: stats.totalLessons,
               fraction: stats.fraction(stats.mastered),
               color: stats.mastered > 0
-                  ? context.colors.right
+                  ? context.colors.rightText
                   : context.colors.textPrimary,
             ),
           ),

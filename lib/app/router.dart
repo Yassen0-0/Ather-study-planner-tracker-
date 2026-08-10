@@ -117,6 +117,8 @@ CustomTransitionPage<void> atherModalPage(GoRouterState state, Widget child) {
 
 /// Bridges the account stream to something [GoRouter] will listen to, so the
 /// redirect below re-runs the moment a student signs in or out.
+/// Disposed by [GoRouter.dispose], which `routerProvider` hooks to the provider
+/// scope -- otherwise this subscription outlives the app that created it.
 class _AuthRefresh extends ChangeNotifier {
   _AuthRefresh(Stream<Account?> stream) {
     _subscription = stream.listen((_) => notifyListeners());
@@ -282,5 +284,13 @@ GoRouter createRouter({
   );
 }
 
+/// `-1` for anything unparseable, rather than throwing.
+///
+/// Every screen already handles an id that matches no row — it is the ordinary
+/// case after a delete, and the summary providers return null for it. A bare
+/// `int.parse` turned a malformed path into an exception during route building
+/// instead, which is a crash with no screen to show it on. Nothing in the app
+/// produces such a path today; a restored deep link or a typo'd URL on the
+/// desktop build can.
 int _intParam(GoRouterState state, String name) =>
-    int.parse(state.pathParameters[name]!);
+    int.tryParse(state.pathParameters[name] ?? '') ?? -1;

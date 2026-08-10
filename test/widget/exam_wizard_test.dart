@@ -1,5 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/instants.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/data/repositories/drift_study_repository.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
@@ -26,10 +28,18 @@ void main() {
       // "5 أسئلة بدرجة واحدة، 3 أسئلة بدرجتين", 4 and 2 correct.
       const groups = <ExamQuestionGroup>[
         ExamQuestionGroup(
-          id: 1, examId: 1, pointsPerQuestion: 1, questionCount: 5, correctCount: 4,
+          id: 1,
+          examId: 1,
+          pointsPerQuestion: 1,
+          questionCount: 5,
+          correctCount: 4,
         ),
         ExamQuestionGroup(
-          id: 2, examId: 1, pointsPerQuestion: 2, questionCount: 3, correctCount: 2,
+          id: 2,
+          examId: 1,
+          pointsPerQuestion: 2,
+          questionCount: 3,
+          correctCount: 2,
         ),
       ];
 
@@ -40,7 +50,11 @@ void main() {
     test('an all-correct exam is exactly 100%', () {
       const groups = <ExamQuestionGroup>[
         ExamQuestionGroup(
-          id: 1, examId: 1, pointsPerQuestion: 3, questionCount: 7, correctCount: 7,
+          id: 1,
+          examId: 1,
+          pointsPerQuestion: 3,
+          questionCount: 7,
+          correctCount: 7,
         ),
       ];
       expect(ExamEntry.percentageOf(groups), 100);
@@ -49,7 +63,11 @@ void main() {
     test('an all-wrong exam is 0%, not NaN', () {
       const groups = <ExamQuestionGroup>[
         ExamQuestionGroup(
-          id: 1, examId: 1, pointsPerQuestion: 2, questionCount: 4, correctCount: 0,
+          id: 1,
+          examId: 1,
+          pointsPerQuestion: 2,
+          questionCount: 4,
+          correctCount: 0,
         ),
       ];
       expect(ExamEntry.percentageOf(groups), 0);
@@ -60,18 +78,34 @@ void main() {
       // Same number of questions right, but on the heavier group.
       const heavyRight = <ExamQuestionGroup>[
         ExamQuestionGroup(
-          id: 1, examId: 1, pointsPerQuestion: 1, questionCount: 5, correctCount: 0,
+          id: 1,
+          examId: 1,
+          pointsPerQuestion: 1,
+          questionCount: 5,
+          correctCount: 0,
         ),
         ExamQuestionGroup(
-          id: 2, examId: 1, pointsPerQuestion: 5, questionCount: 5, correctCount: 5,
+          id: 2,
+          examId: 1,
+          pointsPerQuestion: 5,
+          questionCount: 5,
+          correctCount: 5,
         ),
       ];
       const lightRight = <ExamQuestionGroup>[
         ExamQuestionGroup(
-          id: 1, examId: 1, pointsPerQuestion: 1, questionCount: 5, correctCount: 5,
+          id: 1,
+          examId: 1,
+          pointsPerQuestion: 1,
+          questionCount: 5,
+          correctCount: 5,
         ),
         ExamQuestionGroup(
-          id: 2, examId: 1, pointsPerQuestion: 5, questionCount: 5, correctCount: 0,
+          id: 2,
+          examId: 1,
+          pointsPerQuestion: 5,
+          questionCount: 5,
+          correctCount: 0,
         ),
       ];
 
@@ -84,14 +118,26 @@ void main() {
 
   group('review exam flow end to end', () {
     test('an overdue lesson clears once a review exam is recorded', () async {
-      final chapterId = await repo.createChapter(subjectId: 1, name: 'الباب الأول');
-      final lessonId = await repo.createLesson(chapterId: chapterId, name: 'درس');
+      final chapterId = await repo.createChapter(
+        subjectId: 1,
+        name: 'الباب الأول',
+        at: kSeedInstant,
+      );
+      final lessonId = await repo.createLesson(
+        chapterId: chapterId,
+        name: 'درس',
+        at: kSeedInstant,
+      );
 
       // Proven 40 days ago -> decayed.
       await repo.recordExam(
         lessonId: lessonId,
         groups: const <DraftQuestionGroup>[
-          DraftQuestionGroup(pointsPerQuestion: 1, questionCount: 100, correctCount: 85),
+          DraftQuestionGroup(
+            pointsPerQuestion: 1,
+            questionCount: 100,
+            correctCount: 85,
+          ),
         ],
         isReviewExam: false,
         at: now.subtract(const Duration(days: 40)),
@@ -112,7 +158,11 @@ void main() {
       await repo.recordExam(
         lessonId: lessonId,
         groups: const <DraftQuestionGroup>[
-          DraftQuestionGroup(pointsPerQuestion: 1, questionCount: 100, correctCount: 95),
+          DraftQuestionGroup(
+            pointsPerQuestion: 1,
+            questionCount: 100,
+            correctCount: 95,
+          ),
         ],
         isReviewExam: true,
         at: now,
@@ -140,20 +190,39 @@ void main() {
 
   group('chapter completion guard', () {
     test('blocks, then celebrates once every lesson clears 70%', () async {
-      final chapterId = await repo.createChapter(subjectId: 1, name: 'باب');
-      final a = await repo.createLesson(chapterId: chapterId, name: 'أ');
-      final b = await repo.createLesson(chapterId: chapterId, name: 'ب');
+      final chapterId = await repo.createChapter(
+        subjectId: 1,
+        name: 'باب',
+        at: kSeedInstant,
+      );
+      final a = await repo.createLesson(
+        chapterId: chapterId,
+        name: 'أ',
+        at: kSeedInstant,
+      );
+      final b = await repo.createLesson(
+        chapterId: chapterId,
+        name: 'ب',
+        at: kSeedInstant,
+      );
 
       // Nothing examined yet.
       var snapshot = await repo.readSnapshot();
       expect(ReviewCycleService.canMasterChapter(snapshot, chapterId), isFalse);
-      expect(ReviewCycleService.chapterBlockers(snapshot, chapterId), hasLength(2));
+      expect(
+        ReviewCycleService.chapterBlockers(snapshot, chapterId),
+        hasLength(2),
+      );
 
       // One strong lesson; the other still unexamined.
       await repo.recordExam(
         lessonId: a,
         groups: const <DraftQuestionGroup>[
-          DraftQuestionGroup(pointsPerQuestion: 1, questionCount: 100, correctCount: 90),
+          DraftQuestionGroup(
+            pointsPerQuestion: 1,
+            questionCount: 100,
+            correctCount: 90,
+          ),
         ],
         isReviewExam: false,
         at: now,
@@ -169,7 +238,11 @@ void main() {
       await repo.recordExam(
         lessonId: b,
         groups: const <DraftQuestionGroup>[
-          DraftQuestionGroup(pointsPerQuestion: 1, questionCount: 100, correctCount: 20),
+          DraftQuestionGroup(
+            pointsPerQuestion: 1,
+            questionCount: 100,
+            correctCount: 20,
+          ),
         ],
         isReviewExam: false,
         at: now,
@@ -185,7 +258,11 @@ void main() {
       await repo.recordExam(
         lessonId: b,
         groups: const <DraftQuestionGroup>[
-          DraftQuestionGroup(pointsPerQuestion: 1, questionCount: 100, correctCount: 80),
+          DraftQuestionGroup(
+            pointsPerQuestion: 1,
+            questionCount: 100,
+            correctCount: 80,
+          ),
         ],
         isReviewExam: false,
         at: now.add(const Duration(days: 1)),
@@ -202,20 +279,31 @@ void main() {
       // while one lesson still sits at 62%. `chapterBlockers` keeps listing
       // that lesson -- it answers "what is weakest here", and is only ever
       // rendered when the gate fails, so the two never contradict on screen.
-      final remaining =
-          ReviewCycleService.chapterBlockers(snapshot, chapterId);
+      final remaining = ReviewCycleService.chapterBlockers(snapshot, chapterId);
       expect(remaining, hasLength(1));
       expect(remaining.single.mastery, closeTo(62, 1e-9));
     });
 
     test('mastering restarts the review clock on every lesson', () async {
-      final chapterId = await repo.createChapter(subjectId: 1, name: 'باب');
+      final chapterId = await repo.createChapter(
+        subjectId: 1,
+        name: 'باب',
+        at: kSeedInstant,
+      );
       for (var i = 0; i < 3; i++) {
-        final id = await repo.createLesson(chapterId: chapterId, name: 'د$i');
+        final id = await repo.createLesson(
+          chapterId: chapterId,
+          name: 'د$i',
+          at: kSeedInstant,
+        );
         await repo.recordExam(
           lessonId: id,
           groups: const <DraftQuestionGroup>[
-            DraftQuestionGroup(pointsPerQuestion: 1, questionCount: 100, correctCount: 88),
+            DraftQuestionGroup(
+              pointsPerQuestion: 1,
+              questionCount: 100,
+              correctCount: 88,
+            ),
           ],
           isReviewExam: false,
           at: now.subtract(const Duration(days: 20)),
@@ -234,60 +322,99 @@ void main() {
   });
 
   group('summaries stay consistent with the calculators', () {
-    test('a chapter summary reports the same numbers as the raw services',
-        () async {
-      final chapterId = await repo.createChapter(subjectId: 2, name: 'باب');
-      final a = await repo.createLesson(chapterId: chapterId, name: 'أ');
-      await repo.createLesson(chapterId: chapterId, name: 'ب');
-      await repo.recordExam(
-        lessonId: a,
-        groups: const <DraftQuestionGroup>[
-          DraftQuestionGroup(pointsPerQuestion: 1, questionCount: 100, correctCount: 60),
-        ],
-        isReviewExam: false,
-        at: now,
-      );
+    test(
+      'a chapter summary reports the same numbers as the raw services',
+      () async {
+        final chapterId = await repo.createChapter(
+          subjectId: 2,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final a = await repo.createLesson(
+          chapterId: chapterId,
+          name: 'أ',
+          at: kSeedInstant,
+        );
+        await repo.createLesson(
+          chapterId: chapterId,
+          name: 'ب',
+          at: kSeedInstant,
+        );
+        await repo.recordExam(
+          lessonId: a,
+          groups: const <DraftQuestionGroup>[
+            DraftQuestionGroup(
+              pointsPerQuestion: 1,
+              questionCount: 100,
+              correctCount: 60,
+            ),
+          ],
+          isReviewExam: false,
+          at: now,
+        );
 
-      final snapshot = await repo.readSnapshot();
-      final summary = Summaries.chapter(
-        snapshot,
-        snapshot.chapterById(chapterId)!,
-        now,
-      );
+        final snapshot = await repo.readSnapshot();
+        final summary = Summaries.chapter(
+          snapshot,
+          snapshot.chapterById(chapterId)!,
+          now,
+        );
 
-      expect(
-        summary.mastery,
-        closeTo(MasteryCalculator.chapterMasteryOf(snapshot, chapterId), 1e-9),
-      );
-      expect(summary.lessonCount, 2);
-      expect(summary.examinedLessonCount, 1);
-      expect(summary.canMaster, isFalse);
-      expect(summary.weakestLesson!.lesson.name, 'ب');
-    });
+        expect(
+          summary.mastery,
+          closeTo(
+            MasteryCalculator.chapterMasteryOf(snapshot, chapterId),
+            1e-9,
+          ),
+        );
+        expect(summary.lessonCount, 2);
+        expect(summary.examinedLessonCount, 1);
+        expect(summary.canMaster, isFalse);
+        expect(summary.weakestLesson!.lesson.name, 'ب');
+      },
+    );
 
-    test('the dashboard counts remaining lessons and mastered chapters',
-        () async {
-      final chapterId = await repo.createChapter(subjectId: 1, name: 'باب');
-      final strong = await repo.createLesson(chapterId: chapterId, name: 'قوي');
-      await repo.createLesson(chapterId: chapterId, name: 'بدون');
-      await repo.recordExam(
-        lessonId: strong,
-        groups: const <DraftQuestionGroup>[
-          DraftQuestionGroup(pointsPerQuestion: 1, questionCount: 100, correctCount: 92),
-        ],
-        isReviewExam: false,
-        at: now,
-      );
+    test(
+      'the dashboard counts remaining lessons and mastered chapters',
+      () async {
+        final chapterId = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final strong = await repo.createLesson(
+          chapterId: chapterId,
+          name: 'قوي',
+          at: kSeedInstant,
+        );
+        await repo.createLesson(
+          chapterId: chapterId,
+          name: 'بدون',
+          at: kSeedInstant,
+        );
+        await repo.recordExam(
+          lessonId: strong,
+          groups: const <DraftQuestionGroup>[
+            DraftQuestionGroup(
+              pointsPerQuestion: 1,
+              questionCount: 100,
+              correctCount: 92,
+            ),
+          ],
+          isReviewExam: false,
+          at: now,
+        );
 
-      final snapshot = await repo.readSnapshot();
-      final dashboard = Summaries.dashboard(snapshot, now);
+        final snapshot = await repo.readSnapshot();
+        final dashboard = Summaries.dashboard(snapshot, now);
 
-      expect(dashboard.totalChapters, 1);
-      expect(dashboard.masteredChapters, 0);
-      // Only the unexamined lesson still counts as remaining.
-      expect(dashboard.lessonsRemaining, 1);
-      expect(dashboard.strongestSubject!.subject.id, 1);
-      expect(dashboard.overdueCount, 0);
-    });
+        expect(dashboard.totalChapters, 1);
+        expect(dashboard.masteredChapters, 0);
+        // Only the unexamined lesson still counts as remaining.
+        expect(dashboard.lessonsRemaining, 1);
+        expect(dashboard.strongestSubject!.subject.id, 1);
+        expect(dashboard.overdueCount, 0);
+      },
+    );
   });
 }

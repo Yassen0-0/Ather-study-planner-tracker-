@@ -96,7 +96,11 @@ void main() {
 
     await tester.tap(find.text('رجوع'));
     await tester.pumpAndSettle();
+    // Back on step 1, "رجوع" leaves the wizard -- and now that there is typed
+    // input to lose, leaving asks first. Answering it is part of the script.
     await tester.tap(find.text('رجوع'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('سيبه'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('مراجعة'));

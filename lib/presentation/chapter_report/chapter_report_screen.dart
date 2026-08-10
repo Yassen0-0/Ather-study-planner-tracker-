@@ -92,7 +92,7 @@ class _ReportCard extends StatelessWidget {
     final from = percent(first);
     final to = percent(summary.mastery);
     return delta > 0
-        ? (l.trendUp(from, to), colors.right)
+        ? (l.trendUp(from, to), colors.rightText)
         : (l.trendDown(from, to), colors.wrong);
   }
 

@@ -80,8 +80,17 @@ final appLockEnabledProvider = NotifierProvider<AppLockNotifier, bool>(
 /// Starts locked so the very first frame after launch is the lock, never a
 /// glimpse of the dashboard behind it.
 class LockStateNotifier extends Notifier<bool> {
+  /// `read`, deliberately, not `watch`.
+  ///
+  /// Watching re-runs `build` whenever the preference changes and resets the
+  /// state to its result — so turning the switch **on** in Settings dropped the
+  /// lock screen over the app on the spot, fired a fingerprint prompt, and left
+  /// a student who cancelled it shut out of their own work with the back button
+  /// already swallowed (see `LockAwareBackButtonDispatcher`). The preference
+  /// decides what happens on the *next* launch and on the next `lock()`, which
+  /// is all it was ever meant to decide.
   @override
-  bool build() => ref.watch(appLockEnabledProvider);
+  bool build() => ref.read(appLockEnabledProvider);
 
   void unlock() => state = false;
 

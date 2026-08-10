@@ -11,7 +11,7 @@ import '../../core/widgets/ather_controls.dart';
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/error_banner.dart';
-import '../../core/widgets/pressable.dart';
+import '../../core/widgets/pressable.dart' show Pressable, kMinTarget;
 import '../../domain/repositories/auth_repository.dart';
 import '../providers/auth_providers.dart';
 
@@ -177,10 +177,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         onSubmitted: (_) => _submit(auth),
                         trailing: Pressable(
                           onTap: () => setState(() => _obscure = !_obscure),
+                          // Was an untranslated literal — '•••' / 'abc' — Latin
+                          // text sitting inside an Arabic form, unreadable to a
+                          // screen reader and unlocalised in either direction.
+                          semanticLabel: _obscure
+                              ? l.authShowPassword
+                              : l.authHidePassword,
+                          minTarget: kMinTarget,
                           child: Padding(
                             padding: const EdgeInsets.all(AppSpacing.xs),
                             child: Text(
-                              _obscure ? '•••' : 'abc',
+                              // A dot for hidden, an open eye's absence for
+                              // shown. Geometry rather than words, so it needs
+                              // no translation and matches the icon family.
+                              _obscure ? '•••' : '———',
                               style: AppTypography.style(
                                 size: 13,
                                 weight: AppTypography.bold,
@@ -199,11 +209,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                       const SizedBox(height: AppSpacing.xxl),
                       PrimaryButton(
-                        label: _busy
-                            ? '…'
-                            : _registering
-                            ? l.authRegister
-                            : l.authSignIn,
+                        // A ring rather than the old literal '…', which was an
+                        // untranslated string standing in for a loading state
+                        // and read as a stuck button.
+                        busy: _busy,
+                        label: _registering ? l.authRegister : l.authSignIn,
                         onTap: () => _submit(auth),
                       ),
                       if (!_registering) ...<Widget>[
@@ -234,7 +244,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 PrimaryButton(
                   label: l.authGoogle,
                   tone: PrimaryButtonTone.secondary,
-                  onTap: () => _run(validate: false, auth.signInWithGoogle),
+                  onTap: _busy
+                      ? null
+                      : () => _run(validate: false, auth.signInWithGoogle),
                 ),
                 const SizedBox(height: AppSpacing.section),
                 Pressable(

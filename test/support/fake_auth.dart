@@ -17,8 +17,8 @@ final class FakeAuthRepository implements AuthRepository {
   /// Signed in from the start, which is the state every study-screen test
   /// cares about.
   factory FakeAuthRepository.signedIn() => FakeAuthRepository(
-        const Account(id: 'test-uid', email: 'student@example.com'),
-      );
+    const Account(id: 'test-uid', email: 'student@example.com'),
+  );
 
   Account? _account;
   final StreamController<Account?> _controller =

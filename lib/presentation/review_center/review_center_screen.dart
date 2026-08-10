@@ -55,6 +55,7 @@ class ReviewCenterScreen extends ConsumerWidget {
           for (final (i, item) in queue.indexed) ...<Widget>[
             ListEntrance(
               index: i,
+              id: item.lesson.id,
               child: _ReviewRow(item: item, crumb: _crumb(l, snapshot, item)),
             ),
             const SizedBox(height: AppSpacing.listGap),
@@ -85,10 +86,16 @@ class _ReviewRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = L.of(context);
     final overdue = item.reason == ReviewReason.overdue;
+    // Everything in this queue has been examined -- an unexamined lesson has no
+    // review clock and cannot appear here -- so `hasData` is unconditionally
+    // true. It used to be `mastery > 0 || !overdue`, which handed the grey
+    // "never measured" colour to a lesson that had genuinely scored 0% and gone
+    // overdue, while the number beside it still read "0%". The colour said one
+    // thing and the figure said another.
     final color = MasteryPalette.resolve(
       colors: context.colors,
       percentage: item.mastery,
-      hasData: item.mastery > 0 || !overdue,
+      hasData: true,
       needsReview: overdue,
     );
 

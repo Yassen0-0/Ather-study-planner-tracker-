@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
+import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/icon_motion.dart';
 
@@ -36,6 +37,9 @@ class _SettingsButtonState extends State<SettingsButton> {
         _cog.currentState?.turn();
         context.push(Routes.settings);
       },
+      // The cog is a CustomPaint with no text in it, spinning or not, so it
+      // still needs a name for a screen reader.
+      semanticLabel: L.of(context).settingsTitle,
       child: SpinningCog(key: _cog),
     );
   }

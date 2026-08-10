@@ -36,7 +36,10 @@ abstract final class MasteryPalette {
     if (!hasData) return colors.textNoData;
     if (needsReview) return colors.wrong;
     if (percentage < 50) return colors.wrong;
-    if (percentage >= 90) return colors.right;
+    // `rightText`, not `right`: what this function colours is a *number* and the
+    // bar beneath it, and the brand green is 2.2:1 on white. In the dark palette
+    // the two tokens are the same value, so nothing changes there.
+    if (percentage >= 90) return colors.rightText;
     return colors.textPrimary;
   }
 

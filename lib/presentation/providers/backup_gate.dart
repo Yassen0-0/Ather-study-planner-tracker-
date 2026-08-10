@@ -6,6 +6,7 @@ import '../../domain/repositories/backup_repository.dart';
 import 'app_providers.dart';
 import 'auth_providers.dart';
 import 'backup_providers.dart';
+import 'task_providers.dart';
 
 /// Two jobs, both invisible: flush the backup when the app goes away, and pull
 /// the cloud copy onto a device that has nothing.
@@ -28,6 +29,36 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
   /// re-emits must not be able to replay a restore over data the student has
   /// since typed.
   bool _restoreChecked = false;
+
+  /// Wipes the device when the account that just signed in is **not** the one
+  /// whose data is sitting on it.
+  ///
+  /// Nothing did this before, and the consequences ran in both directions: the
+  /// second student opened the app to the first student's curriculum, and the
+  /// backup sync then uploaded that curriculum into the second student's cloud
+  /// document -- corrupting a backup that had done nothing wrong.
+  ///
+  /// The check is the *uid*, not "is anyone signed in", and it is deliberately
+  /// not tied to sign-out. Signing out leaves everything in place, so the same
+  /// student signing back in -- offline, with work that never reached the cloud
+  /// -- finds it exactly as they left it. Data only becomes the wrong data when
+  /// somebody else's account arrives.
+  ///
+  /// Clearing here also feeds the restore below the answer it wants: the device
+  /// is now genuinely empty, so the ordinary auto-restore pulls the new
+  /// student's own cloud copy with no second code path.
+  Future<void> _clearIfDifferentAccount(String uid) async {
+    final preferences = ref.read(sharedPreferencesProvider);
+    final previous = preferences.getString(kLastAccountUidKey);
+
+    if (previous != null && previous != uid) {
+      await ref.read(studyRepositoryProvider).clear();
+      await ref.read(taskRepositoryProvider).clearTasks();
+    }
+    // Written after the wipe, never before: a crash mid-wipe must leave the
+    // device still claiming the *old* uid, so the next launch tries again.
+    await preferences.setString(kLastAccountUidKey, uid);
+  }
 
   @override
   void initState() {
@@ -73,9 +104,13 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
   /// can write anything at all, tasks included -- and reading them here built
   /// the tasks stream from inside this callback, which left `student_flow_test`
   /// unable to settle.
-  Future<void> _restoreIfEmpty() async {
+  Future<void> _restoreIfEmpty(String uid) async {
     if (_restoreChecked) return;
     _restoreChecked = true;
+
+    // Before anything reads or uploads: if this is a different student, the
+    // data on the device is not theirs.
+    await _clearIfDifferentAccount(uid);
 
     // `snapshotProvider.future`, not `snapshotValueProvider`: awaiting the
     // stream's first real emission gives a true answer, and it goes through the
@@ -104,7 +139,7 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       final now = next.value;
       if (was == null && now != null) {
         _restoreChecked = false;
-        _restoreIfEmpty();
+        _restoreIfEmpty(now.id);
       }
       // Signing out clears the guard so the next student on this device gets
       // their own restore check rather than inheriting this one's.

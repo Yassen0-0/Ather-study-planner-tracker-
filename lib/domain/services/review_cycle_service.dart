@@ -224,21 +224,19 @@ abstract final class ReviewCycleService {
         kChapterMasteryThreshold;
   }
 
-  /// Lessons that are overdue and have not yet had a reminder posted for the
-  /// current cycle. Drives notification scheduling without re-notifying daily.
-  static List<Lesson> lessonsAwaitingNotification(
-    StudySnapshot snapshot,
-    DateTime now,
-  ) {
-    return snapshot.lessons.where((lesson) {
-      if (!needsReview(lesson, now)) return false;
-      final notified = lesson.lastNotifiedAt;
-      final reviewed = lesson.lastReviewedAt;
-      if (notified == null) return true;
-      // Only suppress a reminder that belongs to the *current* cycle.
-      return reviewed != null && notified.isBefore(reviewed);
-    }).toList();
-  }
+  // There was a `lessonsAwaitingNotification` here, and it was dead.
+  //
+  // It belonged to an earlier design where the app polled for overdue lessons
+  // on each launch and posted reminders itself, using `lastNotifiedAt` to avoid
+  // notifying twice in one cycle. That was replaced by `zonedSchedule`, which
+  // books each reminder with the OS at the lesson's due moment so it fires with
+  // the app closed — and nothing has called this since. It kept a full set of
+  // passing tests the whole time, which is how it stayed looking alive.
+  //
+  // `lastNotifiedAt` itself stays. Dropping a column means a migration over a
+  // student's curriculum — the one thing in this repo that cannot be
+  // regenerated (§3.24) — to reclaim eight bytes a row, and `deleteExam` and
+  // `recordExam` already keep it coherent for free.
 }
 
 /// Convenience view used by exam entry to decide `isReviewExam`.

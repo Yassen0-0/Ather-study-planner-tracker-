@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
+import '../l10n/formatting.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -408,7 +409,18 @@ class _Day extends StatelessWidget {
     final day = _column(context);
     // No Pressable at all on an inert strip: the dashboard must not gain a
     // press response for a tap that does nothing.
-    return onTap == null ? day : Pressable(onTap: onTap, child: day);
+    if (onTap == null) return day;
+
+    return Pressable(
+      onTap: onTap,
+      // The letter alone reads as "ا" or "T"; the date is what a student
+      // actually needs to hear before picking a day.
+      semanticLabel: dateLabel(date),
+      // The circle is drawn at 34 and the column is narrow. The hit area is not
+      // obliged to be.
+      minTarget: kMinTarget,
+      child: day,
+    );
   }
 
   Widget _column(BuildContext context) {

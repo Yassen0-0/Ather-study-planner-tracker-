@@ -124,6 +124,10 @@ class _CollapsingListState<T> extends State<CollapsingList<T>> {
           padding: EdgeInsets.only(bottom: widget.gap),
           child: ListEntrance(
             index: _settled ? 0 : i,
+            // The list already has a stable identity for every row -- it is
+            // what the insert/remove diff above is built on -- so scrolling a
+            // chapter's lessons past cannot replay their arrival.
+            id: widget.idOf(_rows[i]),
             child: widget.itemBuilder(context, _rows[i]),
           ),
         );

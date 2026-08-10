@@ -239,10 +239,11 @@ final class StudyBackup {
   static DateTime? _dateOrNull(Object? value) =>
       value == null ? null : DateTime.fromMillisecondsSinceEpoch(value as int);
 
-  static List<Map<String, Object?>> _list(Object? value) => <Map<String, Object?>>[
-    for (final item in (value as List<Object?>? ?? const <Object?>[]))
-      (item as Map<Object?, Object?>).cast<String, Object?>(),
-  ];
+  static List<Map<String, Object?>> _list(Object? value) =>
+      <Map<String, Object?>>[
+        for (final item in (value as List<Object?>? ?? const <Object?>[]))
+          (item as Map<Object?, Object?>).cast<String, Object?>(),
+      ];
 }
 
 /// A backup that cannot be read. Separate from [BackupFailure] because this one

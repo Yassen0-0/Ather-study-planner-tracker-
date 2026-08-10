@@ -23,6 +23,13 @@ abstract final class MasteryCalculator {
   /// [exams] may be in any order; this sorts defensively rather than trusting
   /// the caller, because getting "the last exam" wrong silently corrupts every
   /// number in the app.
+  ///
+  /// The copy-and-sort is why [Summaries] threads a precomputed map around
+  /// instead of calling this repeatedly: a dashboard build reaches every lesson
+  /// roughly four times (its own summary, the chapter gate, the subject mean and
+  /// the overall mean), and each visit used to allocate a fresh list and re-sort
+  /// it. The defensive sort stays — this is a public entry point and a caller
+  /// handing it unsorted exams must still get the right answer.
   static double lessonMastery(List<ExamEntry> exams) {
     if (exams.isEmpty) return 0;
 
@@ -38,6 +45,35 @@ abstract final class MasteryCalculator {
         previous.length;
 
     return last.percentage * 0.7 + previousAverage * 0.3;
+  }
+
+  /// Every lesson's mastery, computed once.
+  ///
+  /// The snapshot already indexes exams by lesson **and sorts each list
+  /// newest-first in its constructor**, so this can skip the defensive copy that
+  /// [lessonMastery] makes — the invariant holds by construction here, and it is
+  /// the one place allowed to rely on it.
+  static Map<int, double> lessonMasteries(StudySnapshot snapshot) {
+    final byLesson = <int, double>{};
+    for (final lesson in snapshot.lessons) {
+      final exams = snapshot.examsFor(lesson.id);
+      if (exams.isEmpty) {
+        byLesson[lesson.id] = 0;
+        continue;
+      }
+      if (exams.length == 1) {
+        byLesson[lesson.id] = exams.first.percentage;
+        continue;
+      }
+      var previousTotal = 0.0;
+      for (var i = 1; i < exams.length; i++) {
+        previousTotal += exams[i].percentage;
+      }
+      byLesson[lesson.id] =
+          exams.first.percentage * 0.7 +
+          (previousTotal / (exams.length - 1)) * 0.3;
+    }
+    return byLesson;
   }
 
   /// Mastery for a chapter: the plain mean of its lessons' mastery.

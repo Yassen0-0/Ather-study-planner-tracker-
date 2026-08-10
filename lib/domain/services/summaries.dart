@@ -144,15 +144,27 @@ final class DashboardSummary {
 }
 
 abstract final class Summaries {
+  /// Every summary here takes an optional precomputed `masteries` map.
+  ///
+  /// **Why it is threaded through rather than recomputed.** A dashboard build
+  /// used to reach each lesson about four times — its own summary, the chapter's
+  /// mastery gate, the subject mean, and the overall mean — and every visit
+  /// copied and re-sorted that lesson's exam list. Multiply by a few hundred
+  /// lessons and it was the most expensive thing in the app, running on every
+  /// database write and (before the clock was fixed) once a minute besides.
+  ///
+  /// Null means "compute it here", which keeps the per-screen family providers
+  /// working unchanged.
   static LessonSummary lesson(
     StudySnapshot snapshot,
     Lesson lesson,
-    DateTime now,
-  ) {
+    DateTime now, {
+    Map<int, double>? masteries,
+  }) {
     final exams = snapshot.examsFor(lesson.id);
     return LessonSummary(
       lesson: lesson,
-      mastery: MasteryCalculator.lessonMastery(exams),
+      mastery: masteries?[lesson.id] ?? MasteryCalculator.lessonMastery(exams),
       examCount: exams.length,
       needsReview: ReviewCycleService.needsReview(lesson, now),
       daysOverdue: ReviewCycleService.daysOverdue(lesson, now),
@@ -166,21 +178,31 @@ abstract final class Summaries {
   static ChapterSummary chapter(
     StudySnapshot snapshot,
     Chapter chapter,
-    DateTime now,
-  ) {
+    DateTime now, {
+    Map<int, double>? masteries,
+  }) {
     final lessons = <LessonSummary>[
       for (final l in snapshot.lessonsIn(chapter.id))
-        Summaries.lesson(snapshot, l, now),
+        Summaries.lesson(snapshot, l, now, masteries: masteries),
     ];
+
+    final mastery = MasteryCalculator.chapterMastery(
+      lessons.map((l) => l.mastery).toList(),
+    );
 
     return ChapterSummary(
       chapter: chapter,
-      mastery: MasteryCalculator.chapterMastery(
-        lessons.map((l) => l.mastery).toList(),
-      ),
+      mastery: mastery,
       lessons: lessons,
       needsReview: lessons.any((l) => l.needsReview),
-      canMaster: ReviewCycleService.canMasterChapter(snapshot, chapter.id),
+      // Read off the summaries just built rather than re-deriving the chapter's
+      // mastery from the snapshot a second time. Identical by definition:
+      // `canMasterChapter` is "every lesson examined, and the same chapter mean
+      // at or above the threshold", and an empty chapter can never qualify.
+      canMaster:
+          lessons.isNotEmpty &&
+          lessons.every((l) => l.hasExam) &&
+          mastery >= kChapterMasteryThreshold,
       averageExamScore: MasteryCalculator.averageExamScore(
         snapshot,
         lessons.map((l) => l.lesson.id),
@@ -191,11 +213,12 @@ abstract final class Summaries {
   static SubjectSummary subject(
     StudySnapshot snapshot,
     Subject subject,
-    DateTime now,
-  ) {
+    DateTime now, {
+    Map<int, double>? masteries,
+  }) {
     final chapters = <ChapterSummary>[
       for (final c in snapshot.chaptersIn(subject.id))
-        Summaries.chapter(snapshot, c, now),
+        Summaries.chapter(snapshot, c, now, masteries: masteries),
     ];
 
     // "Most recent activity" means the newest lesson in the newest chapter --
@@ -217,7 +240,12 @@ abstract final class Summaries {
 
     return SubjectSummary(
       subject: subject,
-      mastery: MasteryCalculator.subjectMasteryOf(snapshot, subject.id),
+      // The mean of the chapter means just computed. `subjectMasteryOf` is the
+      // same arithmetic over the same numbers, so calling it here would walk
+      // every lesson in the subject again for an answer already in hand.
+      mastery: MasteryCalculator.chapterMastery(
+        chapters.map((c) => c.mastery).toList(),
+      ),
       chapters: chapters,
       needsReview: chapters.any((c) => c.needsReview),
       averageExamScore: MasteryCalculator.averageExamScore(
@@ -230,8 +258,13 @@ abstract final class Summaries {
   }
 
   static DashboardSummary dashboard(StudySnapshot snapshot, DateTime now) {
+    // Computed once here and handed down through every subject, chapter and
+    // lesson below. This is the call the whole `masteries` parameter exists for.
+    final masteries = MasteryCalculator.lessonMasteries(snapshot);
+
     final subjects = <SubjectSummary>[
-      for (final s in snapshot.subjects) Summaries.subject(snapshot, s, now),
+      for (final s in snapshot.subjects)
+        Summaries.subject(snapshot, s, now, masteries: masteries),
     ];
 
     var totalChapters = 0;
@@ -262,7 +295,12 @@ abstract final class Summaries {
 
     return DashboardSummary(
       subjects: subjects,
-      overallMastery: MasteryCalculator.overallMastery(snapshot),
+      // Again the same arithmetic over numbers already computed: the mean of
+      // the four subject means, with untouched subjects counting as 0 rather
+      // than being excluded (see `overallMastery`).
+      overallMastery: MasteryCalculator.chapterMastery(
+        subjects.map((s) => s.mastery).toList(),
+      ),
       masteredChapters: masteredChapters,
       totalChapters: totalChapters,
       lessonsRemaining: lessonsRemaining,

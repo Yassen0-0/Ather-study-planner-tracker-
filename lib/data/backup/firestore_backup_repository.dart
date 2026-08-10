@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,6 +8,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../domain/entities/study_backup.dart';
 import '../../domain/repositories/backup_repository.dart';
+
+/// Top-level, because [Isolate.run] sends its closure to another isolate and a
+/// closure capturing `this` would have to send the repository with it.
+Uint8List _encode(Map<String, Object?> json) =>
+    Uint8List.fromList(gzip.encode(utf8.encode(jsonEncode(json))));
+
+Map<String, Object?> _decode(Uint8List bytes) =>
+    jsonDecode(utf8.decode(gzip.decode(bytes))) as Map<String, Object?>;
 
 /// The only file in the app that imports `cloud_firestore`.
 ///
@@ -84,9 +93,10 @@ class FirestoreBackupRepository implements BackupRepository {
     if (blob is! Blob) throw const BackupException(BackupFailure.unreadable);
 
     try {
-      final bytes = gzip.decode(blob.bytes);
-      final json =
-          jsonDecode(utf8.decode(bytes)) as Map<String, Object?>;
+      // Decompressed off the UI isolate for the same reason as [upload], and
+      // with more at stake: a restore runs while a Settings button is showing a
+      // spinner, so a frozen frame thread is a frozen spinner.
+      final json = await Isolate.run(() => _decode(blob.bytes));
       return StudyBackup.fromJson(json);
     } on BackupException {
       rethrow;
@@ -100,9 +110,18 @@ class FirestoreBackupRepository implements BackupRepository {
 
   @override
   Future<void> upload(StudyBackup backup) async {
-    final bytes = Uint8List.fromList(
-      gzip.encode(utf8.encode(jsonEncode(backup.toJson()))),
-    );
+    // Serialise and compress off the UI isolate.
+    //
+    // A two-year record is a few thousand exams; `jsonEncode` plus `gzip.encode`
+    // over that is tens of milliseconds of solid CPU, and it ran on the frame
+    // thread. Worse, it ran on a 20-second debounce — so it landed *while the
+    // student was using the app*, not at some quiet moment. The lifecycle flush
+    // is the only call where jank would not have been noticed.
+    //
+    // `toJson()` stays here: it is plain map building, and sending the entity
+    // graph across an isolate boundary would cost more than it saves.
+    final bytes = await Isolate.run(() => _encode(backup.toJson()));
+
     if (bytes.lengthInBytes > _maxBlobBytes) {
       // Refuse rather than truncate. A backup missing its most recent two years
       // is worse than no backup, because the student believes they have one.

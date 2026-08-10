@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show QueryExecutor;
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/widgets.dart';
@@ -38,17 +40,59 @@ final studyRepositoryProvider = Provider<StudyRepository>(
 /// which is the only reason the 30-day cycle can be verified in seconds.
 final clockProvider = Provider<Clock>((ref) => const SystemClock());
 
-/// Re-emits every minute so date-derived UI (overdue counts, "5 days left")
-/// stays honest without the user relaunching the app.
+/// Re-emits when the *day* changes, so date-derived UI (overdue counts, "5 days
+/// left") stays honest without the student relaunching the app.
 ///
-/// Deliberately coarse: review state changes on a *daily* boundary, so polling
-/// faster would burn frames to display the same number.
-final nowProvider = StreamProvider<DateTime>((ref) async* {
+/// It used to tick every sixty seconds, and every tick was expensive out of all
+/// proportion to what it changed. `nowValueProvider` feeds `dashboardProvider`,
+/// which recomputes every summary for the whole curriculum, which rebuilds every
+/// screen watching it *and* `AppShell` — the widget holding the app's one
+/// `BackdropFilter`. Sixty times an hour, forever, to re-render numbers that are
+/// identical until midnight.
+///
+/// Everything downstream is derived from whole days (`daysSinceReview`,
+/// `daysUntilDue`, `daysOverdue`, the week strip), so the only moment any of it
+/// can change is a date boundary. The timer therefore sleeps until just after
+/// the next midnight and re-arms from there — one emission a day rather than
+/// 1,440.
+/// A real [Timer] behind a controller rather than `async*` with a delay: a
+/// generator's pending `Future.delayed` cannot be cancelled, so it would
+/// outlive the provider and trip "a Timer is still pending" in any widget test
+/// that did not override this.
+final nowProvider = StreamProvider<DateTime>((ref) {
   final clock = ref.watch(clockProvider);
-  yield clock.now();
-  yield* Stream<void>.periodic(
-    const Duration(minutes: 1),
-  ).map((_) => clock.now());
+  late final StreamController<DateTime> controller;
+  Timer? timer;
+
+  void scheduleNextDay() {
+    final now = clock.now();
+    // One second past midnight, so the value that arrives is unambiguously the
+    // new day even if the timer fires a hair early.
+    final nextDay = DateTime(now.year, now.month, now.day + 1, 0, 0, 1);
+    timer = Timer(nextDay.difference(now), () {
+      if (controller.isClosed) return;
+      controller.add(clock.now());
+      scheduleNextDay();
+    });
+  }
+
+  controller = StreamController<DateTime>(
+    onListen: () {
+      controller.add(clock.now());
+      scheduleNextDay();
+    },
+    onCancel: () {
+      timer?.cancel();
+      return controller.close();
+    },
+  );
+
+  ref.onDispose(() {
+    timer?.cancel();
+    if (!controller.isClosed) controller.close();
+  });
+
+  return controller.stream;
 });
 
 // --- Core data --------------------------------------------------------------
@@ -100,6 +144,14 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
 const String _kLocaleKey = 'locale_code';
 const String _kNotificationsKey = 'notifications_enabled';
 const String _kThemeModeKey = 'theme_mode';
+
+/// The uid whose data is currently on this device.
+///
+/// Public because two places have to agree on it: `BackupSyncGate` wipes the
+/// device when a *different* account signs in, and `BackupSyncNotifier` refuses
+/// to upload until the stored uid and the signed-in uid match. Both exist to
+/// stop one student's curriculum reaching another student's cloud document.
+const String kLastAccountUidKey = 'last_account_uid';
 
 /// Selected UI locale, persisted.
 ///

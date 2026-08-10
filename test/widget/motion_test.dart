@@ -37,8 +37,11 @@ void main() {
           matching: find.byType(FadeTransition),
         ),
       );
-      expect(opacity.opacity.value, lessThan(1.0),
-          reason: 'the entrance must actually start from transparent');
+      expect(
+        opacity.opacity.value,
+        lessThan(1.0),
+        reason: 'the entrance must actually start from transparent',
+      );
 
       await tester.pumpAndSettle();
       expect(opacity.opacity.value, 1.0);
@@ -122,8 +125,7 @@ void main() {
 
       // The whole list must settle within the capped window, not within
       // 12 x 40ms. A row past the cap shares slot 6.
-      final capped =
-          AppMotion.stagger * AppMotion.staggerCap + AppMotion.enter;
+      final capped = AppMotion.stagger * AppMotion.staggerCap + AppMotion.enter;
       expect(capped, const Duration(milliseconds: 500));
       expect(find.text('row 11'), findsOneWidget);
     });
@@ -153,21 +155,24 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      expect(peak, lessThanOrEqualTo(1.0),
-          reason: 'a badge that bounces reads as a notification');
+      expect(
+        peak,
+        lessThanOrEqualTo(1.0),
+        reason: 'a badge that bounces reads as a notification',
+      );
     });
   });
 
   group('AnimatedPercentage', () {
     testWidgets('counts between values and lands exactly', (tester) async {
       Widget at(double v) => harness(
-            AnimatedPercentage(
-              value: v,
-              hasData: true,
-              color: const Color(0xFF000000),
-              style: const TextStyle(),
-            ),
-          );
+        AnimatedPercentage(
+          value: v,
+          hasData: true,
+          color: const Color(0xFF000000),
+          style: const TextStyle(),
+        ),
+      );
 
       await tester.pumpWidget(at(40));
       await tester.pumpAndSettle();
@@ -205,14 +210,14 @@ void main() {
       tester,
     ) async {
       Widget at(double v) => harness(
-            AnimatedPercentage(
-              value: v,
-              hasData: true,
-              color: const Color(0xFF000000),
-              style: const TextStyle(),
-            ),
-            reduced: true,
-          );
+        AnimatedPercentage(
+          value: v,
+          hasData: true,
+          color: const Color(0xFF000000),
+          style: const TextStyle(),
+        ),
+        reduced: true,
+      );
 
       await tester.pumpWidget(at(40));
       await tester.pump();
@@ -230,14 +235,14 @@ void main() {
       var counted = false;
 
       Widget build() => harness(
-            CountUpFromZero(
-              value: 75,
-              already: counted,
-              onDone: () => counted = true,
-              color: const Color(0xFF000000),
-              style: const TextStyle(),
-            ),
-          );
+        CountUpFromZero(
+          value: 75,
+          already: counted,
+          onDone: () => counted = true,
+          color: const Color(0xFF000000),
+          style: const TextStyle(),
+        ),
+      );
 
       await tester.pumpWidget(build());
       await tester.pump();
@@ -256,12 +261,12 @@ void main() {
 
   group('CollapsingList', () {
     Widget listOf(List<int> items) => harness(
-          CollapsingList<int>(
-            items: items,
-            idOf: (i) => i,
-            itemBuilder: (context, i) => SizedBox(height: 20, child: Text('$i')),
-          ),
-        );
+      CollapsingList<int>(
+        items: items,
+        idOf: (i) => i,
+        itemBuilder: (context, i) => SizedBox(height: 20, child: Text('$i')),
+      ),
+    );
 
     testWidgets('a removed row collapses, then leaves the tree', (
       tester,
@@ -313,12 +318,12 @@ void main() {
       tester,
     ) async {
       Widget named(String label) => harness(
-            CollapsingList<String>(
-              items: <String>[label],
-              idOf: (_) => 7,
-              itemBuilder: (context, s) => SizedBox(height: 20, child: Text(s)),
-            ),
-          );
+        CollapsingList<String>(
+          items: <String>[label],
+          idOf: (_) => 7,
+          itemBuilder: (context, s) => SizedBox(height: 20, child: Text(s)),
+        ),
+      );
 
       await tester.pumpWidget(named('before'));
       await tester.pumpAndSettle();

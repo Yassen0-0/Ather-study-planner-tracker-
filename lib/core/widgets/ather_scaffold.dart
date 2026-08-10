@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../layout/breakpoints.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'buttons.dart';
 import 'icon_motion.dart';
+import 'list_entrance.dart';
 
 /// The back chevron.
 ///
@@ -57,7 +59,11 @@ class AtherHeader extends StatelessWidget {
       child: Row(
         children: <Widget>[
           if (onBack != null) ...<Widget>[
-            CircleHeaderButton(onTap: onBack!, child: const BackChevron()),
+            CircleHeaderButton(
+              onTap: onBack!,
+              semanticLabel: L.of(context).commonBack,
+              child: const BackChevron(),
+            ),
             const SizedBox(width: AppSpacing.sm),
           ],
           Expanded(
@@ -140,32 +146,37 @@ class AtherScreen extends StatelessWidget {
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: context.windowSize.isCompact
-                  ? double.infinity
-                  : maxContentWidth,
-            ),
-            child: Column(
-              children: <Widget>[
-                header,
-                Expanded(
-                  child: ScrollConfiguration(
-                    // The design hides scrollbars; the cards themselves show
-                    // that a list continues.
-                    behavior: const _NoScrollbar(),
-                    child: body,
+        // One entrance per row per visit to this screen. Without it, a row
+        // scrolled out and back is a fresh mount and animates again -- see
+        // ListEntranceScope.
+        child: ListEntranceScope(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: context.windowSize.isCompact
+                    ? double.infinity
+                    : maxContentWidth,
+              ),
+              child: Column(
+                children: <Widget>[
+                  header,
+                  Expanded(
+                    child: ScrollConfiguration(
+                      // The design hides scrollbars; the cards themselves show
+                      // that a list continues.
+                      behavior: const _NoScrollbar(),
+                      child: body,
+                    ),
                   ),
-                ),
-                // The list may pass under the glass bar; a button may not.
-                // Same inset, applied as real space rather than scroll travel.
-                if (bottom != null)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: underBar),
-                    child: bottom,
-                  ),
-              ],
+                  // The list may pass under the glass bar; a button may not.
+                  // Same inset, applied as real space rather than scroll travel.
+                  if (bottom != null)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: underBar),
+                      child: bottom,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

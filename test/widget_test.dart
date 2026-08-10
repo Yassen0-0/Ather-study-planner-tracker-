@@ -6,6 +6,7 @@ import 'package:ather/core/clock/clock.dart';
 import 'package:ather/core/l10n/formatting.dart';
 import 'package:ather/core/l10n/generated/app_localizations.dart';
 import 'package:ather/core/widgets/ather_scaffold.dart';
+import 'package:ather/core/widgets/buttons.dart';
 import 'package:ather/core/widgets/list_entrance.dart';
 import 'package:ather/domain/entities/chapter.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
@@ -62,7 +63,9 @@ Future<Widget> bootApp({StudySnapshot? snapshot}) async {
       // Signed in from the start: these tests are about the study screens,
       // and the auth gate is covered on its own in test/widget/auth_test.dart.
       authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
-      backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
+      backupRepositoryProvider.overrideWithValue(
+        FakeBackupRepository.failing(),
+      ),
       sharedPreferencesProvider.overrideWithValue(preferences),
       snapshotProvider.overrideWith(
         (ref) => Stream<StudySnapshot>.value(snapshot ?? snapshotWith()),
@@ -144,7 +147,9 @@ StudySnapshot freshExamSnapshot() {
 }
 
 void main() {
-  testWidgets('boots in Arabic RTL and switches to English LTR', (tester) async {
+  testWidgets('boots in Arabic RTL and switches to English LTR', (
+    tester,
+  ) async {
     // Tall enough to hold all four subject rows without scrolling; the default
     // 800x600 test surface cuts the list off after the first one.
     tester.view.physicalSize = const Size(390 * 3, 1000 * 3);
@@ -203,8 +208,9 @@ void main() {
     expect(find.text('لسه مبدأتش'), findsWidgets);
   });
 
-  testWidgets('an overdue lesson is called out on the dashboard',
-      (tester) async {
+  testWidgets('an overdue lesson is called out on the dashboard', (
+    tester,
+  ) async {
     await tester.pumpWidget(await bootApp(snapshot: overdueSnapshot()));
     await tester.pumpAndSettle();
 
@@ -228,9 +234,80 @@ void main() {
     expect(
       find.text('امتحن'),
       findsWidgets,
-      reason: 'there is one thing to do about an overdue lesson, so the row '
+      reason:
+          'there is one thing to do about an overdue lesson, so the row '
           'offers it rather than routing through a detail screen',
     );
+  });
+
+  // The wizard is the one screen holding data that exists nowhere else yet.
+  // Its on-screen Back used to step back through the wizard while the × and the
+  // system back gesture threw the whole entry away without asking, so a student
+  // reaching for "go back one question" could lose a fully described paper.
+  group('the exam wizard does not lose what has been typed', () {
+    Future<void> openWizard(WidgetTester tester) async {
+      await tester.pumpWidget(await bootApp(snapshot: overdueSnapshot()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('مراجعة'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('امتحن').first);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('leaving with nothing typed just closes', (tester) async {
+      await openWizard(tester);
+      expect(find.text('عدد الأسئلة الكلي'), findsOneWidget);
+
+      await tester.tap(find.byType(CircleHeaderButton).first);
+      await tester.pumpAndSettle();
+
+      // Nothing to lose, so nothing to ask about.
+      expect(find.text('تسيب الامتحان؟'), findsNothing);
+      expect(find.text('عدد الأسئلة الكلي'), findsNothing);
+    });
+
+    testWidgets('leaving after typing asks first', (tester) async {
+      await openWizard(tester);
+      await tester.enterText(find.byType(TextField).first, '8');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(CircleHeaderButton).first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('تسيب الامتحان؟'), findsOneWidget);
+
+      // Backing out of the question leaves the entry exactly where it was.
+      await tester.tap(find.text('كمّل'));
+      await tester.pumpAndSettle();
+      expect(find.text('عدد الأسئلة الكلي'), findsOneWidget);
+      expect(find.text('8'), findsOneWidget);
+    });
+
+    testWidgets('the system back steps back instead of closing', (
+      tester,
+    ) async {
+      await openWizard(tester);
+      await tester.enterText(find.byType(TextField).first, '8');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('التالي'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('درجات الأسئلة'), findsOneWidget);
+
+      // The gesture the student actually makes, not the button beside it.
+      // Routed through the real dispatcher, so this also proves
+      // LockAwareBackButtonDispatcher still passes a press through when the app
+      // is unlocked.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('عدد الأسئلة الكلي'),
+        findsOneWidget,
+        reason: 'system back must mean the same thing as the Back button',
+      );
+      expect(find.text('تسيب الامتحان؟'), findsNothing);
+    });
   });
 
   testWidgets('an empty review queue is a result, not a task', (tester) async {
@@ -244,8 +321,9 @@ void main() {
     expect(find.text('كل دروسك في وقتها. استمر.'), findsOneWidget);
   });
 
-  testWidgets('renders without overflow on a small phone viewport',
-      (tester) async {
+  testWidgets('renders without overflow on a small phone viewport', (
+    tester,
+  ) async {
     // A narrow, short window is where fixed-height rows break.
     tester.view.physicalSize = const Size(360 * 3, 640 * 3);
     tester.view.devicePixelRatio = 3;

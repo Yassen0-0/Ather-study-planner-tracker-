@@ -2,6 +2,8 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/instants.dart';
 import 'package:ather/app/app.dart';
 import 'package:ather/core/clock/clock.dart';
 import 'package:ather/data/db/app_database.dart';
@@ -47,8 +49,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 10));
   }
 
-  Future<Widget> boot(FakeBackupRepository backup) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
+  Future<Widget> boot(
+    FakeBackupRepository backup, {
+    Map<String, Object> preferences0 = const <String, Object>{},
+  }) async {
+    SharedPreferences.setMockInitialValues(preferences0);
     final preferences = await SharedPreferences.getInstance();
 
     return ProviderScope(
@@ -82,12 +87,7 @@ void main() {
 
   StudyBackup cloudCopy() => StudyBackup(
     chapters: <Chapter>[
-      Chapter(
-        id: 1,
-        subjectId: 1,
-        name: 'باب من السحابة',
-        createdAt: now,
-      ),
+      Chapter(id: 1, subjectId: 1, name: 'باب من السحابة', createdAt: now),
     ],
     lessons: <Lesson>[
       Lesson(
@@ -148,7 +148,9 @@ void main() {
     final backup = FakeBackupRepository.failing(BackupFailure.permissionDenied);
     // Something to back up: an upload with nothing to send is skipped on
     // purpose, so an empty local database can never overwrite a good cloud copy.
-    await DriftStudyRepository(db).createChapter(subjectId: 1, name: 'باب');
+    await DriftStudyRepository(
+      db,
+    ).createChapter(subjectId: 1, name: 'باب', at: kSeedInstant);
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();
@@ -191,7 +193,9 @@ void main() {
     final backup = FakeBackupRepository.holding(cloudCopy());
 
     // The student already has work on this device before signing in.
-    await DriftStudyRepository(db).createChapter(subjectId: 1, name: 'شغلي أنا');
+    await DriftStudyRepository(
+      db,
+    ).createChapter(subjectId: 1, name: 'شغلي أنا', at: kSeedInstant);
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();
@@ -207,12 +211,78 @@ void main() {
     await closeApp(tester);
   });
 
+  // The device belonged to somebody else. Nothing used to notice, so the second
+  // student opened the app to the first one's curriculum -- and the sync then
+  // mirrored it into the second student's cloud document.
+  testWidgets('a different account wipes the previous student off the device', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    final backup = FakeBackupRepository.holding(cloudCopy());
+
+    await DriftStudyRepository(
+      db,
+    ).createChapter(subjectId: 1, name: 'مش بتاعي', at: kSeedInstant);
+
+    await tester.pumpWidget(
+      await boot(
+        backup,
+        // The device still claims to belong to another uid; the fake signs in
+        // as `test-uid`.
+        preferences0: const <String, Object>{
+          'last_account_uid': 'a-different-student',
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final snapshot = await DriftStudyRepository(db).readSnapshot();
+    expect(
+      snapshot.chapters.map((c) => c.name),
+      isNot(contains('مش بتاعي')),
+      reason: "a student must never see the previous account's curriculum",
+    );
+    // And the device now being genuinely empty, the ordinary auto-restore does
+    // its normal job: this student gets their own cloud copy, no second path.
+    expect(snapshot.chapters.single.name, 'باب من السحابة');
+
+    await closeApp(tester);
+  });
+
+  testWidgets('the same account signing back in keeps everything', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    final backup = FakeBackupRepository.holding(cloudCopy());
+
+    await DriftStudyRepository(
+      db,
+    ).createChapter(subjectId: 1, name: 'شغلي أنا', at: kSeedInstant);
+
+    await tester.pumpWidget(
+      await boot(
+        backup,
+        // Signing out is not a statement that the work is finished with, and
+        // the phone may hold edits that never reached the cloud.
+        preferences0: const <String, Object>{'last_account_uid': 'test-uid'},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final snapshot = await DriftStudyRepository(db).readSnapshot();
+    expect(snapshot.chapters.single.name, 'شغلي أنا');
+
+    await closeApp(tester);
+  });
+
   testWidgets('the manual restore confirms first, then replaces', (
     tester,
   ) async {
     phoneSized(tester);
     final backup = FakeBackupRepository.holding(cloudCopy());
-    await DriftStudyRepository(db).createChapter(subjectId: 1, name: 'شغلي أنا');
+    await DriftStudyRepository(
+      db,
+    ).createChapter(subjectId: 1, name: 'شغلي أنا', at: kSeedInstant);
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();
@@ -222,10 +292,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The destructive confirmation the rest of the app uses, saying what goes.
-    expect(
-      find.textContaining('هيتمسح ويتحط مكانه'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('هيتمسح ويتحط مكانه'), findsOneWidget);
 
     await tester.tap(find.text('حذف').hitTestable());
     await tester.pumpAndSettle();
@@ -239,7 +306,9 @@ void main() {
   testWidgets('backing out of the restore changes nothing', (tester) async {
     phoneSized(tester);
     final backup = FakeBackupRepository.holding(cloudCopy());
-    await DriftStudyRepository(db).createChapter(subjectId: 1, name: 'شغلي أنا');
+    await DriftStudyRepository(
+      db,
+    ).createChapter(subjectId: 1, name: 'شغلي أنا', at: kSeedInstant);
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();

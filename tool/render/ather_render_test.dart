@@ -173,7 +173,11 @@ void main() {
 
     await tester.tap(find.text('رجوع'));
     await tester.pumpAndSettle();
+    // Back on step 1, "رجوع" leaves the wizard -- and now that there is typed
+    // input to lose, leaving asks first. Answering it is part of the script.
     await tester.tap(find.text('رجوع'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('سيبه'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('مراجعة'));
@@ -325,8 +329,14 @@ void main() {
     await tester.tap(find.text('Next'));
     await shot(tester, '23-wizard-result-en');
 
+    // The × now asks before throwing away a fully described paper, so closing
+    // the wizard is two taps rather than one.
     await tester.tap(find.byType(CircleHeaderButton));
     await tester.pumpAndSettle();
+    await shot(tester, '24-wizard-discard-en');
+    await tester.tap(find.text('Leave'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Review'));
     await shot(tester, '21-review-en');
   });

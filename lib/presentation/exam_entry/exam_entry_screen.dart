@@ -22,7 +22,9 @@ import '../../core/widgets/pressable.dart';
 import '../../core/widgets/reduced_motion.dart';
 import '../../domain/entities/exam_entry.dart';
 import '../../domain/services/mastery_calculator.dart';
+import '../common/prompts.dart';
 import '../providers/app_providers.dart';
+import '../providers/notification_providers.dart';
 import '../providers/summary_providers.dart';
 
 /// The exam wizard — the heart of the product.
@@ -113,15 +115,58 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
   double get _resultPercentage =>
       _possiblePoints <= 0 ? 0 : (_earnedPoints / _possiblePoints) * 100;
 
-  void _back() {
-    if (_step == 1) {
+  /// Whether the student has typed anything at all.
+  ///
+  /// Read from the controllers rather than tracked with a flag, so clearing a
+  /// field back to empty correctly counts as nothing entered.
+  bool get _hasInput =>
+      _total.text.isNotEmpty ||
+      _groups.any(
+        (g) =>
+            g.count.text.isNotEmpty ||
+            g.points.text.isNotEmpty ||
+            g.correct.text.isNotEmpty,
+      );
+
+  /// The one exit path, shared by the on-screen Back button, the × and the
+  /// system back gesture.
+  ///
+  /// Those three used to disagree: Back stepped back through the wizard while ×
+  /// and the system gesture threw the whole entry away without asking. A student
+  /// halfway through describing a paper, reaching for "go back one question",
+  /// lost the lot to a stray swipe — and the wizard is the one screen in the app
+  /// holding data that exists nowhere else yet.
+  Future<void> _back() async {
+    if (_step > 1) {
+      setState(() {
+        _step--;
+        _error = null;
+      });
+      return;
+    }
+    await _leave();
+  }
+
+  /// Closes the wizard, asking first if there is anything to lose.
+  Future<void> _leave() async {
+    if (_saving) return;
+
+    if (!_hasInput) {
       context.pop();
       return;
     }
-    setState(() {
-      _step--;
-      _error = null;
-    });
+
+    final l = L.of(context);
+    final router = GoRouter.of(context);
+    final confirmed = await confirmDestructive(
+      context,
+      title: l.examDiscardTitle,
+      message: l.examDiscardBody,
+      // Nothing is being deleted, so the red button does not say "delete".
+      confirmLabel: l.examDiscardLeave,
+      cancelLabel: l.examDiscardStay,
+    );
+    if (confirmed) router.pop();
   }
 
   void _next() {
@@ -165,7 +210,10 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
 
   Future<void> _save() async {
     if (_saving) return;
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
 
     // Everything that needs a BuildContext is resolved *before* the write, so
     // nothing reaches into a possibly-unmounted tree once it completes.
@@ -176,24 +224,55 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
     final direction = Directionality.of(context);
     final summary = ref.read(lessonSummaryProvider(widget.lessonId));
 
-    await ref
-        .read(studyRepositoryProvider)
-        .recordExam(
-          lessonId: widget.lessonId,
-          groups: <DraftQuestionGroup>[
-            for (final group in _groups)
-              DraftQuestionGroup(
-                pointsPerQuestion: group.pointsValue,
-                questionCount: group.countValue,
-                correctCount: group.correctValue,
-              ),
-          ],
-          // Classified from the lesson's state at submit time: an exam sat to
-          // clear a decayed lesson is a review exam, and the student never has
-          // to say so.
-          isReviewExam: summary?.needsReview ?? false,
-          at: ref.read(clockProvider).now(),
-        );
+    // Whether any review clock was running *before* this write. Used below to
+    // decide whether this is the exam that starts the first one.
+    final hadReviews = ref.read(hasScheduledReviewsProvider);
+
+    try {
+      await ref
+          .read(studyRepositoryProvider)
+          .recordExam(
+            lessonId: widget.lessonId,
+            groups: <DraftQuestionGroup>[
+              for (final group in _groups)
+                DraftQuestionGroup(
+                  pointsPerQuestion: group.pointsValue,
+                  questionCount: group.countValue,
+                  correctCount: group.correctValue,
+                ),
+            ],
+            // Classified from the lesson's state at submit time: an exam sat to
+            // clear a decayed lesson is a review exam, and the student never has
+            // to say so.
+            isReviewExam: summary?.needsReview ?? false,
+            at: ref.read(clockProvider).now(),
+          );
+    } on Object catch (error, stack) {
+      // The wizard used to have no catch at all, and `_saving` was never
+      // cleared: one failed write left the student holding a fully entered
+      // paper behind a Save button that silently ignored every further tap.
+      // Staying on step 4 with the numbers intact is the whole point -- there
+      // is nowhere else for this data to live.
+      debugPrint('Ather: recording exam failed -- $error\n$stack');
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = l.examSaveFailed;
+      });
+      return;
+    }
+
+    // The first recorded exam is the moment the first 30-day clock starts, and
+    // therefore the first moment a reminder means anything. Asking here rather
+    // than on cold start is the rule the manifest already described; what was
+    // missing was any call site at all.
+    if (!hadReviews) {
+      try {
+        await ref.read(notificationServiceProvider).requestPermission();
+      } catch (_) {
+        // A refused or unavailable permission never blocks a save.
+      }
+    }
 
     if (!mounted) return;
     router.pop();
@@ -210,82 +289,94 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
     final summary = ref.watch(lessonSummaryProvider(widget.lessonId));
     final isReview = summary?.needsReview ?? false;
 
-    return Scaffold(
-      backgroundColor: context.colors.pageBackground,
-      body: SafeArea(
-        bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Column(
-              children: <Widget>[
-                _WizardHeader(
-                  title: summary?.lesson.name ?? '',
-                  step: _step,
-                  stepCount: _stepCount,
-                  onClose: () => context.pop(),
-                ),
-                // Only the body changes between steps. The header, the progress
-                // bar and the bottom bar persist -- animating them would make
-                // four steps feel like four screens.
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: prefersReducedMotion(context)
-                        ? Duration.zero
-                        : AppMotion.step,
-                    switchInCurve: AppMotion.standard,
-                    switchOutCurve: AppMotion.standard,
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: AnimatedBuilder(
-                        animation: animation,
-                        builder: (context, inner) => Transform.translate(
-                          offset: Offset(
-                            0,
-                            AppMotion.stepRise * (1 - animation.value),
+    return PopScope(
+      // The system back press is routed through the same [_back] as the button
+      // on screen, so the two can no longer mean different things. This is the
+      // one route in the app that holds unsaved data, which is why it is also
+      // the one route that refuses to pop on its own.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _back();
+      },
+      child: Scaffold(
+        backgroundColor: context.colors.pageBackground,
+        body: SafeArea(
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Column(
+                children: <Widget>[
+                  _WizardHeader(
+                    title: summary?.lesson.name ?? '',
+                    step: _step,
+                    stepCount: _stepCount,
+                    onClose: _leave,
+                  ),
+                  // Only the body changes between steps. The header, the
+                  // progress bar and the bottom bar persist -- animating them
+                  // would make four steps feel like four screens.
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: prefersReducedMotion(context)
+                          ? Duration.zero
+                          : AppMotion.step,
+                      switchInCurve: AppMotion.standard,
+                      switchOutCurve: AppMotion.standard,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: AnimatedBuilder(
+                          animation: animation,
+                          builder: (context, inner) => Transform.translate(
+                            offset: Offset(
+                              0,
+                              AppMotion.stepRise * (1 - animation.value),
+                            ),
+                            child: inner,
                           ),
-                          child: inner,
+                          child: child,
                         ),
-                        child: child,
                       ),
-                    ),
-                    // Keyed on the step, so the switcher swaps on a step change
-                    // and NOT on every keystroke inside a step -- a student
-                    // enters numbers fast, and the fields must not flicker.
-                    child: KeyedSubtree(
-                      key: ValueKey<int>(_step),
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.pageMargin,
-                          2,
-                          AppSpacing.pageMargin,
-                          AppSpacing.xxxl,
-                        ),
-                        children: <Widget>[
-                          ..._buildStep(l),
-                          if (_error != null) ...<Widget>[
-                            const SizedBox(height: AppSpacing.lg),
-                            ErrorBanner(message: _error!),
+                      // Keyed on the step, so the switcher swaps on a step
+                      // change and NOT on every keystroke inside a step -- a
+                      // student enters numbers fast, and the fields must not
+                      // flicker.
+                      child: KeyedSubtree(
+                        key: ValueKey<int>(_step),
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.pageMargin,
+                            2,
+                            AppSpacing.pageMargin,
+                            AppSpacing.xxxl,
+                          ),
+                          children: <Widget>[
+                            ..._buildStep(l),
+                            if (_error != null) ...<Widget>[
+                              const SizedBox(height: AppSpacing.lg),
+                              ErrorBanner(message: _error!),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                _BottomBar(
-                  backLabel: l.commonBack,
-                  nextLabel: _step < _stepCount
-                      ? l.commonNext
-                      : isReview
-                      ? l.examSaveReview
-                      : l.examSave,
-                  nextTone: _step == _stepCount && isReview
-                      ? PrimaryButtonTone.wrong
-                      : PrimaryButtonTone.primary,
-                  onBack: _back,
-                  onNext: _next,
-                ),
-              ],
+                  _BottomBar(
+                    backLabel: l.commonBack,
+                    nextLabel: _step < _stepCount
+                        ? l.commonNext
+                        : isReview
+                        ? l.examSaveReview
+                        : l.examSave,
+                    nextTone: _step == _stepCount && isReview
+                        ? PrimaryButtonTone.wrong
+                        : PrimaryButtonTone.primary,
+                    busy: _saving,
+                    onBack: _back,
+                    onNext: _next,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -329,7 +420,9 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
         style: AppTypography.style(
           size: 16,
           weight: AppTypography.bold,
-          color: matched ? context.colors.right : context.colors.textSecondary,
+          color: matched
+              ? context.colors.rightText
+              : context.colors.textSecondary,
         ),
       ),
       const SizedBox(height: AppSpacing.lg),
@@ -338,6 +431,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
           group: _groups[i],
           questionsLabel: l.examGroupQuestions,
           pointsLabel: l.examGroupPoints,
+          removeLabel: l.examRemoveGroup,
           canRemove: _groups.length > 1,
           onChanged: () => setState(() => _error = null),
           onRemove: () => setState(() {
@@ -559,6 +653,7 @@ class _WizardHeader extends StatelessWidget {
             children: <Widget>[
               CircleHeaderButton(
                 onTap: onClose,
+                semanticLabel: L.of(context).commonClose,
                 child: const AtherIcon(AtherGlyph.close, size: 17),
               ),
               Expanded(
@@ -659,6 +754,7 @@ class _GroupCard extends StatelessWidget {
     required this.group,
     required this.questionsLabel,
     required this.pointsLabel,
+    required this.removeLabel,
     required this.canRemove,
     required this.onChanged,
     required this.onRemove,
@@ -667,6 +763,7 @@ class _GroupCard extends StatelessWidget {
   final _GroupDraft group;
   final String questionsLabel;
   final String pointsLabel;
+  final String removeLabel;
   final bool canRemove;
   final VoidCallback onChanged;
   final VoidCallback onRemove;
@@ -710,6 +807,9 @@ class _GroupCard extends StatelessWidget {
             opacity: canRemove ? 1 : 0.25,
             child: Pressable(
               onTap: canRemove ? onRemove : null,
+              semanticLabel: removeLabel,
+              // Was 32 x 46. The × keeps its 16px, the card keeps its layout.
+              minTarget: kMinTarget,
               child: SizedBox(
                 width: 32,
                 height: AppSizes.input,
@@ -810,6 +910,7 @@ class _BottomBar extends StatelessWidget {
     required this.nextTone,
     required this.onBack,
     required this.onNext,
+    this.busy = false,
   });
 
   final String backLabel;
@@ -817,6 +918,10 @@ class _BottomBar extends StatelessWidget {
   final PrimaryButtonTone nextTone;
   final VoidCallback onBack;
   final VoidCallback onNext;
+
+  /// The save is in flight. Back is disabled too: stepping out from under a
+  /// write in progress is the one way to end up unsure whether it landed.
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -836,7 +941,7 @@ class _BottomBar extends StatelessWidget {
               child: PrimaryButton(
                 label: backLabel,
                 tone: PrimaryButtonTone.secondary,
-                onTap: onBack,
+                onTap: busy ? null : onBack,
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -845,6 +950,7 @@ class _BottomBar extends StatelessWidget {
               child: PrimaryButton(
                 label: nextLabel,
                 tone: nextTone,
+                busy: busy,
                 onTap: onNext,
               ),
             ),

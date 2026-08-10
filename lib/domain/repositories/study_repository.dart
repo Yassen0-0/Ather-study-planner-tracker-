@@ -18,7 +18,17 @@ abstract interface class StudyRepository {
   Future<StudySnapshot> readSnapshot();
 
   // --- Chapters -------------------------------------------------------------
-  Future<int> createChapter({required int subjectId, required String name});
+  /// [at] comes from the injectable [Clock], like every other timestamp the app
+  /// writes. `createChapter` and `createLesson` used to call `DateTime.now()`
+  /// directly — the only two writes in the repository that did — which quietly
+  /// exempted `createdAt` from the debug time-travel tool and from any test
+  /// pinning the date. `createdAt` is not decoration: it is the sort order of
+  /// every list, and it is what "most recent activity" is read from.
+  Future<int> createChapter({
+    required int subjectId,
+    required String name,
+    required DateTime at,
+  });
   Future<void> renameChapter({required int chapterId, required String name});
   Future<void> deleteChapter(int chapterId);
 
@@ -34,7 +44,11 @@ abstract interface class StudyRepository {
   });
 
   // --- Lessons --------------------------------------------------------------
-  Future<int> createLesson({required int chapterId, required String name});
+  Future<int> createLesson({
+    required int chapterId,
+    required String name,
+    required DateTime at,
+  });
   Future<void> renameLesson({required int lessonId, required String name});
   Future<void> deleteLesson(int lessonId);
   Future<void> updateChecklist({
@@ -72,7 +86,12 @@ abstract interface class StudyRepository {
     required DateTime at,
   });
 
-  Future<void> deleteHomework(int homeworkId);
+  // There is deliberately no `deleteHomework`. One existed, unreachable from any
+  // screen, for the whole life of the app. Unlike an exam, a homework score
+  // needs no correction path: only the most recent entry is ever read
+  // (`latestHomeworkPercentage`), so recording a new one supersedes a mistyped
+  // one, and homework never touches mastery in the first place. If a homework
+  // history is ever shown, the delete comes back with the UI that needs it.
 
   // --- Restore ---------------------------------------------------------------
   /// Replaces every chapter, lesson, exam and homework entry with [backup].
@@ -89,4 +108,18 @@ abstract interface class StudyRepository {
   /// The four seeded subjects are untouched: they are not part of a backup, and
   /// the receiving install has already created them.
   Future<void> restore(StudyBackup backup);
+
+  /// Empties the student's record from this device, leaving the seeded subjects.
+  ///
+  /// Called in exactly one situation: a **different** account has just signed in
+  /// on a device that still holds the previous student's curriculum. Nothing
+  /// cleared local data before, so the second student opened the app to the
+  /// first one's chapters -- and the backup sync then mirrored those chapters
+  /// into the second student's cloud document.
+  ///
+  /// Deliberately **not** called on sign-out. Signing out is not a statement
+  /// that the data is finished with, the phone may be offline with unsynced
+  /// work, and the same student signing back in must find everything where they
+  /// left it. The data only becomes wrong when somebody else's account arrives.
+  Future<void> clear();
 }

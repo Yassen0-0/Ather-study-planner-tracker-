@@ -38,7 +38,9 @@ void main() {
     return ProviderScope(
       overrides: [
         authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
-        backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
+        backupRepositoryProvider.overrideWithValue(
+          FakeBackupRepository.failing(),
+        ),
         sharedPreferencesProvider.overrideWithValue(preferences),
         databaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(MutableClock(now)),
@@ -128,7 +130,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Back on the lesson, with the score and the confirmation.
-    expect(find.text('اتسجّل الامتحان — عداد المراجعة بدأ من جديد'), findsOneWidget);
+    expect(
+      find.text('اتسجّل الامتحان — عداد المراجعة بدأ من جديد'),
+      findsOneWidget,
+    );
     expect(find.text(iso('75%')), findsWidgets);
     expect(
       find.text('باقي ${iso('30')} يوم'),
@@ -141,7 +146,10 @@ void main() {
 
     // Let the toast retire itself; its 2.2s timer outlives the test otherwise.
     await tester.pump(const Duration(seconds: 3));
-    expect(find.text('اتسجّل الامتحان — عداد المراجعة بدأ من جديد'), findsNothing);
+    expect(
+      find.text('اتسجّل الامتحان — عداد المراجعة بدأ من جديد'),
+      findsNothing,
+    );
 
     // Drift keeps stream-query timers alive; closing here rather than in
     // tearDown lets them drain before the binding checks for pending timers.

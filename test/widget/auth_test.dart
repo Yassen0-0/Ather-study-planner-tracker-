@@ -27,17 +27,17 @@ import '../support/fake_auth.dart';
 final DateTime kNow = DateTime(2026, 8, 3);
 
 StudySnapshot emptySnapshot() => StudySnapshot(
-      subjects: const <Subject>[
-        Subject(id: 1, code: SubjectCode.biology, sortOrder: 0),
-        Subject(id: 2, code: SubjectCode.physics, sortOrder: 1),
-        Subject(id: 3, code: SubjectCode.chemistry, sortOrder: 2),
-        Subject(id: 4, code: SubjectCode.english, sortOrder: 3),
-      ],
-      chapters: const <dynamic>[].cast(),
-      lessons: const <dynamic>[].cast(),
-      exams: const <dynamic>[].cast(),
-      homework: const <dynamic>[].cast(),
-    );
+  subjects: const <Subject>[
+    Subject(id: 1, code: SubjectCode.biology, sortOrder: 0),
+    Subject(id: 2, code: SubjectCode.physics, sortOrder: 1),
+    Subject(id: 3, code: SubjectCode.chemistry, sortOrder: 2),
+    Subject(id: 4, code: SubjectCode.english, sortOrder: 3),
+  ],
+  chapters: const <dynamic>[].cast(),
+  lessons: const <dynamic>[].cast(),
+  exams: const <dynamic>[].cast(),
+  homework: const <dynamic>[].cast(),
+);
 
 Future<Widget> boot(FakeAuthRepository auth, {bool lockOn = false}) async {
   SharedPreferences.setMockInitialValues(<String, Object>{
@@ -48,7 +48,9 @@ Future<Widget> boot(FakeAuthRepository auth, {bool lockOn = false}) async {
   return ProviderScope(
     overrides: [
       authRepositoryProvider.overrideWithValue(auth),
-      backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
+      backupRepositoryProvider.overrideWithValue(
+        FakeBackupRepository.failing(),
+      ),
       sharedPreferencesProvider.overrideWithValue(preferences),
       snapshotProvider.overrideWith(
         (ref) => Stream<StudySnapshot>.value(emptySnapshot()),
@@ -113,7 +115,8 @@ void main() {
   });
 
   testWidgets('a bad password is explained, not swallowed', (tester) async {
-    final auth = FakeAuthRepository()..nextFailure = AuthFailure.wrongCredentials;
+    final auth = FakeAuthRepository()
+      ..nextFailure = AuthFailure.wrongCredentials;
     addTearDown(auth.dispose);
 
     await tester.pumpWidget(await boot(auth));
@@ -128,8 +131,9 @@ void main() {
     expect(find.text('النهارده'), findsNothing);
   });
 
-  testWidgets('being offline says exactly that, and why it matters',
-      (tester) async {
+  testWidgets('being offline says exactly that, and why it matters', (
+    tester,
+  ) async {
     final auth = FakeAuthRepository()..nextFailure = AuthFailure.network;
     addTearDown(auth.dispose);
 
@@ -148,8 +152,9 @@ void main() {
     );
   });
 
-  testWidgets('local validation refuses before the network is touched',
-      (tester) async {
+  testWidgets('local validation refuses before the network is touched', (
+    tester,
+  ) async {
     final auth = FakeAuthRepository();
     addTearDown(auth.dispose);
 

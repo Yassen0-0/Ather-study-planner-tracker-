@@ -1,4 +1,6 @@
-import 'package:flutter/widgets.dart';
+// Material, for exactly one widget: the ring inside a busy [PrimaryButton].
+// Nothing else here is a Material control.
+import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -34,12 +36,23 @@ class PrimaryButton extends StatelessWidget {
     required this.onTap,
     this.tone = PrimaryButtonTone.primary,
     this.leading,
+    this.busy = false,
   });
 
   final String label;
   final VoidCallback? onTap;
   final PrimaryButtonTone tone;
   final Widget? leading;
+
+  /// A write is in flight: the label is replaced by a ring and the button stops
+  /// taking taps.
+  ///
+  /// The app had no loading state anywhere, which mattered most on the two slow
+  /// paths — saving an exam and restoring a cloud backup — where a student with
+  /// nothing to look at taps again. The ring is deliberately the only spinner in
+  /// the app and it never appears on a read: everything else in Ather reads
+  /// local SQLite and has nothing to wait for.
+  final bool busy;
 
   Color _background(AppColors c) => switch (tone) {
     PrimaryButtonTone.primary => c.accent,
@@ -61,32 +74,52 @@ class PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppColors c = context.colors;
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        height: AppSizes.primaryButton,
-        decoration: BoxDecoration(
-          color: _background(c),
-          borderRadius: BorderRadius.circular(AppRadius.button),
-        ),
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (leading != null) ...<Widget>[
-              leading!,
-              const SizedBox(width: AppSpacing.xs),
-            ],
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.text.button.copyWith(color: _foreground(c)),
-              ),
+    final Color foreground = _foreground(c);
+
+    return Semantics(
+      button: true,
+      enabled: onTap != null && !busy,
+      label: label,
+      child: ExcludeSemantics(
+        child: Pressable(
+          onTap: busy ? null : onTap,
+          child: Container(
+            height: AppSizes.primaryButton,
+            decoration: BoxDecoration(
+              color: _background(c),
+              borderRadius: BorderRadius.circular(AppRadius.button),
             ),
-          ],
+            alignment: Alignment.center,
+            child: busy
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.2,
+                      color: foreground,
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (leading != null) ...<Widget>[
+                        leading!,
+                        const SizedBox(width: AppSpacing.xs),
+                      ],
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.text.button.copyWith(
+                            color: foreground,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );
@@ -243,6 +276,7 @@ class CircleHeaderButton extends StatelessWidget {
     required this.child,
     required this.onTap,
     this.background,
+    this.semanticLabel,
   });
 
   final Widget child;
@@ -252,10 +286,19 @@ class CircleHeaderButton extends StatelessWidget {
   /// constant any more, because "the card colour" is now two colours.
   final Color? background;
 
+  /// What this button does. Its content is always a bare `AtherIcon`, which is
+  /// a `CustomPaint` and carries no accessible name of its own — so back,
+  /// settings, edit and the wizard's × were all announced identically, as
+  /// nothing.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     return Pressable(
       onTap: onTap,
+      semanticLabel: semanticLabel,
+      // Drawn at 36; hit at 48. The circle does not move or grow.
+      minTarget: kMinTarget,
       child: Container(
         width: AppSizes.headerButton,
         height: AppSizes.headerButton,

@@ -110,7 +110,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
               Text(
                 percent(widget.percentage),
                 style: AppTypography.celebrationNumber.copyWith(
-                  color: context.colors.right,
+                  color: context.colors.rightText,
                 ),
               ),
               const SizedBox(height: AppSpacing.xxxl),

@@ -88,7 +88,18 @@ class BackupSyncNotifier extends Notifier<SyncState> {
   /// and by the manual button in Settings.
   Future<void> flush() async {
     _debounce?.cancel();
-    if (ref.read(accountProvider).value == null) return;
+    final account = ref.read(accountProvider).value;
+    if (account == null) return;
+
+    // The device has to agree that this data belongs to this account before any
+    // of it leaves the phone. `BackupSyncGate` writes the uid only *after* it
+    // has wiped a previous student's curriculum, so a mismatch here means the
+    // wipe has not happened yet -- and uploading in that window is exactly how
+    // one student's chapters end up in another student's cloud document.
+    final owner = ref
+        .read(sharedPreferencesProvider)
+        .getString(kLastAccountUidKey);
+    if (owner != account.id) return;
 
     final snapshot = ref.read(snapshotValueProvider);
     final tasks = ref.read(tasksValueProvider);

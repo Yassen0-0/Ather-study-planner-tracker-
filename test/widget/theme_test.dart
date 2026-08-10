@@ -42,7 +42,9 @@ void main() {
     return ProviderScope(
       overrides: [
         authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
-        backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
+        backupRepositoryProvider.overrideWithValue(
+          FakeBackupRepository.failing(),
+        ),
         sharedPreferencesProvider.overrideWithValue(preferences),
         snapshotProvider.overrideWith(
           (ref) => Stream<StudySnapshot>.value(const StudySnapshot.empty()),

@@ -78,6 +78,16 @@ class LEn extends L {
   String get sectionSubjects => 'Subjects';
 
   @override
+  String get firstRunTitle => 'Start here';
+
+  @override
+  String get firstRunBody =>
+      'Open a subject, add a chapter inside it, then a lesson. Mastery comes only from your real exam results — not from finishing a lesson.';
+
+  @override
+  String get firstRunAction => 'Open your first subject';
+
+  @override
   String get sectionNext => 'Up next';
 
   @override
@@ -300,6 +310,20 @@ class LEn extends L {
   String get examReviewBadge => 'Review';
 
   @override
+  String get examHistoryHint =>
+      'Tap an exam to remove it if it was entered by mistake';
+
+  @override
+  String get examDelete => 'Remove exam';
+
+  @override
+  String get examDeleteConfirm =>
+      'This exam will be removed from the record and the lesson\'s mastery recalculated without it. This can\'t be undone.';
+
+  @override
+  String get toastExamDeleted => 'Exam removed — mastery recalculated';
+
+  @override
   String get examStart => 'Start the exam';
 
   @override
@@ -339,6 +363,9 @@ class LEn extends L {
   String get examAddGroup => '+ Add group';
 
   @override
+  String get examRemoveGroup => 'Remove group';
+
+  @override
   String examGroupLabel(String count, String points) {
     return '$count questions × $points marks';
   }
@@ -359,6 +386,23 @@ class LEn extends L {
 
   @override
   String get examSaveReview => 'Save review exam';
+
+  @override
+  String get examSaveFailed =>
+      'We couldn\'t save this exam. Your numbers are still here — try again.';
+
+  @override
+  String get examDiscardTitle => 'Leave this exam?';
+
+  @override
+  String get examDiscardBody =>
+      'What you\'ve entered will be lost and nothing will be recorded.';
+
+  @override
+  String get examDiscardLeave => 'Leave';
+
+  @override
+  String get examDiscardStay => 'Keep going';
 
   @override
   String get examErrorNeedAtLeastOneQuestion =>
@@ -414,6 +458,10 @@ class LEn extends L {
 
   @override
   String get analyticsAllSubjects => 'All subjects';
+
+  @override
+  String get analyticsAlwaysAllSubjects =>
+      'This card always compares all four subjects';
 
   @override
   String get analyticsMasteryBySubject => 'Mastery by subject';
@@ -611,6 +659,10 @@ class LEn extends L {
       'Remind me when a lesson is due for review';
 
   @override
+  String get settingsNotificationsBlocked =>
+      'Notifications are turned off in your phone\'s settings. Turn them on there to get reminders.';
+
+  @override
   String get settingsAbout => 'About';
 
   @override
@@ -698,6 +750,18 @@ class LEn extends L {
 
   @override
   String get commonSave => 'Save';
+
+  @override
+  String get commonSomethingWentWrong => 'Something didn\'t work. Try again.';
+
+  @override
+  String get nameRequired => 'Type a name first';
+
+  @override
+  String get authShowPassword => 'Show password';
+
+  @override
+  String get authHidePassword => 'Hide password';
 
   @override
   String get commonCancel => 'Cancel';

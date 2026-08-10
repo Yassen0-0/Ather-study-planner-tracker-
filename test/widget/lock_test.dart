@@ -37,7 +37,9 @@ void main() {
     return ProviderScope(
       overrides: [
         authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
-        backupRepositoryProvider.overrideWithValue(FakeBackupRepository.failing()),
+        backupRepositoryProvider.overrideWithValue(
+          FakeBackupRepository.failing(),
+        ),
         localAuthProvider.overrideWithValue(localAuth),
         sharedPreferencesProvider.overrideWithValue(preferences),
         snapshotProvider.overrideWith(
@@ -58,9 +60,7 @@ void main() {
   Future<void> pressSystemBack(WidgetTester tester) async {
     await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
       'flutter/navigation',
-      const JSONMethodCodec().encodeMethodCall(
-        const MethodCall('popRoute'),
-      ),
+      const JSONMethodCodec().encodeMethodCall(const MethodCall('popRoute')),
       (_) {},
     );
     await tester.pumpAndSettle();
@@ -101,7 +101,9 @@ void main() {
   testWidgets('being locked out does not unlock the app', (tester) async {
     // The worst of the old bypasses: fail enough times that the OS locks the
     // sensor, and the catch-all opened the app.
-    final localAuth = FakeLocalAuth(throwCode: LocalAuthExceptionCode.temporaryLockout);
+    final localAuth = FakeLocalAuth(
+      throwCode: LocalAuthExceptionCode.temporaryLockout,
+    );
 
     await tester.pumpWidget(await boot(localAuth));
     await tester.pumpAndSettle();
@@ -116,7 +118,9 @@ void main() {
   ) async {
     // uiUnavailable is the modern spelling of the no_fragment_activity
     // misconfiguration. Releasing on it is how it stayed hidden once before.
-    final localAuth = FakeLocalAuth(throwCode: LocalAuthExceptionCode.uiUnavailable);
+    final localAuth = FakeLocalAuth(
+      throwCode: LocalAuthExceptionCode.uiUnavailable,
+    );
 
     await tester.pumpWidget(await boot(localAuth));
     await tester.pumpAndSettle();
@@ -131,7 +135,9 @@ void main() {
     // The one case that must still release: the sensor can never say yes, and
     // holding a student's own study record hostage behind it is worse than not
     // locking at all.
-    final localAuth = FakeLocalAuth(throwCode: LocalAuthExceptionCode.noBiometricsEnrolled);
+    final localAuth = FakeLocalAuth(
+      throwCode: LocalAuthExceptionCode.noBiometricsEnrolled,
+    );
 
     await tester.pumpWidget(await boot(localAuth));
     await tester.pumpAndSettle();

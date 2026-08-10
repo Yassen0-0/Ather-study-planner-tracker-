@@ -82,16 +82,27 @@ class AtherCheckbox extends StatelessWidget {
 /// which under RTL is the physical left, so the control is forced LTR: a
 /// switch is a physical metaphor, and mirroring it makes "on" look like "off".
 class AtherSwitch extends StatelessWidget {
-  const AtherSwitch({super.key, required this.value, required this.onChanged});
+  const AtherSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.semanticLabel,
+  });
 
   final bool value;
   final ValueChanged<bool> onChanged;
+
+  /// What this switch controls. The knob carries no text of its own, so without
+  /// it a screen reader announces "on" with no subject -- and every switch in
+  /// Settings sounds identical.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     final reduced = prefersReducedMotion(context);
 
     return Semantics(
+      label: semanticLabel,
       toggled: value,
       child: GestureDetector(
         onTap: () => onChanged(!value),

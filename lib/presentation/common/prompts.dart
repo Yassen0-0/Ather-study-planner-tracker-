@@ -6,6 +6,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/ather_sheet.dart';
 import '../../core/widgets/buttons.dart';
+import '../../core/widgets/error_banner.dart';
 
 /// Asks for a single line of text — a chapter or lesson name.
 ///
@@ -53,9 +54,17 @@ class _NamePromptSheetState extends State<_NamePromptSheet> {
     super.dispose();
   }
 
+  bool _showError = false;
+
   void _submit() {
     final value = _controller.text.trim();
-    if (value.isEmpty) return;
+    // Was a bare `return`, which swallowed the tap in silence -- the exact thing
+    // the comment on the button below says this app never does, and the
+    // opposite of what the homework sheet does with the same problem.
+    if (value.isEmpty) {
+      setState(() => _showError = true);
+      return;
+    }
     Navigator.of(context).pop(value);
   }
 
@@ -107,13 +116,19 @@ class _NamePromptSheetState extends State<_NamePromptSheet> {
               ),
             ),
           ),
+          if (_showError && !_valid) ...<Widget>[
+            const SizedBox(height: AppSpacing.md),
+            ErrorBanner(message: l.nameRequired),
+          ],
           const SizedBox(height: AppSpacing.xxl),
           PrimaryButton(
             label: l.commonSave,
-            // Stays tappable while empty and simply does nothing, matching the
-            // rest of the app: no greyed-out control ever silently swallows a
-            // tap without the student learning why.
-            tone: _valid ? PrimaryButtonTone.primary : PrimaryButtonTone.unearned,
+            // Stays tappable while empty, matching the rest of the app: no
+            // greyed-out control, and no tap swallowed without the student
+            // learning why.
+            tone: _valid
+                ? PrimaryButtonTone.primary
+                : PrimaryButtonTone.unearned,
             onTap: _submit,
           ),
         ],
@@ -168,10 +183,17 @@ Future<void> showEditSheet(
 
 /// Destructive confirmation. Deletes cascade, so the copy says exactly what
 /// goes with it rather than a bare "are you sure?".
+///
+/// [confirmLabel] and [cancelLabel] default to "delete" and "cancel" because
+/// that is what almost every caller means. The exam wizard's discard prompt is
+/// the exception: nothing is being deleted there, so calling the red button
+/// "حذف" would describe the wrong act.
 Future<bool> confirmDestructive(
   BuildContext context, {
   required String title,
   required String message,
+  String? confirmLabel,
+  String? cancelLabel,
 }) async {
   final l = L.of(context);
   final result = await showAtherSheet<bool>(
@@ -184,13 +206,13 @@ Future<bool> confirmDestructive(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           PrimaryButton(
-            label: l.commonDelete,
+            label: confirmLabel ?? l.commonDelete,
             tone: PrimaryButtonTone.wrong,
             onTap: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(height: AppSpacing.sm),
           PrimaryButton(
-            label: l.commonCancel,
+            label: cancelLabel ?? l.commonCancel,
             tone: PrimaryButtonTone.secondary,
             onTap: () => Navigator.of(context).pop(false),
           ),

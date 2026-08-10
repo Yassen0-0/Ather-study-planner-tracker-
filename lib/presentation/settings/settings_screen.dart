@@ -13,11 +13,14 @@ import '../../core/widgets/ather_controls.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
+import '../../core/widgets/error_banner.dart';
 import '../../domain/repositories/backup_repository.dart';
 import '../common/prompts.dart';
+import '../common/write_guard.dart';
 import '../providers/app_providers.dart';
 import '../providers/auth_providers.dart';
 import '../providers/backup_providers.dart';
+import '../providers/notification_providers.dart';
 
 /// A short list of cards and nothing else.
 ///
@@ -41,7 +44,6 @@ class SettingsScreen extends ConsumerWidget {
     final l = L.of(context);
     final locale = ref.watch(localeProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final notifications = ref.watch(notificationsEnabledProvider);
     final account = ref.watch(accountValueProvider);
     final lockEnabled = ref.watch(appLockEnabledProvider);
     // The lock switch is only offered where the device can actually satisfy it;
@@ -108,39 +110,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        AtherCard(
-          padding: AppSpacing.cardPaddingLarge,
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      l.settingsNotifications,
-                      style: AppTypography.cardTitle,
-                    ),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      l.settingsNotificationsBody,
-                      style: AppTypography.style(
-                        size: 13,
-                        weight: AppTypography.medium,
-                        color: context.colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              AtherSwitch(
-                value: notifications,
-                onChanged: (value) =>
-                    ref.read(notificationsEnabledProvider.notifier).set(value),
-              ),
-            ],
-          ),
-        ),
+        const _NotificationsCard(),
         if (biometricsAvailable) ...<Widget>[
           const SizedBox(height: AppSpacing.md),
           AtherCard(
@@ -167,6 +137,7 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(width: AppSpacing.lg),
                 AtherSwitch(
                   value: lockEnabled,
+                  semanticLabel: l.lockSetting,
                   onChanged: (value) =>
                       ref.read(appLockEnabledProvider.notifier).set(value),
                 ),
@@ -196,8 +167,17 @@ class SettingsScreen extends ConsumerWidget {
                       title: l.authSignOut,
                       message: l.authSignOutConfirm,
                     );
-                    if (!confirmed) return;
-                    await ref.read(authRepositoryProvider).signOut();
+                    if (!confirmed || !context.mounted) return;
+                    // Push whatever has not been mirrored yet *before* the
+                    // session goes: after sign-out there is no uid to upload
+                    // under, and the debounce may still be holding the last
+                    // twenty seconds of work.
+                    await ref.read(backupSyncProvider.notifier).flush();
+                    if (!context.mounted) return;
+                    await runWrite(
+                      context,
+                      () => ref.read(authRepositoryProvider).signOut(),
+                    );
                   },
                 ),
               ],
@@ -235,14 +215,106 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
+/// The review-reminder switch, and the one line that tells the truth when the
+/// switch and the operating system disagree.
+///
+/// Flipping it on is the clearest possible moment to ask for the OS permission:
+/// the student has just said, in words, that they want reminders. Nothing used
+/// to ask at all, which is why no reminder had ever been scheduled.
+class _NotificationsCard extends ConsumerWidget {
+  const _NotificationsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = L.of(context);
+    final enabled = ref.watch(notificationsEnabledProvider);
+    final allowed = ref.watch(osNotificationsAllowedProvider).value ?? true;
+
+    // Only warn when a reminder is genuinely owed. On a fresh install nothing
+    // has a review clock yet, so "notifications are blocked" would be a warning
+    // about a problem the student does not have.
+    final blocked =
+        enabled && !allowed && ref.watch(hasScheduledReviewsProvider);
+
+    return AtherCard(
+      padding: AppSpacing.cardPaddingLarge,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l.settingsNotifications,
+                      style: AppTypography.cardTitle,
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      l.settingsNotificationsBody,
+                      style: AppTypography.style(
+                        size: 13,
+                        weight: AppTypography.medium,
+                        color: context.colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.lg),
+              AtherSwitch(
+                value: enabled,
+                semanticLabel: l.settingsNotifications,
+                onChanged: (value) => _set(ref, value),
+              ),
+            ],
+          ),
+          if (blocked) ...<Widget>[
+            const SizedBox(height: AppSpacing.md),
+            ErrorBanner(height: 1.5, message: l.settingsNotificationsBlocked),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _set(WidgetRef ref, bool value) async {
+    await ref.read(notificationsEnabledProvider.notifier).set(value);
+    if (!value) return;
+
+    // Android only ever prompts once per install; after a refusal this returns
+    // false without showing anything, which is precisely when the line above
+    // has to appear instead.
+    try {
+      await ref.read(notificationServiceProvider).requestPermission();
+    } catch (_) {
+      // A platform that cannot be asked is a platform that answers "no".
+    }
+    ref.invalidate(osNotificationsAllowedProvider);
+  }
+}
+
 /// The cloud backup card.
 ///
 /// Deliberately quiet. Sync is not a feature a student should have to think
 /// about -- the card exists so they know it is happening and can force it, not
 /// so they have to manage it. There is no toggle: a backup the student can
 /// switch off is a backup they will find missing on the day their phone dies.
-class _BackupCard extends ConsumerWidget {
+class _BackupCard extends ConsumerStatefulWidget {
   const _BackupCard();
+
+  @override
+  ConsumerState<_BackupCard> createState() => _BackupCardState();
+}
+
+class _BackupCardState extends ConsumerState<_BackupCard> {
+  /// A restore is a download plus a full database replacement, and it is the
+  /// most destructive thing in the app. It used to run with no feedback at all:
+  /// the button stayed live, took further taps, and the student had no way to
+  /// tell a slow network from a dead control.
+  bool _restoring = false;
 
   /// Turns a failure into a sentence, here rather than in the data layer --
   /// which has no localisation, which is why [BackupFailure] is an enum.
@@ -251,11 +323,12 @@ class _BackupCard extends ConsumerWidget {
     BackupFailure.permissionDenied => l.backupErrorPermission,
     BackupFailure.tooLarge => l.backupErrorTooLarge,
     BackupFailure.unreadable => l.backupErrorUnreadable,
-    BackupFailure.notSignedIn || BackupFailure.unknown =>
-      l.backupErrorUnknown,
+    BackupFailure.notSignedIn || BackupFailure.unknown => l.backupErrorUnknown,
   };
 
-  Future<void> _restore(BuildContext context, WidgetRef ref) async {
+  Future<void> _restore() async {
+    if (_restoring) return;
+
     final l = L.of(context);
     final messenger = Overlay.of(context, rootOverlay: true);
     final direction = Directionality.of(context);
@@ -265,8 +338,9 @@ class _BackupCard extends ConsumerWidget {
       title: l.backupRestore,
       message: l.backupRestoreConfirm,
     );
-    if (!confirmed) return;
+    if (!confirmed || !mounted) return;
 
+    setState(() => _restoring = true);
     try {
       final backup = await ref.read(backupRepositoryProvider).download();
       if (backup == null) {
@@ -277,11 +351,25 @@ class _BackupCard extends ConsumerWidget {
       showAtherToastOn(messenger, direction, l.backupRestoreDone);
     } on BackupException catch (e) {
       showAtherToastOn(messenger, direction, _failureLabel(l, e.failure));
+    } on Object catch (error, stack) {
+      // Only BackupException was caught before, so a failure from the *local*
+      // write half -- the drift transaction that replaces the database -- went
+      // unhandled and told the student nothing. The transaction rolls back, so
+      // their data is intact; they just have to be told it did not happen.
+      debugPrint('Ather: restore failed -- $error\n$stack');
+      showAtherToastOn(
+        messenger,
+        direction,
+        l.commonSomethingWentWrong,
+        tone: ToastTone.failed,
+      );
+    } finally {
+      if (mounted) setState(() => _restoring = false);
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = L.of(context);
     final sync = ref.watch(backupSyncProvider);
     final cloud = ref.watch(backupMetadataProvider).value;
@@ -334,6 +422,7 @@ class _BackupCard extends ConsumerWidget {
           PrimaryButton(
             label: l.backupSaveNow,
             tone: PrimaryButtonTone.secondary,
+            busy: sync.status == SyncStatus.saving,
             onTap: () => ref.read(backupSyncProvider.notifier).flush(),
           ),
           // Only offered once something is actually up there. A restore button
@@ -344,7 +433,8 @@ class _BackupCard extends ConsumerWidget {
             PrimaryButton(
               label: l.backupRestore,
               tone: PrimaryButtonTone.wrong,
-              onTap: () => _restore(context, ref),
+              busy: _restoring,
+              onTap: _restore,
             ),
           ],
         ],

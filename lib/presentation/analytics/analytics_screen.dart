@@ -60,9 +60,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
     // Discipline counts only lessons that have been examined: a lesson never
     // sat is not "late", it simply has no clock running yet.
+    //
+    // Counted over `filtered`, not `subjects`. The filter used to reach the
+    // chapter bars and the weakest list and nothing else, so picking a subject
+    // left this card and the bar chart above it showing figures for all four --
+    // two cards silently answering a question the student had not asked.
     var examined = 0;
     var overdue = 0;
-    for (final subject in subjects) {
+    for (final subject in filtered) {
       for (final chapter in subject.chapters) {
         for (final lesson in chapter.lessons) {
           if (!lesson.hasExam) continue;
@@ -90,7 +95,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           onSelect: (id) => setState(() => _subjectFilter = id),
         ),
         const SizedBox(height: AppSpacing.lg),
-        _SubjectBarsCard(subjects: subjects),
+        // The one card that deliberately ignores the filter, and says so: it
+        // exists to compare the four subjects against each other, and a
+        // comparison of one subject with itself is not a chart.
+        _SubjectBarsCard(
+          subjects: subjects,
+          comparingAll: _subjectFilter != null,
+        ),
         const SizedBox(height: AppSpacing.lg),
         if (chapters.isNotEmpty) ...<Widget>[
           _ChapterBarsCard(chapters: chapters),
@@ -259,9 +270,14 @@ class _FilterRow extends StatelessWidget {
 }
 
 class _SubjectBarsCard extends StatelessWidget {
-  const _SubjectBarsCard({required this.subjects});
+  const _SubjectBarsCard({required this.subjects, required this.comparingAll});
 
   final List<SubjectSummary> subjects;
+
+  /// A subject filter is active and this card is showing all four anyway.
+  /// Stated in a line under the title rather than left for the student to
+  /// notice, or not notice.
+  final bool comparingAll;
 
   @override
   Widget build(BuildContext context) {
@@ -273,6 +289,10 @@ class _SubjectBarsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(l.analyticsMasteryBySubject, style: AppTypography.cardTitle),
+          if (comparingAll) ...<Widget>[
+            const SizedBox(height: 2),
+            Text(l.analyticsAlwaysAllSubjects, style: context.text.micro),
+          ],
           const SizedBox(height: AppSpacing.xl),
           // Forced LTR so the four subjects keep the same left-to-right order
           // as every other chart, and a comparison never silently mirrors.

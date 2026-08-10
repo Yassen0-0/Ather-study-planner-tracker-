@@ -235,6 +235,24 @@ abstract class L {
   /// **'المواد'**
   String get sectionSubjects;
 
+  /// No description provided for @firstRunTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ من هنا'**
+  String get firstRunTitle;
+
+  /// No description provided for @firstRunBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح مادة، ضيف فيها باب، وبعدين درس. الإتقان بيتحسب من امتحاناتك الحقيقية بس — مش من إنك خلصت الدرس.'**
+  String get firstRunBody;
+
+  /// No description provided for @firstRunAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح أول مادة'**
+  String get firstRunAction;
+
   /// No description provided for @sectionNext.
   ///
   /// In ar, this message translates to:
@@ -595,6 +613,30 @@ abstract class L {
   /// **'مراجعة'**
   String get examReviewBadge;
 
+  /// No description provided for @examHistoryHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس على امتحان عشان تشيله لو اتسجل غلط'**
+  String get examHistoryHint;
+
+  /// No description provided for @examDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيل الامتحان'**
+  String get examDelete;
+
+  /// No description provided for @examDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيتشال الامتحان من السجل وإتقان الدرس هيتحسب من غيره. مش هينفع ترجع فيها.'**
+  String get examDeleteConfirm;
+
+  /// No description provided for @toastExamDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتشال الامتحان — الإتقان اتحسب من الأول'**
+  String get toastExamDeleted;
+
   /// No description provided for @examStart.
   ///
   /// In ar, this message translates to:
@@ -673,6 +715,12 @@ abstract class L {
   /// **'+ إضافة مجموعة'**
   String get examAddGroup;
 
+  /// No description provided for @examRemoveGroup.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيل المجموعة'**
+  String get examRemoveGroup;
+
   /// No description provided for @examGroupLabel.
   ///
   /// In ar, this message translates to:
@@ -708,6 +756,36 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'احفظ امتحان المراجعة'**
   String get examSaveReview;
+
+  /// No description provided for @examSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرناش نحفظ الامتحان. أرقامك لسه موجودة — جرّب تاني.'**
+  String get examSaveFailed;
+
+  /// No description provided for @examDiscardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسيب الامتحان؟'**
+  String get examDiscardTitle;
+
+  /// No description provided for @examDiscardBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي كتبته هيروح ومش هيتسجل.'**
+  String get examDiscardBody;
+
+  /// No description provided for @examDiscardLeave.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيبه'**
+  String get examDiscardLeave;
+
+  /// No description provided for @examDiscardStay.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل'**
+  String get examDiscardStay;
 
   /// No description provided for @examErrorNeedAtLeastOneQuestion.
   ///
@@ -804,6 +882,12 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'كل المواد'**
   String get analyticsAllSubjects;
+
+  /// No description provided for @analyticsAlwaysAllSubjects.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكارت ده بيقارن المواد الأربعة دايماً'**
+  String get analyticsAlwaysAllSubjects;
 
   /// No description provided for @analyticsMasteryBySubject.
   ///
@@ -1153,6 +1237,12 @@ abstract class L {
   /// **'ذكّرني لما يجي وقت مراجعة درس'**
   String get settingsNotificationsBody;
 
+  /// No description provided for @settingsNotificationsBlocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'التنبيهات مقفولة من إعدادات التليفون. افتحها من هناك عشان التذكير يوصلك.'**
+  String get settingsNotificationsBlocked;
+
   /// No description provided for @settingsAbout.
   ///
   /// In ar, this message translates to:
@@ -1314,6 +1404,30 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'حفظ'**
   String get commonSave;
+
+  /// No description provided for @commonSomethingWentWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'في حاجة مامشتش صح. جرّب تاني.'**
+  String get commonSomethingWentWrong;
+
+  /// No description provided for @nameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم الأول'**
+  String get nameRequired;
+
+  /// No description provided for @authShowPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار كلمة السر'**
+  String get authShowPassword;
+
+  /// No description provided for @authHidePassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء كلمة السر'**
+  String get authHidePassword;
 
   /// No description provided for @commonCancel.
   ///

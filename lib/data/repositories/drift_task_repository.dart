@@ -26,16 +26,19 @@ class DriftTaskRepository implements TaskRepository {
   }
 
   @override
-  Future<int> addTask({required DateTime day, required String title}) {
+  Future<int> addTask({
+    required DateTime day,
+    required String title,
+    required DateTime at,
+  }) {
     final normalised = dayOf(day);
 
     // The read and the insert are one transaction: two adds racing on the same
     // day would otherwise both read the same max and land on top of each other.
     return _db.transaction(() async {
-      final existing =
-          await (_db.select(_db.dailyTasks)
-                ..where((t) => t.day.equals(normalised)))
-              .get();
+      final existing = await (_db.select(
+        _db.dailyTasks,
+      )..where((t) => t.day.equals(normalised))).get();
 
       var next = 0;
       for (final row in existing) {
@@ -49,7 +52,7 @@ class DriftTaskRepository implements TaskRepository {
               day: normalised,
               title: title.trim(),
               sortOrder: next,
-              createdAt: DateTime.now(),
+              createdAt: at,
             ),
           );
     });
@@ -89,8 +92,7 @@ class DriftTaskRepository implements TaskRepository {
             DailyTasksCompanion(sortOrder: Value(i)),
             // Scoped by day as well as id: a stale list of ids from another day
             // must not be able to renumber rows the student is not looking at.
-            where: (t) =>
-                t.id.equals(orderedIds[i]) & t.day.equals(normalised),
+            where: (t) => t.id.equals(orderedIds[i]) & t.day.equals(normalised),
           );
         }
       });
@@ -116,6 +118,9 @@ class DriftTaskRepository implements TaskRepository {
       });
     });
   }
+
+  @override
+  Future<void> clearTasks() => _db.delete(_db.dailyTasks).go();
 
   DailyTask _toTask(DailyTaskRow r) => DailyTask(
     id: r.id,

@@ -24,6 +24,13 @@ class ReviewNotificationService {
   bool _initialised = false;
 
   /// True once the OS has granted permission (or the platform does not gate it).
+  ///
+  /// Read back from the OS by [refreshPermission] rather than only ever set by
+  /// [requestPermission]. It used to be the latter, and because nothing called
+  /// `requestPermission`, this stayed `false` for the life of the app and
+  /// [reschedule] returned early every single time — so no reminder was ever
+  /// scheduled on any device. A flag that can only be set by a call that does
+  /// not exist is indistinguishable from a feature that was never wired.
   bool permissionGranted = false;
 
   Future<void> initialise({
@@ -59,9 +66,34 @@ class ReviewNotificationService {
     _initialised = true;
   }
 
-  /// Asks for permission at a moment when its value is obvious — after the
-  /// student masters their first chapter — rather than on cold start, where a
-  /// permission prompt before any context is reliably denied.
+  /// Reads the current permission back from the OS, showing nothing.
+  ///
+  /// Called on every sync, so a student who granted the permission last month —
+  /// or who is on a build below Android 13, where it is granted at install —
+  /// gets their reminders scheduled without ever being asked again. It also
+  /// picks up a permission *revoked* in system settings, which would otherwise
+  /// leave the app scheduling into a void and reporting success.
+  Future<bool> refreshPermission() async {
+    if (!Platform.isAndroid) {
+      permissionGranted = true;
+      return true;
+    }
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    permissionGranted = await android?.areNotificationsEnabled() ?? false;
+    return permissionGranted;
+  }
+
+  /// Asks for permission at a moment when its value is obvious — the student
+  /// turning the reminder switch on, or recording the exam that starts the very
+  /// first 30-day clock — rather than on cold start, where a permission prompt
+  /// arriving before any context is reliably denied.
+  ///
+  /// Returns the granted state. Android only prompts once per install; after a
+  /// refusal this resolves to `false` immediately, which is why the caller must
+  /// treat a `false` as "say so in the UI", not "ask again".
   Future<bool> requestPermission() async {
     if (Platform.isAndroid) {
       final android = _plugin
