@@ -413,6 +413,14 @@ toast passing underneath at **1.5 : 1** — which cannot happen, because the toa
 Separately, and out of this work's scope: 2.80 : 1 at 11px already fails WCAG AA. That is a
 pre-existing token decision, unchanged here, but it is written down now.
 
+> **Corrected 2026-08-13.** The paragraph above is right about the surfaces and wrong about the
+> range. "Everything that passes under this bar is lighter than the tint" is true of `card`,
+> `muted`, `fill`, `track` and the page — and false of the content drawn *on* them. An analytics
+> column at `accent` composites to **1.90 : 1** and a mastery fill to **1.91 : 1**, both below the
+> 2.55 floor claimed here and below the toast case this section was careful to design out. The
+> pill exposing content on four sides is what widened the set. Full numbers, and why raising the
+> tint alpha cannot repair the light theme, are in §9.
+
 `AppShell` sets `extendBody: true` so the list actually scrolls under the bar — otherwise
 there is nothing to blur — and `AtherScreen` adds the bar's height back as list padding, plus
 real space under any pinned bottom button. A button may not sit behind glass.
@@ -1121,15 +1129,61 @@ so it reads like a broken checkout rather than a one-switch machine setting.
   feature was asked for. The cost is bounded: the delete happens in a sheet over that very
   screen, so the row's departure is already explained, whereas the collapse exists for removals
   that arrive from *another* screen as a shorter list.
-- **The v1 → v2 migration has been exercised on a real file, but not on a real phone.**
-  `test/data/task_migration_test.dart` builds an actual v1 image on disk and reopens it, which is
-  the mechanism; it is not the same as relaunching an APK over an install that has been there for
-  weeks.
-- **The floating bar's contrast has not been re-measured.** §3.19's 2.55–2.80:1 for the inactive
-  label was measured against a full-bleed bar. The pill exposes content on four sides instead of
-  one; both light and dark renders were reviewed and read fine, but no numbers were taken. If it
-  ever fails, the rule is already written: raise the tint alpha, never darken the label.
-- 20 transitive packages are held back by the Flutter SDK's `meta 1.18.0` pin. Benign.
+- ~~**The v1 → v2 migration has been exercised on a real file, but not on a real phone.**~~
+  **Run on an Android runtime 2026-08-13**, against the shipped `1.2.0+6` release APK on
+  `nasaq_pixel_390` (API 35, x86_64). Not the unit test's in-process SQLite — the real APK, the
+  real app data directory, opened by the app itself on launch.
+
+  The v1 image was built the way `task_migration_test.dart` builds it, which is the only honest
+  way: let the app create the current schema, insert a student's work, then drop exactly what v2
+  added and set `PRAGMA user_version = 1`. Hand-writing the v1 DDL would be reproducing drift's
+  column naming from memory. Then `adb install -r` of the same APK over it — an upgrade, not a
+  fresh install — and launch.
+
+  | | before | after |
+  |---|---|---|
+  | `user_version` | 1 | **2** |
+  | `daily_tasks` | dropped | **created, and accepts an insert** |
+  | chapter | `الباب الأول — الخلية` | unchanged |
+  | lesson | `تركيب الغشاء البلازمي` | unchanged |
+  | exam | 90.0% | unchanged |
+  | subjects | 4 | **4** — the seed stayed idempotent, not 8 |
+
+  `logcat` clean across the upgrade launch and a second cold launch: no `SQLiteException`, no
+  `FATAL`, no unhandled Dart error, and the app rendered its login screen normally on the
+  migrated file.
+
+  *What this still does not cover:* a database that has genuinely aged on a student's phone for
+  weeks, and the emulator is x86_64 rather than the arm64 every real student is on.
+- ~~**The floating bar's contrast has not been re-measured.**~~ **Measured 2026-08-13, and the
+  documented remedy does not work.** §3.19 put the inactive label at 2.55–2.80:1 on the reasoning
+  that "everything that passes under this bar is lighter than the tint". That holds for the
+  *surface* tokens and fails for *content*. Composited through `card` at `glassTint` 0.72:
+
+  | Under the pill | Light (`#9A9AA0`) | Dark (`#78787E`) |
+  |---|---|---|
+  | page / card / muted / fill / track | 2.66 – 2.80 : 1 | 3.71 – 4.19 : 1 |
+  | accent chart column | **1.90 : 1** | 2.41 : 1 |
+  | mastery fill, `wrong` / `right` | **1.91 / 2.22 : 1** | 2.74 / 2.23 : 1 |
+  | a solid `textPrimary` field | **1.41 : 1** | 1.52 : 1 |
+
+  So the floor is **1.90 : 1**, not 2.55. §3.19 guarded against the black toast at 1.5:1 by
+  pinning it clear of the bar, and then let the analytics columns and every mastery bar scroll
+  underneath at worse than the range it claimed.
+
+  **The standing rule cannot fix the light theme.** "Raise the tint alpha, never darken the
+  label" reaches 3.0:1 in dark at alpha 0.84–0.86, but in light the label tops out at **2.80:1
+  against pure white** — an opaque bar is already the ceiling, and no alpha reaches 3.0. The only
+  lever left in light is the label token, which the rule forbids. The rule and the token cannot
+  both stand; §3.19's own closing line already concedes 2.80:1 at 11px fails AA.
+
+  *Limit of this measurement:* it composites solid colour, which is right for a chart column, a
+  mastery fill or a filled button, and pessimistic for text — `sigmaX/Y = 24` averages a thin
+  glyph into the page around it, so a line of body copy passing under does not really land at
+  1.41:1. The large solid areas are the honest failures. Nothing here was sampled from a
+  screenshot; it is the composite arithmetic, and a render check would tighten it.
+- 30 transitive packages are held back by the Flutter SDK's `meta 1.18.0` pin (20 when this line
+  was written; rechecked 2026-08-13). Benign, but it only moves one way.
 - ~~**The release signing config is wired, but no keystore exists yet.**~~ **The keystore exists
   (since 2026-08-05)** and has signed every release since, up to `1.2.0+6`. Its certificate is
   `CN=yassen, OU=per, O=ather, L=giza, ST=giza, C=eg`, SHA-1 `f3eaec08…623e` — that fingerprint
@@ -1244,6 +1298,22 @@ above rather than by reading the docs:
 - **§8's environment table was stale in both directions** — Visual Studio is now installed
   (it was listed as missing), and the Android licences are no longer fully accepted (they were
   listed as OK).
+
+**Then the two oldest "not verified on a device" items were closed (same day).** The AVD
+`nasaq_pixel_390` had to be wiped first: its user storage was in a state where `/sdcard` was not
+writable and `ceDataInode=0`, so every install "succeeded" and then `am start` answered
+`Activity class ... does not exist`. The class was in `classes14.dex` the whole time. Worth
+recognising again — the error named the app, and the fault was the device.
+
+- **The v1 → v2 migration now has an on-device run** against the shipped release APK, upgraded
+  in place over a genuine v1 file holding a chapter, a lesson and a 90% exam. All of it survived,
+  `daily_tasks` was created and accepted a write, and the subject seed stayed at 4. Full table
+  in §9.
+- **Rule 1's second condition was demonstrated rather than argued.** Installing the release APK
+  over the debug build failed with
+  `INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package com.ather.app signatures do not match`.
+  That is the exact refusal a student would hit, produced on demand, and it is why the
+  debug-signed APKs are now quarantined rather than merely described as unusable.
 
 *Three operational hazards worth knowing.* **Developer Mode is off**, which does not merely block
 the Windows desktop build — it makes `flutter test` fail in every worktree, so an agent working in
