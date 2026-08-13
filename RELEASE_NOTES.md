@@ -1,4 +1,4 @@
-# Ather — release build, 2026-08-10 · 1.2.0+5
+# Ather — release build, 2026-08-11 · 1.2.0+6
 
 **A minor-version bump, because five things that were silently broken now work.** No visual
 change: this sits on top of the 1.1.0+4 visual refresh and does not touch a colour, a layout, a
@@ -44,26 +44,45 @@ of them had been reported.
 
 ## Upgrading
 
-**Installs straight over 1.1.0+4.** Same upload key, `versionCode` 4 → 5, data kept. Nobody
+**Installs straight over 1.1.0+4.** Same upload key, `versionCode` 4 → 6, data kept. Nobody
 uninstalls anything.
+
+`+5` was never built — the notes below were written for it, then the build number was bumped
+again before anything left the machine. So `1.1.0+4` is the newest build that exists on anyone's
+phone, and this one goes straight over it. Everything described above is in this artefact; the
+only change between `+5` and `+6` is the build number itself.
 
 The old warning about the two debug-signed **profile** builds (`1.1.0+2`, `1.1.0+3`) still
 applies if anyone is somehow still on one: those carry a different signing identity, so Android
 refuses this release over them with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. Save to the cloud from
 Settings → النسخة السحابية before uninstalling, and sign back in to restore.
 
-## Building it
+## The build
 
-The APKs for this version have **not been built yet** — these notes describe the tree, not an
-artefact on disk. Sizes go in when there is something to measure.
+One **universal** APK, carrying all three ABIs, so a single file installs on any phone without
+anyone having to know which one they need.
+
+| | |
+|---|---|
+| File | `Ather-1.2.0-build6-universal.apk` |
+| Size | 61.9 MB (64,932,945 bytes) |
+| SHA-256 | `cf2245c5ab1617f677699316bc31513d490c03e79504a29890a7a883bdc7b4a3` |
+| ABIs | `arm64-v8a`, `armeabi-v7a`, `x86_64` |
+| `minSdkVersion` | 24 (Android 7.0) |
+| `targetSdkVersion` | 36 |
+
+Rebuild it with:
+
+```bash
+flutter build apk --release
+```
+
+Splitting per ABI instead gets arm64 down to roughly a third of the size, at the cost of having
+to hand each person the right file:
 
 ```bash
 flutter build apk --release --split-per-abi
 ```
-
-`app-arm64-v8a-release.apk` is the one for almost every real phone since ~2017;
-`app-armeabi-v7a-release.apk` covers older 32-bit devices; `app-x86_64-release.apk` is for
-emulators. All land in `build/app/outputs/flutter-apk/`.
 
 ## Signing
 
