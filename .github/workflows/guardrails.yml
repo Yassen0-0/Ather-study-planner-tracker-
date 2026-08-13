@@ -1,0 +1,48 @@
+name: guardrails
+
+# The repository had no CI at all. The rule it most needed enforcing -- Rule 1,
+# "every APK must upgrade the one before it" -- was 76 lines of prose and
+# nothing else, and it had already been broken twice.
+#
+# Nothing here signs or publishes anything. It only refuses changes that would
+# make the next APK unable to install over a student's current one.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The versionCode and schemaVersion checks compare against the base
+          # branch, so a shallow clone would leave them silently skipped.
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin main --depth=0 || git fetch origin main
+
+      - name: Release invariants
+        run: bash tool/check_invariants.sh origin/main
+
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.6
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
