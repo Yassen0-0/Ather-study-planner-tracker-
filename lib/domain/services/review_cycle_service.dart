@@ -42,11 +42,31 @@ final class ReviewItem {
 /// Every function takes `now` explicitly rather than calling `DateTime.now()`,
 /// so the whole mechanic is testable in milliseconds instead of a month.
 abstract final class ReviewCycleService {
+  /// The calendar day [d] falls on, as a count of days. Normalised through UTC
+  /// so the subtraction cannot be bent by a daylight-saving shift -- Egypt
+  /// observes one, and two local midnights either side of it are 23 or 25 hours
+  /// apart, which `Duration.inDays` would silently round the wrong way.
+  static int _dayNumber(DateTime d) =>
+      DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/
+      Duration.millisecondsPerDay;
+
   /// Whole days since a lesson was last proven, or null if never examined.
+  ///
+  /// **Calendar days, not 24-hour periods.** This used to be
+  /// `now.difference(last).inDays`, which counts elapsed time -- so a lesson
+  /// examined at 15:00 fell due at 15:00 thirty days later. Everything that
+  /// reads this is driven by `nowProvider`, which emits once per *midnight*
+  /// (§3.8), so the app could not notice a mid-afternoon transition until the
+  /// following midnight: the student saw "not due yet" for most of the day it
+  /// became due, and the count only agreed with the calendar on lessons that
+  /// happened to be examined at midnight.
+  ///
+  /// Measuring the day itself makes the two agree by construction -- the value
+  /// can only change when the day changes, which is exactly when the clock ticks.
   static int? daysSinceReview(Lesson lesson, DateTime now) {
     final last = lesson.lastReviewedAt;
     if (last == null) return null;
-    return now.difference(last).inDays;
+    return _dayNumber(now) - _dayNumber(last);
   }
 
   /// Whether a lesson's mastery has decayed and must be re-proven.

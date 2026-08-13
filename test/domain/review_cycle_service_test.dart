@@ -63,6 +63,45 @@ void main() {
       expect(ReviewCycleService.needsReview(lesson, now), isFalse);
     });
 
+    // The count is of calendar days, not of elapsed 24-hour periods. It matters
+    // because `nowProvider` emits once per midnight: anything that can fall due
+    // at 15:00 cannot be noticed until the following midnight, and the student
+    // spends most of a day looking at a number that is a day behind.
+    test('an exam taken in the afternoon falls due on the 30th day, not the '
+        '31st', () {
+      final lesson = lessonWith(
+        lastReviewedAt: DateTime(2026, 6, 1, 15, 0),
+      );
+
+      // 30 calendar days later, at the midnight the clock actually ticks on.
+      expect(
+        ReviewCycleService.needsReview(lesson, DateTime(2026, 7, 1)),
+        isTrue,
+        reason: '30 calendar days have passed; elapsed-time maths said 29',
+      );
+      expect(
+        ReviewCycleService.daysSinceReview(lesson, DateTime(2026, 7, 1)),
+        30,
+      );
+    });
+
+    test('the day count only moves when the day does', () {
+      final lesson = lessonWith(lastReviewedAt: DateTime(2026, 6, 1, 15, 0));
+      // Every hour of the same calendar day answers identically, so a screen
+      // rebuilt at any point during the day cannot disagree with one rebuilt
+      // at midnight.
+      for (final hour in <int>[0, 6, 14, 15, 16, 23]) {
+        expect(
+          ReviewCycleService.daysSinceReview(
+            lesson,
+            DateTime(2026, 6, 20, hour),
+          ),
+          19,
+          reason: 'hour $hour disagreed with the rest of its own day',
+        );
+      }
+    });
+
     test('a never-examined lesson is never overdue', () {
       final lesson = lessonWith();
       expect(
@@ -375,12 +414,7 @@ void main() {
             name: 'متأخر جدًا',
             at: kSeedInstant,
           );
-          await recordPercentage(
-            repo,
-            veryOverdue,
-            80,
-            kAnchor.subtract(const Duration(days: 50)),
-          );
+          await recordPercentage(repo, veryOverdue, 80, daysBefore(kAnchor, 50));
 
           // Overdue by 5 days.
           final slightlyOverdue = await repo.createLesson(
@@ -392,7 +426,7 @@ void main() {
             repo,
             slightlyOverdue,
             80,
-            kAnchor.subtract(const Duration(days: 35)),
+            daysBefore(kAnchor, 35),
           );
 
           // Current but weak.
