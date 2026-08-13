@@ -25,6 +25,13 @@
 *.xml    text
 *.svg    text
 
+# Shell scripts are LF everywhere, including on Windows checkouts. A `.sh` with
+# CRLF is not merely untidy: bash reads the carriage return as part of the
+# shebang and of every line, so the script dies with `$'\r': command not found`
+# under Git Bash and `bad interpreter` on a Linux runner.
+# tool/check_invariants.sh has to run in both.
+*.sh     text eol=lf
+
 # Binary, so git never tries to normalise or diff them as lines. The golden
 # renders are ignored rather than tracked (see .gitignore), but the branding
 # bitmaps and the bundled font are here and must survive byte-for-byte.
