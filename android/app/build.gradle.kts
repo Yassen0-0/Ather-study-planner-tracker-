@@ -96,6 +96,29 @@ android {
         }
     }
 
+    // `--target-platform android-arm64` drops Flutter's own engine and app
+    // snapshot for the other ABIs, and stops there. Plugin AARs still contribute
+    // their prebuilt `.so` for every ABI they ship, so the APK came out with
+    // `lib/armeabi-v7a/libdartjni.so` and no `libflutter.so` beside it.
+    //
+    // That combination is worse than either extreme. Android reads the presence
+    // of `lib/armeabi-v7a/` as "this ABI is supported", so a 32-bit phone
+    // **installs** the update over a working app -- and then dies on launch with
+    // no engine to load. A clean `INSTALL_FAILED_NO_MATCHING_ABIS` would have
+    // left the student on the build they already had. This left them with a
+    // dead app and their database behind it, which is Rule 1's harm arriving
+    // through the one door the four checks do not watch.
+    //
+    // Gated on the release task so debug keeps every ABI and `flutter run`
+    // still works on the x86_64 emulator.
+    if (buildingRelease) {
+        packaging {
+            jniLibs {
+                excludes += setOf("**/armeabi-v7a/**", "**/x86_64/**")
+            }
+        }
+    }
+
     buildTypes {
         release {
             // Unreachable without a keystore: the guard at the top of this file
@@ -107,6 +130,17 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+
+            // Which ABIs a release carries is decided by `--target-platform
+            // android-arm64` on the build command, not by `ndk { abiFilters }`
+            // here -- that is the obvious place and it does nothing, because the
+            // Flutter Gradle plugin packages its own `lib/<abi>/` payload after
+            // AGP's filter has run. Measured: an APK with the filter set was
+            // still 61.9 MB and still carried all three.
+            //
+            // See the packaging block below for the half `--target-platform`
+            // does not cover, and RELEASING.md §4 for why this is not
+            // `--split-per-abi`.
         }
     }
 }

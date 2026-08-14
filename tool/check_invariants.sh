@@ -95,7 +95,40 @@ if git rev-parse --verify --quiet "$BASE" >/dev/null; then
   fi
 fi
 
-# --- 5. nothing half-merged ---------------------------------------------------
+# --- 5. a built release APK carries one complete ABI --------------------------
+# Only when there is one to look at; CI has no keystore and builds nothing.
+#
+# `--target-platform android-arm64` drops Flutter's engine for the other ABIs
+# and stops there: plugin AARs still contribute their own .so for every ABI they
+# ship. The result was lib/armeabi-v7a/libdartjni.so with no libflutter.so next
+# to it -- which Android reads as "this ABI is supported", so a 32-bit phone
+# installs the update over a working app and then dies on launch with no engine
+# to load. A clean INSTALL_FAILED_NO_MATCHING_ABIS would have left the student on
+# the build they had.
+apk="build/app/outputs/flutter-apk/app-release.apk"
+if [ -f "$apk" ] && command -v unzip >/dev/null 2>&1; then
+  # `-Z1` lists entry names and nothing else. Parsing `unzip -l`'s columns is
+  # what broke the first version of this check: on Git Bash the listing carries
+  # CRLF, so the name field ended with a stray \r and every ABI looked engineless.
+  names="$(unzip -Z1 "$apk" | tr -d '\r')"
+  abis="$(printf '%s\n' "$names" | sed -n 's:^lib/\([^/]*\)/.*:\1:p' | sort -u)"
+  incomplete=""
+  for abi in $abis; do
+    if ! printf '%s\n' "$names" | grep -qx "lib/$abi/libflutter.so"; then
+      incomplete="$incomplete $abi"
+    fi
+  done
+  if [ -z "$incomplete" ]; then
+    pass "release APK: every packaged ABI has an engine ($(echo "$abis" | tr '\n' ' '))"
+  else
+    fail "release APK packages ABI(s) with no libflutter.so:$incomplete"
+    note "A phone on that ABI will install this and crash on launch, having already"
+    note "replaced the build that worked. Exclude them -- see the packaging block in"
+    note "android/app/build.gradle.kts."
+  fi
+fi
+
+# --- 6. nothing half-merged ---------------------------------------------------
 # PROJECT.md sat in main with two unresolved conflicts committed into it,
 # including one that swallowed an entire work-log entry.
 markers="$(git grep -I -l -E '^(<<<<<<<|>>>>>>>)' -- . ':(exclude)tool/check_invariants.sh' || true)"

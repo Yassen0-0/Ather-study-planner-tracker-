@@ -82,10 +82,41 @@ The debug key's SHA-1 is already registered, which is why it works locally.
 ## 4. Building
 
 ```bash
-flutter build appbundle          # Google Play wants this
-flutter build apk --release      # one universal APK, hand-distributed
-flutter build apk --split-per-abi   # smaller, but read the warning below first
+flutter build appbundle                              # Google Play wants this
+flutter build apk --release --target-platform android-arm64   # what we hand out
 ```
+
+**64-bit ARM only, decided 2026-08-13.** 32-bit phones are not supported. The universal APK was
+61.9 MB against **22.9 MB** for arm64 alone, and the other two thirds were `armeabi-v7a` for
+phones we no longer serve plus `x86_64` that only ever runs on an emulator. These students are on
+mobile data.
+
+Two things about that command are load-bearing:
+
+- **`--target-platform`, not `--split-per-abi`.** Splitting makes Flutter add an ABI offset to the
+  build number, so arm64 would ship as `2007` instead of `7` — see below. `--target-platform`
+  produces one APK at the plain number.
+- **`ndk { abiFilters }` in `build.gradle.kts` does not do this.** It is the obvious place, it is
+  accepted, and it is ignored: the Flutter Gradle plugin packages its own `lib/<abi>/` payload
+  after AGP's filter has run. An APK built with the filter set was still 61.9 MB.
+
+There is a `packaging { jniLibs { excludes } }` block in `android/app/build.gradle.kts` gated to
+release builds, and it is not decoration. `--target-platform` drops *Flutter's* engine for the
+other ABIs and stops there; plugin AARs still contribute their own `.so` for every ABI they ship.
+The first arm64 build came out with `lib/armeabi-v7a/libdartjni.so` and **no `libflutter.so` next
+to it** — which Android reads as "this ABI is supported", so a 32-bit phone would have installed
+the update over a working app and then died on launch with no engine to load. A clean
+`INSTALL_FAILED_NO_MATCHING_ABIS` leaves the student on the build they already had; a half-ABI
+APK takes their working app away and leaves the database stranded behind it.
+
+`tool/check_invariants.sh` now fails if any packaged ABI lacks an engine.
+
+### What dropping 32-bit costs
+
+A student on a 32-bit phone running `1.2.0+6` **stays on `1.2.0+6` forever.** The install is
+refused cleanly, so they keep the app and every exam in it — they simply receive no further
+updates. That is the accepted trade, not an accident: it is the difference between "no new
+features" and "no app", and only the first one is survivable.
 
 ### `--split-per-abi` moves the versionCode line, permanently
 
@@ -112,14 +143,16 @@ The consequence is one-way and worth stating plainly, because Rule 1 turns on it
   `2006`, and Android refuses every one of them.
 
 So the choice is not "which is smaller". It is **which line every future update has to live on**,
-and switching costs a student their database. Until Ather is on Play, the universal APK keeps the
-side-loaded line and the eventual Play line as the same numbers, which is the reversible option —
-at the price of ~40 MB per download (61.9 MB against ~22 MB for arm64 alone).
+and switching costs a student their database.
 
-If the size is judged to matter more, the way to take it **without** stranding anyone is to raise
-the base build number in `pubspec.yaml` above the offsets once — `version: 1.3.0+5001` — so the
-plain number is already higher than any split APK ever issued, and Play can still overtake it
-later. That is a decision to make deliberately, once, and to write down here.
+**This is why the arm64 build above uses `--target-platform` and not `--split-per-abi`.** It gets
+the same ~23 MB and keeps `versionCode` at the plain `7`, so the side-loaded line and the eventual
+Play line remain one sequence. Had we split, arm64 would have shipped as `2007`, and the first
+Play release — carrying `8` from `pubspec.yaml` — could never have installed over it.
+
+If `--split-per-abi` is ever genuinely needed, the way to take it without stranding anyone is to
+raise the base build number above the offsets once, deliberately — `version: 1.4.0+5001` — so the
+plain number already exceeds any split APK ever issued. Write it down here if that day comes.
 
 **A release build fails outright when `android/key.properties` is missing.** It
 does not fall back to the debug key. That fallback shipped a debug-signed APK
