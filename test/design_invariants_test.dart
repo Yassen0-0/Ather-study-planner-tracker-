@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ather/core/theme/app_colors.dart';
+import 'package:ather/core/theme/app_spacing.dart';
 import 'package:ather/core/widgets/ather_icons.dart';
 import 'package:ather/core/widgets/icon_motion.dart';
 
@@ -69,6 +72,88 @@ void main() {
       for (final colors in <AppColors>[AppColors.light, AppColors.dark]) {
         expect(colors.accent, isNot(colors.right));
         expect(colors.accent, isNot(colors.wrong));
+      }
+    });
+  });
+
+  /// §3.19 reasoned about the tab bar's contrast instead of measuring it, and
+  /// the reasoning -- "everything that passes under this bar is lighter than the
+  /// tint" -- was true of the surfaces and false of the content drawn on them.
+  /// An analytics column sat at 1.90:1 for a year.
+  ///
+  /// The numbers are now a tripwire rather than a paragraph. This is the check
+  /// that would have caught it, so it is also the check that stops the two
+  /// tokens involved from drifting back.
+  group('the inactive tab label survives the glass', () {
+    double luminance(Color c) {
+      double channel(double v) {
+        final s = v;
+        return s <= 0.03928
+            ? s / 12.92
+            : math.pow((s + 0.055) / 1.055, 2.4).toDouble();
+      }
+
+      return 0.2126 * channel(c.r) +
+          0.7152 * channel(c.g) +
+          0.0722 * channel(c.b);
+    }
+
+    double ratio(Color a, Color b) {
+      final la = luminance(a);
+      final lb = luminance(b);
+      final hi = math.max(la, lb);
+      final lo = math.min(la, lb);
+      return (hi + 0.05) / (lo + 0.05);
+    }
+
+    /// The bar is `card` at [AppMotion.glassTint] over whatever is scrolling
+    /// underneath.
+    Color bar(AppColors colors, Color under) =>
+        Color.alphaBlend(colors.card.withValues(alpha: AppMotion.glassTint), under);
+
+    test('clears 3:1 over every solid area that can scroll under it', () {
+      for (final (name, colors) in <(String, AppColors)>[
+        ('light', AppColors.light),
+        ('dark', AppColors.dark),
+      ]) {
+        // Not just the surfaces: the content. These are the wide, solid fills a
+        // list or a chart puts under the pill.
+        final under = <String, Color>{
+          'pageBackground': colors.pageBackground,
+          'card': colors.card,
+          'muted': colors.muted,
+          'fill': colors.fill,
+          'track': colors.track,
+          'accent (chart column)': colors.accent,
+          'right (mastery fill)': colors.right,
+          'wrong (mastery fill)': colors.wrong,
+        };
+
+        under.forEach((what, colour) {
+          final measured = ratio(colors.textTertiary, bar(colors, colour));
+          expect(
+            measured,
+            greaterThanOrEqualTo(3.0),
+            reason:
+                '$name: the inactive tab label is ${measured.toStringAsFixed(2)}:1 '
+                'over $what. The fix is the pair -- raise AppMotion.glassTint '
+                'and move textTertiary together. Neither alone reaches 3:1 '
+                'without either flattening the label into textSecondary or '
+                'making the glass opaque enough to stop being glass. See §3.19.',
+          );
+        });
+      }
+    });
+
+    test('stays quieter than body text, which is what makes it a tab label', () {
+      // The counter-pressure on the check above: darkening the label until it
+      // passes is easy, and at #636369 it *is* textSecondary -- at which point
+      // an inactive tab reads as loud as the content it sits under.
+      for (final colors in <AppColors>[AppColors.light, AppColors.dark]) {
+        expect(
+          ratio(colors.textTertiary, colors.card),
+          lessThan(ratio(colors.textSecondary, colors.card)),
+        );
       }
     });
   });

@@ -52,13 +52,16 @@ void main() {
   Future<Widget> boot(
     FakeBackupRepository backup, {
     Map<String, Object> preferences0 = const <String, Object>{},
+    FakeAuthRepository? auth,
   }) async {
     SharedPreferences.setMockInitialValues(preferences0);
     final preferences = await SharedPreferences.getInstance();
 
     return ProviderScope(
       overrides: [
-        authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
+        authRepositoryProvider.overrideWithValue(
+          auth ?? FakeAuthRepository.signedIn(),
+        ),
         backupRepositoryProvider.overrideWithValue(backup),
         sharedPreferencesProvider.overrideWithValue(preferences),
         databaseProvider.overrideWithValue(db),
@@ -245,6 +248,51 @@ void main() {
     // And the device now being genuinely empty, the ordinary auto-restore does
     // its normal job: this student gets their own cloud copy, no second path.
     expect(snapshot.chapters.single.name, 'باب من السحابة');
+
+    await closeApp(tester);
+  });
+
+  testWidgets('a second account arriving without a sign-out still wipes', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    final backup = FakeBackupRepository.holding(cloudCopy());
+    final auth = FakeAuthRepository.signedIn();
+    addTearDown(auth.dispose);
+
+    await DriftStudyRepository(
+      db,
+    ).createChapter(subjectId: 1, name: 'مش بتاعي', at: kSeedInstant);
+
+    await tester.pumpWidget(
+      await boot(
+        backup,
+        auth: auth,
+        preferences0: const <String, Object>{'last_account_uid': 'test-uid'},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The device is this student's, so nothing was touched on the way in.
+    expect(
+      (await DriftStudyRepository(db).readSnapshot()).chapters.map((c) => c.name),
+      contains('مش بتاعي'),
+    );
+
+    // Now a *different* uid arrives with no null in between. The guard used to
+    // ask "did somebody sign in where nobody was", which is only the same
+    // question if every account change passes through signed-out first -- and
+    // nothing guarantees that. Missing it leaves one student looking at
+    // another's curriculum, and uploads it into their cloud document.
+    await auth.signInWithGoogle();
+    await tester.pumpAndSettle();
+
+    final snapshot = await DriftStudyRepository(db).readSnapshot();
+    expect(
+      snapshot.chapters.map((c) => c.name),
+      isNot(contains('مش بتاعي')),
+      reason: "the previous student's curriculum survived a direct uid switch",
+    );
 
     await closeApp(tester);
   });

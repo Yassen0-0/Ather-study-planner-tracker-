@@ -413,6 +413,20 @@ toast passing underneath at **1.5 : 1** — which cannot happen, because the toa
 Separately, and out of this work's scope: 2.80 : 1 at 11px already fails WCAG AA. That is a
 pre-existing token decision, unchanged here, but it is written down now.
 
+> **Corrected 2026-08-13.** The paragraph above is right about the surfaces and wrong about the
+> range. "Everything that passes under this bar is lighter than the tint" is true of `card`,
+> `muted`, `fill`, `track` and the page — and false of the content drawn *on* them. An analytics
+> column at `accent` composites to **1.90 : 1** and a mastery fill to **1.91 : 1**, both below the
+> 2.55 floor claimed here and below the toast case this section was careful to design out. The
+> pill exposing content on four sides is what widened the set.
+>
+> **Both numbers above are now stale, deliberately.** The tokens moved to fix this: `glassTint`
+> is **0.85**, and the inactive label is **`#7A7A80`** in light and **`#88888E`** in dark. Every
+> solid fill that can scroll under the pill now clears 3:1, and `design_invariants_test.dart`
+> fails the build if that stops being true — which is the part of this section that should have
+> existed from the start. Raising the tint alone could never have done it; the full reasoning and
+> the measured table are in §9.
+
 `AppShell` sets `extendBody: true` so the list actually scrolls under the bar — otherwise
 there is nothing to blur — and `AtherScreen` adds the bar's height back as list padding, plus
 real space under any pinned bottom button. A button may not sit behind glass.
@@ -820,17 +834,12 @@ a chapter needs review, the whole chapter is red.
 | Login screen in the Ather design language | Complete |
 | Biometric app lock | Complete |
 | Celebration (white screen + green disc) | Complete |
-<<<<<<< HEAD
-| Notification service + lifecycle reconciliation | Complete |
+| Notification service + lifecycle reconciliation | Complete — **never once delivered a reminder before 2026-08-10**, see §3.15a; observed end to end on a device that day, except across a reboot (§9) |
 | Cloud backup + restore (Firestore) | Complete — verified against live Firestore 2026-08-05 |
-=======
-| Notification service + lifecycle reconciliation | Complete — **never once delivered a reminder before 2026-08-10**, see §3.15a; still unobserved on a device |
-| Cloud backup + restore (Firestore) | Complete — not yet exercised against live Firestore |
->>>>>>> 4a9c8b6 (Audit fixes: notifications, account isolation, exam deletion, performance)
 | Daily tasks tab (add / tick / edit / reorder / delete, per day) | Complete |
 | Floating glass tab bar | Complete |
-| Android build + on-device verification | Complete — full journey run on emulator |
-| Windows desktop verification | **Blocked** — see §8, needs two user actions |
+| Android build + on-device verification | Complete — full journey run on a Nothing Phone A015 (Android 16), not just the emulator |
+| Windows desktop verification | **Untested** — see §8; the C++ toolchain is now installed, Developer Mode is the last unknown |
 
 ---
 
@@ -1055,28 +1064,40 @@ registering its SHA-1 with Firebase, and how to verify what you actually built.
 | Item | Status |
 |---|---|
 | Flutter 3.44.6 / Dart 3.12.2 | OK |
-| Android SDK `android-36.1`, build-tools `36.0.0`, licence accepted | OK |
+| Android SDK build-tools `36.0.0` | OK |
+| Android SDK licences | **Not all accepted** — `flutter doctor --android-licenses` |
 | `JAVA_HOME` → Microsoft JDK 17 | OK |
 | `flutter analyze` / `flutter test` | OK — no device required |
 | Android `cmdline-tools` + `system-images;android-35;google_apis;x86_64` | Installed |
 | Android emulator `nasaq_pixel_390` | Working — boots as `emulator-5554`, Android 15 (API 35) |
-| `flutter build apk --debug` | Passing |
-| Visual Studio C++ toolchain | **Missing** — required for `flutter run -d windows` |
-| Windows Developer Mode | **Off** — plugin symlink support; blocks the desktop build first |
+| `flutter build apk --debug` / `--release` | Passing — release signs from `android/key.properties` |
+| Visual Studio C++ toolchain | OK — Community 2026 18.8.2 (was missing until 2026-08-13) |
+| Chrome | **Missing** — blocks web builds only; set `CHROME_EXECUTABLE` if wanted |
 
-**To unblock Windows desktop, two user actions are needed:**
-1. `start ms-settings:developers` → enable **Developer Mode** (symlink support for plugins).
-2. Install the Visual Studio **Desktop development with C++** workload.
+Last checked against `flutter doctor` on **2026-08-13**: two categories flagged, the Android
+licences and Chrome. Neither blocks an Android release build, which is the only build that ships.
 
-Until both are done, Windows desktop is **untested** and is reported as such — never as working.
+**Windows desktop is still untested**, but the reason has narrowed to one thing. The C++
+toolchain is now installed; **Developer Mode is off**, confirmed 2026-08-13 —
+`start ms-settings:developers`. Until someone actually runs `flutter run -d windows`, this is
+reported as untested, never as working.
+
+**Developer Mode being off costs more than the desktop build.** `flutter test` **fails outright
+in a fresh worktree** with `Building with plugins requires symlink support`, because the plugin
+symlinks have to be created and cannot be. It passes in `C:\ather` only because that checkout's
+symlinks already exist. Anything working in `.claude/worktrees/` therefore cannot run the test
+suite at all until Developer Mode is enabled — and the failure names symlinks, not the worktree,
+so it reads like a broken checkout rather than a one-switch machine setting.
 
 ---
 
 ## 9. Known Issues / Follow-ups
 
-- **Google sign-in has not been exercised on a device.** Email/password, sign-out, the
-  fingerprint lock and the airplane-mode relaunch were all run on the emulator (see §10); the
-  Google account sheet was not, because it needs a Google account signed in on the device.
+- ~~**Google sign-in has not been exercised on a device.**~~ **Done (2026-08-05)** — and the
+  entry survived here for eight days after the run that disproved it. Google Sign-In completed on
+  a real phone against the *release* build, which is the case that matters: the upload key's SHA-1
+  is registered against `com.ather.app` in Firebase, and without that registration the account
+  sheet opens and then fails with `ApiException: 10`. See §10, "First signed release".
 - **A test account exists in Firebase.** `test@ather.app` was created to verify the flow and
   can be deleted from the Authentication console. There is also a stray empty Google Cloud
   project, `ather-app-2026`, left over from a failed first attempt.
@@ -1087,8 +1108,11 @@ Until both are done, Windows desktop is **untested** and is reported as such —
   and the lock screen. `logcat` was clean — no Flutter exception, no overflow, no
   setState-after-dispose. Two things were found on the device that the render goldens had not
   caught; both are fixed and written up in the work log.
-- **Windows desktop cannot be built on this machine.** `flutter doctor` reports Visual Studio
-  absent, and plugin builds additionally need Developer Mode enabled. Both are user actions.
+- **Windows desktop is still unbuilt, but only one blocker is left — and it is not just the
+  desktop.** Visual Studio is installed as of 2026-08-13 (`flutter doctor` reports Community
+  2026 18.8.2); what remains is **Developer Mode**, a single switch. It is off, and that also
+  makes `flutter test` fail in every worktree under `.claude/worktrees/` (§8). Enabling it is a
+  user action and is the cheapest open item on this list.
 - ~~**Notification delivery has never been observed firing.**~~ **Observed 2026-08-10**, on a
   Nothing Phone A015 (Android 16, API 36), end to end for the first time in the app's history:
   recording the first exam raised the permission prompt; `dumpsys alarm` showed a pending
@@ -1111,16 +1135,80 @@ Until both are done, Windows desktop is **untested** and is reported as such —
   feature was asked for. The cost is bounded: the delete happens in a sheet over that very
   screen, so the row's departure is already explained, whereas the collapse exists for removals
   that arrive from *another* screen as a shorter list.
-- **The v1 → v2 migration has been exercised on a real file, but not on a real phone.**
-  `test/data/task_migration_test.dart` builds an actual v1 image on disk and reopens it, which is
-  the mechanism; it is not the same as relaunching an APK over an install that has been there for
-  weeks.
-- **The floating bar's contrast has not been re-measured.** §3.19's 2.55–2.80:1 for the inactive
-  label was measured against a full-bleed bar. The pill exposes content on four sides instead of
-  one; both light and dark renders were reviewed and read fine, but no numbers were taken. If it
-  ever fails, the rule is already written: raise the tint alpha, never darken the label.
-- 20 transitive packages are held back by the Flutter SDK's `meta 1.18.0` pin. Benign.
-- **The release signing config is wired, but no keystore exists yet.**
+- ~~**The v1 → v2 migration has been exercised on a real file, but not on a real phone.**~~
+  **Run on an Android runtime 2026-08-13**, against the shipped `1.2.0+6` release APK on
+  `nasaq_pixel_390` (API 35, x86_64). Not the unit test's in-process SQLite — the real APK, the
+  real app data directory, opened by the app itself on launch.
+
+  The v1 image was built the way `task_migration_test.dart` builds it, which is the only honest
+  way: let the app create the current schema, insert a student's work, then drop exactly what v2
+  added and set `PRAGMA user_version = 1`. Hand-writing the v1 DDL would be reproducing drift's
+  column naming from memory. Then `adb install -r` of the same APK over it — an upgrade, not a
+  fresh install — and launch.
+
+  | | before | after |
+  |---|---|---|
+  | `user_version` | 1 | **2** |
+  | `daily_tasks` | dropped | **created, and accepts an insert** |
+  | chapter | `الباب الأول — الخلية` | unchanged |
+  | lesson | `تركيب الغشاء البلازمي` | unchanged |
+  | exam | 90.0% | unchanged |
+  | subjects | 4 | **4** — the seed stayed idempotent, not 8 |
+
+  `logcat` clean across the upgrade launch and a second cold launch: no `SQLiteException`, no
+  `FATAL`, no unhandled Dart error, and the app rendered its login screen normally on the
+  migrated file.
+
+  *What this still does not cover:* a database that has genuinely aged on a student's phone for
+  weeks, and the emulator is x86_64 rather than the arm64 every real student is on.
+- ~~**The floating bar's contrast has not been re-measured.**~~ **Measured 2026-08-13, and the
+  documented remedy does not work.** §3.19 put the inactive label at 2.55–2.80:1 on the reasoning
+  that "everything that passes under this bar is lighter than the tint". That holds for the
+  *surface* tokens and fails for *content*. Composited through `card` at `glassTint` 0.72:
+
+  | Under the pill | Light (`#9A9AA0`) | Dark (`#78787E`) |
+  |---|---|---|
+  | page / card / muted / fill / track | 2.66 – 2.80 : 1 | 3.71 – 4.19 : 1 |
+  | accent chart column | **1.90 : 1** | 2.41 : 1 |
+  | mastery fill, `wrong` / `right` | **1.91 / 2.22 : 1** | 2.74 / 2.23 : 1 |
+  | a solid `textPrimary` field | **1.41 : 1** | 1.52 : 1 |
+
+  So the floor is **1.90 : 1**, not 2.55. §3.19 guarded against the black toast at 1.5:1 by
+  pinning it clear of the bar, and then let the analytics columns and every mastery bar scroll
+  underneath at worse than the range it claimed.
+
+  **Fixed the same day, and the standing rule went with it.** "Raise the tint alpha, never darken
+  the label" cannot work in light: the label tops out at **2.80:1 against pure white**, so an
+  opaque bar is already the ceiling and no alpha reaches 3.0. Neither lever is enough alone — at
+  the old 0.72 the label would have to fall to `#636369`, which *is* `textSecondary` and erases
+  the difference between a tab label and body text; at 0.90 the bar is opaque enough that the blur
+  stops carrying the depth §3.19 justified it for.
+
+  The pair that moves both least: **`glassTint` 0.72 → 0.85**, and **`textTertiary` `#9A9AA0` →
+  `#7A7A80`** in light, `#78787E` → `#88888E` in dark. Every row of the table above now clears
+  3:1. The four non-glass uses of `textTertiary` — the input hint, the wizard's fine print, the
+  celebration line — improve with it; they were 2.7:1 on a card.
+
+  **A tripwire now, not a paragraph.** `design_invariants_test.dart` composites the label against
+  every solid fill that can scroll under the pill and fails below 3:1, with a second test holding
+  the other side: the label must stay quieter than `textSecondary`, or "fix the contrast" quietly
+  becomes "delete the distinction the bar exists to draw". Verified to fail on the old tokens, at
+  2.69:1.
+
+  *Limit of this measurement:* it composites solid colour, which is right for a chart column, a
+  mastery fill or a filled button, and pessimistic for text — `sigmaX/Y = 24` averages a thin
+  glyph into the page around it, so a line of body copy passing under does not really land at
+  1.41:1. The large solid areas are the honest failures. Nothing here was sampled from a
+  screenshot; it is the composite arithmetic, and a render check would tighten it.
+- 30 transitive packages are held back by the Flutter SDK's `meta 1.18.0` pin (20 when this line
+  was written; rechecked 2026-08-13). Benign, but it only moves one way.
+- ~~**The release signing config is wired, but no keystore exists yet.**~~ **The keystore exists
+  (since 2026-08-05)** and has signed every release since, up to `1.2.0+6`. Its certificate is
+  `CN=yassen, OU=per, O=ather, L=giza, ST=giza, C=eg`, SHA-1 `f3eaec08…623e` — that fingerprint
+  is now the app's identity and must never change. The paragraph below still describes how the
+  wiring behaves, and is why a missing keystore fails the build instead of silently using the
+  debug key.
+
   `android/app/build.gradle.kts` reads `android/key.properties` (git-ignored, alongside `*.jks`
   and `*.keystore`) and signs `release` from it. Until that file exists, a **release build fails
   outright** with instructions — it does *not* fall back to the debug key. That fallback is what
@@ -1198,82 +1286,67 @@ produced those numbers is untouched by the redesign.
 
 ## 10. Work Log
 
-<<<<<<< HEAD
-**Visual refresh: one brand blue, a new mark, and no "+" (2026-08-05).**
-Ported the `design_handoff_visual_refresh` handoff into the Flutter app. Where it contradicted a
-standing rule, **the design won and the rule was rewritten** — §3.10 no longer claims a
-two-colour palette, §3.23 no longer describes a five-slot bar, and §7a no longer describes a
-concentric ring. The new rules are §3.27 (one accent, and why it is not a state colour), §3.28
-(why the "+" went) and §3.29 (the three-week strip).
+**1.2.0+6 published, and the documentation reconciled with it (2026-08-13).**
+The first build of the 1.2.0 line to actually leave the machine. `1.2.0+5` was written up but
+never built, so `1.1.0+4` was still the newest APK in existence.
 
-- **Accent tokens** `accent` / `onAccent` / `accentSoft` on `AppColors`, and the accent applied
-  everywhere "active" is meant: tab bar, `PrimaryButton` (its `black` tone renamed `primary`,
-  which is the point — the tone is named for meaning, not colour), `PillButton`, checkboxes,
-  task discs, filter chips, the segmented control, every progress bar and chart column.
-  `MasteryPalette.fill` is the one mapping from the neutral number colour to the accent.
-- **New brand mark.** Organic seven-point ring, stroked whole plus a 27% accent run.
-  `AtherBrandPalette` lost `core` and renamed `track` → `ring`. All three SVGs in
-  `assets/branding/` rewritten and every Android bitmap re-exported.
-- **New subject icons**: a knee joint for Biology, a horseshoe magnet for Physics, an open book
-  for English. Chemistry's flask is unchanged.
-- **Week strip rewritten**: flat, underline-marked today, accent rings, a three-week drag buffer
-  and the directional "return to today" glow. Both bugs the handoff flagged in the design layer
-  are covered by `test/widget/week_strip_test.dart` (5 cases).
-- **Lock screen**: 108px mark, 38px wordmark, no standing body copy. `lockTitle` and `lockBody`
-  are deleted from both ARBs; the wordmark is `appName`, which in Arabic is now **أثر** rather
-  than the Latin "Ather".
-- `AppSizes` lost `fab`, `fabOverhang` and `fabLift`; `toastBottom` re-derived.
+Verified before publishing, against Rule 1's four conditions:
 
-**160/160 tests pass**, `dart analyze` clean.
+1. `versionCode` **6**, against the 4 that is really on phones. Goes up.
+2. Signed `CN=yassen …`, SHA-1 `f3eaec08…623e` — the upload key, not `CN=Android Debug`.
+3. `applicationId` `com.ather.app`.
+4. `schemaVersion` 2 with an additive `onUpgrade`, covered by `task_migration_test.dart`.
 
-**Driven on a real phone (2026-08-05).** A Nothing Phone (A015, Android 16), debug build, the
-whole flow. Two gaps the render goldens had missed, both the same mistake — a fill that was
-never routed through `MasteryPalette.fill`:
+**200/200 tests pass.** Published as a GitHub release, `v1.2.0-build6`, one universal APK
+(61.9 MB, all three ABIs). GitHub's own reported digest matches the SHA-256 computed here before
+upload — `cf2245c5…b4a3` — so the file a student downloads is the file that was verified.
 
-1. **The exam wizard's result bar stayed white.** A mid-range score resolves to the neutral
-   text colour, and the bar took it verbatim. It is the one bar a student stares at.
-2. **Material's own `ColorScheme.primary`, `FilledButton`, focused input border, progress
-   indicator, and the wizard's four step bars were still the foreground colour.** Every
-   framework widget that has not been replaced by a hand-built one now tints itself the accent,
-   which is what stops a stray `FilledButton` from looking like it belongs to the old design.
+*Three things that were true on disk and false in this document*, all found while checking the
+above rather than by reading the docs:
 
-Neither is visible in a widget test — both are colour, and the goldens for those screens were
-regenerated from the same code that had the bug. That is the honest limit of a golden: it
-proves nothing changed, not that anything is right.
+- **This file had two unresolved merge conflicts committed into it**, at §5 and §10 — raw
+  `<<<<<<<` markers, from the merge of the audit branch into the visual-refresh branch. §5 was
+  showing both answers about notifications and cloud backup at once, and the entire 2026-08-10
+  audit entry was sitting inside conflict markers. Both are resolved above; no history was
+  dropped, because the two work-log entries were parallel branches rather than competing edits.
+- **§9 claimed there was no keystore, and that Google sign-in had never run on a device.** Both
+  had been disproved by the 2026-08-05 session recorded three sections further down this same
+  file. A follow-up list that is not read back after the follow-up is done is worse than none:
+  it is the "doubt the code first" trap of CLAUDE.md Rule 2 pointed at the documentation.
+- **§8's environment table was stale in both directions** — Visual Studio is now installed
+  (it was listed as missing), and the Android licences are no longer fully accepted (they were
+  listed as OK).
 
-One consequence of the design worth knowing about, kept because the handoff is explicit that
-the glow is tappable: **the return-to-today glow overlays the strip's first day cell**, so on
-the Tasks screen (where the strip is a picker) that one day cannot be tapped while another
-week is on screen. Narrowing the glow or making its inner half inert would fix it.
+**Then the two oldest "not verified on a device" items were closed (same day).** The AVD
+`nasaq_pixel_390` had to be wiped first: its user storage was in a state where `/sdcard` was not
+writable and `ceDataInode=0`, so every install "succeeded" and then `am start` answered
+`Activity class ... does not exist`. The class was in `classes14.dex` the whole time. Worth
+recognising again — the error named the app, and the fault was the device.
 
-**First signed release, and the first live Firestore round-trip (2026-08-05).**
-An upload key now exists (procedure and warnings: RELEASING.md). Its SHA-1 and SHA-256 are
-registered against `com.ather.app` in Firebase and `android/app/google-services.json` was
-re-downloaded — it now carries two certificate hashes for the package, the debug key and
-`f3eaec08…`.
+- **The v1 → v2 migration now has an on-device run** against the shipped release APK, upgraded
+  in place over a genuine v1 file holding a chapter, a lesson and a 90% exam. All of it survived,
+  `daily_tasks` was created and accepted a write, and the subject seed stayed at 4. Full table
+  in §9.
+- **Rule 1's second condition was demonstrated rather than argued.** Installing the release APK
+  over the debug build failed with
+  `INSTALL_FAILED_UPDATE_INCOMPATIBLE: Existing package com.ather.app signatures do not match`.
+  That is the exact refusal a student would hit, produced on demand, and it is why the
+  debug-signed APKs are now quarantined rather than merely described as unusable.
 
-Verified on the device, in this order, because each step only proves the next one is worth
-trying:
+*Three operational hazards worth knowing.* **Developer Mode is off**, which does not merely block
+the Windows desktop build — it makes `flutter test` fail in every worktree, so an agent working in
+one cannot run the suite at all (§8). Next, `build/` and `dist/` still hold old APKs that are
+debug-signed, several under the pre-rebrand `com.sahm.sahm` id, and one carrying `versionCode`
+**2001** — higher than anything the real line will reach for years. None can be distributed, and
+the 2001 one cannot be upgraded from at all. Separately, the repository directory was renamed
+from `C:\arrow` to `C:\ather`, which broke the `.git` links of all three sibling worktrees;
+`git worktree list` still prints the old paths and `git -C` fails inside them, so Rule 2's
+worktree sweep silently checks nothing until that is repaired.
 
-1. `apksigner verify` reports `CN=yassen, OU=per, O=ather, L=giza, ST=giza, C=eg` — not
-   `CN=Android Debug`. 22.8 MB on arm64, AOT.
-2. The debug build was **uninstalled** — a signing key cannot be changed in place — and the
-   release APK installed onto an empty package.
-3. Google Sign-In completed. This is what the SHA-1 registration buys: without it the account
-   picker still opens and then fails with `ApiException: 10`. *(`DEVELOPER_ERROR` does appear in
-   `logcat` around sign-in, but from Play Services' own Phenotype/FlagStore processes, not from
-   the app's pid. Sign-in succeeding is the proof that it is unrelated.)*
-4. **The curriculum came back on its own** from Firestore onto the wiped install — chapter,
-   lesson and the 90% exam. `BackupSyncGate`'s auto-restore-onto-an-empty-device path had never
-   run against a real backend before.
+> The two entries below were written on branches that ran in parallel from the same
+> 155-test base, then merged. That is why the audit reads "155 before" while the visual
+> refresh under it reports 160: neither followed the other, and neither supersedes it.
 
-Two numbers on that restored dashboard look wrong at a glance and are not:
-`overallMastery` showed 23% while Biology showed 90%, because untouched subjects deliberately
-count as 0 (§ the calculator's own comment: a figure that ignored three empty subjects would
-tell a student they are 85% ready for Thanaweya Amma); and "0 of 1 chapters mastered" is right
-because `Chapter.isMastered` is `masteredAt != null` — an explicit press of the mastery gate,
-never derived from a score.
-=======
 **Full audit, then five phases of fixes (2026-08-10).**
 A read of every file in `lib/` against this document, followed by the work below. `flutter
 analyze` clean, **163/163 tests pass** (155 before; four dead-code tests removed, twelve added),
@@ -1360,7 +1433,81 @@ app with accounts, and it is a product decision about what happens to the cloud 
 file export, email verification, and Crashlytics. `flush()` still skips an upload when the local
 database is empty, so a student who deletes everything cannot clear their cloud copy — that is a
 real edge but the safe direction of the two.
->>>>>>> 4a9c8b6 (Audit fixes: notifications, account isolation, exam deletion, performance)
+
+**Visual refresh: one brand blue, a new mark, and no "+" (2026-08-05).**
+Ported the `design_handoff_visual_refresh` handoff into the Flutter app. Where it contradicted a
+standing rule, **the design won and the rule was rewritten** — §3.10 no longer claims a
+two-colour palette, §3.23 no longer describes a five-slot bar, and §7a no longer describes a
+concentric ring. The new rules are §3.27 (one accent, and why it is not a state colour), §3.28
+(why the "+" went) and §3.29 (the three-week strip).
+
+- **Accent tokens** `accent` / `onAccent` / `accentSoft` on `AppColors`, and the accent applied
+  everywhere "active" is meant: tab bar, `PrimaryButton` (its `black` tone renamed `primary`,
+  which is the point — the tone is named for meaning, not colour), `PillButton`, checkboxes,
+  task discs, filter chips, the segmented control, every progress bar and chart column.
+  `MasteryPalette.fill` is the one mapping from the neutral number colour to the accent.
+- **New brand mark.** Organic seven-point ring, stroked whole plus a 27% accent run.
+  `AtherBrandPalette` lost `core` and renamed `track` → `ring`. All three SVGs in
+  `assets/branding/` rewritten and every Android bitmap re-exported.
+- **New subject icons**: a knee joint for Biology, a horseshoe magnet for Physics, an open book
+  for English. Chemistry's flask is unchanged.
+- **Week strip rewritten**: flat, underline-marked today, accent rings, a three-week drag buffer
+  and the directional "return to today" glow. Both bugs the handoff flagged in the design layer
+  are covered by `test/widget/week_strip_test.dart` (5 cases).
+- **Lock screen**: 108px mark, 38px wordmark, no standing body copy. `lockTitle` and `lockBody`
+  are deleted from both ARBs; the wordmark is `appName`, which in Arabic is now **أثر** rather
+  than the Latin "Ather".
+- `AppSizes` lost `fab`, `fabOverhang` and `fabLift`; `toastBottom` re-derived.
+
+**160/160 tests pass**, `dart analyze` clean.
+
+**Driven on a real phone (2026-08-05).** A Nothing Phone (A015, Android 16), debug build, the
+whole flow. Two gaps the render goldens had missed, both the same mistake — a fill that was
+never routed through `MasteryPalette.fill`:
+
+1. **The exam wizard's result bar stayed white.** A mid-range score resolves to the neutral
+   text colour, and the bar took it verbatim. It is the one bar a student stares at.
+2. **Material's own `ColorScheme.primary`, `FilledButton`, focused input border, progress
+   indicator, and the wizard's four step bars were still the foreground colour.** Every
+   framework widget that has not been replaced by a hand-built one now tints itself the accent,
+   which is what stops a stray `FilledButton` from looking like it belongs to the old design.
+
+Neither is visible in a widget test — both are colour, and the goldens for those screens were
+regenerated from the same code that had the bug. That is the honest limit of a golden: it
+proves nothing changed, not that anything is right.
+
+One consequence of the design worth knowing about, kept because the handoff is explicit that
+the glow is tappable: **the return-to-today glow overlays the strip's first day cell**, so on
+the Tasks screen (where the strip is a picker) that one day cannot be tapped while another
+week is on screen. Narrowing the glow or making its inner half inert would fix it.
+
+**First signed release, and the first live Firestore round-trip (2026-08-05).**
+An upload key now exists (procedure and warnings: RELEASING.md). Its SHA-1 and SHA-256 are
+registered against `com.ather.app` in Firebase and `android/app/google-services.json` was
+re-downloaded — it now carries two certificate hashes for the package, the debug key and
+`f3eaec08…`.
+
+Verified on the device, in this order, because each step only proves the next one is worth
+trying:
+
+1. `apksigner verify` reports `CN=yassen, OU=per, O=ather, L=giza, ST=giza, C=eg` — not
+   `CN=Android Debug`. 22.8 MB on arm64, AOT.
+2. The debug build was **uninstalled** — a signing key cannot be changed in place — and the
+   release APK installed onto an empty package.
+3. Google Sign-In completed. This is what the SHA-1 registration buys: without it the account
+   picker still opens and then fails with `ApiException: 10`. *(`DEVELOPER_ERROR` does appear in
+   `logcat` around sign-in, but from Play Services' own Phenotype/FlagStore processes, not from
+   the app's pid. Sign-in succeeding is the proof that it is unrelated.)*
+4. **The curriculum came back on its own** from Firestore onto the wiped install — chapter,
+   lesson and the 90% exam. `BackupSyncGate`'s auto-restore-onto-an-empty-device path had never
+   run against a real backend before.
+
+Two numbers on that restored dashboard look wrong at a glance and are not:
+`overallMastery` showed 23% while Biology showed 90%, because untouched subjects deliberately
+count as 0 (§ the calculator's own comment: a figure that ignored three empty subjects would
+tell a student they are 85% ready for Thanaweya Amma); and "0 of 1 chapters mastered" is right
+because `Chapter.isMastered` is `masteredAt != null` — an explicit press of the mastery gate,
+never derived from a score.
 
 
 **The biometric lock was skippable (2026-08-05).**

@@ -101,9 +101,30 @@ class BackupSyncNotifier extends Notifier<SyncState> {
         .getString(kLastAccountUidKey);
     if (owner != account.id) return;
 
-    final snapshot = ref.read(snapshotValueProvider);
-    final tasks = ref.read(tasksValueProvider);
+    // `.future`, never `snapshotValueProvider` / `tasksValueProvider`. Those two
+    // fall back to empty while their stream is still loading -- deliberately, so
+    // a transient frame cannot crash a screen -- and reading them here asked
+    // "what does this student have?" at the one moment the honest answer is "not
+    // known yet".
+    //
+    // The old guard was `snapshot.isEmpty && tasks.isEmpty`, an `&&`, so it only
+    // caught the case where *both* halves were still loading. These are two
+    // independent drift streams: when one had emitted and the other had not,
+    // this uploaded the half it could see over the half it could not. A student
+    // who backgrounded the app in that window had their cloud tasks replaced
+    // with an empty list -- and the cloud copy is the only copy that survives a
+    // lost phone.
+    //
+    // This is the same trap, in the same feature, that `BackupSyncGate` already
+    // documents at length for the restore direction. Awaiting is free here:
+    // nothing renders off this path.
+    final snapshot = await ref.read(snapshotProvider.future);
+    final tasks = await ref.read(tasksProvider.future);
     if (snapshot.isEmpty && tasks.isEmpty) return;
+
+    // The account can change while those two awaits are in flight, and an upload
+    // is addressed by uid. Re-check rather than trust the value read above.
+    if (ref.read(accountProvider).value?.id != owner) return;
 
     state = state.copyWith(status: SyncStatus.saving, clearFailure: true);
     try {

@@ -63,6 +63,78 @@ void main() {
       expect(ReviewCycleService.needsReview(lesson, now), isFalse);
     });
 
+    // The count is of calendar days, not of elapsed 24-hour periods. It matters
+    // because `nowProvider` emits once per midnight: anything that can fall due
+    // at 15:00 cannot be noticed until the following midnight, and the student
+    // spends most of a day looking at a number that is a day behind.
+    test('an exam taken in the afternoon falls due on the 30th day, not the '
+        '31st', () {
+      final lesson = lessonWith(
+        lastReviewedAt: DateTime(2026, 6, 1, 15, 0),
+      );
+
+      // 30 calendar days later, at the midnight the clock actually ticks on.
+      expect(
+        ReviewCycleService.needsReview(lesson, DateTime(2026, 7, 1)),
+        isTrue,
+        reason: '30 calendar days have passed; elapsed-time maths said 29',
+      );
+      expect(
+        ReviewCycleService.daysSinceReview(lesson, DateTime(2026, 7, 1)),
+        30,
+      );
+    });
+
+    // The reminder and the lesson screen have to be making the same statement.
+    // They were not: `dueAt` was hour-precise while `needsReview` counts whole
+    // days, so an exam recorded at 23:00 was notified as due at 23:00 on day 30
+    // while the screen still read "باقي ١ يوم" until the next midnight. The
+    // student tapped a reminder and landed on a screen contradicting it, and the
+    // gap was widest for the students who study in the evening.
+    test('the reminder lands on the same day the screen turns overdue', () {
+      for (final hour in <int>[0, 7, 15, 21, 23]) {
+        final lesson = lessonWith(
+          lastReviewedAt: DateTime(2026, 6, 1, hour, 30),
+        );
+        final due = ReviewCycleService.dueAt(lesson)!;
+
+        // The lesson is already overdue by the moment the reminder is posted,
+        // never the other way round.
+        expect(
+          ReviewCycleService.needsReview(lesson, due),
+          isTrue,
+          reason:
+              'exam at $hour:30 -> reminder at $due, but the screen still '
+              'says not due',
+        );
+
+        // And that moment is the first day the screen turns, not a day late.
+        final dayBefore = DateTime(due.year, due.month, due.day - 1, 23, 59);
+        expect(
+          ReviewCycleService.needsReview(lesson, dayBefore),
+          isFalse,
+          reason: 'exam at $hour:30 -> the reminder is a day late',
+        );
+      }
+    });
+
+    test('the day count only moves when the day does', () {
+      final lesson = lessonWith(lastReviewedAt: DateTime(2026, 6, 1, 15, 0));
+      // Every hour of the same calendar day answers identically, so a screen
+      // rebuilt at any point during the day cannot disagree with one rebuilt
+      // at midnight.
+      for (final hour in <int>[0, 6, 14, 15, 16, 23]) {
+        expect(
+          ReviewCycleService.daysSinceReview(
+            lesson,
+            DateTime(2026, 6, 20, hour),
+          ),
+          19,
+          reason: 'hour $hour disagreed with the rest of its own day',
+        );
+      }
+    });
+
     test('a never-examined lesson is never overdue', () {
       final lesson = lessonWith();
       expect(
@@ -123,12 +195,29 @@ void main() {
       );
     });
 
-    test('dueAt is exactly 30 days after the last proof', () {
+    test('dueAt is the 30th day after the last proof, at the reminder hour', () {
+      // Not `last + Duration(days: 30)`. That was hour-precise while
+      // `needsReview` counts calendar days, and the two disagreed for up to 23
+      // hours. The date is what carries the meaning; the hour is only so the
+      // reminder does not arrive at midnight.
       final lesson = lessonWith(lastReviewedAt: kAnchor);
       expect(
         ReviewCycleService.dueAt(lesson),
-        kAnchor.add(const Duration(days: 30)),
+        DateTime(2026, 7, 1, ReviewCycleService.kReminderHour),
       );
+    });
+
+    test('dueAt lands on the same date whatever hour the exam was taken', () {
+      for (final hour in <int>[0, 9, 17, 23]) {
+        final lesson = lessonWith(
+          lastReviewedAt: DateTime(2026, 6, 1, hour, 45),
+        );
+        expect(
+          ReviewCycleService.dueAt(lesson),
+          DateTime(2026, 7, 1, ReviewCycleService.kReminderHour),
+          reason: 'an exam at $hour:45 moved the due date',
+        );
+      }
     });
   });
 
@@ -375,12 +464,7 @@ void main() {
             name: 'متأخر جدًا',
             at: kSeedInstant,
           );
-          await recordPercentage(
-            repo,
-            veryOverdue,
-            80,
-            kAnchor.subtract(const Duration(days: 50)),
-          );
+          await recordPercentage(repo, veryOverdue, 80, daysBefore(kAnchor, 50));
 
           // Overdue by 5 days.
           final slightlyOverdue = await repo.createLesson(
@@ -392,7 +476,7 @@ void main() {
             repo,
             slightlyOverdue,
             80,
-            kAnchor.subtract(const Duration(days: 35)),
+            daysBefore(kAnchor, 35),
           );
 
           // Current but weak.

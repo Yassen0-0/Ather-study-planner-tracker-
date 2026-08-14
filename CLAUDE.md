@@ -57,6 +57,28 @@ most often because a release build needs a keystore you do not have — **build 
 why.** Do not generate a signing key to get past it: the key is the app's identity on Play, and
 a wrong or lost one means the app can never be updated again. A human creates it, once.
 
+**Four of these are now checked mechanically.** This rule was prose and nothing else for its
+whole life, and it was broken twice anyway — two debug-signed APKs, and a build carrying
+`versionCode` 2001 that no genuine release can ever upgrade. Prose does not run:
+
+```bash
+bash tool/check_invariants.sh
+```
+
+It asserts the `applicationId`, that a release without a keystore still fails the build rather
+than falling back, that `versionCode` has not gone backwards, that `schemaVersion` did not move
+without a migration test moving with it, and that no conflict markers are committed. It runs on
+every push and pull request via `.github/workflows/guardrails.yml`, alongside `flutter analyze`
+and the test suite. **Run it yourself before handing over an APK** — it is faster than the
+checklist and it cannot forget.
+
+What it cannot check is the signing certificate of an APK you actually produced, because CI has
+no keystore. That one stays manual:
+
+```bash
+apksigner verify --print-certs <file>.apk
+```
+
 ---
 
 ## Rule 2 — find the current design before you build on it

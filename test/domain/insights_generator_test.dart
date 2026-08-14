@@ -273,18 +273,8 @@ void main() {
           at: kSeedInstant,
         );
 
-        await recordPercentage(
-          repo,
-          old,
-          80,
-          kNow.subtract(const Duration(days: 100)),
-        );
-        await recordPercentage(
-          repo,
-          newer,
-          80,
-          kNow.subtract(const Duration(days: 50)),
-        );
+        await recordPercentage(repo, old, 80, daysBefore(kNow, 100));
+        await recordPercentage(repo, newer, 80, daysBefore(kNow, 50));
       });
 
       final insight = InsightsGenerator.generate(

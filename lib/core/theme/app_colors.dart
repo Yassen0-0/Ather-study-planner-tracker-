@@ -211,7 +211,12 @@ class AppColors extends ThemeExtension<AppColors> {
     track: Color(0xFFE9E9EC),
     textPrimary: Color(0xFF000000),
     textSecondary: Color(0xFF63636A),
-    textTertiary: Color(0xFF9A9AA0),
+    // Was #9A9AA0. Through the tab bar's glass that measured 1.90:1 over an
+    // analytics column and 1.91:1 over a mastery fill -- §3.19 assumed only
+    // *surfaces* passed underneath, and content does too. #7A7A80 clears 3:1
+    // against every solid area that can scroll under the pill, and is a plain
+    // improvement on the four non-glass uses as well, where #9A9AA0 was 2.7:1.
+    textTertiary: Color(0xFF7A7A80),
     textMicro: Color(0xFF7C7C82),
     // Was #C6C6CB, which is 1.7:1 on white -- effectively invisible in daylight,
     // and it carries the "—" that means "never examined" plus every field hint.
@@ -262,7 +267,9 @@ class AppColors extends ThemeExtension<AppColors> {
     track: Color(0xFF2C2C2E),
     textPrimary: Color(0xFFFFFFFF),
     textSecondary: Color(0xFFA1A1A8),
-    textTertiary: Color(0xFF78787E),
+    // Was #78787E. Dark gains contrast by going *lighter*: #88888E clears 3:1
+    // through the same glass. See the light note above and §3.19.
+    textTertiary: Color(0xFF88888E),
     textMicro: Color(0xFF8E8E94),
     textNoData: Color(0xFF5A5A60),
     weekLabel: Color(0xFF8E8E94),

@@ -130,7 +130,7 @@
   "examSave": "Save result",
   "examSaveFailed": "We couldn't save this exam. Your numbers are still here — try again.",
   "examDiscardTitle": "Leave this exam?",
-  "examDiscardBody": "What you've entered will be lost and nothing will be recorded.",
+  "examDiscardBody": "What you've entered will be lost. This can't be undone.",
   "examDiscardLeave": "Leave",
   "examDiscardStay": "Keep going",
   "examSaveReview": "Save review exam",

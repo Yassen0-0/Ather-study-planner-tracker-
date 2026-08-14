@@ -42,11 +42,31 @@ final class ReviewItem {
 /// Every function takes `now` explicitly rather than calling `DateTime.now()`,
 /// so the whole mechanic is testable in milliseconds instead of a month.
 abstract final class ReviewCycleService {
+  /// The calendar day [d] falls on, as a count of days. Normalised through UTC
+  /// so the subtraction cannot be bent by a daylight-saving shift -- Egypt
+  /// observes one, and two local midnights either side of it are 23 or 25 hours
+  /// apart, which `Duration.inDays` would silently round the wrong way.
+  static int _dayNumber(DateTime d) =>
+      DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/
+      Duration.millisecondsPerDay;
+
   /// Whole days since a lesson was last proven, or null if never examined.
+  ///
+  /// **Calendar days, not 24-hour periods.** This used to be
+  /// `now.difference(last).inDays`, which counts elapsed time -- so a lesson
+  /// examined at 15:00 fell due at 15:00 thirty days later. Everything that
+  /// reads this is driven by `nowProvider`, which emits once per *midnight*
+  /// (§3.8), so the app could not notice a mid-afternoon transition until the
+  /// following midnight: the student saw "not due yet" for most of the day it
+  /// became due, and the count only agreed with the calendar on lessons that
+  /// happened to be examined at midnight.
+  ///
+  /// Measuring the day itself makes the two agree by construction -- the value
+  /// can only change when the day changes, which is exactly when the clock ticks.
   static int? daysSinceReview(Lesson lesson, DateTime now) {
     final last = lesson.lastReviewedAt;
     if (last == null) return null;
-    return now.difference(last).inDays;
+    return _dayNumber(now) - _dayNumber(last);
   }
 
   /// Whether a lesson's mastery has decayed and must be re-proven.
@@ -79,10 +99,38 @@ abstract final class ReviewCycleService {
 
   /// The moment a lesson becomes due, or null if it has never been examined.
   /// Used to schedule the notification rather than polling daily.
+  /// The hour a reminder is posted on the day a lesson falls due.
+  ///
+  /// A time of day has to be chosen because [needsReview] flips at midnight and
+  /// a notification at midnight is a notification nobody reads. 18:00 is after
+  /// school and before the evening these students actually study in.
+  static const int kReminderHour = 18;
+
   static DateTime? dueAt(Lesson lesson) {
     final last = lesson.lastReviewedAt;
     if (last == null) return null;
-    return last.add(const Duration(days: kReviewCycleDays));
+    // Deliberately *not* `last.add(Duration(days: 30))`.
+    //
+    // That is hour-precise, while [needsReview] counts calendar days, and the
+    // two then disagree for up to 23 hours -- widest for a student who studies
+    // in the evening, which is most of them. A lesson examined at 23:00 was
+    // notified as due at 23:00 on day 30 while the lesson screen still showed
+    // "باقي ١ يوم", so the reminder contradicted the screen it opened. For a
+    // product whose whole mechanic is this clock, that is a credibility
+    // problem rather than a cosmetic one.
+    //
+    // Anchoring to the day makes them the same statement: the reminder lands on
+    // the day the screen turns, at an hour someone is awake for.
+    // Built from calendar components rather than by adding a Duration: adding
+    // 30x24h across a daylight-saving change lands an hour off, and Egypt has
+    // one. Dart normalises an out-of-range day, so `day + 30` is exactly "the
+    // same date thirty days later".
+    return DateTime(
+      last.year,
+      last.month,
+      last.day + kReviewCycleDays,
+      kReminderHour,
+    );
   }
 
   /// A chapter is red if **even one** lesson inside it needs review.

@@ -1,95 +1,89 @@
-# Ather — release build, 2026-08-11 · 1.2.0+6
+# Ather — release build, 2026-08-13 · 1.3.0+7
 
-**A minor-version bump, because five things that were silently broken now work.** No visual
-change: this sits on top of the 1.1.0+4 visual refresh and does not touch a colour, a layout, a
-glyph or a piece of copy that a student had already learned. What changed is behaviour that had
-never behaved.
+**A third of the download, and three silent bugs that could each cost a student their work.**
+No new features. The minor version moves because this build stops supporting 32-bit phones,
+which is a decision about who can install it rather than about what it does.
 
-## What was broken, and how it looked from the outside
-
-Every one of these failed **silently** — no crash, no error, nothing on screen. That is why none
-of them had been reported.
-
-- **Review reminders had never fired. Not once, in the app's history.** Two independent causes:
-  nothing ever asked for the notification permission, so the flag guarding the scheduler stayed
-  false and every pass cancelled the schedule and booked nothing; and the plugin's receivers were
-  never declared in the manifest, so even a booked alarm would have shown nothing. Both fixed,
-  and the whole cycle has now been watched end to end on a real phone — permission prompt, alarm
-  booked at thirty days, reminder posted, and tapping it opening the lesson it names.
-- **A second account on the same phone inherited the first student's curriculum** — and the
-  backup then mirrored it into the second student's cloud document. The device is now wiped when
-  a *different* uid signs in, and never on sign-out, so signing out and back in still loses
-  nothing.
-- **The exam wizard hung for good on a failed save.** No catch, and the in-flight flag was never
-  cleared, so one failure left a fully entered paper behind a button that ignored every tap after.
-- **A mistyped exam could not be corrected.** The delete existed in the data layer and no screen
-  called it. It is now on the lesson's history card — and it moves the review clock back to the
-  newest surviving evidence, which the naive version would have left pointing at a deleted exam.
-- **Every other write was fire-and-forget** — ticking a step, saving homework, mastering a
-  chapter, any task edit. A failure changed nothing and said nothing.
-
-## Also in this build
-
-- **Faster where it was quietly expensive**: the clock woke sixty times an hour and recomputed
-  every summary for the whole curriculum; each lesson's mastery was derived four times per
-  dashboard build; list rows replayed their entrance on every scroll; and the backup's gzip ran
-  on the UI thread while the student was using the app.
-- **Accessibility**: the app had two `Semantics` widgets in total. Every icon-only control now
-  has a name, tap targets are 48dp (the drawn sizes are unchanged), and two colours that failed
-  contrast outright — the brand green as *text* at 2.2:1, and the "no data" grey at 1.7:1 — were
-  fixed without touching the fills.
-- **A guard against the design being reverted a third time.** `test/design_invariants_test.dart`
-  fails if the brand blue disappears or the removed "+" comes back. See PROJECT.md's standing
-  rule.
-
-## Upgrading
-
-**Installs straight over 1.1.0+4.** Same upload key, `versionCode` 4 → 6, data kept. Nobody
-uninstalls anything.
-
-`+5` was never built — the notes below were written for it, then the build number was bumped
-again before anything left the machine. So `1.1.0+4` is the newest build that exists on anyone's
-phone, and this one goes straight over it. Everything described above is in this artefact; the
-only change between `+5` and `+6` is the build number itself.
-
-The old warning about the two debug-signed **profile** builds (`1.1.0+2`, `1.1.0+3`) still
-applies if anyone is somehow still on one: those carry a different signing identity, so Android
-refuses this release over them with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. Save to the cloud from
-Settings → النسخة السحابية before uninstalling, and sign back in to restore.
-
-## The build
-
-One **universal** APK, carrying all three ABIs, so a single file installs on any phone without
-anyone having to know which one they need.
+## The size
 
 | | |
 |---|---|
-| File | `Ather-1.2.0-build6-universal.apk` |
-| Size | 61.9 MB (64,932,945 bytes) |
-| SHA-256 | `cf2245c5ab1617f677699316bc31513d490c03e79504a29890a7a883bdc7b4a3` |
-| ABIs | `arm64-v8a`, `armeabi-v7a`, `x86_64` |
+| `1.2.0+6`, all three ABIs | 61.9 MB |
+| **`1.3.0+7`, arm64 only** | **22.9 MB** |
+
+Two thirds of the old download was `armeabi-v7a` for 32-bit phones and `x86_64`, which only ever
+runs on an emulator. Every student was carrying both. On mobile data that is the whole first
+impression of the app.
+
+**A 32-bit phone can no longer install Ather.** It is refused cleanly at install time, so a
+student on one keeps `1.2.0+6` and every exam in it, and simply receives no further updates.
+That is the accepted trade — "no new features" is survivable, "no app" is not, and the build was
+deliberately shaped so they get the first and never the second. See RELEASING.md for the
+half-ABI trap that would have caused the second, and how it is now checked.
+
+## What was broken
+
+Each of these failed **silently**, which is why none had been reported.
+
+- **The cloud backup could overwrite your tasks with nothing.** The upload read the curriculum
+  and the task list from two independent streams and did not wait for both. If one had loaded and
+  the other had not — closing the app shortly after opening it was enough — it uploaded the half
+  it could see over the half it could not, and the cloud copy is the only one that survives a lost
+  phone. It now waits for both. Nothing in the test suite had ever exercised the upload path; it
+  has four cases now.
+- **A second account could inherit the first student's curriculum.** The wipe that keeps two
+  students apart on one phone triggered on "somebody signed in where nobody was", which is only
+  the same thing as "a different account is here" if every switch passes through signed-out. It
+  is now keyed on the account id itself.
+- **The review clock could be a day behind.** It counted 24-hour periods while everything reading
+  it updates at midnight, so a lesson examined at 15:00 fell due at 15:00 thirty days later and
+  the app could not notice until the following midnight. It counts calendar days now, which is
+  what "30 days" meant all along.
+
+## Also in this build
+
+- **The inactive tab labels are readable.** Measured rather than assumed: over an analytics
+  column the label was at 1.90:1, well under any threshold. The bar's tint and the label tone
+  moved together — neither alone could fix it — and a test now fails the build if any surface
+  that can scroll under the tab bar drops below 3:1. The input hints and the wizard's fine print
+  get the same improvement. **This is the one thing here a student can see.**
+- **The release rules are enforced by a script, not by memory.** `tool/check_invariants.sh` runs
+  in CI and checks the things that break an in-place upgrade.
+
+## Upgrading
+
+**Installs straight over `1.2.0+6` on any 64-bit phone.** Same upload key, `versionCode` 6 → 7,
+data kept. Nobody uninstalls anything.
+
+Unchanged from before: a phone still carrying one of the old **debug-signed** builds (the `1.0.0`
+test APKs, or the `1.1.0+2` / `1.1.0+3` profile builds) will refuse this with
+`INSTALL_FAILED_UPDATE_INCOMPATIBLE`, because those carry a different signing identity. Save from
+**Settings → النسخة السحابية** before uninstalling, and sign back in to restore.
+
+## The build
+
+| | |
+|---|---|
+| File | `Ather-1.3.0-build7-arm64.apk` |
+| Size | 22.9 MB (24,060,598 bytes) |
+| SHA-256 | `b3d4d17d2d5314d061f3da8fd4b3c4f079aeae6b921fc8eb419c88d9b51bd1bb` |
+| ABI | `arm64-v8a` only |
 | `minSdkVersion` | 24 (Android 7.0) |
 | `targetSdkVersion` | 36 |
 
-Rebuild it with:
-
 ```bash
-flutter build apk --release
+flutter build apk --release --target-platform android-arm64
 ```
 
-Splitting per ABI instead gets arm64 down to roughly a third of the size, at the cost of having
-to hand each person the right file:
-
-```bash
-flutter build apk --release --split-per-abi
-```
+`--target-platform`, not `--split-per-abi`: splitting adds an ABI offset to the build number
+(arm64 would ship as `2007`), and a phone on that line could never be upgraded by a Play release.
+RELEASING.md §4.
 
 ## Signing
 
 Signed with the upload key at `C:\Users\<you>\keys\ather-upload.jks`, credentials in the
 git-ignored `android/key.properties`. The release config **refuses to build** rather than falling
-back to the debug key, which is how the profile builds above went out wrong. Verify what you
-actually produced:
+back to the debug key. Verify what you actually produced:
 
 ```
 Signer #1 certificate DN: CN=yassen, OU=per, O=ather, L=giza, ST=giza, C=eg
