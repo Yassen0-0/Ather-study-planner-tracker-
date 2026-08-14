@@ -766,7 +766,7 @@ abstract class L {
   /// No description provided for @examDiscardBody.
   ///
   /// In ar, this message translates to:
-  /// **'اللي كتبته هيروح ومش هيتسجل.'**
+  /// **'اللي كتبته هيروح. مش هينفع ترجع فيها.'**
   String get examDiscardBody;
 
   /// No description provided for @examDiscardLeave.

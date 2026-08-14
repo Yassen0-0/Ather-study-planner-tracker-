@@ -396,7 +396,7 @@ class LAr extends L {
   String get examDiscardTitle => 'تسيب الامتحان؟';
 
   @override
-  String get examDiscardBody => 'اللي كتبته هيروح ومش هيتسجل.';
+  String get examDiscardBody => 'اللي كتبته هيروح. مش هينفع ترجع فيها.';
 
   @override
   String get examDiscardLeave => 'سيبه';

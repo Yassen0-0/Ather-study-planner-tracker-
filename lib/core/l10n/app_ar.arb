@@ -185,7 +185,7 @@
   "examSaveReview": "احفظ امتحان المراجعة",
   "examSaveFailed": "مقدرناش نحفظ الامتحان. أرقامك لسه موجودة — جرّب تاني.",
   "examDiscardTitle": "تسيب الامتحان؟",
-  "examDiscardBody": "اللي كتبته هيروح ومش هيتسجل.",
+  "examDiscardBody": "اللي كتبته هيروح. مش هينفع ترجع فيها.",
   "examDiscardLeave": "سيبه",
   "examDiscardStay": "كمّل",
 

@@ -392,7 +392,7 @@ class LEn extends L {
 
   @override
   String get examDiscardBody =>
-      'What you\'ve entered will be lost and nothing will be recorded.';
+      'What you\'ve entered will be lost. This can\'t be undone.';
 
   @override
   String get examDiscardLeave => 'Leave';
