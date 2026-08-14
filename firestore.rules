@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// The only thing standing between one student's exam history and another's.
+//
+// This lived exclusively in the Firebase console until 2026-08-13, which meant
+// the confidentiality of every backup depended on configuration that could not
+// be read in this repository, could not be reviewed in a pull request, could not
+// be restored from git, and could be destroyed by one wrong click. Worse, the
+// two states are indistinguishable from the outside: a project left in Firestore
+// **test mode** grants open read/write to any authenticated caller until the
+// timestamp expires, and then denies everything — which would break backup for
+// every student with no code change to explain it.
+//
+// The client half of this contract is `FirestoreBackupRepository`, which writes
+// one document per student at `users/{uid}/backup/snapshot`.
+//
+// Deploy with:  firebase deploy --only firestore:rules
+// Nothing deploys these automatically; `firebase.json` only makes it possible.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // A student's backup is readable and writable by that student and nobody
+    // else. `request.auth.uid == uid` is the whole guarantee: the uid in the
+    // path has to be the uid on the token, so a client cannot ask for someone
+    // else's document by editing a path.
+    match /users/{uid}/backup/{document=**} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // The size ceiling is also enforced client-side (`_maxBlobBytes`, 900 KiB)
+      // so a student gets a real error instead of a rejection they cannot read.
+      // It is repeated here because a client-side limit is a courtesy, not a
+      // control — the server must not depend on the app being the one asking.
+      allow write: if request.auth != null
+                   && request.auth.uid == uid
+                   && request.resource.size() < 1048576;
+    }
+
+    // Nothing else in this project is reachable from a client. Written
+    // explicitly rather than left to the absence of a rule, so that adding a
+    // collection later is a deliberate act with a rule attached, not something
+    // that inherits access by being forgotten.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

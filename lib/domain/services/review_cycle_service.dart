@@ -99,10 +99,38 @@ abstract final class ReviewCycleService {
 
   /// The moment a lesson becomes due, or null if it has never been examined.
   /// Used to schedule the notification rather than polling daily.
+  /// The hour a reminder is posted on the day a lesson falls due.
+  ///
+  /// A time of day has to be chosen because [needsReview] flips at midnight and
+  /// a notification at midnight is a notification nobody reads. 18:00 is after
+  /// school and before the evening these students actually study in.
+  static const int kReminderHour = 18;
+
   static DateTime? dueAt(Lesson lesson) {
     final last = lesson.lastReviewedAt;
     if (last == null) return null;
-    return last.add(const Duration(days: kReviewCycleDays));
+    // Deliberately *not* `last.add(Duration(days: 30))`.
+    //
+    // That is hour-precise, while [needsReview] counts calendar days, and the
+    // two then disagree for up to 23 hours -- widest for a student who studies
+    // in the evening, which is most of them. A lesson examined at 23:00 was
+    // notified as due at 23:00 on day 30 while the lesson screen still showed
+    // "باقي ١ يوم", so the reminder contradicted the screen it opened. For a
+    // product whose whole mechanic is this clock, that is a credibility
+    // problem rather than a cosmetic one.
+    //
+    // Anchoring to the day makes them the same statement: the reminder lands on
+    // the day the screen turns, at an hour someone is awake for.
+    // Built from calendar components rather than by adding a Duration: adding
+    // 30x24h across a daylight-saving change lands an hour off, and Egypt has
+    // one. Dart normalises an out-of-range day, so `day + 30` is exactly "the
+    // same date thirty days later".
+    return DateTime(
+      last.year,
+      last.month,
+      last.day + kReviewCycleDays,
+      kReminderHour,
+    );
   }
 
   /// A chapter is red if **even one** lesson inside it needs review.

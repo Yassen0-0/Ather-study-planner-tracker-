@@ -200,6 +200,32 @@ build used the debug key and must not be distributed.
 
 ---
 
+## 4a. Firestore rules are part of the release, and they are not deployed by building
+
+Every student's whole exam history lives at `users/{uid}/backup/snapshot`. **What stops student A
+reading student B's document is a security rule, and nothing in an APK carries it.**
+
+Until 2026-08-13 that rule existed only inside the Firebase web console: unreadable from this
+repository, unreviewable in a pull request, unrestorable from git, and one wrong click from being
+replaced. It is now [`firestore.rules`](firestore.rules), registered in `firebase.json`.
+
+**Getting it into git did not deploy it.** The console is still whatever it already was, and the
+two possibilities look identical from here:
+
+- if the project was created in **test mode**, any signed-in caller can read and write *any*
+  student's document until the expiry date, and after that date every backup silently starts
+  failing with `permissionDenied` and no code change to explain it;
+- or the correct rule was published by hand at some point and matches the file.
+
+Nobody can tell which by reading this repository. Check the console, then:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Do this **before** the app reaches students who do not know each other. It is the one thing in
+this project where the failure is invisible from the inside: the app works perfectly either way.
+
 ## 5. Before the first public release
 
 Open items recorded in PROJECT.md §9, all of which block Play rather than
