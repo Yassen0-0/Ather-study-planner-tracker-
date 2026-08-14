@@ -1,72 +1,73 @@
-# Ather — release build, 2026-08-13 · 1.3.0+7
+# Ather — release build, 2026-08-14 · 1.3.1+8
 
-**A third of the download, and three silent bugs that could each cost a student their work.**
-No new features. The minor version moves because this build stops supporting 32-bit phones,
-which is a decision about who can install it rather than about what it does.
+**A point release on 1.3.0.** Same size, same shape, same 64-bit-only reach. What changed is that
+the reminder and the lesson screen now say the same thing, and the security rule protecting every
+student's backup is in this repository instead of only in a web console.
 
-## The size
+If you already have `1.3.0+7`, this is a small upgrade. If you are on `1.2.0+6` or older, read the
+1.3.0 section further down as well — that is the build that dropped 32-bit phones.
 
-| | |
-|---|---|
-| `1.2.0+6`, all three ABIs | 61.9 MB |
-| **`1.3.0+7`, arm64 only** | **22.9 MB** |
+## What changed since 1.3.0+7
 
-Two thirds of the old download was `armeabi-v7a` for 32-bit phones and `x86_64`, which only ever
-runs on an emulator. Every student was carrying both. On mobile data that is the whole first
-impression of the app.
+- **A reminder no longer arrives before the app agrees.** The notification was scheduled to the
+  hour (`last exam + 30 days`) while the lesson screen counts whole days, so an exam recorded at
+  23:00 produced a reminder at 23:00 on day 30 while the screen still read **"باقي ١ يوم"** until
+  the next midnight. Tapping the reminder landed you on a screen contradicting it — and the gap
+  was widest for students who study in the evening, which is most of them. The reminder now lands
+  on the day the screen turns, at 18:00.
+- **"تسيب الامتحان؟" now says it cannot be undone.** Every other irreversible confirmation in the
+  app ends with *"مش هينفع ترجع فيها."* — deleting a chapter, a lesson, an exam. The one dialog
+  guarding a fully typed exam paper did not.
+- **Two unused dependencies removed**, including a chart library the analytics screen deliberately
+  does not use.
 
-**A 32-bit phone can no longer install Ather.** It is refused cleanly at install time, so a
-student on one keeps `1.2.0+6` and every exam in it, and simply receives no further updates.
-That is the accepted trade — "no new features" is survivable, "no app" is not, and the build was
-deliberately shaped so they get the first and never the second. See RELEASING.md for the
-half-ABI trap that would have caused the second, and how it is now checked.
+Nothing above changes a layout, a colour or a flow.
 
-## What was broken
+## Not in the APK, but shipped with it
 
-Each of these failed **silently**, which is why none had been reported.
+**The Firestore security rules are now in version control** (`firestore.rules`). Every student's
+exam history lives at `users/{uid}/backup/snapshot`, and what stops one student reading another's
+was configuration that existed only inside the Firebase console — unreadable from the repository,
+unreviewable in a pull request, unrestorable from git.
 
-- **The cloud backup could overwrite your tasks with nothing.** The upload read the curriculum
-  and the task list from two independent streams and did not wait for both. If one had loaded and
-  the other had not — closing the app shortly after opening it was enough — it uploaded the half
-  it could see over the half it could not, and the cloud copy is the only one that survives a lost
-  phone. It now waits for both. Nothing in the test suite had ever exercised the upload path; it
-  has four cases now.
-- **A second account could inherit the first student's curriculum.** The wipe that keeps two
-  students apart on one phone triggered on "somebody signed in where nobody was", which is only
-  the same thing as "a different account is here" if every switch passes through signed-out. It
-  is now keyed on the account id itself.
-- **The review clock could be a day behind.** It counted 24-hour periods while everything reading
-  it updates at midnight, so a lesson examined at 15:00 fell due at 15:00 thirty days later and
-  the app could not notice until the following midnight. It counts calendar days now, which is
-  what "30 days" meant all along.
+**Committing them does not deploy them.** See RELEASING.md §4a: the console is still whatever it
+already was, and a project left in *test mode* grants every signed-in caller access to every
+document until an expiry date, after which all backups start failing with nothing in the code to
+explain it. This is the one failure here that is invisible from inside the app, which works
+identically either way.
 
-## Also in this build
+## Carried over from 1.3.0 — read this if you are upgrading from 1.2.0 or older
 
-- **The inactive tab labels are readable.** Measured rather than assumed: over an analytics
-  column the label was at 1.90:1, well under any threshold. The bar's tint and the label tone
-  moved together — neither alone could fix it — and a test now fails the build if any surface
-  that can scroll under the tab bar drops below 3:1. The input hints and the wizard's fine print
-  get the same improvement. **This is the one thing here a student can see.**
-- **The release rules are enforced by a script, not by memory.** `tool/check_invariants.sh` runs
-  in CI and checks the things that break an in-place upgrade.
+**A third of the download**: 61.9 MB → **22.9 MB**, by shipping 64-bit ARM only. **A 32-bit phone
+can no longer install Ather.** It is refused cleanly at install time, so a student on one keeps
+what they have and every exam in it, and simply receives no further updates.
+
+And three silent bugs, each of which could cost a student work:
+
+- **The cloud backup could overwrite your tasks with nothing** — the upload did not wait for both
+  halves of the local database to load, and uploaded the half it could see over the half it could
+  not.
+- **A second account could inherit the first student's curriculum** — the wipe triggered on
+  "somebody signed in where nobody was" rather than on the account actually changing.
+- **The review clock could be a day behind** — it counted 24-hour periods while the app updates at
+  midnight.
 
 ## Upgrading
 
-**Installs straight over `1.2.0+6` on any 64-bit phone.** Same upload key, `versionCode` 6 → 7,
-data kept. Nobody uninstalls anything.
+**Installs straight over `1.3.0+7` or `1.2.0+6` on any 64-bit phone.** Same upload key,
+`versionCode` 7 → 8, data kept. Nobody uninstalls anything.
 
-Unchanged from before: a phone still carrying one of the old **debug-signed** builds (the `1.0.0`
-test APKs, or the `1.1.0+2` / `1.1.0+3` profile builds) will refuse this with
-`INSTALL_FAILED_UPDATE_INCOMPATIBLE`, because those carry a different signing identity. Save from
-**Settings → النسخة السحابية** before uninstalling, and sign back in to restore.
+A phone still carrying an old **debug-signed** build (the `1.0.0` test APKs, or the `1.1.0+2` /
+`1.1.0+3` profile builds) will refuse this with `INSTALL_FAILED_UPDATE_INCOMPATIBLE` — different
+signing identity. Save from **Settings → النسخة السحابية** first, then sign back in afterwards.
 
 ## The build
 
 | | |
 |---|---|
-| File | `Ather-1.3.0-build7-arm64.apk` |
-| Size | 22.9 MB (24,060,598 bytes) |
-| SHA-256 | `b3d4d17d2d5314d061f3da8fd4b3c4f079aeae6b921fc8eb419c88d9b51bd1bb` |
+| File | `Ather-1.3.1-build8-arm64.apk` |
+| Size | 22.9 MB (24,059,384 bytes) |
+| SHA-256 | `e22d6dbdae6fb7d3292a51d502a58eea8ef654828c32e0f90d9ca09adf8e61a6` |
 | ABI | `arm64-v8a` only |
 | `minSdkVersion` | 24 (Android 7.0) |
 | `targetSdkVersion` | 36 |
@@ -76,18 +77,15 @@ flutter build apk --release --target-platform android-arm64
 ```
 
 `--target-platform`, not `--split-per-abi`: splitting adds an ABI offset to the build number
-(arm64 would ship as `2007`), and a phone on that line could never be upgraded by a Play release.
+(arm64 would ship as `2008`), and a phone on that line could never be upgraded by a Play release.
 RELEASING.md §4.
 
 ## Signing
-
-Signed with the upload key at `C:\Users\<you>\keys\ather-upload.jks`, credentials in the
-git-ignored `android/key.properties`. The release config **refuses to build** rather than falling
-back to the debug key. Verify what you actually produced:
 
 ```
 Signer #1 certificate DN: CN=yassen, OU=per, O=ather, L=giza, ST=giza, C=eg
 Signer #1 certificate SHA-1 digest: f3eaec08a58d41d334d22abade33b1e89577623e
 ```
 
-Not `CN=Android Debug`. Procedure and the two ways this can go permanently wrong: RELEASING.md.
+Not `CN=Android Debug`. The release config refuses to build rather than falling back to the debug
+key. Procedure and the two ways this can go permanently wrong: RELEASING.md.
