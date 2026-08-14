@@ -83,8 +83,43 @@ The debug key's SHA-1 is already registered, which is why it works locally.
 
 ```bash
 flutter build appbundle          # Google Play wants this
-flutter build apk --split-per-abi   # hand-distributed testing
+flutter build apk --release      # one universal APK, hand-distributed
+flutter build apk --split-per-abi   # smaller, but read the warning below first
 ```
+
+### `--split-per-abi` moves the versionCode line, permanently
+
+**Flutter does not use `pubspec.yaml`'s build number as-is when it splits.** It adds an ABI
+offset, so a single `version: 1.2.0+6` produces three APKs with three different `versionCode`s:
+
+| APK | offset | `versionCode` at `+6` |
+|---|---|---|
+| `app-armeabi-v7a-release.apk` | +1000 | 1006 |
+| `app-arm64-v8a-release.apk` | +2000 | **2006** |
+| `app-x86_64-release.apk` | +4000 | 4006 |
+| universal (`--release`, no split) | none | **6** |
+
+This is visible in the old builds in `dist/_quarantine-do-not-distribute/`: the same `1.0.0+1`
+tree produced a universal APK at `1`, an armeabi one at `1001` and an arm64 one at `2001`. That
+`2001` is not a mistake anyone made — it is this offset.
+
+The consequence is one-way and worth stating plainly, because Rule 1 turns on it:
+
+- A phone on the **universal** line (`6`) accepts a split arm64 APK (`2006`) — the number goes up.
+- A phone on the **split arm64** line (`2006`) can never go back to a universal APK (`6`), and
+  **cannot be upgraded by a Play release either**, because an App Bundle carries the plain
+  `versionCode` from `pubspec.yaml`. Play would be shipping `7`, `8`, `9` against a phone holding
+  `2006`, and Android refuses every one of them.
+
+So the choice is not "which is smaller". It is **which line every future update has to live on**,
+and switching costs a student their database. Until Ather is on Play, the universal APK keeps the
+side-loaded line and the eventual Play line as the same numbers, which is the reversible option —
+at the price of ~40 MB per download (61.9 MB against ~22 MB for arm64 alone).
+
+If the size is judged to matter more, the way to take it **without** stranding anyone is to raise
+the base build number in `pubspec.yaml` above the offsets once — `version: 1.3.0+5001` — so the
+plain number is already higher than any split APK ever issued, and Play can still overtake it
+later. That is a decision to make deliberately, once, and to write down here.
 
 **A release build fails outright when `android/key.properties` is missing.** It
 does not fall back to the debug key. That fallback shipped a debug-signed APK
