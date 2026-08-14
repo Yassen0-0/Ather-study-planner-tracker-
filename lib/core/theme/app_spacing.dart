@@ -200,5 +200,18 @@ abstract final class AppMotion {
   /// §3.19: the sigma is never animated, and the tint is a floor, not a
   /// starting point.
   static const double glassSigma = 24;
-  static const double glassTint = 0.72;
+
+  /// Raised from 0.72 on 2026-08-13, together with a darker `textTertiary`.
+  ///
+  /// 0.72 was chosen as the floor at which the inactive label still read
+  /// against *surfaces*, which is what §3.19 measured. Content drawn on those
+  /// surfaces — an analytics column, a mastery fill — is far darker than the
+  /// tint, and through the pill those landed at 1.90:1 and 1.91:1.
+  ///
+  /// Neither lever fixes it alone: at 0.72 the label would have to darken to
+  /// #636369, which is `textSecondary` and erases the gap between a tab label
+  /// and body text; at 0.90 the glass is opaque enough that the blur stops
+  /// carrying the depth §3.19 justified it for. 0.85 is the pair that moves
+  /// both least and still clears 3:1 everywhere.
+  static const double glassTint = 0.85;
 }

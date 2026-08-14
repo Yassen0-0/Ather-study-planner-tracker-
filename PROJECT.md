@@ -418,8 +418,14 @@ pre-existing token decision, unchanged here, but it is written down now.
 > `muted`, `fill`, `track` and the page — and false of the content drawn *on* them. An analytics
 > column at `accent` composites to **1.90 : 1** and a mastery fill to **1.91 : 1**, both below the
 > 2.55 floor claimed here and below the toast case this section was careful to design out. The
-> pill exposing content on four sides is what widened the set. Full numbers, and why raising the
-> tint alpha cannot repair the light theme, are in §9.
+> pill exposing content on four sides is what widened the set.
+>
+> **Both numbers above are now stale, deliberately.** The tokens moved to fix this: `glassTint`
+> is **0.85**, and the inactive label is **`#7A7A80`** in light and **`#88888E`** in dark. Every
+> solid fill that can scroll under the pill now clears 3:1, and `design_invariants_test.dart`
+> fails the build if that stops being true — which is the part of this section that should have
+> existed from the start. Raising the tint alone could never have done it; the full reasoning and
+> the measured table are in §9.
 
 `AppShell` sets `extendBody: true` so the list actually scrolls under the bar — otherwise
 there is nothing to blur — and `AtherScreen` adds the bar's height back as list padding, plus
@@ -1171,11 +1177,23 @@ so it reads like a broken checkout rather than a one-switch machine setting.
   pinning it clear of the bar, and then let the analytics columns and every mastery bar scroll
   underneath at worse than the range it claimed.
 
-  **The standing rule cannot fix the light theme.** "Raise the tint alpha, never darken the
-  label" reaches 3.0:1 in dark at alpha 0.84–0.86, but in light the label tops out at **2.80:1
-  against pure white** — an opaque bar is already the ceiling, and no alpha reaches 3.0. The only
-  lever left in light is the label token, which the rule forbids. The rule and the token cannot
-  both stand; §3.19's own closing line already concedes 2.80:1 at 11px fails AA.
+  **Fixed the same day, and the standing rule went with it.** "Raise the tint alpha, never darken
+  the label" cannot work in light: the label tops out at **2.80:1 against pure white**, so an
+  opaque bar is already the ceiling and no alpha reaches 3.0. Neither lever is enough alone — at
+  the old 0.72 the label would have to fall to `#636369`, which *is* `textSecondary` and erases
+  the difference between a tab label and body text; at 0.90 the bar is opaque enough that the blur
+  stops carrying the depth §3.19 justified it for.
+
+  The pair that moves both least: **`glassTint` 0.72 → 0.85**, and **`textTertiary` `#9A9AA0` →
+  `#7A7A80`** in light, `#78787E` → `#88888E` in dark. Every row of the table above now clears
+  3:1. The four non-glass uses of `textTertiary` — the input hint, the wizard's fine print, the
+  celebration line — improve with it; they were 2.7:1 on a card.
+
+  **A tripwire now, not a paragraph.** `design_invariants_test.dart` composites the label against
+  every solid fill that can scroll under the pill and fails below 3:1, with a second test holding
+  the other side: the label must stay quieter than `textSecondary`, or "fix the contrast" quietly
+  becomes "delete the distinction the bar exists to draw". Verified to fail on the old tokens, at
+  2.69:1.
 
   *Limit of this measurement:* it composites solid colour, which is right for a chart column, a
   mastery fill or a filled button, and pessimistic for text — `sigmaX/Y = 24` averages a thin
