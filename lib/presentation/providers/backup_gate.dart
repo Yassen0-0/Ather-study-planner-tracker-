@@ -137,7 +137,14 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
     ref.listen<AsyncValue<Account?>>(accountProvider, (previous, next) {
       final was = previous?.value;
       final now = next.value;
-      if (was == null && now != null) {
+      // The condition is "a *different* account is now signed in", not "somebody
+      // signed in where nobody was". Those are the same thing only if every
+      // account change passes through null on the way, and the wipe below is
+      // the one thing standing between two students on one phone. Keying it on
+      // the uid means it cannot be skipped by a transition that never emits
+      // null -- and it still does nothing when the stream merely re-emits the
+      // same account, which happens on every token refresh.
+      if (now != null && now.id != was?.id) {
         _restoreChecked = false;
         _restoreIfEmpty(now.id);
       }
