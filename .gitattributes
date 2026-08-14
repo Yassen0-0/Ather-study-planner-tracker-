@@ -25,6 +25,18 @@
 *.xml    text
 *.svg    text
 
+# The Windows desktop runner. `flutter` regenerates these with LF, and without
+# an entry here they sit permanently "modified" in `git status` with an empty
+# `git diff` -- the exact phantom diff this file was written to stop, missed the
+# first time because the list only covered Dart and its config. It matters more
+# than tidiness: Rule 2's worktree sweep is read off `git status`, and a worktree
+# that always shows three modified files teaches you to skip past the one line
+# that would have been real.
+*.cc     text
+*.h      text
+*.cmake  text
+*.txt    text
+
 # Shell scripts are LF everywhere, including on Windows checkouts. A `.sh` with
 # CRLF is not merely untidy: bash reads the carriage return as part of the
 # shebang and of every line, so the script dies with `$'\r': command not found`
