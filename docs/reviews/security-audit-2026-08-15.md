@@ -18,6 +18,37 @@ Evidence tags used below: **[S]** static (repo), **[D]** device, **[C]** cloud/c
 
 ---
 
+# Remediation status — updated 2026-08-15
+
+Work done in the same session as the audit. Commits `90510f4` … `91d808f`.
+
+| | Item | Status |
+|---|---|---|
+| BLOCK-1 | Play App Signing SHA-1 registered in Firebase | **Documented, not done** — `RELEASING.md` §3a. The key does not exist until the first bundle is uploaded, so this is a step for the release, not a code change. |
+| BLOCK-2 | In-app account deletion | **Done** — Settings → Delete account, 6 tests |
+| BLOCK-3 | Firestore document deleted before the Auth user | **Done** — the ordering is asserted, not just implemented |
+| BLOCK-4 | Privacy policy | **Written, not deployed** — `public/privacy.html`, needs 2 placeholders filled |
+| BLOCK-5 | Data safety declaration | **Answers drafted** — appendix below; must be entered in Play Console |
+| HIGH-1 | App Check | **SDK shipped, enforcement pending by design** — enforcing now would lock out 1.2.0/1.3.1 installs |
+| MEDIUM-1 | Lock released without a credential | **Open** — unreproduced; do not change lock code first |
+| MEDIUM-2 | Email enumeration protection | **Open** — console toggle |
+| MEDIUM-3 | Password policy | **Client half done** (8 chars, registration only); server half is a console setting |
+| MEDIUM-4 | Email verification | **Open** — decision, not a defect |
+| LOW-1 | Android Auto Backup | **Done — turned off**, both cloud backup and device transfer |
+| LOW-2 | Unencrypted SQLite | **Accepted**, with evidence |
+| LOW-3 | Rules validate size not shape | **Open** — low, self-inflicted only |
+| LOW-4 | Exported `firebase_auth` activities | **No action** — inert, documented |
+| LOW-5 | No `FLAG_SECURE` | **Open** — deliberate "no" is acceptable |
+| LOW-6 | Dependency drift | **Open** — deliberately not touched before a release; nothing known-vulnerable |
+| LOW-7 | Obsolete `com.sahm.sahm` app | **Partly done** — `firebase.json` no longer points at it (it recorded the dead appId as the Android default, so `flutterfire configure` would have regenerated config against it). Deleting the app itself needs the console. |
+| LOW-8 | Stray project, test account | **Open** — needs the console |
+
+**New follow-up created by this work.** With Auto Backup off, a student whose compressed record exceeds `_maxBlobBytes` (900 KiB) fails with `BackupFailure.tooLarge` and now has **no cloud copy at all**, where Auto Backup would previously have caught them — and nothing in the UI tells them their backup has silently stopped. That ceiling was theoretical before and is load-bearing now.
+
+**Not doable from here.** Deleting the `com.sahm.sahm` app, the `ather-app-2026` project, and the `test@ather.app` account all need console access: `firebase-tools` has no `apps:delete`, no `projects:delete`, and no single-user delete, and `gcloud` is not installed. Note that deleting the app changes `google-services.json`, which must then be re-downloaded and committed.
+
+---
+
 # Verdict
 
 **Ather cannot be published yet, and the reason is not a vulnerability — it is three missing compliance artefacts and one configuration step that will silently break sign-in for every real user.**
@@ -340,3 +371,62 @@ Blockers first, then the cheap high-value console toggles, then the rest.
 9. **Gap 3** — run the multi-tenancy attack on a disposable device. It is the biggest untested risk to a student's data.
 
 One process note worth acting on independently: the phone is running **1.2.0+6** while the repo is at **1.3.1+8**. Any future device verification should start by confirming which build is actually installed — two of this audit's findings would have been misattributed if the version had been assumed.
+
+---
+
+# Appendix — Data safety answers (BLOCK-5)
+
+Drafted 2026-08-15 from what the code actually does, so the form matches the app
+rather than the intention. Every "yes" below is traceable to a file.
+
+**Does your app collect or share any of the required user data types?** Yes.
+**Is all user data encrypted in transit?** Yes — Firebase SDKs only, no cleartext
+endpoint, no `usesCleartextTraffic`, no `networkSecurityConfig`.
+**Do you provide a way for users to request that their data be deleted?** Yes —
+in-app (Settings → Delete account) and by email (`public/account-deletion.html`).
+
+| Data type | Collected | Shared | Optional? | Purpose |
+|---|---|---|---|---|
+| **Email address** | Yes | No | **Required** | Account management |
+| **Name** | Yes (Google Sign-In only) | No | Required on that path | Account management |
+| **User IDs** (Firebase uid) | Yes | No | **Required** | Account management |
+| **Other app activity** — chapters, lessons, exam and homework scores, review dates | Yes | No | **Required** | App functionality |
+
+**Nothing else is collected.** No location, contacts, phone number, photos, audio,
+files, calendar, health, financial, browsing history, installed apps, device or
+advertising IDs, or crash/diagnostic data.
+
+### The three answers most likely to be got wrong
+
+1. **"Other app activity" must be marked collected, not just processed on-device.**
+   The study record is transmitted to Firestore. It is tempting to treat an
+   offline-first app as on-device only — it is not, and this is the single most
+   consequential answer on the form.
+
+2. **Nothing may be marked "Optional".** `BackupSyncNotifier` uploads on a
+   20-second debounce and on every backgrounding, with no toggle, and the auth
+   gate makes signing in mandatory. There is no path through the app that avoids
+   any of this, so "users can choose whether this data is collected" is false for
+   every row.
+
+3. **"Shared" is No throughout.** Google/Firebase is a **processor** acting on our
+   instructions, which Play does not count as sharing. There is no third party
+   receiving data — no ads SDK, no analytics, no crash reporter.
+
+### Data types that look like they apply and do not
+
+- **Photos / files** — none touched.
+- **Device or other IDs** — the Firebase uid is an account identifier, declared
+  under *User IDs*; no advertising ID, no device ID is read.
+- **Crash logs / diagnostics** — no Crashlytics, no analytics. `debugPrint` writes
+  to the device log only and never leaves the phone.
+- **Biometrics** — the app lock uses Android's own prompt. Ather receives a
+  yes/no, never biometric data, so no sensitive category applies.
+
+### Target audience and Families Policy
+
+- Target age includes **under 18**, which triggers Families Policy.
+- No ads at all, so no ad-content rating and no ad-SDK disclosure is needed —
+  worth protecting, because adding an ads or analytics SDK later changes this
+  section, the Data safety form, and the privacy policy together.
+- Privacy policy URL is required and must be live *before* submission.
