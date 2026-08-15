@@ -177,7 +177,13 @@ It is nearly empty, in fact: **Android Auto Backup only runs on an unmetered net
 
 What genuinely remains is the case where the Firestore copy cannot be written while Auto Backup still could — most concretely a record that exceeds `_maxBlobBytes` and fails with `BackupFailure.tooLarge` (see LOW-3/§J). That is real, but it argues for fixing the ceiling rather than for keeping a second uncontrolled copy of a minor's exam history in a different place.
 
-**Recommendation, corrected: set `android:allowBackup="false"`** — the durability it buys is marginal and duplicated, and the audience is minors. It is left at `true` in the code for now, declared explicitly with the reasoning, because flipping it is a behaviour change that removes a recovery path and that is the app owner's call, not the auditor's. Either way it must appear in the Data safety declaration while it is on.
+**Recommendation, corrected: set `android:allowBackup="false"`** — the durability it buys is marginal and duplicated, and the audience is minors.
+
+**Resolved 2026-08-15: the owner chose `false`, and it is now off.** `android:allowBackup="false"` covers API ≤30, and a new `res/xml/data_extraction_rules.xml` covers 31+. The second file is not redundant: on Android 12 and later, **device-to-device transfer is a separate channel with its own opt-out**, so `allowBackup="false"` alone would have left the record still copying to a new phone through the setup wizard. Both channels exclude `domain="root" path="."` rather than naming individual paths, so a future directory is not included by having been forgotten.
+
+The privacy policy and deletion page were updated in the same change — they now state that the record exists in exactly two places, the phone and Firestore, which is only true because of this.
+
+**Outstanding follow-up this creates:** a student whose compressed record exceeds `_maxBlobBytes` fails with `BackupFailure.tooLarge` and now has **no cloud copy at all**, where Auto Backup would previously have caught them. Nothing in the UI tells them their backup has silently stopped. Raising or paging that ceiling is now load-bearing rather than theoretical.
 
 ## LOW-2 · Local database is unencrypted · [S]
 

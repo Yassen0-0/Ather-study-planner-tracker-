@@ -55,6 +55,11 @@ break if the app changes:
 - **"The cloud copy is automatic."** True because `BackupSyncNotifier` uploads on a
   20-second debounce and on every backgrounding, with no toggle. If a toggle is ever
   added, this sentence becomes a lie in the student's favour and still has to change.
-- **"Android Auto Backup copies app data to your own Google account."** True while
-  `android:allowBackup="true"` in `AndroidManifest.xml`. If that flips to `false`,
-  delete that bullet from both languages.
+- **"Your study record exists in exactly two places."** True because
+  `android:allowBackup="false"` and `data_extraction_rules.xml` exclude both cloud
+  backup and device transfer. This is the strongest claim on the page and the easiest
+  to falsify by accident: turning Auto Backup back on, or adding any SDK that ships
+  data off the device, makes it false. Both pages say it in both languages.
+- **"No ads, no tracking, no analytics, no crash reporting."** True today. Adding
+  Firebase Analytics or Crashlytics — the two most natural things to reach for next —
+  breaks this and the Data safety form together.

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  API 31+ half of "Android Auto Backup is off". See the comment above
+  <application> in AndroidManifest.xml for the reasoning.
+
+  `android:allowBackup="false"` alone is not enough on Android 12 and later:
+  it stops cloud backup, but **device-to-device transfer is a separate channel
+  with its own opt-out**, and leaving it unset means a student's exam history
+  still copies to a new phone through the setup wizard. Both are excluded here.
+
+  `<exclude domain="root" path="."/>` rather than a list of specific paths,
+  deliberately: the database lives under `app_flutter/` (drift_flutter writes
+  `sahm.sqlite` into getApplicationDocumentsDirectory()), preferences under
+  `shared_prefs/`, and Firebase's cached session in files of its own. Naming
+  them individually means a future path is included by having been forgotten,
+  which is the wrong default for this data.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+    </device-transfer>
+</data-extraction-rules>
