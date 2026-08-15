@@ -271,9 +271,17 @@ this project where the failure is invisible from the inside: the app works perfe
 Open items recorded in PROJECT.md §9, all of which block Play rather than
 testing:
 
-- In-app **account deletion** — mandatory for any app with sign-in.
-- A **privacy policy URL**, and the Data safety form (the app collects an email
-  address through Firebase Auth).
+- ~~In-app **account deletion** — mandatory for any app with sign-in.~~ **Built 2026-08-15**:
+  Settings → Delete account, which deletes the Firestore document *before* the Auth user.
+  That order is the feature — see `_DeleteAccountCard`.
+- A **privacy policy URL**, and the Data safety form. **Both are written and neither is
+  live.** `public/privacy.html` and `public/account-deletion.html` are ready to serve from
+  Firebase Hosting; they still contain `[[PUBLISHER_NAME]]` and `[[CONTACT_EMAIL]]`
+  placeholders and must not be deployed until those are filled. The Data safety answers are
+  drafted in `docs/reviews/security-audit-2026-08-15.md`.
+- **Register the Play App Signing SHA-1** (§3a). Nothing on this machine can catch this one.
+- **The full security audit's open items** — `docs/reviews/security-audit-2026-08-15.md`
+  carries a per-finding remediation table.
 - ~~The app has still never run on a real phone.~~ Done 2026-08-05 — a debug build was
   driven end to end on a Nothing Phone (Android 16). See PROJECT.md §10.
 - ~~Cloud backup has never been exercised against live Firestore.~~ Done 2026-08-05:
