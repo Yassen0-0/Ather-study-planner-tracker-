@@ -465,7 +465,7 @@ class _Day extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.textGap),
         // Done is the accent fill -- the same blue every progress bar fills
         // with, because a completed day is progress and not a verdict. Green
         // here would claim the day was *correct*.

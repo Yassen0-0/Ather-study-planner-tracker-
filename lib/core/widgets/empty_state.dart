@@ -51,10 +51,10 @@ class EmptyState extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AppTypography.style(size: 18, weight: AppTypography.bold),
+            style: AppTypography.emptyTitle,
           ),
           if (body != null) ...<Widget>[
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.textGap),
             Text(
               body!,
               textAlign: TextAlign.center,

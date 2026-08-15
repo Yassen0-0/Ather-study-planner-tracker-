@@ -54,8 +54,13 @@ StudySnapshot snapshotWith({
   );
 }
 
-Future<Widget> bootApp({StudySnapshot? snapshot}) async {
-  SharedPreferences.setMockInitialValues(<String, Object>{});
+Future<Widget> bootApp({StudySnapshot? snapshot, Locale? locale}) async {
+  // The locale is read from preferences rather than injected, so seeding the
+  // stored code is how a test picks a language -- the same path the settings
+  // toggle takes.
+  SharedPreferences.setMockInitialValues(<String, Object>{
+    if (locale != null) 'locale_code': locale.languageCode,
+  });
   final preferences = await SharedPreferences.getInstance();
 
   return ProviderScope(

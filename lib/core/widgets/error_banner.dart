@@ -17,7 +17,9 @@ class ErrorBanner extends StatelessWidget {
 
   final String message;
 
-  /// Line height. The login screen's copy is longer and breaks across lines.
+  /// Line height override. Null keeps the status line's own 1.4, which is right
+  /// for the one-sentence case; the login screen's copy is longer and breaks
+  /// across lines, so it opens to 1.5.
   final double? height;
 
   @override
@@ -30,16 +32,17 @@ class ErrorBanner extends StatelessWidget {
       duration: AppMotion.micro,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl,
+          vertical: AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           color: context.colors.wrongTint,
           borderRadius: BorderRadius.circular(AppRadius.button),
         ),
         child: Text(
           message,
-          style: AppTypography.style(
-            size: 13.5,
-            weight: AppTypography.semiBold,
+          style: AppTypography.statusLine.copyWith(
             height: height,
             color: context.colors.wrong,
           ),

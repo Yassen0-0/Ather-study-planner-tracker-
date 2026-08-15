@@ -12,11 +12,24 @@ import 'app_colors.dart';
 /// [_font] sets both: `fontVariations` does the real work, `fontWeight` keeps
 /// fallback fonts and Flutter's own text diffing behaving.
 ///
-/// Two rules the design is strict about:
+/// Three rules the design is strict about:
 /// * **Never go above 700.** The axis stops there; asking for 800 makes Flutter
 ///   fake a weight, which looks coarse next to real 700.
 /// * **Every number is tabular.** Digits must not jitter as a percentage
 ///   animates or a counter ticks.
+/// * **No size is invented at a call site.** Every role below has a name, and
+///   the name is what a screen asks for. Call sites used to hard-code 11, 12,
+///   13, 14, 15, 15.5, 16, 17, 18, 19, 22 and 26 directly, which is how the
+///   scale grew half-steps nobody chose: a screen needing "a bit smaller than
+///   the token" typed a number rather than asking whether the role already
+///   existed. Fifty-odd of those are now tokens, and with them went the
+///   half-steps below 16 — 11.5, 12.5, 13.5, 14.5 and 15.5 are gone, folded
+///   into the whole number they were within half a point of. Below 20 the ramp
+///   is integers only, one named role per rung.
+///
+/// The one half-step that remains is [rowTitleSmall] at 16.5, kept because
+/// collapsing it to 16 would give three names to one size — see the note on the
+/// row pair below.
 ///
 /// ## Colour
 ///
@@ -109,6 +122,12 @@ abstract final class AppTypography {
       style(size: 20, weight: bold, letterSpacing: -0.3, height: 1.3);
 
   // --- Rows and cards -------------------------------------------------------
+  //
+  // Rows come in two densities, and the pair moves together: a subject row is
+  // 17/19, a lesson row is 16.5/18. The title and the number are sized as one
+  // decision, which is why neither pair is collapsed into the other -- the
+  // number is the row's answer, and it has to stay a fixed step above its own
+  // title rather than above some other row's.
 
   /// Title of a row in a list.
   static TextStyle get rowTitle => style(size: 17, weight: bold, height: 1.3);
@@ -131,6 +150,60 @@ abstract final class AppTypography {
   static TextStyle get rowNumberSmall =>
       style(size: 18, weight: bold, height: 1.2);
 
+  /// The trailing figure on a row *inside* a card — exam history, the weakest
+  /// list, the not-ready sheet. Those rows are divided hairlines rather than
+  /// cards of their own, so their number sits a step below [rowNumberSmall].
+  static TextStyle get rowNumberCompact =>
+      style(size: 16, weight: bold, height: 1.2);
+
+  /// The title of a row inside a card, matching [rowNumberCompact].
+  static TextStyle get listTitle =>
+      style(size: 15, weight: semiBold, height: 1.3);
+
+  /// The heading of an empty state — the one line on an otherwise blank screen.
+  /// Larger than [cardTitle] because there is nothing beside it to be larger
+  /// than, smaller than [screenTitle] because the screen already has one.
+  static TextStyle get emptyTitle => style(size: 18, weight: bold, height: 1.3);
+
+  /// The label on a control that is not a button: a segment of the segmented
+  /// control, a tally, a trend figure, the quiet second action under a form.
+  static TextStyle get controlLabel =>
+      style(size: 14, weight: bold, height: 1.2);
+
+  /// The status or context line under a row title — "متأخر 16 يوم", "3 أبواب ·
+  /// 12 درس". Uncoloured: the caller decides between `wrong` and
+  /// `textSecondary`, and that choice is the whole point of the line.
+  static TextStyle get rowStatus =>
+      style(size: 14, weight: medium, height: 1.4);
+
+  /// A short verdict line that has earned emphasis — "تمام، جاهز تدخل
+  /// الامتحان", "اتقنت الباب في...". Uncoloured for the same reason as
+  /// [rowStatus]; [AppTextStyles.status] is this style at the quiet grey.
+  static TextStyle get statusLine =>
+      style(size: 13, weight: semiBold, height: 1.4);
+
+  /// The label a tappable item carries beside a control — a checklist item, a
+  /// task. Sits at [body]'s size with a tighter leading, because it is one
+  /// line beside a 24 disc rather than a paragraph.
+  static TextStyle get itemLabel =>
+      style(size: 15, weight: medium, height: 1.3);
+
+  // --- The dashboard's three-up stat row -------------------------------------
+  //
+  // Three tokens for one component, because the row is three sizes stacked in
+  // 72dp on a small phone and the relationship between them is the design. It
+  // was written at the call site as 14 / 19 / 13, which is the same thing
+  // stated in a place nobody would think to look for it.
+
+  /// "الباقي" — what the count below it is counting.
+  static TextStyle get statLabel =>
+      style(size: 14, weight: semiBold, height: 1.3);
+
+  /// The count itself. Deliberately identical to [rowNumber]: a stat is a
+  /// number that answers a label, which is exactly what a row's trailing
+  /// figure is, and the two sit on the same screen.
+  static TextStyle get statValue => rowNumber;
+
   // --- Body -----------------------------------------------------------------
 
   static TextStyle get body => style(size: 15, weight: medium, height: 1.5);
@@ -140,8 +213,18 @@ abstract final class AppTypography {
 
   // --- Controls -------------------------------------------------------------
 
-  static TextStyle get chipLabel =>
-      style(size: 13.5, weight: bold, height: 1.2);
+  static TextStyle get chipLabel => style(size: 13, weight: bold, height: 1.2);
+
+  /// The label on a [MiniBadge] — "مراجعة", "أضعف درس".
+  static TextStyle get badgeLabel => style(size: 11, weight: bold, height: 1.2);
+
+  /// The overdue count inside the tab bar's 16px disc. The one size below 11
+  /// in the app, and it is set by the disc rather than by the scale: two digits
+  /// have to fit inside a circle that must not grow into the icon above it.
+  static TextStyle get badgeCount => style(size: 10, weight: bold, height: 1.2);
+
+  /// The figure printed above an analytics column, and beside a chapter bar.
+  static TextStyle get chartValue => style(size: 12, weight: bold, height: 1.2);
 
   /// Text typed into a numeric field.
   static TextStyle get input => style(size: 17, weight: bold, height: 1.2);
@@ -190,37 +273,70 @@ class AppTextStyles {
   TextStyle get secondary => AppTypography.style(
     size: 14,
     weight: AppTypography.medium,
-    height: 1.45,
+    height: 1.5,
     color: colors.textSecondary,
   );
 
   TextStyle get secondaryStrong => AppTypography.style(
     size: 14,
     weight: AppTypography.semiBold,
-    height: 1.45,
+    height: 1.5,
     color: colors.textSecondary,
   );
 
   /// A status or reason line under a row title.
-  TextStyle get status => AppTypography.style(
-    size: 13.5,
-    weight: AppTypography.semiBold,
-    height: 1.4,
+  TextStyle get status =>
+      AppTypography.statusLine.copyWith(color: colors.textSecondary);
+
+  /// The explanatory line under a card's heading — what a setting does, what a
+  /// screen's subtitle is naming. One step quieter than [secondary], which is
+  /// content; this is the label's own small print.
+  TextStyle get sublabel => AppTypography.style(
+    size: 13,
+    weight: AppTypography.medium,
+    height: 1.5,
     color: colors.textSecondary,
   );
 
   /// Breadcrumbs and chart labels.
   TextStyle get small => AppTypography.style(
-    size: 12.5,
+    size: 12,
     weight: AppTypography.medium,
     height: 1.4,
     color: colors.textSecondary,
   );
 
   TextStyle get smallStrong => AppTypography.style(
-    size: 12.5,
+    size: 12,
     weight: AppTypography.bold,
     height: 1.35,
+    color: colors.textSecondary,
+  );
+
+  /// The name above an input box. The label sits outside the field rather than
+  /// floating inside it, so it is small print rather than a heading.
+  TextStyle get fieldLabel => AppTypography.style(
+    size: 12,
+    weight: AppTypography.semiBold,
+    height: 1.3,
+    color: colors.textSecondary,
+  );
+
+  /// The "/ 24" under a stat count. Two steps below [AppTypography.statValue]
+  /// and quiet, because the denominator is context for the figure beside it,
+  /// not a second figure.
+  TextStyle get statDenominator => AppTypography.style(
+    size: 13,
+    weight: AppTypography.semiBold,
+    height: 1.2,
+    color: colors.textSecondary,
+  );
+
+  /// The subject name under an analytics column.
+  TextStyle get chartLabel => AppTypography.style(
+    size: 11,
+    weight: AppTypography.semiBold,
+    height: 1.2,
     color: colors.textSecondary,
   );
 
@@ -234,7 +350,7 @@ class AppTextStyles {
 
   /// Fine print, e.g. the homework disclaimer.
   TextStyle get micro => AppTypography.style(
-    size: 11.5,
+    size: 11,
     weight: AppTypography.regular,
     height: 1.5,
     color: colors.textMicro,
@@ -247,10 +363,20 @@ class AppTextStyles {
     color: colors.onPrimary,
   );
 
+  /// The message on the toast's plate — the one black (or, in dark, white)
+  /// surface in the app, which is why it needs its own `on` colour rather than
+  /// any of the greys.
+  TextStyle get toastMessage => AppTypography.style(
+    size: 14,
+    weight: AppTypography.semiBold,
+    height: 1.35,
+    color: colors.onPrimary,
+  );
+
   /// The label on an accent pill — the "Exam" button. Coloured for the accent
   /// fill it always sits on, not for the page.
   TextStyle get pillLabel => AppTypography.style(
-    size: 14.5,
+    size: 14,
     weight: AppTypography.bold,
     height: 1.2,
     color: colors.onAccent,

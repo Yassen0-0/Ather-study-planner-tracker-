@@ -109,7 +109,7 @@ class _ReportCard extends StatelessWidget {
     final (trendLine, trendColor) = _trend(l, context.colors);
 
     return AtherCard(
-      padding: AppSpacing.section,
+      padding: AppSpacing.xxxl,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -133,7 +133,7 @@ class _ReportCard extends StatelessWidget {
             ),
             color: MasteryPalette.fill(context.colors, color),
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           Text(
             '${l.averageExamScore}: '
             '${hasData ? percent(summary.averageExamScore) : '—'}',
@@ -144,11 +144,7 @@ class _ReportCard extends StatelessWidget {
           Text(
             trendLine,
             textAlign: TextAlign.center,
-            style: AppTypography.style(
-              size: 14,
-              weight: AppTypography.bold,
-              color: trendColor,
-            ),
+            style: AppTypography.controlLabel.copyWith(color: trendColor),
           ),
         ],
       ),
@@ -178,7 +174,7 @@ class _LessonRow extends StatelessWidget {
         children: <Widget>[
           if (weakest) ...<Widget>[
             MiniBadge(label: l.weakestLessonBadge, wrong: true),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.md),
           ],
           Expanded(
             child: Text(
@@ -191,11 +187,7 @@ class _LessonRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
           Text(
             percentLabel(summary.mastery, hasData: summary.hasExam),
-            style: AppTypography.style(
-              size: 17,
-              weight: AppTypography.bold,
-              color: color,
-            ),
+            style: AppTypography.rowTitle.copyWith(color: color),
           ),
         ],
       ),

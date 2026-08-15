@@ -29,10 +29,14 @@ class DayHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
+      // The same horizontal margin as `AtherHeader` and as the page itself.
+      // These two headers are the same shape on two screens and used to
+      // disagree by 4, which on a 320 phone is the difference between
+      // "النهارده" fitting and eliding.
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xxl,
-        4,
-        AppSpacing.xxl,
+        AppSpacing.pageMargin,
+        AppSpacing.xxs,
+        AppSpacing.pageMargin,
         AppSpacing.xl,
       ),
       child: Column(

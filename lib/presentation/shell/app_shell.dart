@@ -147,7 +147,7 @@ Widget _floatingBar(BuildContext context, {required Widget tabs}) {
 
 Widget _glassPill(BuildContext context, Widget content) {
   final radius = BorderRadius.circular(AppRadius.pill);
-  final border = Border.all(color: context.colors.dividerStrong, width: 1);
+  final border = Border.all(color: context.colors.glassBorder, width: 1);
 
   // Deliberately NOT gated on MediaQuery.disableAnimations. Glass is a visual
   // effect, not a motion: a student who turns on reduce-motion because
@@ -302,7 +302,9 @@ class _Tab extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xxs),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.opticalInset,
+                ),
                 child: Text(
                   label,
                   maxLines: 1,
@@ -378,7 +380,7 @@ Widget _badge(BuildContext context, int count) {
   return Container(
     constraints: const BoxConstraints(minWidth: 16),
     height: 16,
-    padding: const EdgeInsets.symmetric(horizontal: 4),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
     alignment: Alignment.center,
     decoration: BoxDecoration(
       color: context.colors.wrong,
@@ -386,12 +388,7 @@ Widget _badge(BuildContext context, int count) {
     ),
     child: Text(
       '$count',
-      style: AppTypography.style(
-        size: 10,
-        weight: AppTypography.bold,
-        color: context.colors.onState,
-      ),
+      style: AppTypography.badgeCount.copyWith(color: context.colors.onState),
     ),
   );
 }
-

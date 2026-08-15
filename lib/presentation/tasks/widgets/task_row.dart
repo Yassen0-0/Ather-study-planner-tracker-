@@ -48,9 +48,7 @@ class TaskRow extends StatelessWidget {
             width: AppSizes.checkbox,
             height: AppSizes.checkbox,
             decoration: BoxDecoration(
-              color: task.done
-                  ? context.colors.accent
-                  : context.colors.card,
+              color: task.done ? context.colors.accent : context.colors.card,
               shape: BoxShape.circle,
               border: task.done
                   ? null
@@ -77,9 +75,7 @@ class TaskRow extends StatelessWidget {
             child: AnimatedDefaultTextStyle(
               duration: reduced ? Duration.zero : AppMotion.micro,
               curve: AppMotion.standard,
-              style: AppTypography.style(
-                size: 15.5,
-                weight: AppTypography.medium,
+              style: AppTypography.itemLabel.copyWith(
                 color: task.done
                     ? context.colors.textSecondary
                     : context.colors.textPrimary,
@@ -100,7 +96,7 @@ class TaskRow extends StatelessWidget {
             // needs; `minTarget` now guarantees the rest without redrawing it.
             minTarget: kMinTarget,
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: AtherIcon(
                 AtherGlyph.edit,
                 size: 17,

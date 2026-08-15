@@ -169,17 +169,14 @@ class QuietPillButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
+          horizontal: AppSpacing.xl,
           vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
           color: context.colors.card,
           borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
-        child: Text(
-          label,
-          style: AppTypography.style(size: 13.5, weight: AppTypography.bold),
-        ),
+        child: Text(label, style: AppTypography.chipLabel),
       ),
     );
   }
@@ -216,9 +213,7 @@ class DashedAddButton extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: AppTypography.style(
-              size: 15,
-              weight: AppTypography.semiBold,
+            style: AppTypography.listTitle.copyWith(
               color: context.colors.textSecondary,
             ),
           ),

@@ -29,7 +29,7 @@ class AtherCheckbox extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 11),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Row(
           children: <Widget>[
             // The disc closes inward from the rim, then takes the tick. What
@@ -61,9 +61,7 @@ class AtherCheckbox extends StatelessWidget {
                     ? Duration.zero
                     : AppMotion.micro,
                 curve: AppMotion.standard,
-                style: AppTypography.style(
-                  size: 15.5,
-                  weight: AppTypography.medium,
+                style: AppTypography.itemLabel.copyWith(
                   color: checked
                       ? context.colors.textSecondary
                       : context.colors.textPrimary,
@@ -174,19 +172,15 @@ class SegmentedControl extends StatelessWidget {
               child: Pressable(
                 onTap: () => onSelect(i),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: i == selectedIndex
-                        ? context.colors.accent
-                        : null,
-                    borderRadius: BorderRadius.circular(9),
+                    color: i == selectedIndex ? context.colors.accent : null,
+                    borderRadius: BorderRadius.circular(AppRadius.segment),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     labels[i],
-                    style: AppTypography.style(
-                      size: 14,
-                      weight: AppTypography.bold,
+                    style: AppTypography.controlLabel.copyWith(
                       color: i == selectedIndex
                           ? context.colors.onAccent
                           : context.colors.textSecondary,
@@ -240,22 +234,15 @@ class AtherTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          label,
-          style: AppTypography.style(
-            size: 12.5,
-            weight: AppTypography.semiBold,
-            color: context.colors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 6),
+        Text(label, style: context.text.fieldLabel),
+        const SizedBox(height: AppSpacing.textGap),
         Container(
           decoration: BoxDecoration(
             color: context.colors.muted,
             borderRadius: BorderRadius.circular(AppRadius.input),
           ),
           padding: const EdgeInsetsDirectional.only(
-            start: AppSpacing.lg,
+            start: AppSpacing.xl,
             end: AppSpacing.xs,
           ),
           child: Row(
@@ -282,8 +269,11 @@ class AtherTextField extends StatelessWidget {
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
+                    // See the note in prompts.dart: 12 puts the field at
+                    // AppSizes.input, which is what the rest of the app's
+                    // inputs measure.
                     contentPadding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.lg,
+                      vertical: AppSpacing.md,
                     ),
                   ),
                 ),
