@@ -39,25 +39,28 @@ class LEn extends L {
   String get subjectEnglish => 'English';
 
   @override
-  String get weekdaySaturday => 'S';
+  String get weekdaySaturday => 'Sat';
 
   @override
-  String get weekdaySunday => 'S';
+  String get weekdaySunday => 'Sun';
 
   @override
-  String get weekdayMonday => 'M';
+  String get weekdayMonday => 'Mon';
 
   @override
-  String get weekdayTuesday => 'T';
+  String get weekdayTuesday => 'Tue';
 
   @override
-  String get weekdayWednesday => 'W';
+  String get weekdayWednesday => 'Wed';
 
   @override
-  String get weekdayThursday => 'T';
+  String get weekdayThursday => 'Thu';
 
   @override
-  String get weekdayFriday => 'F';
+  String get weekdayFriday => 'Fri';
+
+  @override
+  String get todayLabel => 'Today';
 
   @override
   String get dashboardTitle => 'Today';

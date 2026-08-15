@@ -39,25 +39,28 @@ class LAr extends L {
   String get subjectEnglish => 'إنجليزي';
 
   @override
-  String get weekdaySaturday => 'س';
+  String get weekdaySaturday => 'سبت';
 
   @override
-  String get weekdaySunday => 'ح';
+  String get weekdaySunday => 'أحد';
 
   @override
-  String get weekdayMonday => 'ن';
+  String get weekdayMonday => 'اتنين';
 
   @override
-  String get weekdayTuesday => 'ث';
+  String get weekdayTuesday => 'ثلاثاء';
 
   @override
-  String get weekdayWednesday => 'ر';
+  String get weekdayWednesday => 'أربعاء';
 
   @override
-  String get weekdayThursday => 'خ';
+  String get weekdayThursday => 'خميس';
 
   @override
-  String get weekdayFriday => 'ج';
+  String get weekdayFriday => 'جمعة';
+
+  @override
+  String get todayLabel => 'اليوم';
 
   @override
   String get dashboardTitle => 'النهارده';
@@ -706,7 +709,7 @@ class LAr extends L {
   String get backupErrorUnknown => 'الحفظ مظبطش';
 
   @override
-  String get tasksTitle => 'مهام النهارده';
+  String get tasksTitle => 'مهام اليوم';
 
   @override
   String tasksDoneOf(String done, String total) {

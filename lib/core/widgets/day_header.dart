@@ -4,7 +4,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 
 /// The header shared by the two day-shaped screens: a large title, actions on
-/// the trailing edge, and the week strip beneath.
+/// the trailing edge, and the day picker beneath.
 ///
 /// Extracted from the dashboard when the tasks screen grew the same shape. Two
 /// hand-kept copies of a header is how they start to drift by a couple of pixels
@@ -13,22 +13,22 @@ class DayHeader extends StatelessWidget {
   const DayHeader({
     super.key,
     required this.title,
-    this.strip,
+    this.picker,
     this.actions = const <Widget>[],
   });
 
   final String title;
 
-  /// The week strip for this screen, or null for a screen that does not pick a
-  /// day.
+  /// The [DayPicker] for this screen, or null for a screen that does not pick a
+  /// day — which is every screen but one.
   ///
-  /// Passed in rather than built here because the tasks screen fills its
-  /// circles from its own data, and it is the only screen that does: the
-  /// dashboard carried a copy that could not be tapped, selected nothing, and
-  /// reported a fact — "an exam happened on this day" — that the cards directly
-  /// beneath it already state in full. A row of seven circles that answers
-  /// nothing is a row the eye has to skip past to reach the screen.
-  final Widget? strip;
+  /// Passed in rather than built here because the picker is fed by the tasks
+  /// screen's own data, and it is the only screen that has any: the dashboard
+  /// carried a copy of the old week strip that could not be tapped, selected
+  /// nothing, and reported a fact — "an exam happened on this day" — that the
+  /// cards directly beneath it already state in full. A row of seven circles
+  /// that answers nothing is a row the eye has to skip past to reach the screen.
+  final Widget? picker;
 
   final List<Widget> actions;
 
@@ -63,12 +63,12 @@ class DayHeader extends StatelessWidget {
               ],
             ],
           ),
-          // Both the gap and the strip go together. Keeping the gap for a
-          // screen with no strip would leave the title floating above 20 of
+          // Both the gap and the picker go together. Keeping the gap for a
+          // screen with no picker would leave the title floating above 20 of
           // nothing.
-          if (strip != null) ...<Widget>[
+          if (picker != null) ...<Widget>[
             const SizedBox(height: AppSpacing.xxl),
-            strip!,
+            picker!,
           ],
         ],
       ),

@@ -50,16 +50,13 @@ void main() {
       // Every tab, because the tab bar is the one piece of chrome that does not
       // scroll and the analytics screen is the widest thing in the app.
       //
-      // The tasks tab is excluded below 400 and the exclusion is a **known
-      // defect, not a tolerance** — see `the tasks week strip does not fit a
-      // narrow phone` below for the measurement and the reason it is not fixed
-      // here.
+      // The tasks tab used to be excluded below 400, as a known defect rather
+      // than a tolerance: its week strip laid seven cells at the 48px target
+      // floor and so demanded 336px on a screen that can be 288 wide. The
+      // `DayPicker` that replaced it measures its labels and drops a pair of
+      // days rather than overflow, so there is no width left to exclude.
       final L l = L.of(tester.element(find.byType(Scaffold).first));
-      final tabs = <String>[
-        l.navReview,
-        l.navProgress,
-        if (size.width >= 400) l.navTasks,
-      ];
+      final tabs = <String>[l.navReview, l.navProgress, l.navTasks];
       for (final tab in tabs) {
         await tester.tap(find.text(tab));
         await tester.pumpAndSettle();
@@ -76,36 +73,13 @@ void main() {
     });
   }
 
-  /// A standing note, in the form of arithmetic, about a defect this file found
-  /// and deliberately did **not** fix.
-  ///
-  /// The week strip is a summary on the dashboard and a *picker* on the tasks
-  /// screen. As a picker each of its seven day cells is a [Pressable] carrying
-  /// `minTarget: kMinTarget` — the 48 floor the whole app honours — so the row
-  /// demands 7 x 48 = 336 no matter how narrow the window is. The header gives
-  /// it the page margin on each side, so it fits only from 336 + 32 = 368 up:
-  /// a 360 phone, which is the commonest Android width there is, clips it by 8,
-  /// and a 320 phone by 48. The dashboard's copy escapes because an inert cell
-  /// gets no [Pressable] at all and therefore no floor.
-  ///
-  /// This is not a spacing-system fault and it predates the ladder rebuild
-  /// (which improved it by 4, via the header margin). Fixing it means choosing
-  /// between two things the app has already committed to: distribute the cells
-  /// with `Expanded` and let the target fall to 41 on a 320 screen, or let the
-  /// strip scroll and give up "the whole week at a glance". Seven 48 targets
-  /// cannot be laid in 288 — no arrangement of them exists — so that choice is
-  /// the product's, not a refactor's.
-  test('the tasks week strip does not fit a narrow phone', () {
-    const double cells = 7 * 48; // kMinTarget, per day
-    const double narrowestContent = 320 - 2 * 16; // page margin either side
-    expect(
-      cells,
-      greaterThan(narrowestContent),
-      reason:
-          'If this ever stops being true the defect above has been fixed and '
-          'the tasks tab should go back into the width matrix unconditionally.',
-    );
-  });
+  // The arithmetic that used to sit here recorded the defect this file found
+  // and deliberately did not fix: seven day cells at the app's 48px target
+  // floor demand 336, the narrowest screen offers 288 between the page margins,
+  // and no arrangement of seven 48s fits in 288. The fix was not a refactor and
+  // could not be — it was the product decision to stop showing seven days. See
+  // `day_picker_test.dart`, which asserts the replacement's side of it: three
+  // cells at 320, more when there is room, and never a scaled-down label.
 
   for (final mode in <ThemeMode>[ThemeMode.light, ThemeMode.dark]) {
     for (final locale in <Locale>[Locale('ar'), Locale('en')]) {

@@ -136,12 +136,15 @@ abstract final class AppSizes {
   static const double barTrack = 8;
   static const double barTrackSmall = 6;
 
-  static const double weekCircle = 34;
-
-  /// The week strip's own height, fixed because it clips: three weeks share the
-  /// box and the two off-screen ones must not stretch it. 4 dot + 3 + ~18
-  /// underlined letter + 6 + the circle.
-  static const double weekStrip = 4 + 3 + 21 + 6 + weekCircle;
+  /// The tasks screen's day picker: the whole row, and each cell inside it.
+  ///
+  /// `kMinTarget` exactly, and that is the point rather than a coincidence. The
+  /// week strip this replaced drew a 34px day and grew a 48px hit box around
+  /// it, which is how seven cells came to demand 336px on a screen that could
+  /// be 288 wide. Here the cell *is* the target: the artwork fills the square a
+  /// finger has to find, so the row can drop a pair of days to fit instead of
+  /// overflowing.
+  static const double dayPicker = 48;
 
   static const double checkbox = 24;
 }
@@ -168,14 +171,12 @@ abstract final class AppMotion {
   /// How long the confirmation toast stays on screen.
   static const Duration toast = Duration(milliseconds: 2200);
 
-  /// The week strip snapping to a week after a drag is released. Shares the
-  /// sheet's spring: both are "a surface you were holding finding its rest".
-  static const Duration weekSnap = sheet;
-  static const Curve weekSnapCurve = sheetCurve;
-
-  /// One half-cycle of the week strip's "come back to today" glow. Slow on
-  /// purpose — it is a standing cue, not an alert.
-  static const Duration weekGlowPulse = Duration(milliseconds: 1800);
+  // Gone with the week strip: `weekSnap`/`weekSnapCurve`, which eased a
+  // released drag back to a week boundary, and `weekGlowPulse`, one half-cycle
+  // of the "come back to today" glow. The day picker commits a drag to a whole
+  // day instead of settling a partial offset, so there is nothing to snap; and
+  // its glow is a standing sign rather than a pulsing one, which is also how it
+  // stopped being a ticker that never lets `pumpAndSettle` return.
 
   // ---------------------------------------------------------------------------
   // Motion system v1.1. Everything below is one ease-out and a set of durations
