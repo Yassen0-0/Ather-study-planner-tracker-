@@ -39,9 +39,13 @@ import 'reduced_motion.dart';
 /// The strip holds three weeks — previous, current, next — and drags
 /// horizontally between them. Past that, [WeekStrip] refuses to let the student
 /// get lost: whenever a week other than today's is on screen, a green edge glow
-/// appears on **the side they would have to drag toward** to come back, and
-/// tapping it returns in one move. Green, not the accent: it is wayfinding, not
-/// brand.
+/// appears on **the side today's week is actually on**, and tapping it returns
+/// in one move. Green, not the accent: it is wayfinding, not brand.
+///
+/// "The side today is on" and "the side you drag toward" are opposite edges,
+/// and the strip used to light the second — which reads as a sign pointing away
+/// from the place it names. An edge marker is read as *there it is*, never as
+/// *move your finger this way*.
 class WeekStrip extends StatefulWidget {
   const WeekStrip({
     super.key,
@@ -263,9 +267,17 @@ class _WeekStripState extends State<WeekStrip> with TickerProviderStateMixin {
                   if (_week != 0)
                     _ReturnGlow(
                       key: returnGlowKey,
-                      // Past weeks sit toward the start of the travel, so the
-                      // way home is the start edge; future weeks, the end.
-                      atStart: _week < 0,
+                      // The glow marks *where today is*, not which way the
+                      // finger travels to get there. Those are opposite sides,
+                      // and the strip used to show the second: on a past week
+                      // it lit the start edge, while today's week -- being the
+                      // later one -- was sitting off screen past the *end*
+                      // edge. A marker on the right for something to the left
+                      // is a marker pointing the wrong way, in both scripts.
+                      //
+                      // So: on a past week today lies toward the end; on a
+                      // future week, toward the start.
+                      atStart: _week > 0,
                       pulse: _pulse,
                       onTap: () {
                         _drag = 0;

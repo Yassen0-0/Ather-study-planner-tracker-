@@ -13,16 +13,22 @@ class DayHeader extends StatelessWidget {
   const DayHeader({
     super.key,
     required this.title,
-    required this.strip,
+    this.strip,
     this.actions = const <Widget>[],
   });
 
   final String title;
 
-  /// The [WeekStrip] for this screen. Passed in rather than built here: the two
-  /// screens fill its circles from different data and only one of them is a
-  /// picker.
-  final Widget strip;
+  /// The week strip for this screen, or null for a screen that does not pick a
+  /// day.
+  ///
+  /// Passed in rather than built here because the tasks screen fills its
+  /// circles from its own data, and it is the only screen that does: the
+  /// dashboard carried a copy that could not be tapped, selected nothing, and
+  /// reported a fact — "an exam happened on this day" — that the cards directly
+  /// beneath it already state in full. A row of seven circles that answers
+  /// nothing is a row the eye has to skip past to reach the screen.
+  final Widget? strip;
 
   final List<Widget> actions;
 
@@ -57,8 +63,13 @@ class DayHeader extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: AppSpacing.xxl),
-          strip,
+          // Both the gap and the strip go together. Keeping the gap for a
+          // screen with no strip would leave the title floating above 20 of
+          // nothing.
+          if (strip != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.xxl),
+            strip!,
+          ],
         ],
       ),
     );

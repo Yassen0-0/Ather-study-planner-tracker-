@@ -137,4 +137,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(glow, findsNothing);
   });
+
+  /// The glow marks where today *is*, and it used to mark the way the finger
+  /// travels to reach it. Those are opposite edges, so on every week other than
+  /// today's the strip carried a sign pointing away from the thing it named.
+  ///
+  /// Measured rather than reasoned about, because the mistake is a mirror and
+  /// reasoning is exactly what produced it: a past week sits behind today, so
+  /// today is the *later* of the two and lies past the **end** edge -- physical
+  /// left in Arabic, physical right in English. A future week reverses it.
+  group('the glow sits on the side today is actually on', () {
+    /// Drags [dx] and returns whether the glow landed on the physical left.
+    Future<bool> glowOnLeft(WidgetTester tester, double dx) async {
+      await swipe(tester, dx);
+      expect(glow, findsOneWidget);
+      final strip = tester.getRect(find.byType(WeekStrip));
+      return tester.getRect(glow).center.dx < strip.center.dx;
+    }
+
+    testWidgets('Arabic: past week puts today on the left', (tester) async {
+      await tester.pumpWidget(host());
+      await tester.pump();
+      // Under RTL a drag toward the physical left travels toward the end of the
+      // strip, which pulls the previous week in.
+      expect(await glowOnLeft(tester, -120), isTrue);
+    });
+
+    testWidgets('Arabic: future week puts today on the right', (tester) async {
+      await tester.pumpWidget(host());
+      await tester.pump();
+      expect(await glowOnLeft(tester, 120), isFalse);
+    });
+
+    testWidgets('English: past week puts today on the right', (tester) async {
+      await tester.pumpWidget(host(direction: TextDirection.ltr));
+      await tester.pump();
+      expect(await glowOnLeft(tester, 120), isFalse);
+    });
+
+    testWidgets('English: future week puts today on the left', (tester) async {
+      await tester.pumpWidget(host(direction: TextDirection.ltr));
+      await tester.pump();
+      expect(await glowOnLeft(tester, -120), isTrue);
+    });
+  });
 }

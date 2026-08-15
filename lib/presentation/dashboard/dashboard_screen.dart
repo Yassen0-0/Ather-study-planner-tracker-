@@ -18,11 +18,9 @@ import '../../core/widgets/day_header.dart';
 import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/mastery_bar.dart';
-import '../../core/widgets/week_strip.dart';
 import '../../domain/services/summaries.dart';
 import '../common/settings_button.dart';
 import '../common/subject_presentation.dart';
-import '../providers/app_providers.dart';
 import '../providers/navigation_providers.dart';
 import '../providers/summary_providers.dart';
 
@@ -40,17 +38,18 @@ class DashboardScreen extends ConsumerWidget {
     final l = L.of(context);
     final dashboard = ref.watch(dashboardProvider);
     final stats = ref.watch(homeStatsProvider);
-    final now = ref.watch(nowValueProvider);
-    final examDays = ref.watch(examDaysProvider);
     final next = ref.watch(nextTargetProvider);
 
     return AtherScreen(
+      // No week strip. The dashboard's copy was inert -- nothing to select and
+      // nothing to tap -- and the only thing it reported, "an exam happened on
+      // this day", is already stated in full by the cards directly beneath it.
+      // Seven circles that answer no question are seven circles between the
+      // student and the screen. The tasks screen keeps its strip, because there
+      // it picks the day the list belongs to.
       header: DayHeader(
         title: l.dashboardTitle,
         actions: const <Widget>[SettingsButton()],
-        // Here a filled circle means an exam was recorded, and the strip is a
-        // summary rather than a picker — no selection, no tap.
-        strip: WeekStrip(today: now, activeDays: examDays),
       ),
       children: <Widget>[
         // A brand-new student used to land on "—", three zeroes and four
