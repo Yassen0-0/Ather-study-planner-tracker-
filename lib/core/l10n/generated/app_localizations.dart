@@ -1072,7 +1072,7 @@ abstract class L {
   /// No description provided for @authErrorPasswordShort.
   ///
   /// In ar, this message translates to:
-  /// **'الباسورد لازم 6 حروف على الأقل'**
+  /// **'الباسورد لازم 8 حروف على الأقل'**
   String get authErrorPasswordShort;
 
   /// No description provided for @authErrorWrongCredentials.
@@ -1122,6 +1122,54 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'الحساب'**
   String get authAccount;
+
+  /// No description provided for @authDeleteAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب'**
+  String get authDeleteAccount;
+
+  /// No description provided for @authDeleteAccountBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيمسح حسابك، والنسخة السحابية، وكل اللي على التليفون ده: الأبواب والدروس وكل امتحان سجّلته.'**
+  String get authDeleteAccountBody;
+
+  /// No description provided for @authDeleteConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحذف الحساب؟'**
+  String get authDeleteConfirmTitle;
+
+  /// No description provided for @authDeleteConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل امتحان سجّلته هيروح — من التليفون ومن السحابة. مفيش نسخة تانية، ومش هينفع نرجّعه. ده مش هيتراجع.'**
+  String get authDeleteConfirmMessage;
+
+  /// No description provided for @authDeleteConfirmButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح حسابي نهائيًا'**
+  String get authDeleteConfirmButton;
+
+  /// No description provided for @authDeleteNeedsConnection.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الحساب محتاج نت، عشان النسخة السحابية تتمسح هي كمان. اتصل بالنت وجرّب تاني.'**
+  String get authDeleteNeedsConnection;
+
+  /// No description provided for @authDeleteDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب اتمسح'**
+  String get authDeleteDone;
+
+  /// No description provided for @authErrorRecentLogin.
+  ///
+  /// In ar, this message translates to:
+  /// **'لأمان حسابك، سجّل خروج وادخل تاني قبل ما تمسحه.'**
+  String get authErrorRecentLogin;
 
   /// No description provided for @lockUnlock.
   ///

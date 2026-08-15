@@ -82,5 +82,17 @@ final class FakeAuthRepository implements AuthRepository {
     _set(null);
   }
 
+  int deleteAccountCount = 0;
+
+  @override
+  Future<void> deleteAccount() async {
+    deleteAccountCount++;
+    // Before the state change, so a test that arms `nextFailure` gets an
+    // account that is still signed in -- which is the situation a student is in
+    // when deletion fails, and the only one worth asserting about.
+    _maybeThrow();
+    _set(null);
+  }
+
   void dispose() => _controller.close();
 }

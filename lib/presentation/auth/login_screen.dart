@@ -30,6 +30,11 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  /// Minimum length for a **new** password, matching the Identity Platform
+  /// policy. Firebase's own default floor is 6, which is what this was before
+  /// and is too low for a record a student keeps for two years.
+  static const int _minPasswordLength = 8;
+
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
 
@@ -52,6 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     AuthFailure.emailInUse => l.authErrorEmailInUse,
     AuthFailure.network => l.authErrorNoNetwork,
     AuthFailure.tooManyRequests => l.authErrorTooManyAttempts,
+    AuthFailure.requiresRecentLogin => l.authErrorRecentLogin,
     AuthFailure.cancelled || AuthFailure.unknown => l.authErrorGeneric,
   };
 
@@ -70,7 +76,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         setState(() => _failure = AuthFailure.invalidEmail);
         return;
       }
-      if (_password.text.length < 6) {
+      // Checked **only when registering**, and that distinction is the whole
+      // point. The minimum was 6 for both paths, and raising it to 8 across the
+      // board would have locked out every student who already has a 6- or
+      // 7-character password: sign-in does not care how long a password is, so
+      // a client-side floor applied there rejects a *correct* password and
+      // leaves the student staring at "too short" about an account they own.
+      //
+      // 8 matches the Identity Platform policy this pairs with. Enforced here
+      // too so the student gets the answer instantly instead of after a round
+      // trip -- the server remains the one that actually decides.
+      if (_registering && _password.text.length < _minPasswordLength) {
         setState(() => _failure = AuthFailure.weakPassword);
         return;
       }

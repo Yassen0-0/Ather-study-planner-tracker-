@@ -36,6 +36,14 @@ class FakeBackupRepository implements BackupRepository {
 
   int uploadCount = 0;
   int downloadCount = 0;
+  int deleteCount = 0;
+
+  /// Set when [delete] runs, so a test can assert the cloud copy went **before**
+  /// the account did rather than merely that both were called.
+  bool? cloudDeletedBeforeAccountDeleted;
+
+  /// Consulted by [delete] to record the ordering above.
+  int Function()? accountDeleteCount;
 
   @override
   Future<BackupMetadata?> readMetadata() async {
@@ -55,5 +63,14 @@ class FakeBackupRepository implements BackupRepository {
     uploadCount++;
     if (failure != null) throw BackupException(failure!);
     stored = backup;
+  }
+
+  @override
+  Future<void> delete() async {
+    deleteCount++;
+    cloudDeletedBeforeAccountDeleted = (accountDeleteCount?.call() ?? 0) == 0;
+    if (failure != null) throw BackupException(failure!);
+    stored = null;
+    metadata = null;
   }
 }

@@ -27,6 +27,12 @@ enum AuthFailure {
   /// nothing at all for this.
   cancelled,
 
+  /// Firebase will not delete an account on a session it considers stale, and
+  /// a student who signed in weeks ago and never signed out has exactly that.
+  /// The remedy is to sign out and back in, so the copy has to say so — this
+  /// arriving as [unknown] would read as "deleting is broken".
+  requiresRecentLogin,
+
   unknown,
 }
 
@@ -60,4 +66,19 @@ abstract interface class AuthRepository {
   Future<void> sendPasswordReset(String email);
 
   Future<void> signOut();
+
+  /// Deletes the account itself, permanently.
+  ///
+  /// **This is not the whole of "delete my account", and must never be called on
+  /// its own.** Firebase deletes the Auth user and nothing else: the student's
+  /// backup document at `users/{uid}/backup/snapshot` is left behind, and with
+  /// the account gone there is no longer any uid that satisfies the security
+  /// rules for it — so the record becomes unreachable, undeletable, and
+  /// permanent. Measured on the live project on 2026-08-15: deleting the user
+  /// left the document sitting there until a separate explicit delete removed
+  /// it.
+  ///
+  /// The cloud copy therefore goes **first**. `Settings` owns that order; see
+  /// `_DeleteAccountCard`.
+  Future<void> deleteAccount();
 }

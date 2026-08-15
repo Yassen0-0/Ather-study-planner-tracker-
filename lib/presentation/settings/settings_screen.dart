@@ -14,6 +14,7 @@ import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/error_banner.dart';
+import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/backup_repository.dart';
 import '../common/prompts.dart';
 import '../common/write_guard.dart';
@@ -21,6 +22,7 @@ import '../providers/app_providers.dart';
 import '../providers/auth_providers.dart';
 import '../providers/backup_providers.dart';
 import '../providers/notification_providers.dart';
+import '../providers/task_providers.dart';
 
 /// A short list of cards and nothing else.
 ///
@@ -183,6 +185,8 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+          const _DeleteAccountCard(),
         ],
         const SizedBox(height: AppSpacing.md),
         AtherCard(
@@ -211,6 +215,150 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Deleting the account, and the order that keeps it from being a lie.
+///
+/// **Play requires this**, for any app a student can create an account in. But
+/// the requirement is not "call `user.delete()`" — it is that the student's data
+/// actually goes, and the obvious implementation fails that in a way nobody sees:
+/// Firebase deletes the Auth user and leaves `users/{uid}/backup/snapshot`
+/// exactly where it was. The security rules key that document on
+/// `request.auth.uid == uid`, so once the account is gone **no caller can ever
+/// satisfy them again**. The record becomes unreachable and permanent, and the
+/// app has just told the student it deleted everything.
+///
+/// Measured, not assumed: on 2026-08-15 a live account was deleted and its
+/// document was still there afterwards, and needed a separate explicit delete.
+///
+/// So the order is **cloud, then account, then device**, and the first failure
+/// stops the sequence:
+///
+/// 1. **Cloud copy.** If this fails, nothing else runs. The student keeps their
+///    account and their data, and is told to try again with a connection —
+///    which is recoverable. Deleting the account first would not be.
+/// 2. **The account.** If this fails, the cloud copy is already gone, but that
+///    is the harmless half: the backup is a mirror, not a source of truth
+///    (PROJECT.md §3.26), the local database is untouched, and the next
+///    successful backup rebuilds it.
+/// 3. **The device.** Last, because it is the copy the student is holding, and
+///    the only step that cannot be undone by a retry.
+class _DeleteAccountCard extends ConsumerStatefulWidget {
+  const _DeleteAccountCard();
+
+  @override
+  ConsumerState<_DeleteAccountCard> createState() => _DeleteAccountCardState();
+}
+
+class _DeleteAccountCardState extends ConsumerState<_DeleteAccountCard> {
+  bool _busy = false;
+
+  Future<void> _delete() async {
+    if (_busy) return;
+
+    final l = L.of(context);
+    final confirmed = await confirmDestructive(
+      context,
+      title: l.authDeleteConfirmTitle,
+      message: l.authDeleteConfirmMessage,
+      confirmLabel: l.authDeleteConfirmButton,
+    );
+    if (!confirmed || !mounted) return;
+
+    // Everything the messages need is resolved *before* the first await. The
+    // account going away pops this screen out from under us, so by the time the
+    // last toast is shown there may be no element left to read `L` from.
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    final direction = Directionality.of(context);
+    final needsConnection = l.authDeleteNeedsConnection;
+    final recentLogin = l.authErrorRecentLogin;
+    final generic = l.commonSomethingWentWrong;
+    final done = l.authDeleteDone;
+
+    void say(String message, {bool failed = true}) {
+      if (overlay == null) return;
+      showAtherToastOn(
+        overlay,
+        direction,
+        message,
+        tone: failed ? ToastTone.failed : ToastTone.done,
+      );
+    }
+
+    setState(() => _busy = true);
+
+    // 1. The cloud copy, first and blocking.
+    try {
+      await ref.read(backupRepositoryProvider).delete();
+    } on BackupException catch (error) {
+      if (mounted) setState(() => _busy = false);
+      // Offline is the likely one and it has its own copy, because "something
+      // went wrong" would send the student back to a button that will keep
+      // failing for a reason they could have fixed.
+      say(
+        error.failure == BackupFailure.offline ||
+                error.failure == BackupFailure.notSignedIn
+            ? needsConnection
+            : generic,
+      );
+      return;
+    }
+
+    // 2. The account.
+    try {
+      await ref.read(authRepositoryProvider).deleteAccount();
+    } on AuthException catch (error) {
+      if (mounted) setState(() => _busy = false);
+      say(
+        error.failure == AuthFailure.requiresRecentLogin
+            ? recentLogin
+            : generic,
+      );
+      return;
+    }
+
+    // 3. The device. Not guarded by `mounted`: the auth stream has already
+    // emitted null and the router is tearing this screen down, but the wipe
+    // must finish regardless -- a student whose account is gone while their
+    // exam history sits on the phone is the failure this whole card exists to
+    // prevent.
+    await ref.read(studyRepositoryProvider).clear();
+    await ref.read(taskRepositoryProvider).clearTasks();
+    // Cleared so the next student to sign in on this phone is not measured
+    // against a uid that no longer exists.
+    await ref.read(sharedPreferencesProvider).remove(kLastAccountUidKey);
+
+    say(done, failed: false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.of(context);
+
+    return AtherCard(
+      padding: AppSpacing.cardPaddingLarge,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(l.authDeleteAccount, style: AppTypography.cardTitle),
+          const SizedBox(height: 6),
+          // Names the three things that go. A bare "delete account" reads as
+          // though it removes a login, and the student would not learn what it
+          // costs until it had already happened.
+          Text(
+            l.authDeleteAccountBody,
+            style: context.text.secondary.copyWith(height: 1.6),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          PrimaryButton(
+            label: l.authDeleteAccount,
+            tone: PrimaryButtonTone.wrong,
+            onTap: _busy ? null : _delete,
+          ),
+        ],
+      ),
     );
   }
 }

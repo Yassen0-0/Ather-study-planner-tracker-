@@ -568,7 +568,7 @@ class LAr extends L {
   String get authErrorEmailInvalid => 'الإيميل مش مظبوط';
 
   @override
-  String get authErrorPasswordShort => 'الباسورد لازم 6 حروف على الأقل';
+  String get authErrorPasswordShort => 'الباسورد لازم 8 حروف على الأقل';
 
   @override
   String get authErrorWrongCredentials => 'الإيميل أو الباسورد غلط';
@@ -595,6 +595,34 @@ class LAr extends L {
 
   @override
   String get authAccount => 'الحساب';
+
+  @override
+  String get authDeleteAccount => 'حذف الحساب';
+
+  @override
+  String get authDeleteAccountBody =>
+      'بيمسح حسابك، والنسخة السحابية، وكل اللي على التليفون ده: الأبواب والدروس وكل امتحان سجّلته.';
+
+  @override
+  String get authDeleteConfirmTitle => 'تحذف الحساب؟';
+
+  @override
+  String get authDeleteConfirmMessage =>
+      'كل امتحان سجّلته هيروح — من التليفون ومن السحابة. مفيش نسخة تانية، ومش هينفع نرجّعه. ده مش هيتراجع.';
+
+  @override
+  String get authDeleteConfirmButton => 'امسح حسابي نهائيًا';
+
+  @override
+  String get authDeleteNeedsConnection =>
+      'مسح الحساب محتاج نت، عشان النسخة السحابية تتمسح هي كمان. اتصل بالنت وجرّب تاني.';
+
+  @override
+  String get authDeleteDone => 'الحساب اتمسح';
+
+  @override
+  String get authErrorRecentLogin =>
+      'لأمان حسابك، سجّل خروج وادخل تاني قبل ما تمسحه.';
 
   @override
   String get lockUnlock => 'افتح';

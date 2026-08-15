@@ -143,6 +143,14 @@ class FirestoreBackupRepository implements BackupRepository {
     );
   }
 
+  @override
+  Future<void> delete() async {
+    // Firestore's `delete()` succeeds on a document that does not exist, which
+    // is the behaviour account deletion wants: a student who never turned cloud
+    // backup on has nothing here, and that must not stop them deleting.
+    await _guard(() async => _doc().delete().timeout(_timeout));
+  }
+
   /// Translates every transport failure into a [BackupFailure] at the boundary,
   /// so no Firebase type and no English error string escapes this file.
   Future<T> _guard<T>(Future<T> Function() action) async {

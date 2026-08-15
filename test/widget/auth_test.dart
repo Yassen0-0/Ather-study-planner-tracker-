@@ -167,11 +167,60 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('الإيميل مش مظبوط'), findsOneWidget);
 
+    // A short password on **sign-in** is not refused here, and that is
+    // deliberate. The minimum used to apply to both paths; raising it to 8 with
+    // that shape would have locked out every student who already has a 6- or
+    // 7-character password, because sign-in does not care how long a password
+    // is -- only whether it is right. A local floor there rejects a *correct*
+    // password and blames the student for an account they own.
     await tester.enterText(find.byType(TextField).at(0), 'student@example.com');
-    await tester.enterText(find.byType(TextField).at(1), '123');
+    await tester.enterText(find.byType(TextField).at(1), '123456');
     await tester.tap(find.text('دخول'));
     await tester.pumpAndSettle();
-    expect(find.text('الباسورد لازم 6 حروف على الأقل'), findsOneWidget);
+    expect(
+      find.text('الباسورد لازم 8 حروف على الأقل'),
+      findsNothing,
+      reason: 'the server decides whether an existing password is right',
+    );
+  });
+
+  testWidgets('a new password must reach 8 characters', (tester) async {
+    final auth = FakeAuthRepository();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth));
+    await tester.pumpAndSettle();
+
+    // The mode toggle sits at the bottom of a scrolling form, below the fold on
+    // the default test viewport, so it has to be brought into view the same way
+    // a student would.
+    final toggle = find.text('لسه مش عامل حساب؟ اعمل واحد');
+    await tester.ensureVisible(toggle);
+    await tester.pumpAndSettle();
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'student@example.com');
+    // Six characters: Firebase's own default floor, and what this app accepted
+    // until the audit on 2026-08-15 found '123456' being taken by the live
+    // project.
+    await tester.enterText(find.byType(TextField).at(1), '123456');
+    final submit = find.text('إنشاء حساب');
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+    expect(find.text('الباسورد لازم 8 حروف على الأقل'), findsOneWidget);
+
+    // And nothing was sent: validation refuses before the network is touched.
+    expect(auth.currentAccount, isNull);
+
+    await tester.enterText(find.byType(TextField).at(1), '12345678');
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+    expect(auth.currentAccount, isNotNull);
   });
 
   testWidgets('signing out returns to the gate', (tester) async {

@@ -69,4 +69,15 @@ abstract interface class BackupRepository {
   Future<StudyBackup?> download();
 
   Future<void> upload(StudyBackup backup);
+
+  /// Removes the student's cloud copy entirely.
+  ///
+  /// Exists for account deletion, which is the one operation that has to be able
+  /// to reach this document — nothing else in the app ever deletes a backup,
+  /// because a backup that can vanish is not a backup.
+  ///
+  /// Deleting a document that was never there is a success, not an error: a
+  /// student who never enabled cloud backup must still be able to delete their
+  /// account.
+  Future<void> delete();
 }

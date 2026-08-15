@@ -127,6 +127,33 @@ final class FirebaseAuthRepository implements AuthRepository {
     await _auth.signOut();
   }
 
+  @override
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    // Already gone. Treated as success so a retry after a partial failure
+    // finishes rather than reporting an error about work already done.
+    if (user == null) return;
+
+    try {
+      await user.delete();
+    } on fb.FirebaseAuthException catch (e) {
+      throw AuthException(_map(e));
+    } catch (_) {
+      throw const AuthException(AuthFailure.unknown);
+    }
+
+    // Google's own session survives `user.delete()`, and leaving it in place
+    // pre-selects the account that was just deleted on the next attempt --
+    // which reads as the deletion not having worked.
+    if (_googleInitialised) {
+      try {
+        await _google.signOut();
+      } catch (_) {
+        // Never let the Google plugin turn a completed deletion into a failure.
+      }
+    }
+  }
+
   static AuthFailure _map(fb.FirebaseAuthException e) => switch (e.code) {
     'invalid-email' => AuthFailure.invalidEmail,
     'weak-password' => AuthFailure.weakPassword,
@@ -140,6 +167,7 @@ final class FirebaseAuthRepository implements AuthRepository {
     'user-disabled' => AuthFailure.wrongCredentials,
     'network-request-failed' => AuthFailure.network,
     'too-many-requests' => AuthFailure.tooManyRequests,
+    'requires-recent-login' => AuthFailure.requiresRecentLogin,
     _ => AuthFailure.unknown,
   };
 }

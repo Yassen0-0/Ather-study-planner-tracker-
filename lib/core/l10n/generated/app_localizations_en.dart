@@ -567,7 +567,7 @@ class LEn extends L {
 
   @override
   String get authErrorPasswordShort =>
-      'The password needs at least 6 characters';
+      'The password needs at least 8 characters';
 
   @override
   String get authErrorWrongCredentials => 'Wrong email or password';
@@ -595,6 +595,34 @@ class LEn extends L {
 
   @override
   String get authAccount => 'Account';
+
+  @override
+  String get authDeleteAccount => 'Delete account';
+
+  @override
+  String get authDeleteAccountBody =>
+      'Deletes your account, your cloud copy, and everything on this phone: chapters, lessons, and every exam you have recorded.';
+
+  @override
+  String get authDeleteConfirmTitle => 'Delete your account?';
+
+  @override
+  String get authDeleteConfirmMessage =>
+      'Every exam you have recorded will be gone — from this phone and from the cloud. There is no other copy and we cannot bring it back. This cannot be undone.';
+
+  @override
+  String get authDeleteConfirmButton => 'Delete my account permanently';
+
+  @override
+  String get authDeleteNeedsConnection =>
+      'Deleting your account needs a connection, so the cloud copy goes with it. Connect and try again.';
+
+  @override
+  String get authDeleteDone => 'Account deleted';
+
+  @override
+  String get authErrorRecentLogin =>
+      'For your security, sign out and sign in again before deleting your account.';
 
   @override
   String get lockUnlock => 'Unlock';
