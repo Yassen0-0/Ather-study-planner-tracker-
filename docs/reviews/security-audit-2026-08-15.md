@@ -86,7 +86,9 @@ The declared audience includes under-18 students, which triggers **Google Play F
 | Email address | Firebase Auth | Collected, transmitted, tied to identity |
 | Display name | Firebase Auth (Google sign-in) | Collected, transmitted |
 | Firebase uid | Auth + Firestore path | Collected, transmitted |
-| Study record (gzipped JSON blob) | Firestore `users/{uid}/backup/snapshot` | Collected, transmitted, **opt-in** |
+| Study record (gzipped JSON blob) | Firestore `users/{uid}/backup/snapshot` | Collected, transmitted, **automatic — not optional** |
+
+**Correction, 2026-08-15 (same day).** An earlier revision of this report called cloud backup "opt-in". It is not. `BackupSyncNotifier` uploads on a 20-second debounce after any write and again when the app backgrounds, for every signed-in student, with no toggle anywhere — and the auth gate makes signing in mandatory to use the app at all. So **every** student's exam history is transmitted to Firestore by default. The Data safety form must declare it as automatic collection, and the privacy policy must not imply a choice the student does not have. The consequences for LOW-1 are worked through there.
 
 **The genuinely good news:** there are no ads, no analytics SDK, no crash reporter, and no third-party trackers. Dependency review confirms it — the only network-capable packages are `firebase_core`, `firebase_auth`, `cloud_firestore`, and `google_sign_in`. That makes the Families Policy questionnaire dramatically easier to pass honestly, and it is a real asset. Do not add an analytics SDK before launch without revisiting this section.
 
@@ -167,7 +169,15 @@ No `dataExtractionRules` governs device-to-device transfer either. So the unencr
 
 **This is presented as a decision, not a defect, because it cuts both ways.** Against confidentiality: the record leaves the device without the student ever opting into cloud backup. For durability: it is the *only* thing that recovers a student's history after a lost or broken phone when they never enabled Ather's own backup — which is the exact harm CLAUDE.md Rule 1 exists to prevent, arriving through a door Rule 1 does not watch.
 
-Given the audience is minors and cloud backup is already offered explicitly and opt-in, the recommendation is to **declare the flag deliberately** rather than leave it defaulted — and whichever way it goes, write down why. If it stays on, it must appear in the Data safety declaration.
+**Revised 2026-08-15, after the "opt-in" correction above — and the revision moves the recommendation.**
+
+The original argument for leaving Auto Backup on was durability: cloud backup was believed to be opt-in, so Auto Backup was the only thing standing between a student who never enabled it and a lost phone. That premise was wrong. Every signed-in student already gets an automatic Firestore copy, and `BackupSyncGate._restoreIfEmpty` pulls it down onto a new phone by itself. So the durability case for Auto Backup is far narrower than stated.
+
+It is nearly empty, in fact: **Android Auto Backup only runs on an unmetered network** (charging and idle besides), so the offline-only student the argument was built around is not covered by it either. Both recovery paths need the same network.
+
+What genuinely remains is the case where the Firestore copy cannot be written while Auto Backup still could — most concretely a record that exceeds `_maxBlobBytes` and fails with `BackupFailure.tooLarge` (see LOW-3/§J). That is real, but it argues for fixing the ceiling rather than for keeping a second uncontrolled copy of a minor's exam history in a different place.
+
+**Recommendation, corrected: set `android:allowBackup="false"`** — the durability it buys is marginal and duplicated, and the audience is minors. It is left at `true` in the code for now, declared explicitly with the reasoning, because flipping it is a behaviour change that removes a recovery path and that is the app owner's call, not the auditor's. Either way it must appear in the Data safety declaration while it is on.
 
 ## LOW-2 · Local database is unencrypted · [S]
 

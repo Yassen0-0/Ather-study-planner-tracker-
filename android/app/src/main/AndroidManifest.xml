@@ -8,9 +8,68 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
+    <!-- Android Auto Backup, declared on purpose rather than defaulted.
+         Decided 2026-08-15, during the pre-Play security audit.
+
+         `allowBackup` defaults to **true**, so this line changes no behaviour at
+         all. It is here because "true by inheritance" and "true on purpose" are
+         indistinguishable in a diff, and this flag decides whether a student's
+         entire exam history leaves the phone.
+
+         What it means: the SQLite record (`app_flutter/sahm.sqlite`) and the
+         preferences beside it are uploaded to **the student's own Google
+         account** — encrypted with their device credential, which Google itself
+         cannot read on Android 9+ — and restored automatically onto their next
+         phone.
+
+         Why it is still true, and why that is an open question rather than a
+         settled one. The first draft of this comment argued that Ather's own
+         cloud backup is opt-in, so Auto Backup was the only thing standing
+         between a student who never enabled it and a lost phone. **That was
+         wrong.** `BackupSyncNotifier` uploads on a 20-second debounce after any
+         write and again when the app backgrounds, for every signed-in student,
+         and the auth gate makes signing in mandatory — so every student already
+         has an automatic Firestore copy, and `BackupSyncGate._restoreIfEmpty`
+         pulls it onto a new phone unaided.
+
+         Auto Backup also only runs on an **unmetered** network, so it does not
+         rescue the offline-only student that argument was built around either.
+         Both paths need the same connection.
+
+         What is left is the narrow case where Firestore cannot take the record
+         but Auto Backup could — most concretely a student whose compressed
+         record passes `_maxBlobBytes` and fails with `BackupFailure.tooLarge`,
+         who then has no Ather-side cloud copy at all. That is real, and it is
+         an argument for raising or paging that ceiling rather than for keeping
+         a second uncontrolled copy of a minor's exam history somewhere else.
+
+         So the audit's corrected recommendation is **false**, and this is
+         deliberately left at true: flipping it removes a recovery path, however
+         narrow, and CLAUDE.md Rule 1 says that is not a change to make casually
+         or on an auditor's say-so. It is the app owner's call. If it flips, it is
+         a one-line change here and a line in the Data safety form.
+
+         **The database and the preferences are one unit — never back up one
+         without the other.** `app_flutter/sahm.sqlite` holds the record and
+         `shared_prefs` holds `last_account_uid`, and §3.30's "the device belongs
+         to one account at a time" wipe compares an incoming uid against that
+         preference. Restore the database without the preference and `previous`
+         reads null, the wipe never fires, and the *second* student to sign in on
+         a restored phone opens the *first* student's curriculum. Excluding
+         `shared_prefs` for privacy would look like a tightening and would
+         actually reintroduce the exact data-mixing bug §3.30 was written to fix.
+
+         Not done, and deliberately left as a follow-up: an `<include>` allowlist
+         that backs up the study data while excluding Firebase's cached auth
+         token, so a restored phone asks for a sign-in instead of arriving already
+         signed in. That is a better posture, but an allowlist that names the
+         wrong backup domain silently drops the database from every backup, and
+         verifying it needs a real backup → wipe → restore cycle on a device we
+         are free to erase. Do not add it without running that cycle. -->
     <application
         android:label="Ather"
         android:name="${applicationName}"
+        android:allowBackup="true"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

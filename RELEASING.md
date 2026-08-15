@@ -77,6 +77,46 @@ re-download `google-services.json` into `android/app/`.
 
 The debug key's SHA-1 is already registered, which is why it works locally.
 
+### 3a. And then the **Play App Signing** key, which is a third key
+
+**This is the step that breaks sign-in for every student who installs from the
+store, and it cannot be caught by any test run on this machine.**
+
+With Play App Signing — which Play enrols you in and which you cannot opt out of
+for a new app — the bundle you upload is signed with the *upload* key, and Play
+then **re-signs the app with a different key of its own** before shipping it. The
+certificate on the APK a student installs is therefore neither the upload key nor
+the debug key. It is a third fingerprint that does not exist on this machine and
+is not in `google-services.json`.
+
+Google Sign-In authenticates by *package name + signing certificate*. So:
+
+| Build | Signed with | Google Sign-In |
+|---|---|---|
+| `flutter run` | debug key | works — SHA-1 registered |
+| `flutter build apk --release`, side-loaded | upload key | works — SHA-1 registered |
+| **anything installed from Play** | **Play's key** | **fails: `ApiException: 10`** |
+
+Every local verification passes. The signed-release run recorded in PROJECT.md §9
+proves the *upload* key works and says nothing at all about this. The first
+failure is a real student tapping "Continue with Google" and watching the account
+sheet open and die.
+
+**After the first bundle is uploaded** (the key does not exist before then):
+
+1. Play Console → **Release → Setup → App signing**.
+2. Copy the **SHA-1** and **SHA-256** under *App signing key certificate* — not
+   the upload key certificate below it.
+3. Firebase console → same place as above → **Add fingerprint** for both.
+4. Re-download `google-services.json` into `android/app/` and commit it.
+
+Do this before promoting to **any** track a person other than you can install
+from — internal testing is Play-signed too, so "it's only internal testing" is
+exactly the situation this fails in.
+
+Verify by installing from the store track itself and signing in with Google. A
+side-loaded APK cannot verify this, because it is signed with the wrong key.
+
 ---
 
 ## 4. Building
