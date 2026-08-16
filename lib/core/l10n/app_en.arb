@@ -227,6 +227,7 @@
   "lockSetting": "Fingerprint lock",
 
   "settingsTitle": "Settings",
+  "settingsPreferences": "Preferences",
   "settingsLanguage": "Language",
   "settingsLanguageArabic": "العربية",
   "settingsLanguageEnglish": "English",

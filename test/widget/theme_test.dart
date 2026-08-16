@@ -81,6 +81,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Settings shows the *current* theme on its row and offers the alternatives
+  /// in a sheet, so picking one is two taps now rather than a segment on the
+  /// page. The row and the sheet both carry the mode's name, so the tap has to
+  /// be aimed at the sheet's copy -- the last one built.
+  Future<void> pickTheme(WidgetTester tester, String label) async {
+    await tester.tap(find.text('المظهر'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(label).hitTestable().last);
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('switching to dark repaints without a relaunch', (tester) async {
     tester.view.physicalSize = const Size(390 * 3, 900 * 3);
     tester.view.devicePixelRatio = 3;
@@ -92,8 +103,7 @@ void main() {
     expect(paletteOnScreen(tester), AppColors.light);
 
     await openSettings(tester);
-    await tester.tap(find.text('داكن'));
-    await tester.pumpAndSettle();
+    await pickTheme(tester, 'داكن');
 
     expect(paletteOnScreen(tester), AppColors.dark);
 
@@ -106,8 +116,7 @@ void main() {
     expect(paletteOnScreen(tester), AppColors.dark);
 
     await openSettings(tester);
-    await tester.tap(find.text('فاتح'));
-    await tester.pumpAndSettle();
+    await pickTheme(tester, 'فاتح');
     expect(paletteOnScreen(tester), AppColors.light);
   });
 
@@ -121,8 +130,7 @@ void main() {
     await tester.pumpWidget(await boot());
     await tester.pumpAndSettle();
     await openSettings(tester);
-    await tester.tap(find.text('داكن'));
-    await tester.pumpAndSettle();
+    await pickTheme(tester, 'داكن');
 
     final preferences = await SharedPreferences.getInstance();
     // Stored by name, not index -- reordering ThemeMode must not reinterpret
@@ -155,8 +163,7 @@ void main() {
 
     // But an explicit choice outranks the OS.
     await openSettings(tester);
-    await tester.tap(find.text('داكن'));
-    await tester.pumpAndSettle();
+    await pickTheme(tester, 'داكن');
     expect(paletteOnScreen(tester), AppColors.dark);
   });
 }

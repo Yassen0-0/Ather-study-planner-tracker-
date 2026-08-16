@@ -105,6 +105,46 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('the two ways out of an account are the last rows on the page', (
+    tester,
+  ) async {
+    // The ordering is a safety property, not a layout preference: a student
+    // who reaches "حذف الحساب" has scrolled past every setting to get there,
+    // and that scroll is the difference between "I want this" and "I was
+    // looking for notifications". It was held up by a comment until now.
+    phoneSized(tester);
+    final auth = FakeAuthRepository.signedIn();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth, FakeBackupRepository.failing()));
+    await tester.pumpAndSettle();
+    await openSettings(tester);
+    await reachDeleteButton(tester);
+
+    double bottomOf(String label) =>
+        tester.getRect(find.text(label).hitTestable().first).top;
+
+    final signOut = bottomOf('تسجيل الخروج');
+    final delete = bottomOf('حذف الحساب');
+
+    // Every other row on the page sits above both of them, and delete is last.
+    for (final earlier in <String>[
+      'الخصوصية',
+      'عن التطبيق',
+      'اللغة',
+      'المظهر',
+    ]) {
+      expect(
+        bottomOf(earlier),
+        lessThan(signOut),
+        reason: '"$earlier" must come before the account actions',
+      );
+    }
+    expect(signOut, lessThan(delete));
+
+    await closeApp(tester);
+  });
+
   testWidgets('deleting the account wipes the device, the cloud and the account', (tester) async {
     phoneSized(tester);
     final auth = FakeAuthRepository.signedIn();

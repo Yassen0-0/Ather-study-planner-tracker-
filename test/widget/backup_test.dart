@@ -88,6 +88,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// The backup left the Settings page for a screen of its own: the row there
+  /// shows only when it last saved, which is the part read at a glance.
+  Future<void> openBackup(WidgetTester tester) async {
+    await openSettings(tester);
+    await tester.tap(find.text('النسخة السحابية'));
+    await tester.pumpAndSettle();
+  }
+
   StudyBackup cloudCopy() => StudyBackup(
     chapters: <Chapter>[
       Chapter(id: 1, subjectId: 1, name: 'باب من السحابة', createdAt: now),
@@ -157,9 +165,7 @@ void main() {
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();
-    await openSettings(tester);
-
-    expect(find.text('النسخة السحابية'), findsOneWidget);
+    await openBackup(tester);
 
     await tester.tap(find.text('احفظ الآن'));
     await tester.pumpAndSettle();
@@ -334,7 +340,7 @@ void main() {
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();
-    await openSettings(tester);
+    await openBackup(tester);
 
     await tester.tap(find.text('استرجاع النسخة السحابية'));
     await tester.pumpAndSettle();
@@ -362,7 +368,7 @@ void main() {
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();
-    await openSettings(tester);
+    await openBackup(tester);
 
     await tester.tap(find.text('استرجاع النسخة السحابية'));
     await tester.pumpAndSettle();

@@ -1267,6 +1267,12 @@ abstract class L {
   /// **'الإعدادات'**
   String get settingsTitle;
 
+  /// No description provided for @settingsPreferences.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفضيلات'**
+  String get settingsPreferences;
+
   /// No description provided for @settingsLanguage.
   ///
   /// In ar, this message translates to:

@@ -678,6 +678,9 @@ class LAr extends L {
   String get settingsTitle => 'الإعدادات';
 
   @override
+  String get settingsPreferences => 'التفضيلات';
+
+  @override
   String get settingsLanguage => 'اللغة';
 
   @override

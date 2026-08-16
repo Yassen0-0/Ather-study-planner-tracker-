@@ -678,6 +678,9 @@ class LEn extends L {
   String get settingsTitle => 'Settings';
 
   @override
+  String get settingsPreferences => 'Preferences';
+
+  @override
   String get settingsLanguage => 'Language';
 
   @override

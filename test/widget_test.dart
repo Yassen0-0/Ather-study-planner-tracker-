@@ -185,7 +185,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('English'));
+    // The language row shows the current choice and offers the alternatives in
+    // a sheet; "English" appears on both, so aim at the sheet's copy.
+    await tester.tap(find.text('اللغة'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English').hitTestable().last);
     await tester.pumpAndSettle();
 
     // Settings is pushed over the shell; return to the dashboard to confirm the
