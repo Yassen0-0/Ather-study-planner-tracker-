@@ -8,10 +8,22 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
+    <!-- `allowBackup` has no default worth inheriting: leave it out and Android
+         reads it as **true with no rules**, which is how the study database
+         ended up eligible for Google's Auto Backup and, on API <= 30, for
+         `adb backup -noapk com.ather.app` off an unlocked phone. Both routes go
+         around the biometric lock in Settings, which exists to stop exactly
+         that. Backup stays on -- a student moving to a new phone should keep
+         their settings -- but what may leave the device is now written down.
+         See res/xml/backup_rules.xml (API <= 30) and
+         res/xml/data_extraction_rules.xml (API >= 31). -->
     <application
         android:label="Ather"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

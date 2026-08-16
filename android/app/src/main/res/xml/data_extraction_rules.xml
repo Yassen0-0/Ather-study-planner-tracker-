@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12 and above (API >= 31), where the platform finally distinguishes the
+  two things `allowBackup` used to conflate.
+
+  **cloud-backup** is a copy sitting in Google's storage for as long as the
+  account exists. The study database is excluded there for the same reason as in
+  `backup_rules.xml`: Ather already keeps an account-keyed copy in Firestore, so
+  a second uncontrolled copy buys the student nothing and costs them a second
+  place their record can be read from.
+
+  **device-transfer** is the student standing in front of both phones, moving to
+  a new one. The database is *kept* here — that is the migration the feature
+  exists for, it never leaves the two devices, and refusing it would make a new
+  phone start empty for a student who had been offline since their last edit.
+
+  The Firebase Auth session is excluded from **both**. A refresh token restored
+  onto another device is a signed-in session nobody authenticated for; the
+  student signs in once on the new phone instead, which is the sentence the
+  login screen already promises.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="sahm.sqlite" />
+        <exclude domain="file" path="sahm.sqlite-wal" />
+        <exclude domain="file" path="sahm.sqlite-shm" />
+        <exclude domain="sharedpref" path="com.google.firebase.auth.api.Store.W0RFRkFVTFRd+MTo4ODI2MDY3MjU3MjA6YW5kcm9pZDpmN2U5MTA5ZDQ2MjBlODQ0MjBjODJk.xml" />
+        <exclude domain="sharedpref" path="com.google.firebase.auth.api.crypto.W0RFRkFVTFRd+MTo4ODI2MDY3MjU3MjA6YW5kcm9pZDpmN2U5MTA5ZDQ2MjBlODQ0MjBjODJk.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="com.google.firebase.auth.api.Store.W0RFRkFVTFRd+MTo4ODI2MDY3MjU3MjA6YW5kcm9pZDpmN2U5MTA5ZDQ2MjBlODQ0MjBjODJk.xml" />
+        <exclude domain="sharedpref" path="com.google.firebase.auth.api.crypto.W0RFRkFVTFRd+MTo4ODI2MDY3MjU3MjA6YW5kcm9pZDpmN2U5MTA5ZDQ2MjBlODQ0MjBjODJk.xml" />
+    </device-transfer>
+</data-extraction-rules>

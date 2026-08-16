@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 11 and below (API <= 30): what Google's Auto Backup and `adb backup`
+  are allowed to take out of this app.
+
+  Two things are excluded, and for two different reasons.
+
+  `sahm.sqlite` is the whole study record — every chapter, lesson and exam a
+  student has ever entered. Before this file existed, `android:allowBackup`
+  defaulted to true with no rules attached, so that database was copied
+  wholesale into whatever backup transport the device had, and on API <= 30 it
+  could be pulled off the phone with `adb backup -noapk com.ather.app` by
+  anyone holding an unlocked device with USB debugging on. That path walks
+  straight past the biometric app lock in Settings, which is the one control a
+  student turns on precisely to stop somebody with their phone reading it.
+
+  The Firebase Auth preference files hold the session — a refresh token that
+  mints access tokens for the account. A session is bound to the device that
+  authenticated; carrying it into a backup means restoring it somewhere else,
+  which is a signed-in session the student never created.
+
+  Nothing is lost by excluding the database: Ather keeps its own account-keyed
+  backup in Firestore (`FirestoreBackupRepository`), it uploads without being
+  asked, and a restore onto an empty device happens automatically the moment the
+  student signs in. That copy is better than Google's for this app — it is
+  keyed to the account rather than the phone, so it survives a factory reset, a
+  different OEM, and a student who never enabled Google backup at all.
+-->
+<full-backup-content>
+    <exclude domain="file" path="sahm.sqlite" />
+    <exclude domain="file" path="sahm.sqlite-wal" />
+    <exclude domain="file" path="sahm.sqlite-shm" />
+    <exclude domain="sharedpref" path="com.google.firebase.auth.api.Store.W0RFRkFVTFRd+MTo4ODI2MDY3MjU3MjA6YW5kcm9pZDpmN2U5MTA5ZDQ2MjBlODQ0MjBjODJk.xml" />
+    <exclude domain="sharedpref" path="com.google.firebase.auth.api.crypto.W0RFRkFVTFRd+MTo4ODI2MDY3MjU3MjA6YW5kcm9pZDpmN2U5MTA5ZDQ2MjBlODQ0MjBjODJk.xml" />
+</full-backup-content>
