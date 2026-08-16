@@ -71,12 +71,12 @@ class SettingsScreen extends ConsumerWidget {
       header: AtherHeader(title: l.settingsTitle, onBack: () => context.pop()),
       children: <Widget>[
         AtherCard(
-          padding: AppSpacing.cardPaddingLarge,
+          padding: AppSpacing.cardPadding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(l.settingsLanguage, style: AppTypography.cardTitle),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xl),
               SegmentedControl(
                 labels: <String>[
                   l.settingsLanguageArabic,
@@ -95,21 +95,14 @@ class SettingsScreen extends ConsumerWidget {
         // language row above it, deliberately: a second way of presenting a
         // three-way choice would be a new pattern to learn for no gain.
         AtherCard(
-          padding: AppSpacing.cardPaddingLarge,
+          padding: AppSpacing.cardPadding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(l.settingsTheme, style: AppTypography.cardTitle),
               const SizedBox(height: AppSpacing.xxs),
-              Text(
-                l.settingsThemeBody,
-                style: AppTypography.style(
-                  size: 13,
-                  weight: AppTypography.medium,
-                  color: context.colors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
+              Text(l.settingsThemeBody, style: context.text.sublabel),
+              const SizedBox(height: AppSpacing.xl),
               SegmentedControl(
                 labels: <String>[
                   l.settingsThemeLight,
@@ -129,7 +122,7 @@ class SettingsScreen extends ConsumerWidget {
         if (biometricsAvailable) ...<Widget>[
           const SizedBox(height: AppSpacing.md),
           AtherCard(
-            padding: AppSpacing.cardPaddingLarge,
+            padding: AppSpacing.cardPadding,
             child: Row(
               children: <Widget>[
                 Expanded(
@@ -138,18 +131,11 @@ class SettingsScreen extends ConsumerWidget {
                     children: <Widget>[
                       Text(l.lockSetting, style: AppTypography.cardTitle),
                       const SizedBox(height: AppSpacing.xxs),
-                      Text(
-                        l.lockSettingBody,
-                        style: AppTypography.style(
-                          size: 13,
-                          weight: AppTypography.medium,
-                          color: context.colors.textSecondary,
-                        ),
-                      ),
+                      Text(l.lockSettingBody, style: context.text.sublabel),
                     ],
                   ),
                 ),
-                const SizedBox(width: AppSpacing.lg),
+                const SizedBox(width: AppSpacing.xl),
                 AtherSwitch(
                   value: lockEnabled,
                   semanticLabel: l.lockSetting,
@@ -170,21 +156,21 @@ class SettingsScreen extends ConsumerWidget {
         // The policy, one tap away from every other setting. Google Play
         // expects to find it; a student expecting honesty finds it too.
         AtherCard(
-          padding: AppSpacing.cardPaddingLarge,
+          padding: AppSpacing.cardPadding,
           onTap: () => context.push(Routes.privacy),
           child: Row(
             children: <Widget>[
               Expanded(
                 child: Text(l.settingsPrivacy, style: AppTypography.rowTitle),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppSpacing.md),
               const AtherIcon(AtherGlyph.chevron, size: 20),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.md),
         AtherCard(
-          padding: AppSpacing.cardPaddingLarge,
+          padding: AppSpacing.cardPadding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -194,16 +180,16 @@ class SettingsScreen extends ConsumerWidget {
               Row(
                 children: <Widget>[
                   const brand.AtherGlyph(size: 26),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: AppSpacing.md),
                   Text(l.settingsAbout, style: AppTypography.cardTitle),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.textGap),
               Text(
                 '${l.appName} — ${l.appTagline}',
-                style: context.text.secondary.copyWith(height: 1.6),
+                style: context.text.secondary,
               ),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 '${l.homeworkNote} · ${l.settingsVersionFormat(appVersion)}',
                 style: context.text.micro,
@@ -215,7 +201,7 @@ class SettingsScreen extends ConsumerWidget {
         // where a deliberate scroll is the difference between "I want this"
         // and "I was looking for notifications". See _DeleteAccountSection.
         if (account != null) ...<Widget>[
-          const SizedBox(height: AppSpacing.section),
+          const SizedBox(height: AppSpacing.xxxl),
           const _DeleteAccountSection(),
         ],
       ],
@@ -245,7 +231,7 @@ class _NotificationsCard extends ConsumerWidget {
         enabled && !allowed && ref.watch(hasScheduledReviewsProvider);
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -262,16 +248,12 @@ class _NotificationsCard extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.xxs),
                     Text(
                       l.settingsNotificationsBody,
-                      style: AppTypography.style(
-                        size: 13,
-                        weight: AppTypography.medium,
-                        color: context.colors.textSecondary,
-                      ),
+                      style: context.text.sublabel,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.lg),
+              const SizedBox(width: AppSpacing.xl),
               AtherSwitch(
                 value: enabled,
                 semanticLabel: l.settingsNotifications,
@@ -403,30 +385,19 @@ class _BackupCardState extends ConsumerState<_BackupCard> {
     }
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(l.backupTitle, style: AppTypography.cardTitle),
           const SizedBox(height: AppSpacing.xxs),
-          Text(
-            l.backupBody,
-            style: AppTypography.style(
-              size: 13,
-              weight: AppTypography.medium,
-              color: context.colors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
+          Text(l.backupBody, style: context.text.sublabel),
+          const SizedBox(height: AppSpacing.md),
           Text(
             status,
-            style: AppTypography.style(
-              size: 13,
-              weight: AppTypography.semiBold,
-              color: statusColor,
-            ),
+            style: AppTypography.statusLine.copyWith(color: statusColor),
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           PrimaryButton(
             label: l.backupSaveNow,
             tone: PrimaryButtonTone.secondary,
@@ -437,7 +408,7 @@ class _BackupCardState extends ConsumerState<_BackupCard> {
           // that can only say "nothing to restore" is a button that teaches the
           // student the feature does not work.
           if (cloud != null) ...<Widget>[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.md),
             PrimaryButton(
               label: l.backupRestore,
               tone: PrimaryButtonTone.wrong,
@@ -471,14 +442,14 @@ class _AccountCardState extends ConsumerState<_AccountCard> {
     final account = widget.account;
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(l.authAccount, style: AppTypography.cardTitle),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.textGap),
           Text(account.email, style: context.text.secondary),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           PrimaryButton(
             label: l.authSignOut,
             tone: PrimaryButtonTone.secondary,
@@ -698,7 +669,7 @@ class _ReauthSheetState extends State<_ReauthSheet> {
               borderRadius: BorderRadius.circular(AppRadius.input),
             ),
             padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
+              horizontal: AppSpacing.xl,
               vertical: 2,
             ),
             child: TextField(
@@ -722,7 +693,7 @@ class _ReauthSheetState extends State<_ReauthSheet> {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.lg,
+                  vertical: AppSpacing.xl,
                 ),
               ),
             ),

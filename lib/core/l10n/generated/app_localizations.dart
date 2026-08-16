@@ -157,47 +157,53 @@ abstract class L {
   /// **'إنجليزي'**
   String get subjectEnglish;
 
-  /// No description provided for @weekdaySaturday.
+  /// Short weekday name in the day picker, beside the date: 'سبت 14'. These were single letters (س ح ن ر خ ج) while the week strip showed all seven days at once and had ~41px per cell to do it in. The picker shows three to five days and gives each one a pill, so there is room for a name a student does not have to decode.
   ///
   /// In ar, this message translates to:
-  /// **'س'**
+  /// **'سبت'**
   String get weekdaySaturday;
 
   /// No description provided for @weekdaySunday.
   ///
   /// In ar, this message translates to:
-  /// **'ح'**
+  /// **'أحد'**
   String get weekdaySunday;
 
   /// No description provided for @weekdayMonday.
   ///
   /// In ar, this message translates to:
-  /// **'ن'**
+  /// **'اتنين'**
   String get weekdayMonday;
 
   /// No description provided for @weekdayTuesday.
   ///
   /// In ar, this message translates to:
-  /// **'ث'**
+  /// **'ثلاثاء'**
   String get weekdayTuesday;
 
   /// No description provided for @weekdayWednesday.
   ///
   /// In ar, this message translates to:
-  /// **'ر'**
+  /// **'أربعاء'**
   String get weekdayWednesday;
 
   /// No description provided for @weekdayThursday.
   ///
   /// In ar, this message translates to:
-  /// **'خ'**
+  /// **'خميس'**
   String get weekdayThursday;
 
   /// No description provided for @weekdayFriday.
   ///
   /// In ar, this message translates to:
-  /// **'ج'**
+  /// **'جمعة'**
   String get weekdayFriday;
+
+  /// What today's cell says in the day picker, in place of its weekday and date. Today always carries it, selected or not: it is the one fixed landmark in a row whose other cells change every time the student moves a day.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get todayLabel;
 
   /// No description provided for @dashboardTitle.
   ///
@@ -1471,10 +1477,10 @@ abstract class L {
   /// **'الحفظ مظبطش'**
   String get backupErrorUnknown;
 
-  /// No description provided for @tasksTitle.
+  /// The tasks screen's title while today is the selected day. 'النهارده' until the day picker landed under it saying 'اليوم': two words for the same day, one directly above the other. The dashboard keeps 'النهارده' — it is a different screen and nothing there contradicts it.
   ///
   /// In ar, this message translates to:
-  /// **'مهام النهارده'**
+  /// **'مهام اليوم'**
   String get tasksTitle;
 
   /// No description provided for @tasksDoneOf.

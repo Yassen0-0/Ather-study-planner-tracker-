@@ -75,7 +75,7 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.opticalInset),
       child: Row(
         children: <Widget>[
           Expanded(child: Text(text, style: AppTypography.sectionTitle)),
@@ -87,14 +87,13 @@ class SectionTitle extends StatelessWidget {
 }
 
 /// A hairline between rows inside a single card.
+///
+/// It carried a `strong` flag for a second, heavier hairline that no call site
+/// ever passed. A variant nobody chooses is a variant nobody designed.
 class CardDivider extends StatelessWidget {
-  const CardDivider({super.key, this.strong = false});
-
-  final bool strong;
+  const CardDivider({super.key});
 
   @override
-  Widget build(BuildContext context) => Container(
-    height: 1,
-    color: strong ? context.colors.dividerStrong : context.colors.divider,
-  );
+  Widget build(BuildContext context) =>
+      Container(height: 1, color: context.colors.divider);
 }

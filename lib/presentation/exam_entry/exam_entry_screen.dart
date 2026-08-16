@@ -353,7 +353,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
                           children: <Widget>[
                             ..._buildStep(l),
                             if (_error != null) ...<Widget>[
-                              const SizedBox(height: AppSpacing.lg),
+                              const SizedBox(height: AppSpacing.xl),
                               ErrorBanner(message: _error!),
                             ],
                           ],
@@ -417,15 +417,13 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
       // press Next to find out.
       Text(
         fraction(_assigned, _totalValue),
-        style: AppTypography.style(
-          size: 16,
-          weight: AppTypography.bold,
+        style: AppTypography.cardTitle.copyWith(
           color: matched
               ? context.colors.rightText
               : context.colors.textSecondary,
         ),
       ),
-      const SizedBox(height: AppSpacing.lg),
+      const SizedBox(height: AppSpacing.xl),
       for (var i = 0; i < _groups.length; i++) ...<Widget>[
         _GroupCard(
           group: _groups[i],
@@ -458,16 +456,13 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
     const SizedBox(height: AppSpacing.xl),
     for (final group in _groups) ...<Widget>[
       AtherCard(
-        padding: AppSpacing.lg,
+        padding: AppSpacing.xl,
         child: Row(
           children: <Widget>[
             Expanded(
               child: Text(
                 l.examGroupLabel(iso(group.countValue), iso(group.pointsValue)),
-                style: AppTypography.style(
-                  size: 15,
-                  weight: AppTypography.semiBold,
-                ),
+                style: AppTypography.listTitle,
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -476,10 +471,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
               child: NumberField(
                 controller: group.correct,
                 height: 48,
-                textStyle: AppTypography.style(
-                  size: 18,
-                  weight: AppTypography.bold,
-                ),
+                textStyle: AppTypography.rowNumberSmall,
                 onChanged: (_) => setState(() => _error = null),
               ),
             ),
@@ -517,10 +509,10 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
         child: Text(l.examStep4Title, style: AppTypography.stepTitle),
       ),
       AtherCard(
-        padding: AppSpacing.cardPaddingLarge,
+        padding: AppSpacing.cardPadding,
         child: Column(
           children: <Widget>[
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.textGap),
             // The one place in the app that counts from zero, and it does it
             // once. Stepping back to 3 and forward again shows a fact, not
             // news, so the flag lives on the wizard rather than the widget.
@@ -547,13 +539,13 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
               // MasteryPalette.fill.
               color: MasteryPalette.fill(context.colors, resultColor),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.textGap),
           ],
         ),
       ),
       const SizedBox(height: AppSpacing.md),
       AtherCard(
-        padding: AppSpacing.cardPaddingLarge,
+        padding: AppSpacing.cardPadding,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -645,7 +637,7 @@ class _WizardHeader extends StatelessWidget {
         AppSpacing.xl,
         2,
         AppSpacing.xl,
-        AppSpacing.lg,
+        AppSpacing.xl,
       ),
       child: Column(
         children: <Widget>[
@@ -662,10 +654,7 @@ class _WizardHeader extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.style(
-                    size: 15,
-                    weight: AppTypography.bold,
-                  ),
+                  style: AppTypography.cardTitle,
                 ),
               ),
               // Balances the close button so the title stays optically centred.
@@ -713,7 +702,7 @@ class _WizardHeader extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (i < stepCount) const SizedBox(width: 6),
+                  if (i < stepCount) const SizedBox(width: AppSpacing.textGap),
                 ],
               ],
             ),
@@ -735,9 +724,9 @@ class _StepHeading extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.textGap),
         Text(title, style: AppTypography.stepTitle),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.textGap),
         Text(
           hint,
           style: AppTypography.body.copyWith(
@@ -771,7 +760,7 @@ class _GroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AtherCard(
-      padding: AppSpacing.lg,
+      padding: AppSpacing.xl,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
@@ -783,14 +772,12 @@ class _GroupCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              padding: const EdgeInsets.only(bottom: AppSpacing.xl),
               child: Text(
                 '×',
-                style: AppTypography.style(
-                  size: 15,
-                  weight: AppTypography.medium,
+                style: AppTypography.itemLabel.copyWith(
                   color: context.colors.textTertiary,
                 ),
               ),
@@ -850,13 +837,9 @@ class _LabelledField extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.style(
-            size: 12,
-            weight: AppTypography.semiBold,
-            color: context.colors.textSecondary,
-          ),
+          style: context.text.fieldLabel,
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.textGap),
         NumberField(controller: controller, onChanged: (_) => onChanged()),
       ],
     );
@@ -883,21 +866,10 @@ class _BeforeAfter extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.style(
-            size: 12.5,
-            weight: AppTypography.semiBold,
-            color: context.colors.textSecondary,
-          ),
+          style: context.text.fieldLabel,
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: AppTypography.style(
-            size: 22,
-            weight: AppTypography.bold,
-            color: color,
-          ),
-        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(value, style: AppTypography.sectionTitle.copyWith(color: color)),
       ],
     );
   }
@@ -927,11 +899,11 @@ class _BottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.only(bottom: AppSpacing.sm),
+      minimum: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pageMargin,
-          AppSpacing.sm,
+          AppSpacing.md,
           AppSpacing.pageMargin,
           AppSpacing.md,
         ),
@@ -944,7 +916,7 @@ class _BottomBar extends StatelessWidget {
                 onTap: busy ? null : onBack,
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               flex: 2,
               child: PrimaryButton(

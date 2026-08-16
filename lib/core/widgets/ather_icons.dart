@@ -38,6 +38,20 @@ enum AtherGlyph {
   close,
   chevron,
 
+  /// The password field's "show" toggle, and its "hide" partner below.
+  ///
+  /// These are the last two controls in the app that were drawn with type
+  /// rather than geometry: the toggle printed the literal strings `•••` and
+  /// `———`, which is a clever workaround and reads as one — Latin punctuation
+  /// inside an Arabic form, at a weight and optical centre no other control in
+  /// the app shares. A control is not the place for a rebus.
+  eye,
+
+  /// [eye] with its pupil dropped and a slash across it. The pupil goes rather
+  /// than being crossed: a 1.9 stroke through a 3.1 circle meets itself at the
+  /// centre and fills in as a blot at the 18px this is actually drawn at.
+  eyeOff,
+
   // State
   check,
 
@@ -163,7 +177,10 @@ class _GlyphPainter extends CustomPainter {
           ..close();
         stroke.strokeWidth = strokeWidth ?? 1.9;
         if (selection > 0) {
-          canvas.drawPath(house, fill..color = color.withValues(alpha: selection));
+          canvas.drawPath(
+            house,
+            fill..color = color.withValues(alpha: selection),
+          );
         }
         canvas.drawPath(house, stroke);
 
@@ -280,6 +297,32 @@ class _GlyphPainter extends CustomPainter {
           ..drawLine(const Offset(6, 6), const Offset(18, 18), stroke)
           ..drawLine(const Offset(18, 6), const Offset(6, 18), stroke);
 
+      case AtherGlyph.eye:
+      case AtherGlyph.eyeOff:
+        stroke.strokeWidth = strokeWidth ?? 1.9;
+        // A lens: two mirrored lid curves meeting at a point on each side. The
+        // points are where the round join earns its keep -- closed with a
+        // corner the same path reads as a leaf, which is the wrong object.
+        canvas.drawPath(
+          Path()
+            ..moveTo(2.6, 12)
+            ..cubicTo(5.5, 7.5, 8.5, 5, 12, 5)
+            ..cubicTo(15.5, 5, 18.5, 7.5, 21.4, 12)
+            ..cubicTo(18.5, 16.5, 15.5, 19, 12, 19)
+            ..cubicTo(8.5, 19, 5.5, 16.5, 2.6, 12)
+            ..close(),
+          stroke,
+        );
+        if (glyph == AtherGlyph.eye) {
+          canvas.drawCircle(const Offset(12, 12), 3.1, stroke);
+        } else {
+          canvas.drawLine(
+            const Offset(4.4, 4.4),
+            const Offset(19.6, 19.6),
+            stroke,
+          );
+        }
+
       case AtherGlyph.check:
         stroke.strokeWidth = strokeWidth ?? 3;
         canvas.drawPath(
@@ -357,7 +400,11 @@ class _GlyphPainter extends CustomPainter {
               ..lineTo(8.8, 23.2),
             stroke,
           )
-          ..drawLine(const Offset(12.9, 20.5), const Offset(12.9, 23.2), stroke);
+          ..drawLine(
+            const Offset(12.9, 20.5),
+            const Offset(12.9, 23.2),
+            stroke,
+          );
 
       // A horseshoe magnet with two pole tips. Rotated 205 degrees about the
       // icon's centre so it tilts up-and-to-the-right rather than sitting flat,

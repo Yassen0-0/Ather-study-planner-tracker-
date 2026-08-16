@@ -100,13 +100,3 @@ final quickExamTargetProvider = Provider<NextTarget?>((ref) {
   }
   return null;
 });
-
-/// Days on which an exam was recorded, at day precision — what fills a circle
-/// in the week strip. Proof only: opening the app does not count.
-final examDaysProvider = Provider<Set<DateTime>>((ref) {
-  final snapshot = ref.watch(snapshotValueProvider);
-  return <DateTime>{
-    for (final exam in snapshot.exams)
-      DateTime(exam.createdAt.year, exam.createdAt.month, exam.createdAt.day),
-  };
-});

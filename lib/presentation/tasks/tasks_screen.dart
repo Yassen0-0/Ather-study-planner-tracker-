@@ -8,10 +8,10 @@ import '../../core/theme/app_typography.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/day_header.dart';
+import '../../core/widgets/day_picker.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/reduced_motion.dart';
-import '../../core/widgets/week_strip.dart';
 import '../../domain/entities/daily_task.dart';
 import '../common/prompts.dart';
 import '../common/settings_button.dart';
@@ -29,9 +29,9 @@ import 'widgets/task_row.dart';
 /// claims. The only figure is a plain count in the app's existing "X من Y"
 /// grammar.
 ///
-/// The week strip on top is a **picker** here rather than the summary it is on
-/// the dashboard, and a filled circle means "everything you set yourself that
-/// day is done" rather than "an exam was recorded".
+/// The [DayPicker] on top is the only date control in the app: the dashboard's
+/// copy of the old seven-day strip is gone, and a dot under a day here means
+/// "everything you set yourself that day is done".
 class TasksScreen extends ConsumerWidget {
   const TasksScreen({super.key});
 
@@ -137,10 +137,10 @@ class TasksScreen extends ConsumerWidget {
         // the moment the student taps Thursday.
         title: isToday ? l.tasksTitle : dateLabel(selected),
         actions: const <Widget>[SettingsButton()],
-        strip: WeekStrip(
-          today: now,
-          activeDays: completeDays,
+        picker: DayPicker(
+          today: dayOf(now),
           selectedDay: selected,
+          completeDays: completeDays,
           onSelect: (day) =>
               ref.read(selectedTaskDayProvider.notifier).select(day),
         ),

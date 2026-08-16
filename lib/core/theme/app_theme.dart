@@ -109,7 +109,7 @@ abstract final class AppTheme {
         hintStyle: AppTypography.body.copyWith(color: c.textTertiary),
         labelStyle: AppTextStyles(c).secondary,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
+          horizontal: AppSpacing.xl,
           vertical: AppSpacing.md,
         ),
         border: OutlineInputBorder(

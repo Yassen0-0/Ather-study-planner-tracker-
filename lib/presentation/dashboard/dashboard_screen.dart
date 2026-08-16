@@ -18,11 +18,9 @@ import '../../core/widgets/day_header.dart';
 import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/mastery_bar.dart';
-import '../../core/widgets/week_strip.dart';
 import '../../domain/services/summaries.dart';
 import '../common/settings_button.dart';
 import '../common/subject_presentation.dart';
-import '../providers/app_providers.dart';
 import '../providers/navigation_providers.dart';
 import '../providers/summary_providers.dart';
 
@@ -40,17 +38,18 @@ class DashboardScreen extends ConsumerWidget {
     final l = L.of(context);
     final dashboard = ref.watch(dashboardProvider);
     final stats = ref.watch(homeStatsProvider);
-    final now = ref.watch(nowValueProvider);
-    final examDays = ref.watch(examDaysProvider);
     final next = ref.watch(nextTargetProvider);
 
     return AtherScreen(
+      // No week strip. The dashboard's copy was inert -- nothing to select and
+      // nothing to tap -- and the only thing it reported, "an exam happened on
+      // this day", is already stated in full by the cards directly beneath it.
+      // Seven circles that answer no question are seven circles between the
+      // student and the screen. The tasks screen keeps its strip, because there
+      // it picks the day the list belongs to.
       header: DayHeader(
         title: l.dashboardTitle,
         actions: const <Widget>[SettingsButton()],
-        // Here a filled circle means an exam was recorded, and the strip is a
-        // summary rather than a picker — no selection, no tap.
-        strip: WeekStrip(today: now, activeDays: examDays),
       ),
       children: <Widget>[
         // A brand-new student used to land on "—", three zeroes and four
@@ -70,7 +69,7 @@ class DashboardScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           _StatsCard(stats: stats),
         ],
-        const SizedBox(height: AppSpacing.section),
+        const SizedBox(height: AppSpacing.xxxl),
         SectionTitle(l.sectionSubjects),
         const SizedBox(height: AppSpacing.md),
         for (final (i, subject) in dashboard.subjects.indexed) ...<Widget>[
@@ -111,18 +110,15 @@ class _FirstRunCard extends StatelessWidget {
     final l = L.of(context);
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(l.firstRunTitle, style: AppTypography.cardTitle),
-          const SizedBox(height: 6),
-          Text(
-            l.firstRunBody,
-            style: context.text.secondary.copyWith(height: 1.6),
-          ),
+          const SizedBox(height: AppSpacing.textGap),
+          Text(l.firstRunBody, style: context.text.secondary),
           if (subjects.isNotEmpty) ...<Widget>[
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.xl),
             PrimaryButton(
               label: l.firstRunAction,
               onTap: () =>
@@ -151,14 +147,22 @@ class _OverallCard extends StatelessWidget {
     );
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(l.overallMastery, style: AppTypography.cardLabel),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.textGap),
+          // Baseline, not bottom. The sentence beside the number wraps to two
+          // lines on a narrow screen or at a large text scale, and bottom
+          // alignment lines its *last* line up with the number — which lifts
+          // "١ من ٤ باب" clear above the number's cap height and leaves
+          // "اتقنتها" stranded beside it. On one baseline the sentence starts
+          // level with the figure and runs on underneath it, which is the order
+          // it is read in.
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
               MasteryNumber(
                 value: dashboard.overallMastery,
@@ -181,7 +185,7 @@ class _OverallCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           MasteryBar(
             fraction: MasteryPalette.barFraction(
               percentage: dashboard.overallMastery,
@@ -205,7 +209,7 @@ class _StatsCard extends StatelessWidget {
     final l = L.of(context);
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -218,7 +222,7 @@ class _StatsCard extends StatelessWidget {
               color: context.colors.textPrimary,
             ),
           ),
-          const SizedBox(width: AppSpacing.lg),
+          const SizedBox(width: AppSpacing.xl),
           Expanded(
             child: _Stat(
               label: l.statNeedsReview,
@@ -231,7 +235,7 @@ class _StatsCard extends StatelessWidget {
                   : context.colors.textPrimary,
             ),
           ),
-          const SizedBox(width: AppSpacing.lg),
+          const SizedBox(width: AppSpacing.xl),
           Expanded(
             child: _Stat(
               label: l.statMastered,
@@ -273,9 +277,9 @@ class _Stat extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.style(size: 14, weight: AppTypography.semiBold),
+          style: AppTypography.statLabel,
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: AppSpacing.xxs),
         Ltr(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -283,25 +287,14 @@ class _Stat extends StatelessWidget {
             children: <Widget>[
               Text(
                 '$value',
-                style: AppTypography.style(
-                  size: 19,
-                  weight: AppTypography.bold,
-                  color: color,
-                ),
+                style: AppTypography.statValue.copyWith(color: color),
               ),
               const SizedBox(width: AppSpacing.xxs),
-              Text(
-                '/ $total',
-                style: AppTypography.style(
-                  size: 13,
-                  weight: AppTypography.semiBold,
-                  color: context.colors.textSecondary,
-                ),
-              ),
+              Text('/ $total', style: context.text.statDenominator),
             ],
           ),
         ),
-        const SizedBox(height: 9),
+        const SizedBox(height: AppSpacing.xs),
         MasteryBar(
           // The sliver is a fill, so a stat with nothing to be red or green
           // about gets the accent rather than the black its count is written
@@ -350,7 +343,7 @@ class _SubjectRow extends StatelessWidget {
       child: Row(
         children: <Widget>[
           AtherIcon(summary.subject.code.glyph, size: 26),
-          const SizedBox(width: AppSpacing.lg),
+          const SizedBox(width: AppSpacing.xl),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,14 +368,12 @@ class _SubjectRow extends StatelessWidget {
                     OverdueMark(needsReview: summary.needsReview),
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.style(
-                    size: 14,
-                    weight: AppTypography.medium,
+                  style: AppTypography.rowStatus.copyWith(
                     color: summary.needsReview
                         ? context.colors.wrong
                         : context.colors.textSecondary,
@@ -391,7 +382,7 @@ class _SubjectRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.md),
           AnimatedPercentage(
             value: summary.mastery,
             hasData: hasData,
@@ -426,7 +417,7 @@ class _NextCard extends StatelessWidget {
             alignment: Alignment.center,
             child: const AtherIcon(AtherGlyph.edit, size: 19),
           ),
-          const SizedBox(width: AppSpacing.lg),
+          const SizedBox(width: AppSpacing.xl),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,16 +428,14 @@ class _NextCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.rowTitle,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
                   target.isOverdue
                       ? l.overdueByDays(iso(target.daysOverdue))
                       : l.lessonNoExamYet,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.style(
-                    size: 14,
-                    weight: AppTypography.medium,
+                  style: AppTypography.rowStatus.copyWith(
                     color: target.isOverdue
                         ? context.colors.wrong
                         : context.colors.textSecondary,
@@ -455,7 +444,7 @@ class _NextCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.md),
           PillButton(
             label: l.actionExam,
             onTap: () =>

@@ -20,21 +20,22 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      // The vertical is [AppSpacing.textGap], not a rung: the label's own line
+      // box already carries its leading, so 8 draws a chip half again as tall
+      // as it reads and 4 crops it onto the pill's curve.
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
-        vertical: 6,
+        vertical: AppSpacing.textGap,
       ),
       decoration: BoxDecoration(
-        color: overdue ? context.colors.wrongChip : context.colors.fill,
+        color: overdue ? context.colors.wrongTint : context.colors.fill,
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: AppTypography.style(
-          size: 12.5,
-          weight: AppTypography.bold,
+        style: context.text.smallStrong.copyWith(
           color: overdue ? context.colors.wrong : context.colors.textSecondary,
         ),
       ),
@@ -52,16 +53,17 @@ class MiniBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: wrong ? context.colors.wrongTint : context.colors.fill,
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,
-        style: AppTypography.style(
-          size: 11,
-          weight: AppTypography.bold,
+        style: AppTypography.badgeLabel.copyWith(
           color: wrong ? context.colors.wrong : context.colors.textSecondary,
         ),
       ),
@@ -88,7 +90,10 @@ class AtherFilterChip extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl,
+          vertical: AppSpacing.xs,
+        ),
         decoration: BoxDecoration(
           color: selected ? context.colors.accent : context.colors.card,
           borderRadius: BorderRadius.circular(AppRadius.pill),

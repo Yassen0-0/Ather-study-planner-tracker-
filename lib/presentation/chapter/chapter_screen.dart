@@ -186,10 +186,12 @@ class ChapterScreen extends ConsumerWidget {
                     context.push(Routes.lesson(blocker.lesson.id));
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.md,
+                    ),
                     decoration: BoxDecoration(
                       border: Border(
-                        top: BorderSide(color: context.colors.dividerStrong),
+                        top: BorderSide(color: context.colors.divider),
                       ),
                     ),
                     child: Row(
@@ -199,20 +201,15 @@ class ChapterScreen extends ConsumerWidget {
                             blocker.lesson.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTypography.style(
-                              size: 15,
-                              weight: AppTypography.semiBold,
-                            ),
+                            style: AppTypography.listTitle,
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
+                        const SizedBox(width: AppSpacing.md),
                         Text(
                           blocker.hasExam
                               ? percent(blocker.mastery)
                               : l.noExamShort,
-                          style: AppTypography.style(
-                            size: 14,
-                            weight: AppTypography.bold,
+                          style: AppTypography.controlLabel.copyWith(
                             color: blocker.hasExam
                                 ? MasteryPalette.ofScore(
                                     context.colors,
@@ -221,7 +218,7 @@ class ChapterScreen extends ConsumerWidget {
                                 : context.colors.textSecondary,
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
+                        const SizedBox(width: AppSpacing.md),
                         AtherIcon(
                           AtherGlyph.chevron,
                           size: 16,
@@ -317,12 +314,16 @@ class _ChapterSummaryCard extends StatelessWidget {
     );
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // Baseline rather than bottom, for the reason given on the dashboard's
+          // overall card: the sentence beside the number wraps, and bottom
+          // alignment lines up the wrong one of its two lines.
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
               MasteryNumber(
                 value: summary.mastery,
@@ -345,7 +346,7 @@ class _ChapterSummaryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           MasteryBar(
             fraction: MasteryPalette.barFraction(
               percentage: summary.mastery,
@@ -370,13 +371,11 @@ class _ChapterSummaryCard extends StatelessWidget {
             Row(
               children: <Widget>[
                 const CheckDisc(size: 15, checkSize: 10, strokeWidth: 2.8),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpacing.textGap),
                 Expanded(
                   child: Text(
                     l.chapterMasteredAt(dateLabel(summary.chapter.masteredAt!)),
-                    style: AppTypography.style(
-                      size: 13.5,
-                      weight: AppTypography.semiBold,
+                    style: AppTypography.statusLine.copyWith(
                       color: context.colors.rightText,
                     ),
                   ),
@@ -457,14 +456,12 @@ class _LessonRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.rowTitleSmall,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
                   status,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.style(
-                    size: 13.5,
-                    weight: AppTypography.medium,
+                  style: AppTypography.rowStatus.copyWith(
                     color: summary.needsReview
                         ? context.colors.wrong
                         : context.colors.textSecondary,

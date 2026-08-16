@@ -119,21 +119,19 @@ class _ReviewRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.rowTitleSmall,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
                   crumb,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.text.small,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
                   reason,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.style(
-                    size: 13.5,
-                    weight: AppTypography.semiBold,
+                  style: AppTypography.statusLine.copyWith(
                     // Declining is grey: it is a warning, not a failure, and
                     // colouring it red would make three different situations
                     // look like one emergency.
@@ -145,7 +143,7 @@ class _ReviewRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.md),
           AnimatedPercentage(
             value: item.mastery,
             hasData: true,

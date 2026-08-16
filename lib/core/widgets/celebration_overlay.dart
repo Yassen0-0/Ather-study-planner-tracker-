@@ -91,14 +91,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              Text(
-                widget.title,
-                style: AppTypography.style(
-                  size: 26,
-                  weight: AppTypography.bold,
-                  letterSpacing: -0.5,
-                ),
-              ),
+              Text(widget.title, style: AppTypography.stepTitle),
               const SizedBox(height: AppSpacing.xl),
               Text(
                 widget.body,
@@ -116,9 +109,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
               const SizedBox(height: AppSpacing.xxxl),
               Text(
                 widget.hint,
-                style: AppTypography.style(
-                  size: 13,
-                  weight: AppTypography.medium,
+                style: context.text.sublabel.copyWith(
                   color: context.colors.textTertiary,
                 ),
               ),

@@ -8,6 +8,9 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/ather_card.dart';
 import '../../core/widgets/ather_controls.dart';
+// Prefixed: `AtherGlyph` is a brand-mark widget in ather_logo.dart and the icon
+// enum here. Two different things with one good name; the prefix says which.
+import '../../core/widgets/ather_icons.dart' as icons;
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/error_banner.dart';
@@ -148,13 +151,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: AppTypography.today,
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(
-                  l.authSubtitle,
-                  style: context.text.secondary.copyWith(height: 1.6),
-                ),
-                const SizedBox(height: AppSpacing.section),
+                Text(l.authSubtitle, style: context.text.secondary),
+                const SizedBox(height: AppSpacing.xxxl),
                 AtherCard(
-                  padding: AppSpacing.cardPaddingLarge,
+                  padding: AppSpacing.cardPadding,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
@@ -167,7 +167,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         autofillHints: const <String>[AutofillHints.username],
                         onChanged: (_) => _clearFailure(),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                      const SizedBox(height: AppSpacing.xl),
                       AtherTextField(
                         controller: _password,
                         label: l.authPassword,
@@ -187,22 +187,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           minTarget: kMinTarget,
                           child: Padding(
                             padding: const EdgeInsets.all(AppSpacing.xs),
-                            child: Text(
-                              // A dot for hidden, an open eye's absence for
-                              // shown. Geometry rather than words, so it needs
-                              // no translation and matches the icon family.
-                              _obscure ? '•••' : '———',
-                              style: AppTypography.style(
-                                size: 13,
-                                weight: AppTypography.bold,
-                                color: context.colors.textSecondary,
-                              ),
+                            // The glyph shows what tapping will *do*, not what
+                            // the field is currently doing: while the password
+                            // is hidden the control offers to reveal it.
+                            child: icons.AtherIcon(
+                              _obscure
+                                  ? icons.AtherGlyph.eye
+                                  : icons.AtherGlyph.eyeOff,
+                              size: 18,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ),
                       ),
                       if (_failure != null) ...<Widget>[
-                        const SizedBox(height: AppSpacing.lg),
+                        const SizedBox(height: AppSpacing.xl),
                         ErrorBanner(
                           height: 1.5,
                           message: _message(l, _failure!),
@@ -226,11 +225,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             child: Text(
                               l.authForgotPassword,
                               textAlign: TextAlign.center,
-                              style: AppTypography.style(
-                                size: 13.5,
-                                weight: AppTypography.semiBold,
-                                color: context.colors.textSecondary,
-                              ),
+                              style: context.text.status,
                             ),
                           ),
                         ),
@@ -249,7 +244,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ? null
                       : () => _run(validate: false, auth.signInWithGoogle),
                 ),
-                const SizedBox(height: AppSpacing.section),
+                const SizedBox(height: AppSpacing.xxxl),
                 Pressable(
                   onTap: () => setState(() {
                     _registering = !_registering;
@@ -260,10 +255,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Text(
                       _registering ? l.authToSignIn : l.authToRegister,
                       textAlign: TextAlign.center,
-                      style: AppTypography.style(
-                        size: 14,
-                        weight: AppTypography.bold,
-                      ),
+                      style: AppTypography.controlLabel,
                     ),
                   ),
                 ),

@@ -115,7 +115,7 @@ class _SubjectSummaryCard extends StatelessWidget {
     );
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -143,7 +143,7 @@ class _SubjectSummaryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           MasteryBar(
             fraction: MasteryPalette.barFraction(
               percentage: summary.mastery,
@@ -182,7 +182,7 @@ class _ChapterCard extends StatelessWidget {
             children: <Widget>[
               if (summary.isMastered) ...<Widget>[
                 const CheckDisc(size: 17, checkSize: 11, strokeWidth: 2.6),
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: AppSpacing.md),
               ],
               Expanded(
                 child: Text(
@@ -201,7 +201,7 @@ class _ChapterCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           MasteryBar(
             fraction: MasteryPalette.barFraction(
               percentage: summary.mastery,
@@ -210,7 +210,7 @@ class _ChapterCard extends StatelessWidget {
             color: MasteryPalette.fill(context.colors, color),
             height: AppSizes.barTrackSmall,
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           Text(
             summary.needsReview
                 ? l.chapterNeedsReview
@@ -220,9 +220,7 @@ class _ChapterCard extends StatelessWidget {
                   ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.style(
-              size: 13.5,
-              weight: AppTypography.medium,
+            style: AppTypography.rowStatus.copyWith(
               color: summary.needsReview
                   ? context.colors.wrong
                   : context.colors.textSecondary,

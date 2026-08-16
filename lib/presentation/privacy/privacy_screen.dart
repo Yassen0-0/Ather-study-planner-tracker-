@@ -32,7 +32,7 @@ class PrivacyScreen extends StatelessWidget {
       ),
       children: <Widget>[
         AtherCard(
-          padding: AppSpacing.cardPaddingLarge,
+          padding: AppSpacing.cardPadding,
           child: Text(
             l.privacyIntro,
             style: context.text.secondary.copyWith(height: 1.6),
@@ -65,12 +65,12 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(title, style: AppTypography.cardTitle),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.textGap),
           Text(body, style: context.text.secondary.copyWith(height: 1.6)),
         ],
       ),

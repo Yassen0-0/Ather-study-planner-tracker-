@@ -152,7 +152,7 @@ class _ExamCta extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.pageMargin,
-        AppSpacing.sm,
+        AppSpacing.md,
         AppSpacing.pageMargin,
         AppSpacing.md,
       ),
@@ -197,7 +197,7 @@ class _MasteryCard extends StatelessWidget {
     }
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -221,7 +221,7 @@ class _MasteryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           MasteryBar(
             fraction: MasteryPalette.barFraction(
               percentage: summary.mastery,
@@ -229,19 +229,14 @@ class _MasteryCard extends StatelessWidget {
             ),
             color: MasteryPalette.fill(context.colors, color),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           Text(
             // Spelling out the 70/30 weighting is deliberate: a number the
             // student cannot explain is a number they will not trust.
             summary.hasExam
                 ? l.masteryCaptionWithExams(iso('(70%)'), iso('(30%)'))
                 : l.masteryCaptionNoExams,
-            style: AppTypography.style(
-              size: 13.5,
-              weight: AppTypography.medium,
-              height: 1.55,
-              color: context.colors.textSecondary,
-            ),
+            style: context.text.sublabel,
           ),
         ],
       ),
@@ -291,7 +286,7 @@ class _ChecklistCard extends ConsumerWidget {
         ];
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -302,15 +297,13 @@ class _ChecklistCard extends ConsumerWidget {
               ),
               Text(
                 fraction(checklist.completedCount, LessonChecklist.totalCount),
-                style: AppTypography.style(
-                  size: 14,
-                  weight: AppTypography.bold,
+                style: AppTypography.controlLabel.copyWith(
                   color: context.colors.textSecondary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.textGap),
           for (final item in items) ...<Widget>[
             const CardDivider(),
             AtherCheckbox(
@@ -375,9 +368,7 @@ class _HomeworkCard extends ConsumerWidget {
               Expanded(
                 child: Text(
                   l.homeworkTitle,
-                  style: AppTypography.style(
-                    size: 15,
-                    weight: AppTypography.bold,
+                  style: AppTypography.cardTitle.copyWith(
                     color: context.colors.textSecondary,
                   ),
                 ),
@@ -386,26 +377,20 @@ class _HomeworkCard extends ConsumerWidget {
                 // Grey even when the score is excellent. Homework is not
                 // evidence, so it never earns the green.
                 homework == null ? '—' : percent(homework),
-                style: AppTypography.style(
-                  size: 17,
-                  weight: AppTypography.bold,
+                style: AppTypography.rowTitle.copyWith(
                   color: context.colors.textSecondary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.textGap),
           Text(
             line,
-            style: AppTypography.style(
-              size: 13.5,
-              weight: AppTypography.semiBold,
-              color: lineColor,
-            ),
+            style: AppTypography.statusLine.copyWith(color: lineColor),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(l.homeworkNote, style: context.text.micro),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: QuietPillButton(
@@ -529,15 +514,8 @@ class _Field extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          label,
-          style: AppTypography.style(
-            size: 12.5,
-            weight: AppTypography.semiBold,
-            color: context.colors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 6),
+        Text(label, style: context.text.fieldLabel),
+        const SizedBox(height: AppSpacing.textGap),
         NumberField(
           controller: controller,
           height: AppSizes.inputTall,
@@ -595,7 +573,7 @@ class _HistoryCard extends ConsumerWidget {
     final l = L.of(context);
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -606,18 +584,18 @@ class _HistoryCard extends ConsumerWidget {
               child: Text(l.examNoHistory, style: context.text.secondary),
             )
           else ...<Widget>[
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSpacing.xxs),
             // Stated rather than left to be discovered: a destructive action
             // hidden behind an unmarked tap is one a student only finds by
             // accident.
             Text(l.examHistoryHint, style: context.text.micro),
             for (final exam in exams) ...<Widget>[
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xxs),
               const CardDivider(),
               Pressable(
                 onTap: () => _delete(context, ref, exam),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   child: Row(
                     children: <Widget>[
                       Container(
@@ -631,7 +609,7 @@ class _HistoryCard extends ConsumerWidget {
                           shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
                           dateLabel(exam.createdAt),
@@ -640,13 +618,11 @@ class _HistoryCard extends ConsumerWidget {
                       ),
                       if (exam.isReviewExam) ...<Widget>[
                         MiniBadge(label: l.examReviewBadge),
-                        const SizedBox(width: AppSpacing.sm),
+                        const SizedBox(width: AppSpacing.md),
                       ],
                       Text(
                         percent(exam.percentage),
-                        style: AppTypography.style(
-                          size: 16,
-                          weight: AppTypography.bold,
+                        style: AppTypography.rowNumberCompact.copyWith(
                           color: MasteryPalette.ofScore(
                             context.colors,
                             exam.percentage,
