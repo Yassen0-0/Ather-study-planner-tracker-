@@ -138,11 +138,14 @@ final class FirebaseAuthRepository implements AuthRepository {
   /// than the call that uses it.
   Future<void> _deleteAccount(Future<void> Function()? reauth) async {
     final user = _auth.currentUser;
-    if (user == null) throw const AuthException(AuthFailure.unknown);
+    // Already gone. Treated as success so a retry after a partial failure
+    // finishes rather than reporting an error about work already done.
+    if (user == null) return;
 
     try {
       if (reauth != null) await reauth();
       await user.delete();
+      await _clearGoogleSession();
       return;
     } on fb.FirebaseAuthException catch (e) {
       if (e.code != 'requires-recent-login') {
@@ -163,6 +166,7 @@ final class FirebaseAuthRepository implements AuthRepository {
             fb.GoogleAuthProvider.credential(idToken: idToken),
           );
           await user.delete();
+          await _clearGoogleSession();
           return;
         } on GoogleSignInException catch (e) {
           throw AuthException(
@@ -199,6 +203,18 @@ final class FirebaseAuthRepository implements AuthRepository {
           fb.EmailAuthProvider.credential(email: email, password: password),
         );
       });
+
+  /// Google's own session survives `user.delete()`, and leaving it in place
+  /// pre-selects the account that was just deleted on the next attempt --
+  /// which reads as the deletion not having worked.
+  Future<void> _clearGoogleSession() async {
+    if (!_googleInitialised) return;
+    try {
+      await _google.signOut();
+    } catch (_) {
+      // Never let the Google plugin turn a completed deletion into a failure.
+    }
+  }
 
   static AuthFailure _map(fb.FirebaseAuthException e) => switch (e.code) {
     'invalid-email' => AuthFailure.invalidEmail,

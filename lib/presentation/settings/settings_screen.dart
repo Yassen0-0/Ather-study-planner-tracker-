@@ -43,7 +43,7 @@ class SettingsScreen extends ConsumerWidget {
 
   /// Must match `version:` in pubspec.yaml. Checked by
   /// `tool/check_invariants.sh`.
-  static const String appVersion = '1.3.1+8';
+  static const String appVersion = '1.6.0+11';
 
   /// The order the three options appear in, and the only place that order is
   /// written down. The segmented control renders it and reads a tap back

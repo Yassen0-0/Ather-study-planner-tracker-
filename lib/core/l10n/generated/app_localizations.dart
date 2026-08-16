@@ -1078,7 +1078,7 @@ abstract class L {
   /// No description provided for @authErrorPasswordShort.
   ///
   /// In ar, this message translates to:
-  /// **'الباسورد لازم 6 حروف على الأقل'**
+  /// **'الباسورد لازم 8 حروف على الأقل'**
   String get authErrorPasswordShort;
 
   /// No description provided for @authErrorWrongCredentials.
@@ -1165,23 +1165,11 @@ abstract class L {
   /// **'احذف الحساب'**
   String get authDeleteAccountReauthAction;
 
-  /// No description provided for @authDeleteAccountGoogle.
-  ///
-  /// In ar, this message translates to:
-  /// **'الحساب ده معمول بحساب Google — دوس الزر وهيطلب منك التأكيد.'**
-  String get authDeleteAccountGoogle;
-
   /// No description provided for @authDeleteAccountFailed.
   ///
   /// In ar, this message translates to:
   /// **'الحساب اتمسحش. جرّب تاني.'**
   String get authDeleteAccountFailed;
-
-  /// No description provided for @authDeleted.
-  ///
-  /// In ar, this message translates to:
-  /// **'الحساب اتمسح. نتمنى لك التوفيق.'**
-  String get authDeleted;
 
   /// No description provided for @authDeleteAccountSection.
   ///

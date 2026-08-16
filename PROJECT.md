@@ -1479,11 +1479,19 @@ grey; `int.parse` on a route parameter can no longer crash route building; the r
 auth subscription are disposed with the provider scope; two toasts can no longer stack on top of
 each other; and the password toggle's `'abc'` — untranslated Latin in an Arabic form — is gone.
 
-**Not done, and deliberately left for a decision:** account deletion (Play requires it for any
-app with accounts, and it is a product decision about what happens to the cloud copy), local
-file export, email verification, and Crashlytics. `flush()` still skips an upload when the local
-database is empty, so a student who deletes everything cannot clear their cloud copy — that is a
-real edge but the safe direction of the two.
+**Not done, and deliberately left for a decision:** local file export, email verification, and
+Crashlytics. `flush()` still skips an upload when the local database is empty, so a student who
+deletes everything cannot clear their cloud copy — that is a real edge but the safe direction of
+the two.
+
+~~account deletion (Play requires it for any app with accounts, and it is a product decision
+about what happens to the cloud copy)~~ **Built 2026-08-15** — Settings → Delete account. The
+product decision the entry was waiting on turned out to be forced rather than open: Firebase
+deletes the Auth user and leaves `users/{uid}/backup/snapshot` behind, and once the account is
+gone no caller can satisfy `request.auth.uid == uid` for that document ever again, so the record
+becomes permanently unreachable. Measured on the live project during the security audit. The
+cloud copy therefore goes first, then the account, then the device, and the first failure stops
+the sequence — see `_DeleteAccountCard` and `test/widget/account_deletion_test.dart`.
 
 **Visual refresh: one brand blue, a new mark, and no "+" (2026-08-05).**
 Ported the `design_handoff_visual_refresh` handoff into the Flutter app. Where it contradicted a

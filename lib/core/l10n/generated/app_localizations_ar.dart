@@ -571,7 +571,7 @@ class LAr extends L {
   String get authErrorEmailInvalid => 'الإيميل مش مظبوط';
 
   @override
-  String get authErrorPasswordShort => 'الباسورد لازم 6 حروف على الأقل';
+  String get authErrorPasswordShort => 'الباسورد لازم 8 حروف على الأقل';
 
   @override
   String get authErrorWrongCredentials => 'الإيميل أو الباسورد غلط';
@@ -621,14 +621,7 @@ class LAr extends L {
   String get authDeleteAccountReauthAction => 'احذف الحساب';
 
   @override
-  String get authDeleteAccountGoogle =>
-      'الحساب ده معمول بحساب Google — دوس الزر وهيطلب منك التأكيد.';
-
-  @override
   String get authDeleteAccountFailed => 'الحساب اتمسحش. جرّب تاني.';
-
-  @override
-  String get authDeleted => 'الحساب اتمسح. نتمنى لك التوفيق.';
 
   @override
   String get authDeleteAccountSection => 'منطقة الخطر';

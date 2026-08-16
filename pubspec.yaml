@@ -2,7 +2,7 @@ name: ather
 description: "Ather - mastery measurement for Thanaweya Amma"
 publish_to: 'none'
 
-version: 1.5.0+10
+version: 1.6.0+11
 
 environment:
   sdk: ^3.12.2
@@ -43,6 +43,13 @@ dependencies:
   google_sign_in: ^7.2.0
   local_auth: ^3.0.2
   cloud_firestore: ^6.8.0
+
+  # Attests that a request came from a genuine install of this app, so the API
+  # key that ships inside every APK stops being enough on its own. Added
+  # 2026-08-15 after the audit created three accounts on the live project with
+  # nothing but that key. See main.dart for why it is shipped *before* it is
+  # enforced.
+  firebase_app_check: ^0.4.2
 
 dev_dependencies:
   flutter_test:

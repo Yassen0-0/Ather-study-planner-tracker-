@@ -570,7 +570,7 @@ class LEn extends L {
 
   @override
   String get authErrorPasswordShort =>
-      'The password needs at least 6 characters';
+      'The password needs at least 8 characters';
 
   @override
   String get authErrorWrongCredentials => 'Wrong email or password';
@@ -621,15 +621,8 @@ class LEn extends L {
   String get authDeleteAccountReauthAction => 'Delete account';
 
   @override
-  String get authDeleteAccountGoogle =>
-      'This account was created with Google — tap the button and it will ask you to confirm.';
-
-  @override
   String get authDeleteAccountFailed =>
       'The account was not deleted. Try again.';
-
-  @override
-  String get authDeleted => 'Account deleted. Good luck.';
 
   @override
   String get authDeleteAccountSection => 'Danger zone';

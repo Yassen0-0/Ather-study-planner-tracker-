@@ -77,6 +77,46 @@ re-download `google-services.json` into `android/app/`.
 
 The debug key's SHA-1 is already registered, which is why it works locally.
 
+### 3a. And then the **Play App Signing** key, which is a third key
+
+**This is the step that breaks sign-in for every student who installs from the
+store, and it cannot be caught by any test run on this machine.**
+
+With Play App Signing — which Play enrols you in and which you cannot opt out of
+for a new app — the bundle you upload is signed with the *upload* key, and Play
+then **re-signs the app with a different key of its own** before shipping it. The
+certificate on the APK a student installs is therefore neither the upload key nor
+the debug key. It is a third fingerprint that does not exist on this machine and
+is not in `google-services.json`.
+
+Google Sign-In authenticates by *package name + signing certificate*. So:
+
+| Build | Signed with | Google Sign-In |
+|---|---|---|
+| `flutter run` | debug key | works — SHA-1 registered |
+| `flutter build apk --release`, side-loaded | upload key | works — SHA-1 registered |
+| **anything installed from Play** | **Play's key** | **fails: `ApiException: 10`** |
+
+Every local verification passes. The signed-release run recorded in PROJECT.md §9
+proves the *upload* key works and says nothing at all about this. The first
+failure is a real student tapping "Continue with Google" and watching the account
+sheet open and die.
+
+**After the first bundle is uploaded** (the key does not exist before then):
+
+1. Play Console → **Release → Setup → App signing**.
+2. Copy the **SHA-1** and **SHA-256** under *App signing key certificate* — not
+   the upload key certificate below it.
+3. Firebase console → same place as above → **Add fingerprint** for both.
+4. Re-download `google-services.json` into `android/app/` and commit it.
+
+Do this before promoting to **any** track a person other than you can install
+from — internal testing is Play-signed too, so "it's only internal testing" is
+exactly the situation this fails in.
+
+Verify by installing from the store track itself and signing in with Google. A
+side-loaded APK cannot verify this, because it is signed with the wrong key.
+
 ---
 
 ## 4. Building
@@ -231,9 +271,17 @@ this project where the failure is invisible from the inside: the app works perfe
 Open items recorded in PROJECT.md §9, all of which block Play rather than
 testing:
 
-- In-app **account deletion** — mandatory for any app with sign-in.
-- A **privacy policy URL**, and the Data safety form (the app collects an email
-  address through Firebase Auth).
+- ~~In-app **account deletion** — mandatory for any app with sign-in.~~ **Built 2026-08-15**:
+  Settings → Delete account, which deletes the Firestore document *before* the Auth user.
+  That order is the feature — see `_DeleteAccountCard`.
+- A **privacy policy URL**, and the Data safety form. **Both are written and neither is
+  live.** `public/privacy.html` and `public/account-deletion.html` are ready to serve from
+  Firebase Hosting; they still contain `[[PUBLISHER_NAME]]` and `[[CONTACT_EMAIL]]`
+  placeholders and must not be deployed until those are filled. The Data safety answers are
+  drafted in `docs/reviews/security-audit-2026-08-15.md`.
+- **Register the Play App Signing SHA-1** (§3a). Nothing on this machine can catch this one.
+- **The full security audit's open items** — `docs/reviews/security-audit-2026-08-15.md`
+  carries a per-finding remediation table.
 - ~~The app has still never run on a real phone.~~ Done 2026-08-05 — a debug build was
   driven end to end on a Nothing Phone (Android 16). See PROJECT.md §10.
 - ~~Cloud backup has never been exercised against live Firestore.~~ Done 2026-08-05:
