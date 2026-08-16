@@ -127,6 +127,95 @@ final class FirebaseAuthRepository implements AuthRepository {
     await _auth.signOut();
   }
 
+  @override
+  Future<void> deleteAccount() => _deleteAccount(null);
+
+  /// Deletes the account, re-authenticating first when Firebase demands it.
+  ///
+  /// [reauth] is the caller's second attempt with fresh proof of ownership
+  /// (a password re-typed into the delete sheet, or a fresh Google token) —
+  /// a closure rather than credentials so no password is ever held longer
+  /// than the call that uses it.
+  Future<void> _deleteAccount(Future<void> Function()? reauth) async {
+    final user = _auth.currentUser;
+    // Already gone. Treated as success so a retry after a partial failure
+    // finishes rather than reporting an error about work already done.
+    if (user == null) return;
+
+    try {
+      if (reauth != null) await reauth();
+      await user.delete();
+      await _clearGoogleSession();
+      return;
+    } on fb.FirebaseAuthException catch (e) {
+      if (e.code != 'requires-recent-login') {
+        throw AuthException(_map(e));
+      }
+      // The first attempt with stale credentials lands here. One automatic
+      // retry with a fresh Google token when this session is a Google one:
+      // the student with the phone in their hand is the owner, and a
+      // re-auth prompt they cannot answer is a dead delete button.
+      if (reauth == null && _googleInitialised) {
+        try {
+          final account = await _google.authenticate();
+          final idToken = account.authentication.idToken;
+          if (idToken == null) {
+            throw const AuthException(AuthFailure.unknown);
+          }
+          await user.reauthenticateWithCredential(
+            fb.GoogleAuthProvider.credential(idToken: idToken),
+          );
+          await user.delete();
+          await _clearGoogleSession();
+          return;
+        } on GoogleSignInException catch (e) {
+          throw AuthException(
+            e.code == GoogleSignInExceptionCode.canceled
+                ? AuthFailure.cancelled
+                : AuthFailure.unknown,
+          );
+        } on fb.FirebaseAuthException catch (e) {
+          throw AuthException(_map(e));
+        } on AuthException {
+          rethrow;
+        } catch (_) {
+          throw const AuthException(AuthFailure.unknown);
+        }
+      }
+      throw const AuthException(AuthFailure.requiresRecentLogin);
+    } catch (_) {
+      throw const AuthException(AuthFailure.unknown);
+    }
+  }
+
+  /// Re-authenticates with email/password and deletes. The sheet's second
+  /// attempt, after the student has re-typed their password.
+  @override
+  Future<void> deleteAccountWithPassword(String password) =>
+      _deleteAccount(() async {
+        final user = _auth.currentUser;
+        if (user == null) throw const AuthException(AuthFailure.unknown);
+        final email = user.email;
+        if (email == null) {
+          throw const AuthException(AuthFailure.unknown);
+        }
+        await user.reauthenticateWithCredential(
+          fb.EmailAuthProvider.credential(email: email, password: password),
+        );
+      });
+
+  /// Google's own session survives `user.delete()`, and leaving it in place
+  /// pre-selects the account that was just deleted on the next attempt --
+  /// which reads as the deletion not having worked.
+  Future<void> _clearGoogleSession() async {
+    if (!_googleInitialised) return;
+    try {
+      await _google.signOut();
+    } catch (_) {
+      // Never let the Google plugin turn a completed deletion into a failure.
+    }
+  }
+
   static AuthFailure _map(fb.FirebaseAuthException e) => switch (e.code) {
     'invalid-email' => AuthFailure.invalidEmail,
     'weak-password' => AuthFailure.weakPassword,
@@ -140,6 +229,7 @@ final class FirebaseAuthRepository implements AuthRepository {
     'user-disabled' => AuthFailure.wrongCredentials,
     'network-request-failed' => AuthFailure.network,
     'too-many-requests' => AuthFailure.tooManyRequests,
+    'requires-recent-login' => AuthFailure.requiresRecentLogin,
     _ => AuthFailure.unknown,
   };
 }

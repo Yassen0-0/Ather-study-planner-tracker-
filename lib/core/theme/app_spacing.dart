@@ -1,31 +1,69 @@
 import 'package:flutter/animation.dart';
 
-/// The spacing scale: 4 · 8 · 10 · 12 · 14 · 16 · 18 · 22 · 24.
+/// The spacing ladder: 4 · 8 · 12 · 16 · 20 · 24.
 ///
-/// Anything that needs a value off this ladder is a sign the layout is wrong,
-/// not that the ladder is missing a rung.
+/// Every rung is a multiple of 4, and the standing rule — anything off this
+/// ladder is a sign the layout is wrong, not that the ladder is missing a rung
+/// — is now true of the whole of it.
+///
+/// It used to carry 10, 14, 18 and 22 as well, which made it *two* ladders laid
+/// over each other: a 4-grid and a 4+2 grid, with no written rule for which one
+/// a given gap belonged to. The rule could therefore only ever be half-applied,
+/// and half a rule is what let raw 9s, 11s, 13s and 15s accumulate at call
+/// sites — if the ladder already has a value two off the grid, one more is not
+/// obviously wrong.
+///
+/// The names skip `sm` and `lg` on purpose. Those two rungs *were* 10 and 14;
+/// deleting the values deleted the names with them, and nothing sits between 8
+/// and 12 or between 12 and 16 any more. The gap in the alphabet is the record
+/// of the cleanup, not an oversight.
+///
+/// Every call site that held one of the four removed rungs moved to the nearest
+/// surviving one, which is never further than 2 away.
 abstract final class AppSpacing {
   static const double xxs = 4;
   static const double xs = 8;
-  static const double sm = 10;
   static const double md = 12;
-  static const double lg = 14;
   static const double xl = 16;
-  static const double xxl = 18;
-
-  /// Gap between two sections on the same screen.
-  static const double section = 22;
+  static const double xxl = 20;
   static const double xxxl = 24;
 
-  /// Horizontal page margin on every screen.
+  // --- The two values below the ladder --------------------------------------
+  // Both are optical rather than structural, and both are here so that they are
+  // written once with a reason instead of retyped at thirty call sites. What
+  // the eye measures between two lines of type is the space between the *ink*,
+  // and the line-height either side has already contributed 3-4 of its own; a
+  // gap that is correct on the grid is too open once the leading is counted.
+
+  /// The inset that makes a heading line up with the card content beside it
+  /// rather than with the card's edge, and the top nudge under a header.
+  ///
+  /// Optical alignment: the section title's glyphs start a hair inside its
+  /// text box, so matching the box to the card edge leaves the *letters*
+  /// looking indented.
+  static const double opticalInset = 2;
+
+  /// Between a heading and the sentence it introduces, and the vertical padding
+  /// inside a pill whose label already carries its own leading.
+  ///
+  /// [xxs] closes this up until the two lines read as one block; [xs] opens it
+  /// until the sentence stops belonging to the heading.
+  static const double textGap = 6;
+
+  // --- Named jobs -----------------------------------------------------------
+
+  /// Horizontal page margin on every screen, and the horizontal padding of both
+  /// headers, so a screen title starts on the same vertical as the cards under
+  /// it.
   static const double pageMargin = 16;
 
-  /// Card padding: 16 in lists, 18 on dashboard and detail summaries.
+  /// Card padding. One value: the scale used to carry a second at 18 for
+  /// summary cards, and a 2 difference between two cards on the same screen is
+  /// not a distinction anyone can see.
   static const double cardPadding = 16;
-  static const double cardPaddingLarge = 18;
 
   /// Vertical gap between consecutive cards in a list.
-  static const double listGap = 10;
+  static const double listGap = 12;
 }
 
 /// Corner radii.
@@ -40,17 +78,17 @@ abstract final class AppRadius {
   /// Primary buttons, the toast, the big result field.
   static const double button = 14;
 
-  /// Inner input fields and the segmented control.
+  /// Inner input fields and the segmented control's own box.
   static const double input = 12;
 
-  /// Inner icon squares inside a padded card.
-  static const double inner = 10;
+  /// The selected segment inside the segmented control.
+  ///
+  /// The concentric rule, applied: [input] minus the control's 4 padding. It
+  /// was a raw 9 at the call site, which is the rule missed by one.
+  static const double segment = 8;
 
   /// Top corners of a bottom sheet.
   static const double sheet = 22;
-
-  /// A 36x36 circular header button.
-  static const double headerButton = 18;
 
   /// Chips, pills, day circles, the switch.
   static const double pill = 999;
@@ -89,15 +127,24 @@ abstract final class AppSizes {
   static const double inputTall = 50;
   static const double bigNumberField = 72;
 
+  /// The grab handle at the top of a bottom sheet. A drawn control, so it is a
+  /// size rather than a spacing value; it is here so the stadium's radius is
+  /// derived from its height instead of typed as a separate 3.
+  static const double sheetHandleWidth = 36;
+  static const double sheetHandleHeight = 5;
+
   static const double barTrack = 8;
   static const double barTrackSmall = 6;
 
-  static const double weekCircle = 34;
-
-  /// The week strip's own height, fixed because it clips: three weeks share the
-  /// box and the two off-screen ones must not stretch it. 4 dot + 3 + ~18
-  /// underlined letter + 6 + the circle.
-  static const double weekStrip = 4 + 3 + 21 + 6 + weekCircle;
+  /// The tasks screen's day picker: the whole row, and each cell inside it.
+  ///
+  /// `kMinTarget` exactly, and that is the point rather than a coincidence. The
+  /// week strip this replaced drew a 34px day and grew a 48px hit box around
+  /// it, which is how seven cells came to demand 336px on a screen that could
+  /// be 288 wide. Here the cell *is* the target: the artwork fills the square a
+  /// finger has to find, so the row can drop a pair of days to fit instead of
+  /// overflowing.
+  static const double dayPicker = 48;
 
   static const double checkbox = 24;
 }
@@ -124,14 +171,12 @@ abstract final class AppMotion {
   /// How long the confirmation toast stays on screen.
   static const Duration toast = Duration(milliseconds: 2200);
 
-  /// The week strip snapping to a week after a drag is released. Shares the
-  /// sheet's spring: both are "a surface you were holding finding its rest".
-  static const Duration weekSnap = sheet;
-  static const Curve weekSnapCurve = sheetCurve;
-
-  /// One half-cycle of the week strip's "come back to today" glow. Slow on
-  /// purpose — it is a standing cue, not an alert.
-  static const Duration weekGlowPulse = Duration(milliseconds: 1800);
+  // Gone with the week strip: `weekSnap`/`weekSnapCurve`, which eased a
+  // released drag back to a week boundary, and `weekGlowPulse`, one half-cycle
+  // of the "come back to today" glow. The day picker commits a drag to a whole
+  // day instead of settling a partial offset, so there is nothing to snap; and
+  // its glow is a standing sign rather than a pulsing one, which is also how it
+  // stopped being a ticker that never lets `pumpAndSettle` return.
 
   // ---------------------------------------------------------------------------
   // Motion system v1.1. Everything below is one ease-out and a set of durations

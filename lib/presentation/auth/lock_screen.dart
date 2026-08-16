@@ -156,13 +156,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                 // message takes the space the instructions used to hold.
                 Text(l.appName, style: AppTypography.lockWordmark),
                 if (_message != null) ...<Widget>[
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.xl),
                   Text(
                     _message!(l)!,
                     textAlign: TextAlign.center,
-                    style: AppTypography.style(
-                      size: 14,
-                      weight: AppTypography.semiBold,
+                    style: context.text.secondaryStrong.copyWith(
                       color: context.colors.wrong,
                     ),
                   ),

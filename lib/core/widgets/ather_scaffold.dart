@@ -50,11 +50,17 @@ class AtherHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
+      // The page margin, not a value of its own. The title has to start on the
+      // same vertical as the cards below it, and this header and `DayHeader`
+      // have to start on the same vertical as each other -- they are the same
+      // screen shape wearing two hats, and they used to sit 14 and 18 from the
+      // edge respectively, which put every inner screen's title 2 inside its
+      // own content and every day screen's title 2 outside it.
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        2,
-        AppSpacing.lg,
-        AppSpacing.lg,
+        AppSpacing.pageMargin,
+        AppSpacing.opticalInset,
+        AppSpacing.pageMargin,
+        AppSpacing.xl,
       ),
       child: Row(
         children: <Widget>[
@@ -64,7 +70,7 @@ class AtherHeader extends StatelessWidget {
               semanticLabel: L.of(context).commonBack,
               child: const BackChevron(),
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.md),
           ],
           Expanded(
             child: Column(
@@ -82,11 +88,7 @@ class AtherHeader extends StatelessWidget {
                     subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTypography.style(
-                      size: 13,
-                      weight: AppTypography.medium,
-                      color: context.colors.textSecondary,
-                    ),
+                    style: context.text.sublabel,
                   ),
               ],
             ),
@@ -134,7 +136,7 @@ class AtherScreen extends StatelessWidget {
     final body = ListView(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.pageMargin,
-        2,
+        AppSpacing.opticalInset,
         AppSpacing.pageMargin,
         AppSpacing.xxxl + underBar,
       ),

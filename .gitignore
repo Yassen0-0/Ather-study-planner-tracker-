@@ -66,3 +66,4 @@ dist/
 android/key.properties
 *.jks
 *.keystore
+.commandcode/

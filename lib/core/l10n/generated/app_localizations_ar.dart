@@ -39,25 +39,28 @@ class LAr extends L {
   String get subjectEnglish => 'إنجليزي';
 
   @override
-  String get weekdaySaturday => 'س';
+  String get weekdaySaturday => 'سبت';
 
   @override
-  String get weekdaySunday => 'ح';
+  String get weekdaySunday => 'أحد';
 
   @override
-  String get weekdayMonday => 'ن';
+  String get weekdayMonday => 'اتنين';
 
   @override
-  String get weekdayTuesday => 'ث';
+  String get weekdayTuesday => 'ثلاثاء';
 
   @override
-  String get weekdayWednesday => 'ر';
+  String get weekdayWednesday => 'أربعاء';
 
   @override
-  String get weekdayThursday => 'خ';
+  String get weekdayThursday => 'خميس';
 
   @override
-  String get weekdayFriday => 'ج';
+  String get weekdayFriday => 'جمعة';
+
+  @override
+  String get todayLabel => 'اليوم';
 
   @override
   String get dashboardTitle => 'النهارده';
@@ -568,7 +571,7 @@ class LAr extends L {
   String get authErrorEmailInvalid => 'الإيميل مش مظبوط';
 
   @override
-  String get authErrorPasswordShort => 'الباسورد لازم 6 حروف على الأقل';
+  String get authErrorPasswordShort => 'الباسورد لازم 8 حروف على الأقل';
 
   @override
   String get authErrorWrongCredentials => 'الإيميل أو الباسورد غلط';
@@ -595,6 +598,78 @@ class LAr extends L {
 
   @override
   String get authAccount => 'الحساب';
+
+  @override
+  String get authDeleteAccount => 'حذف الحساب';
+
+  @override
+  String get authDeleteAccountConfirm =>
+      'حسابك ونسختك السحابية وكل حاجة على الجهاز هتتمسح خالص. مش هينفع ترجع فيها.';
+
+  @override
+  String get authDeleteAccountOfflineWarning =>
+      'لو في بيانات لسه مترفعتش للسحابة، هتروح مع الحذف.';
+
+  @override
+  String get authDeleteAccountReauthTitle => 'أكّد إنه حسابك';
+
+  @override
+  String get authDeleteAccountReauthBody =>
+      'اكتب باسورد حسابك عشان نكمل الحذف.';
+
+  @override
+  String get authDeleteAccountReauthAction => 'احذف الحساب';
+
+  @override
+  String get authDeleteAccountFailed => 'الحساب اتمسحش. جرّب تاني.';
+
+  @override
+  String get authDeleteAccountSection => 'منطقة الخطر';
+
+  @override
+  String get settingsPrivacy => 'الخصوصية';
+
+  @override
+  String get privacyTitle => 'خصوصيتك';
+
+  @override
+  String get privacyIntro =>
+      'التطبيق ده بيجمع أقل بيانات ممكنة. الكلام اللي تحت ده وصف حقيقي للي بيحصل فعلاً — مش وعود عامة.';
+
+  @override
+  String get privacyLocalTitle => 'بيانات دراستك';
+
+  @override
+  String get privacyLocalBody =>
+      'أبوابك ودروسك وامتحاناتك ومهامك بتتخزن على موبايلك بس، في قاعدة بيانات محلية. الكود نفسه هو اللي بيحسب الإتقان — مفيش سيرفر تاني شايف ده.';
+
+  @override
+  String get privacyAccountTitle => 'بيانات الحساب';
+
+  @override
+  String get privacyAccountBody =>
+      'عشان النسخة السحابية، بنطلب إيميل وباسورد (أو حساب Google). بنستخدم Firebase Auth بتاع Google لتخزينهم. إيميلك هو كل اللي بنعرفه عنك — مفيش اسم ولا سن ولا أي بيانات تانية.';
+
+  @override
+  String get privacyCloudTitle => 'النسخة السحابية';
+
+  @override
+  String get privacyCloudBody =>
+      'لو عملت حساب، بنرفع نسخة من بيانات دراستك مشفرة أثناء النقل ومحفوظة على سيرفرات Google (Firebase Firestore) باسم حسابك. محدش غيرك يقدر يوصلها — ولا إحنا.';
+
+  @override
+  String get privacyDeleteTitle => 'مسح بياناتك';
+
+  @override
+  String get privacyDeleteBody =>
+      'تحت في آخر صفحة الإعدادات في زرار «حذف الحساب». لما تدوسه: بياناتك على الموبايل بتمسح، النسخة السحابية بتمسح، والحساب نفسه بيتشال من Firebase. نهائياً.';
+
+  @override
+  String get privacyNoCollectTitle => 'اللي بنعملهش';
+
+  @override
+  String get privacyNoCollectBody =>
+      'مفيش إعلانات. مفيش تتبع. مفيش بيع بيانات. مفيش تحليلات ولا تقارير أخطاء لجهة خارجية. التطبيق شغال من غير نت أصلاً معظم الوقت.';
 
   @override
   String get lockUnlock => 'افتح';
@@ -657,6 +732,11 @@ class LAr extends L {
   String get settingsAbout => 'عن التطبيق';
 
   @override
+  String settingsVersionFormat(String version) {
+    return 'الإصدار $version';
+  }
+
+  @override
   String get backupTitle => 'النسخة السحابية';
 
   @override
@@ -706,7 +786,7 @@ class LAr extends L {
   String get backupErrorUnknown => 'الحفظ مظبطش';
 
   @override
-  String get tasksTitle => 'مهام النهارده';
+  String get tasksTitle => 'مهام اليوم';
 
   @override
   String tasksDoneOf(String done, String total) {

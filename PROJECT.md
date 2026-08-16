@@ -574,7 +574,7 @@ The app now has an accent: `AppColors.accent`, `#4D9BFF` on dark and `#1B6EF3` o
 `onAccent` and a low-alpha `accentSoft` beside it. It is used **everywhere something is active**:
 the selected tab icon and label, every progress fill, the ticked checkbox and task disc, the
 selected filter chip, the "Exam" pill, `PrimaryButton`'s default tone, the lock screen's Unlock
-button, the week strip's completed and today rings, and the brand mark's 27% arc.
+button, the day picker's selected pill and its completed-day dot, and the brand mark's 27% arc.
 
 Chose one accent over the previous monochrome because the monochrome version had no way to say
 "this one" without also saying "this is correct" — every emphasis had to borrow green, and green
@@ -605,28 +605,49 @@ Logging an exam is now reachable only from a place that already knows the lesson
 on the dashboard's up-next card, and the sticky CTA on a lesson screen. Two entry points, both
 carrying their subject with them, and no route that opens with "which one?".
 
-### 3.29 The week strip carries three weeks, and signposts the way home
-The strip is flat in-page content — no card, no pill, no blur; the glass exception stays spent on
-the tab bar alone (§3.19). Today is marked by a dot, a darker letter and a 1.5px rule under it,
-**never a filled cell**: a filled cell already means "this day is done" three pixels below, and
-using one fill for both made the two unreadable together.
+### 3.29 The day picker shows the days that fit, not the days of the week
+The tasks screen's date control is a short row of day pills centred on the selected day —
+`اليوم` in the middle, its neighbours named and dated either side. It is flat in-page content:
+no card, no blur, no border; the glass exception stays spent on the tab bar alone (§3.19).
 
-It holds the previous, current and next week and drags between them, snapping past a ±45px
-release. Two things about that are worth writing down:
+**It replaced a seven-day week strip, and the reason is arithmetic rather than taste.** As a
+picker each of the strip's seven cells carried the app's 48px target floor, so the row demanded
+`7 × 48 = 336` however narrow the window was — it fitted only from 368 up. A 360 phone, the
+commonest Android width there is, clipped it by 8; a 320 phone by 48. `layout_matrix_test.dart`
+had to exclude the tasks tab below 400 to stay green, and recorded the exclusion as a known
+defect it could not fix: seven 48px targets cannot be laid in 288, and no arrangement of them
+exists. The fix was never a spacing change. It was to stop showing seven days.
 
-1. **The neighbours only exist while it is moving.** At rest the strip builds one week. An
-   off-screen cell that stays in the tree answers hit tests and `find.text` alike, and a tap
-   meant for Saturday would land on a Saturday three weeks ago.
-2. **Direction is computed exactly once.** The drag is accumulated in *logical* start-to-end
-   pixels and multiplied by a single `sign` at the point it becomes a physical offset. The HTML
-   prototype had the sign flipped per direction at three separate call sites and broke under LTR;
+Four things carry the weight:
+
+1. **The count is measured, never assumed.** The selected day is placed, then neighbours are
+   added outward *in pairs* for as long as they actually fit the width the widget was handed —
+   three on a phone, five on a tablet, seven at most. Nothing is ever scaled down to make room:
+   a date the student cannot read is worse than a date that is not on screen.
+2. **What is measured must be what is laid out.** The prediction applies the 48 floor and bills
+   `n − 1` gaps for `n` cells; the layout applies the same floor and separates cells rather than
+   padding them. If those two ever disagree the row keeps one pair too many and runs over by the
+   difference — which is why `day_picker_test.dart` sweeps every width from 120 to 1000 instead
+   of sampling a few round ones. Under-billing the gaps by 8 fails that sweep at five widths and
+   passes every other test in the file.
+3. **Direction is computed exactly once.** The drag is accumulated in *logical* start-to-end
+   pixels and multiplied by a single `sign` at the point it becomes a decision. The HTML
+   prototype flipped the sign per direction at three separate call sites and broke under LTR;
    everything positional here is `PositionedDirectional` / `AlignmentDirectional` instead.
+4. **Today is a fixed landmark.** Its cell reads `اليوم` whether it is selected or not — every
+   other cell changes each time the student moves a day, so this is the one they navigate
+   against, and the trip home is a tap on a word rather than on arithmetic.
 
-Off today's week, a 34px green edge glow appears on the side the student would drag toward to get
-back, and tapping it returns in one move. Green rather than the accent on purpose: it is
-wayfinding, not brand. Its pulse controller **runs only while the glow is mounted** — the design
-layer left an opacity keyframe looping on a hidden element forever, which is also why
-`pumpAndSettle` is a valid assertion in `test/widget/week_strip_test.dart`.
+When today is off screen entirely, an 18px green edge marks **the side it is actually on** —
+a date comparison, not a direction of travel, because those are opposite edges and the strip
+signposted the wrong one for its whole life. Green rather than the accent: wayfinding, not brand.
+It does not pulse. The strip's did, which left a ticker running for the life of the screen and
+made `pumpAndSettle` unusable; a standing sign says the same thing and lets every test in the
+file settle.
+
+A dot under a day means every task set for it is done. A dot rather than the filled disc the
+strip used, for the reason that kept today off a filled cell there: the pill is already a fill,
+and two fills in one cell are two claims the eye has to separate.
 
 ### 3.24 The first schema migration, and why `onUpgrade` is not optional
 `schemaVersion` went 1 → 2 for `daily_tasks`. Every student on an earlier build already has a v1
@@ -1286,6 +1307,36 @@ produced those numbers is untouched by the redesign.
 
 ## 10. Work Log
 
+**The week strip became a day picker, and a known layout defect closed with it (2026-08-15).**
+The tasks screen's date control is now `DayPicker`: a short row of day pills centred on the
+selected day, with `اليوم` as its fixed landmark. `WeekStrip` is deleted — the dashboard's inert
+copy had already gone in 1.4.0+9, so it had one caller left.
+
+This was asked for as a visual change and is mostly one: 68px of header become 48, seven bare
+letters become named and dated pills, and the selected day is a filled accent pill instead of a
+dot, a darker letter and a rule. But the thing worth recording is that it closed a **defect the
+layout matrix had measured and given up on**. Seven day cells at the 48px target floor demand
+336px; a 320 phone offers 288 between the page margins; no arrangement of seven 48s fits in 288.
+`layout_matrix_test.dart` excluded the tasks tab below 400 and said in writing that the choice
+was the product's, not a refactor's. It was: the product decision is that a task list is
+navigated by the days either side of today, so the picker shows the days that fit and drops the
+rest. The tab is back in the width sweep unconditionally.
+
+Two decisions went **against** the brief that requested this, both on the same grounds:
+
+- **Arabic-Indic numerals (`١٤`) were asked for and not built.** §3.16 puts Western digits in
+  both locales, and the count line `0 من 3` sits four rows under the picker. Two digit systems on
+  one screen is a worse outcome than the one the brief was reaching for.
+- **`اليوم` was asked for where the app says `النهارده`.** Here the brief won on a second pass:
+  the picker says `اليوم`, and `tasksTitle` moved from `مهام النهارده` to `مهام اليوم` so the two
+  do not contradict each other an inch apart. The dashboard keeps `النهارده` — different screen,
+  nothing there to contradict.
+
+`day_picker_test.dart` (16 cases) sweeps every width from 120 to 1000 asserting that what the
+widget *measured* is what it *laid out*, which is the only invariant that makes an adaptive count
+safe. It was written against a deliberately broken build first: under-billing the inter-cell gaps
+by 8 fails the sweep at five widths and passes every other test in the file. See §3.29.
+
 **1.2.0+6 published, and the documentation reconciled with it (2026-08-13).**
 The first build of the 1.2.0 line to actually leave the machine. `1.2.0+5` was written up but
 never built, so `1.1.0+4` was still the newest APK in existence.
@@ -1428,11 +1479,19 @@ grey; `int.parse` on a route parameter can no longer crash route building; the r
 auth subscription are disposed with the provider scope; two toasts can no longer stack on top of
 each other; and the password toggle's `'abc'` — untranslated Latin in an Arabic form — is gone.
 
-**Not done, and deliberately left for a decision:** account deletion (Play requires it for any
-app with accounts, and it is a product decision about what happens to the cloud copy), local
-file export, email verification, and Crashlytics. `flush()` still skips an upload when the local
-database is empty, so a student who deletes everything cannot clear their cloud copy — that is a
-real edge but the safe direction of the two.
+**Not done, and deliberately left for a decision:** local file export, email verification, and
+Crashlytics. `flush()` still skips an upload when the local database is empty, so a student who
+deletes everything cannot clear their cloud copy — that is a real edge but the safe direction of
+the two.
+
+~~account deletion (Play requires it for any app with accounts, and it is a product decision
+about what happens to the cloud copy)~~ **Built 2026-08-15** — Settings → Delete account. The
+product decision the entry was waiting on turned out to be forced rather than open: Firebase
+deletes the Auth user and leaves `users/{uid}/backup/snapshot` behind, and once the account is
+gone no caller can satisfy `request.auth.uid == uid` for that document ever again, so the record
+becomes permanently unreachable. Measured on the live project during the security audit. The
+cloud copy therefore goes first, then the account, then the device, and the first failure stops
+the sequence — see `_DeleteAccountCard` and `test/widget/account_deletion_test.dart`.
 
 **Visual refresh: one brand blue, a new mark, and no "+" (2026-08-05).**
 Ported the `design_handoff_visual_refresh` handoff into the Flutter app. Where it contradicted a
@@ -1813,3 +1872,15 @@ design tokens, Cairo variable font, ar/en ARB + generated delegate, breakpoints,
 dark theme, bootstrap screen. Resolved three dependency conflicts (see §3.6) and the Cairo
 static-TTF 404 (see §3.5). `flutter analyze` clean; 2/2 tests pass including the RTL→LTR
 direction assertion.
+
+**Android release security audit (2026-08-16).** The release manifest now sets
+`android:allowBackup="false"`: local SQLite curriculum and Firebase's cached
+authentication state cannot move through Android Auto Backup or device-transfer
+channels. The authenticated Firestore mirror is deliberately the sole
+cross-device restore route. `firebase.json` was also corrected to point at the
+shipped `com.ather.app` Firebase Android client rather than the retired Sahm
+client, preventing future FlutterFire configuration from silently regenerating
+the wrong Android configuration. `test/security/security_configuration_test.dart`
+locks both properties down. The arm64 release APK built, passed signature and
+manifest inspection, installed on the API-35 emulator, and launched to the
+signed-out login gate without a crash.

@@ -84,8 +84,8 @@ class _NamePromptSheetState extends State<_NamePromptSheet> {
               borderRadius: BorderRadius.circular(AppRadius.input),
             ),
             padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: 2,
+              horizontal: AppSpacing.xl,
+              vertical: AppSpacing.opticalInset,
             ),
             child: TextField(
               controller: _controller,
@@ -110,8 +110,12 @@ class _NamePromptSheetState extends State<_NamePromptSheet> {
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
+                // `md`, not `xl`: this padding plus the 2 above it plus the
+                // line box is the field's whole height, and 12 lands it on
+                // AppSizes.input -- the height every other input in the app is
+                // drawn at. The old 14 was a number that matched nothing.
                 contentPadding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.lg,
+                  vertical: AppSpacing.md,
                 ),
               ),
             ),
@@ -166,7 +170,7 @@ Future<void> showEditSheet(
               onRename();
             },
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           PrimaryButton(
             label: deleteLabel,
             tone: PrimaryButtonTone.wrong,
@@ -210,7 +214,7 @@ Future<bool> confirmDestructive(
             tone: PrimaryButtonTone.wrong,
             onTap: () => Navigator.of(context).pop(true),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           PrimaryButton(
             label: cancelLabel ?? l.commonCancel,
             tone: PrimaryButtonTone.secondary,

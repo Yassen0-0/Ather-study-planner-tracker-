@@ -29,6 +29,11 @@ final class FakeAuthRepository implements AuthRepository {
   AuthFailure? nextFailure;
 
   int signOutCount = 0;
+  int deleteCount = 0;
+
+  /// Thrown by the next `deleteAccount()` when non-null, to drive the
+  /// re-authentication path exactly the way a stale Firebase session does.
+  AuthFailure? nextDeleteFailure;
 
   @override
   Account? get currentAccount => _account;
@@ -79,6 +84,26 @@ final class FakeAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     signOutCount++;
+    _set(null);
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    final failure = nextDeleteFailure;
+    if (failure != null) {
+      nextDeleteFailure = null;
+      throw AuthException(failure);
+    }
+    deleteCount++;
+    _set(null);
+  }
+
+  /// The re-auth retry always succeeds — the fake cannot know the password,
+  /// and the contract under test is "a second attempt goes through", not
+  /// Firebase's credential check.
+  @override
+  Future<void> deleteAccountWithPassword(String password) async {
+    deleteCount++;
     _set(null);
   }
 

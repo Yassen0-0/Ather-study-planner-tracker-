@@ -66,12 +66,11 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.actionDisabled,
     required this.wrong,
     required this.wrongTint,
-    required this.wrongChip,
     required this.right,
     required this.rightText,
     required this.onState,
     required this.divider,
-    required this.dividerStrong,
+    required this.glassBorder,
     required this.switchOff,
     required this.switchKnob,
     required this.checkboxBorder,
@@ -149,11 +148,14 @@ class AppColors extends ThemeExtension<AppColors> {
   /// Wrong, weak (< 50%), overdue, and delete.
   final Color wrong;
 
-  /// Wash behind an error message.
+  /// The one wash red is allowed: behind an error message, an overdue status
+  /// chip, a review badge.
+  ///
+  /// There used to be a second at 12% called `wrongChip`, for the overdue chip
+  /// specifically. Two reds two percent apart, on the same screen and often in
+  /// the same card, is not a distinction — it is a decision nobody made twice
+  /// on purpose. One wash, one name.
   final Color wrongTint;
-
-  /// Wash behind an overdue status chip.
-  final Color wrongChip;
 
   /// Right, mastered (>= 90%), mastered chapter, switch on.
   ///
@@ -183,11 +185,18 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color onState;
 
   // --- Lines and controls ---------------------------------------------------
-  /// Hairline between rows inside one card.
+  /// Hairline between rows inside one card, and between rows in a sheet.
   final Color divider;
 
-  /// Slightly stronger: top edge of the tab bar and sheet rows.
-  final Color dividerStrong;
+  /// The tab bar's own edge.
+  ///
+  /// Not "a slightly stronger [divider]", which is what it was called when it
+  /// was two percent away from one and used for both jobs. This line is drawn
+  /// on a translucent surface with a 24-sigma blur behind it, over whatever the
+  /// student happens to be scrolling; a 6% hairline that reads cleanly inside a
+  /// white card disappears there. The extra weight is the blur's, not the
+  /// design's, which is why it belongs to the bar and to nothing else.
+  final Color glassBorder;
 
   final Color switchOff;
 
@@ -232,14 +241,13 @@ class AppColors extends ThemeExtension<AppColors> {
     actionDisabled: Color(0xFFE9E9EC),
     wrong: Color(0xFFFF3B30),
     wrongTint: Color(0x1AFF3B30), // 10%
-    wrongChip: Color(0x1FFF3B30), // 12%
     right: Color(0xFF34C759),
     // 4.6:1 on white, 4.3:1 on the page grey -- AA for body text, and still
     // unmistakably the same green as the fill beside it.
     rightText: Color(0xFF1B7F3B),
     onState: Color(0xFFFFFFFF),
     divider: Color(0x0F000000), // black @ 6%
-    dividerStrong: Color(0x12000000), // black @ 7%
+    glassBorder: Color(0x12000000), // black @ 7%
     switchOff: Color(0xFFDCDCE0),
     switchKnob: Color(0xFFFFFFFF),
     checkboxBorder: Color(0xFFD5D5DA),
@@ -281,14 +289,13 @@ class AppColors extends ThemeExtension<AppColors> {
     actionDisabled: Color(0xFF2C2C2E),
     wrong: Color(0xFFFF3B30),
     wrongTint: Color(0x26FF3B30), // 15%
-    wrongChip: Color(0x2EFF3B30), // 18%
     right: Color(0xFF34C759),
     // Unchanged from [right]: 7.7:1 on the dark card already. Darkening it here
     // would only make it harder to read.
     rightText: Color(0xFF34C759),
     onState: Color(0xFFFFFFFF),
     divider: Color(0x14FFFFFF), // white @ 8%
-    dividerStrong: Color(0x1AFFFFFF), // white @ 10%
+    glassBorder: Color(0x1AFFFFFF), // white @ 10%
     switchOff: Color(0xFF3A3A3E),
     switchKnob: Color(0xFFF2F2F5),
     checkboxBorder: Color(0xFF48484C),
@@ -324,12 +331,11 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? actionDisabled,
     Color? wrong,
     Color? wrongTint,
-    Color? wrongChip,
     Color? right,
     Color? rightText,
     Color? onState,
     Color? divider,
-    Color? dividerStrong,
+    Color? glassBorder,
     Color? switchOff,
     Color? switchKnob,
     Color? checkboxBorder,
@@ -356,12 +362,11 @@ class AppColors extends ThemeExtension<AppColors> {
       actionDisabled: actionDisabled ?? this.actionDisabled,
       wrong: wrong ?? this.wrong,
       wrongTint: wrongTint ?? this.wrongTint,
-      wrongChip: wrongChip ?? this.wrongChip,
       right: right ?? this.right,
       rightText: rightText ?? this.rightText,
       onState: onState ?? this.onState,
       divider: divider ?? this.divider,
-      dividerStrong: dividerStrong ?? this.dividerStrong,
+      glassBorder: glassBorder ?? this.glassBorder,
       switchOff: switchOff ?? this.switchOff,
       switchKnob: switchKnob ?? this.switchKnob,
       checkboxBorder: checkboxBorder ?? this.checkboxBorder,
@@ -396,12 +401,11 @@ class AppColors extends ThemeExtension<AppColors> {
       actionDisabled: mix(actionDisabled, other.actionDisabled),
       wrong: mix(wrong, other.wrong),
       wrongTint: mix(wrongTint, other.wrongTint),
-      wrongChip: mix(wrongChip, other.wrongChip),
       right: mix(right, other.right),
       rightText: mix(rightText, other.rightText),
       onState: mix(onState, other.onState),
       divider: mix(divider, other.divider),
-      dividerStrong: mix(dividerStrong, other.dividerStrong),
+      glassBorder: mix(glassBorder, other.glassBorder),
       switchOff: mix(switchOff, other.switchOff),
       switchKnob: mix(switchKnob, other.switchKnob),
       checkboxBorder: mix(checkboxBorder, other.checkboxBorder),

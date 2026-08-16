@@ -56,28 +56,42 @@ class AtherSheetBody extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        // The page margin on three sides, so the sheet's content lands on the
+        // same verticals as the screen behind it. It was 20/20/20/28, which is
+        // Material's default and belonged to no scale of ours: the app's one
+        // modal was the only surface in it that did not reach the page margin.
+        //
+        // The bottom is a rung larger than the sides on purpose — it clears the
+        // gesture bar, which the sides have nothing to clear.
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.pageMargin,
+          AppSpacing.pageMargin,
+          AppSpacing.pageMargin,
+          AppSpacing.xxxl,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Center(
               child: Container(
-                width: 36,
-                height: 5,
+                width: AppSizes.sheetHandleWidth,
+                height: AppSizes.sheetHandleHeight,
                 decoration: BoxDecoration(
                   color: context.colors.switchOff,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(
+                    AppSizes.sheetHandleHeight / 2,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(title, style: AppTypography.screenTitle),
             if (body != null) ...<Widget>[
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.textGap),
               Text(body!, style: context.text.secondary),
             ],
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.xl),
             Flexible(child: child),
           ],
         ),

@@ -87,14 +87,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       children: <Widget>[
         if (insights.isNotEmpty) ...<Widget>[
           _InsightsCard(insights: insights),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
         ],
         _FilterRow(
           subjects: subjects,
           selected: _subjectFilter,
           onSelect: (id) => setState(() => _subjectFilter = id),
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
         // The one card that deliberately ignores the filter, and says so: it
         // exists to compare the four subjects against each other, and a
         // comparison of one subject with itself is not a chart.
@@ -102,14 +102,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           subjects: subjects,
           comparingAll: _subjectFilter != null,
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
         if (chapters.isNotEmpty) ...<Widget>[
           _ChapterBarsCard(chapters: chapters),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
         ],
         if (lessons.isNotEmpty) ...<Widget>[
           _WeakestCard(lessons: lessons.take(5).toList()),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
         ],
         _DisciplineCard(
           line: l.lessonsOnTimeOf(iso(onTime), iso(examined)),
@@ -117,7 +117,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           hasData: examined > 0,
         ),
         if (chapters.isEmpty && lessons.isEmpty) ...<Widget>[
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           Center(
             child: Text(
               l.analyticsNotEnoughData,
@@ -177,16 +177,16 @@ class _InsightsCard extends ConsumerWidget {
     final l = L.of(context);
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(l.analyticsInsights, style: AppTypography.cardTitle),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xxs),
           for (final insight in insights) ...<Widget>[
             const CardDivider(),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Builder(
                 builder: (context) {
                   final (text, color) = _render(
@@ -199,7 +199,7 @@ class _InsightsCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Container(
-                        margin: const EdgeInsets.only(top: 5),
+                        margin: const EdgeInsets.only(top: AppSpacing.textGap),
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
@@ -207,17 +207,8 @@ class _InsightsCard extends ConsumerWidget {
                           shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          text,
-                          style: AppTypography.style(
-                            size: 14,
-                            weight: AppTypography.medium,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(child: Text(text, style: AppTypography.body)),
                     ],
                   );
                 },
@@ -284,13 +275,13 @@ class _SubjectBarsCard extends StatelessWidget {
     final l = L.of(context);
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(l.analyticsMasteryBySubject, style: AppTypography.cardTitle),
           if (comparingAll) ...<Widget>[
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSpacing.xxs),
             Text(l.analyticsAlwaysAllSubjects, style: context.text.micro),
           ],
           const SizedBox(height: AppSpacing.xl),
@@ -312,7 +303,7 @@ class _SubjectBarsCard extends StatelessWidget {
                       ),
                     ),
                     if (subject != subjects.last)
-                      const SizedBox(width: AppSpacing.lg),
+                      const SizedBox(width: AppSpacing.xl),
                   ],
                 ],
               ),
@@ -354,11 +345,7 @@ class _VerticalBar extends StatelessWidget {
       children: <Widget>[
         Text(
           percentLabel(mastery, hasData: hasData),
-          style: AppTypography.style(
-            size: 12,
-            weight: AppTypography.bold,
-            color: color,
-          ),
+          style: AppTypography.chartValue.copyWith(color: color),
         ),
         const SizedBox(height: AppSpacing.xs),
         Expanded(
@@ -392,11 +379,7 @@ class _VerticalBar extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.style(
-            size: 11,
-            weight: AppTypography.semiBold,
-            color: context.colors.textSecondary,
-          ),
+          style: context.text.chartLabel,
         ),
       ],
     );
@@ -413,12 +396,12 @@ class _ChapterBarsCard extends StatelessWidget {
     final l = L.of(context);
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(l.analyticsMasteryByChapter, style: AppTypography.cardTitle),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.xl),
           for (final chapter in chapters)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -433,7 +416,7 @@ class _ChapterBarsCard extends StatelessWidget {
                       style: context.text.small,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: MasteryBar(
                       fraction: MasteryPalette.barFraction(
@@ -450,7 +433,7 @@ class _ChapterBarsCard extends StatelessWidget {
                       trackColor: context.colors.fill,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: AppSpacing.md),
                   SizedBox(
                     width: 42,
                     child: Text(
@@ -459,9 +442,7 @@ class _ChapterBarsCard extends StatelessWidget {
                         hasData: chapter.hasAnyExam,
                       ),
                       textAlign: TextAlign.end,
-                      style: AppTypography.style(
-                        size: 13,
-                        weight: AppTypography.bold,
+                      style: AppTypography.chartValue.copyWith(
                         color: MasteryPalette.resolve(
                           colors: context.colors,
                           percentage: chapter.mastery,
@@ -490,18 +471,18 @@ class _WeakestCard extends StatelessWidget {
     final l = L.of(context);
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(l.analyticsWeakestLessons, style: AppTypography.cardTitle),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xxs),
           for (final entry in lessons) ...<Widget>[
             const CardDivider(),
             Pressable(
               onTap: () => context.push(Routes.lesson(entry.lesson.lesson.id)),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 11),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                 child: Row(
                   children: <Widget>[
                     Expanded(
@@ -512,29 +493,20 @@ class _WeakestCard extends StatelessWidget {
                             entry.lesson.lesson.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTypography.style(
-                              size: 15,
-                              weight: AppTypography.semiBold,
-                            ),
+                            style: AppTypography.listTitle,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSpacing.xxs),
                           Text(
                             entry.subject.subject.code.label(l),
-                            style: AppTypography.style(
-                              size: 12,
-                              weight: AppTypography.medium,
-                              color: context.colors.textSecondary,
-                            ),
+                            style: context.text.small,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
+                    const SizedBox(width: AppSpacing.md),
                     Text(
                       percent(entry.lesson.mastery),
-                      style: AppTypography.style(
-                        size: 16,
-                        weight: AppTypography.bold,
+                      style: AppTypography.rowNumberCompact.copyWith(
                         color: MasteryPalette.resolve(
                           colors: context.colors,
                           percentage: entry.lesson.mastery,
@@ -570,7 +542,7 @@ class _DisciplineCard extends StatelessWidget {
     final l = L.of(context);
 
     return AtherCard(
-      padding: AppSpacing.cardPaddingLarge,
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -585,7 +557,7 @@ class _DisciplineCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.md),
           MasteryBar(
             // The accent, not the mastery colour: this measures habit, not
             // understanding, and colouring it green would let a student read

@@ -97,12 +97,10 @@ class MasteryNumber extends StatelessWidget {
             color: color,
             style: style,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSpacing.textGap),
           Text(
             '/ 100',
-            style: AppTypography.style(
-              size: 16,
-              weight: AppTypography.semiBold,
+            style: AppTypography.cardLabel.copyWith(
               color: context.colors.textSecondary,
             ),
           ),

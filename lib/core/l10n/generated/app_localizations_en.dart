@@ -39,25 +39,28 @@ class LEn extends L {
   String get subjectEnglish => 'English';
 
   @override
-  String get weekdaySaturday => 'S';
+  String get weekdaySaturday => 'Sat';
 
   @override
-  String get weekdaySunday => 'S';
+  String get weekdaySunday => 'Sun';
 
   @override
-  String get weekdayMonday => 'M';
+  String get weekdayMonday => 'Mon';
 
   @override
-  String get weekdayTuesday => 'T';
+  String get weekdayTuesday => 'Tue';
 
   @override
-  String get weekdayWednesday => 'W';
+  String get weekdayWednesday => 'Wed';
 
   @override
-  String get weekdayThursday => 'T';
+  String get weekdayThursday => 'Thu';
 
   @override
-  String get weekdayFriday => 'F';
+  String get weekdayFriday => 'Fri';
+
+  @override
+  String get todayLabel => 'Today';
 
   @override
   String get dashboardTitle => 'Today';
@@ -567,7 +570,7 @@ class LEn extends L {
 
   @override
   String get authErrorPasswordShort =>
-      'The password needs at least 6 characters';
+      'The password needs at least 8 characters';
 
   @override
   String get authErrorWrongCredentials => 'Wrong email or password';
@@ -595,6 +598,79 @@ class LEn extends L {
 
   @override
   String get authAccount => 'Account';
+
+  @override
+  String get authDeleteAccount => 'Delete account';
+
+  @override
+  String get authDeleteAccountConfirm =>
+      'Your account, your cloud copy and everything on this device will be permanently deleted. This cannot be undone.';
+
+  @override
+  String get authDeleteAccountOfflineWarning =>
+      'Anything that has not reached the cloud yet will be lost with the deletion.';
+
+  @override
+  String get authDeleteAccountReauthTitle => 'Confirm it is your account';
+
+  @override
+  String get authDeleteAccountReauthBody =>
+      'Type your password to finish deleting the account.';
+
+  @override
+  String get authDeleteAccountReauthAction => 'Delete account';
+
+  @override
+  String get authDeleteAccountFailed =>
+      'The account was not deleted. Try again.';
+
+  @override
+  String get authDeleteAccountSection => 'Danger zone';
+
+  @override
+  String get settingsPrivacy => 'Privacy';
+
+  @override
+  String get privacyTitle => 'Your privacy';
+
+  @override
+  String get privacyIntro =>
+      'This app collects as little as possible. Everything below describes what actually happens — not generic promises.';
+
+  @override
+  String get privacyLocalTitle => 'Your study data';
+
+  @override
+  String get privacyLocalBody =>
+      'Your chapters, lessons, exams and tasks are stored on your phone only, in a local database. Mastery is computed on your device — no other server ever sees it.';
+
+  @override
+  String get privacyAccountTitle => 'Account data';
+
+  @override
+  String get privacyAccountBody =>
+      'For the cloud backup we ask for an email and password (or a Google account). They are stored by Google Firebase Auth. Your email is everything we know about you — no name, no age, no other personal data.';
+
+  @override
+  String get privacyCloudTitle => 'The cloud backup';
+
+  @override
+  String get privacyCloudBody =>
+      'If you create an account, a copy of your study data, encrypted in transit, is stored on Google servers (Firebase Firestore) under your account. Nobody but you can reach it — including us.';
+
+  @override
+  String get privacyDeleteTitle => 'Deleting your data';
+
+  @override
+  String get privacyDeleteBody =>
+      'At the very bottom of Settings there is a Delete account button. When you tap it: the data on your phone is erased, the cloud copy is erased, and the account itself is removed from Firebase. Permanently.';
+
+  @override
+  String get privacyNoCollectTitle => 'What we never do';
+
+  @override
+  String get privacyNoCollectBody =>
+      'No ads. No tracking. No selling data. No third-party analytics or crash reporting. The app works offline most of the time anyway.';
 
   @override
   String get lockUnlock => 'Unlock';
@@ -657,6 +733,11 @@ class LEn extends L {
 
   @override
   String get settingsAbout => 'About';
+
+  @override
+  String settingsVersionFormat(String version) {
+    return 'Version $version';
+  }
 
   @override
   String get backupTitle => 'Cloud backup';

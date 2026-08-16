@@ -36,7 +36,13 @@ void main() {
 
   /// A Wednesday, so the week it falls in has days on both sides of it.
   final DateTime now = DateTime(2026, 8, 5);
-  final DateTime saturday = DateTime(2026, 8, 1);
+  /// The day before [now], which is the neighbour the picker always shows.
+  ///
+  /// It used to be the Saturday that opened the week, because the strip that
+  /// stood here put all seven days on screen at once. The picker shows the days
+  /// that *fit* — three on a phone — so a test that reaches four days back is a
+  /// test asserting on a cell that is deliberately not rendered.
+  final DateTime yesterday = DateTime(2026, 8, 4);
 
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
 
@@ -122,12 +128,15 @@ void main() {
     ),
   );
 
-  /// A weekday letter in **this** screen's strip. The dashboard branch stays
-  /// mounted behind the cross-fade and carries an identical strip, so an
-  /// unscoped `find.text('س')` matches two widgets.
-  Finder day(WidgetTester tester, String letter) => find.descendant(
+  /// A cell in **this** screen's day picker, by the text a student reads on it.
+  ///
+  /// Scoped to the screen even though the dashboard no longer carries a picker
+  /// of its own: the tasks branch stays mounted behind the tab cross-fade, and
+  /// a finder that stops depending on which branch is in front is a finder that
+  /// keeps working when one is added back.
+  Finder day(WidgetTester tester, String label) => find.descendant(
     of: find.byType(TasksScreen),
-    matching: find.text(letter),
+    matching: find.text(label),
   );
 
   /// Reads what is actually on disk for [day].
@@ -151,7 +160,7 @@ void main() {
     phoneSized(tester);
     await openTasks(tester);
 
-    expect(find.text('مهام النهارده'), findsOneWidget);
+    expect(find.text('مهام اليوم'), findsOneWidget);
     expect(find.text('مفيش مهام لليوم ده'), findsOneWidget);
     // Nothing here measures anything: no percentage, no mastery bar.
     expect(find.textContaining('%'), findsNothing);
@@ -252,26 +261,26 @@ void main() {
     await openTasks(tester);
     await addTask(tester, 'مهمة النهارده');
 
-    // The strip is a picker on this screen. "س" is the Saturday that opened the
-    // week 2026-08-05 falls in. Scoped to this screen: the dashboard branch
-    // stays mounted behind the cross-fade and carries its own week strip.
-    await tester.tap(day(tester, 'س'));
+    // Tuesday the 4th, the cell directly before today's. Today's own cell says
+    // "اليوم" rather than a date, which is what makes the trip back a tap on a
+    // word the student can always find.
+    await tester.tap(day(tester, 'ثلاثاء ${iso(4)}'));
     await tester.pumpAndSettle();
 
     expect(find.text('مهمة النهارده'), findsNothing);
     expect(find.text('مفيش مهام لليوم ده'), findsOneWidget);
     // The title stops claiming to be today the moment another day is picked.
-    expect(find.text('مهام النهارده'), findsNothing);
+    expect(find.text('مهام اليوم'), findsNothing);
 
-    await addTask(tester, 'مهمة السبت');
-    expect(await tasksOn(tester, saturday), hasLength(1));
+    await addTask(tester, 'مهمة امبارح');
+    expect(await tasksOn(tester, yesterday), hasLength(1));
     expect(await tasksOn(tester, now), hasLength(1));
 
-    // Back to Wednesday, and nothing has leaked either way.
-    await tester.tap(day(tester, 'ر'));
+    // Back to today, and nothing has leaked either way.
+    await tester.tap(day(tester, 'اليوم'));
     await tester.pumpAndSettle();
     expect(find.text('مهمة النهارده'), findsOneWidget);
-    expect(find.text('مهمة السبت'), findsNothing);
+    expect(find.text('مهمة امبارح'), findsNothing);
 
     await closeApp(tester);
   });

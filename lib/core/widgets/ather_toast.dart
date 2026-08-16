@@ -200,7 +200,7 @@ class _ToastCardState extends State<_ToastCard> {
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl,
-          vertical: AppSpacing.lg,
+          vertical: AppSpacing.xl,
         ),
         decoration: BoxDecoration(
           color: context.colors.actionPrimary,
@@ -227,16 +227,9 @@ class _ToastCardState extends State<_ToastCard> {
               )
             else
               const CheckDisc(size: 18, checkSize: 11, strokeWidth: 2.8),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: Text(
-                widget.message,
-                style: AppTypography.style(
-                  size: 14.5,
-                  weight: AppTypography.semiBold,
-                  color: context.colors.onPrimary,
-                ),
-              ),
+              child: Text(widget.message, style: context.text.toastMessage),
             ),
           ],
         ),

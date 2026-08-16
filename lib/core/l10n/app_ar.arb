@@ -14,13 +14,21 @@
   "subjectChemistry": "كيمياء",
   "subjectEnglish": "إنجليزي",
 
-  "weekdaySaturday": "س",
-  "weekdaySunday": "ح",
-  "weekdayMonday": "ن",
-  "weekdayTuesday": "ث",
-  "weekdayWednesday": "ر",
-  "weekdayThursday": "خ",
-  "weekdayFriday": "ج",
+  "weekdaySaturday": "سبت",
+  "@weekdaySaturday": {
+    "description": "Short weekday name in the day picker, beside the date: 'سبت 14'. These were single letters (س ح ن ر خ ج) while the week strip showed all seven days at once and had ~41px per cell to do it in. The picker shows three to five days and gives each one a pill, so there is room for a name a student does not have to decode."
+  },
+  "weekdaySunday": "أحد",
+  "weekdayMonday": "اتنين",
+  "weekdayTuesday": "ثلاثاء",
+  "weekdayWednesday": "أربعاء",
+  "weekdayThursday": "خميس",
+  "weekdayFriday": "جمعة",
+
+  "todayLabel": "اليوم",
+  "@todayLabel": {
+    "description": "What today's cell says in the day picker, in place of its weekday and date. Today always carries it, selected or not: it is the one fixed landmark in a row whose other cells change every time the student moves a day."
+  },
 
   "dashboardTitle": "النهارده",
   "overallMastery": "الإتقان العام",
@@ -292,7 +300,7 @@
   "authForgotPassword": "نسيت الباسورد؟",
   "authResetSent": "بعتنالك رابط على الإيميل تغيّر بيه الباسورد",
   "authErrorEmailInvalid": "الإيميل مش مظبوط",
-  "authErrorPasswordShort": "الباسورد لازم 6 حروف على الأقل",
+  "authErrorPasswordShort": "الباسورد لازم 8 حروف على الأقل",
   "authErrorWrongCredentials": "الإيميل أو الباسورد غلط",
   "authErrorEmailInUse": "الإيميل ده مستخدم قبل كده",
   "authErrorNoNetwork": "مفيش اتصال بالنت. تسجيل الدخول أول مرة بس محتاج نت — بعد كده التطبيق بيشتغل أوفلاين.",
@@ -301,6 +309,28 @@
   "authSignOut": "تسجيل الخروج",
   "authSignOutConfirm": "هتحتاج نت عشان تسجّل دخول تاني. بياناتك محفوظة على الجهاز ومش هتتمسح.",
   "authAccount": "الحساب",
+  "authDeleteAccount": "حذف الحساب",
+  "authDeleteAccountConfirm": "حسابك ونسختك السحابية وكل حاجة على الجهاز هتتمسح خالص. مش هينفع ترجع فيها.",
+  "authDeleteAccountOfflineWarning": "لو في بيانات لسه مترفعتش للسحابة، هتروح مع الحذف.",
+  "authDeleteAccountReauthTitle": "أكّد إنه حسابك",
+  "authDeleteAccountReauthBody": "اكتب باسورد حسابك عشان نكمل الحذف.",
+  "authDeleteAccountReauthAction": "احذف الحساب",
+  "authDeleteAccountFailed": "الحساب اتمسحش. جرّب تاني.",
+  "authDeleteAccountSection": "منطقة الخطر",
+
+  "settingsPrivacy": "الخصوصية",
+  "privacyTitle": "خصوصيتك",
+  "privacyIntro": "التطبيق ده بيجمع أقل بيانات ممكنة. الكلام اللي تحت ده وصف حقيقي للي بيحصل فعلاً — مش وعود عامة.",
+  "privacyLocalTitle": "بيانات دراستك",
+  "privacyLocalBody": "أبوابك ودروسك وامتحاناتك ومهامك بتتخزن على موبايلك بس، في قاعدة بيانات محلية. الكود نفسه هو اللي بيحسب الإتقان — مفيش سيرفر تاني شايف ده.",
+  "privacyAccountTitle": "بيانات الحساب",
+  "privacyAccountBody": "عشان النسخة السحابية، بنطلب إيميل وباسورد (أو حساب Google). بنستخدم Firebase Auth بتاع Google لتخزينهم. إيميلك هو كل اللي بنعرفه عنك — مفيش اسم ولا سن ولا أي بيانات تانية.",
+  "privacyCloudTitle": "النسخة السحابية",
+  "privacyCloudBody": "لو عملت حساب، بنرفع نسخة من بيانات دراستك مشفرة أثناء النقل ومحفوظة على سيرفرات Google (Firebase Firestore) باسم حسابك. محدش غيرك يقدر يوصلها — ولا إحنا.",
+  "privacyDeleteTitle": "مسح بياناتك",
+  "privacyDeleteBody": "تحت في آخر صفحة الإعدادات في زرار «حذف الحساب». لما تدوسه: بياناتك على الموبايل بتمسح، النسخة السحابية بتمسح، والحساب نفسه بيتشال من Firebase. نهائياً.",
+  "privacyNoCollectTitle": "اللي بنعملهش",
+  "privacyNoCollectBody": "مفيش إعلانات. مفيش تتبع. مفيش بيع بيانات. مفيش تحليلات ولا تقارير أخطاء لجهة خارجية. التطبيق شغال من غير نت أصلاً معظم الوقت.",
 
   "lockUnlock": "افتح",
   "lockReason": "افتح Ather",
@@ -322,6 +352,10 @@
   "settingsNotificationsBody": "ذكّرني لما يجي وقت مراجعة درس",
   "settingsNotificationsBlocked": "التنبيهات مقفولة من إعدادات التليفون. افتحها من هناك عشان التذكير يوصلك.",
   "settingsAbout": "عن التطبيق",
+  "settingsVersionFormat": "الإصدار {version}",
+  "@settingsVersionFormat": {
+    "placeholders": { "version": { "type": "String" } }
+  },
 
   "backupTitle": "النسخة السحابية",
   "backupBody": "بياناتك بتتحفظ على حسابك، فلو غيّرت التليفون تلاقيها زي ما هي.",
@@ -342,7 +376,10 @@
   "backupErrorUnreadable": "النسخة السحابية مش مقروءة",
   "backupErrorUnknown": "الحفظ مظبطش",
 
-  "tasksTitle": "مهام النهارده",
+  "tasksTitle": "مهام اليوم",
+  "@tasksTitle": {
+    "description": "The tasks screen's title while today is the selected day. 'النهارده' until the day picker landed under it saying 'اليوم': two words for the same day, one directly above the other. The dashboard keeps 'النهارده' — it is a different screen and nothing there contradicts it."
+  },
   "tasksDoneOf": "{done} من {total} خلصتهم",
   "@tasksDoneOf": {
     "placeholders": {

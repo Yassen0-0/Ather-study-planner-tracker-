@@ -143,6 +143,19 @@ class FirestoreBackupRepository implements BackupRepository {
     );
   }
 
+  @override
+  Future<void> deleteCloudData() async {
+    // `_doc()` throws `notSignedIn` when the account is already gone — which
+    // is the state account deletion leaves behind. That is success here, not
+    // a failure to report: the goal is "nothing of this student's remains",
+    // and an account that no longer exists owns nothing.
+    try {
+      await _guard(() async => _doc().delete().timeout(_timeout));
+    } on BackupException catch (e) {
+      if (e.failure != BackupFailure.notSignedIn) rethrow;
+    }
+  }
+
   /// Translates every transport failure into a [BackupFailure] at the boundary,
   /// so no Firebase type and no English error string escapes this file.
   Future<T> _guard<T>(Future<T> Function() action) async {

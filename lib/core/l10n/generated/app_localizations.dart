@@ -157,47 +157,53 @@ abstract class L {
   /// **'إنجليزي'**
   String get subjectEnglish;
 
-  /// No description provided for @weekdaySaturday.
+  /// Short weekday name in the day picker, beside the date: 'سبت 14'. These were single letters (س ح ن ر خ ج) while the week strip showed all seven days at once and had ~41px per cell to do it in. The picker shows three to five days and gives each one a pill, so there is room for a name a student does not have to decode.
   ///
   /// In ar, this message translates to:
-  /// **'س'**
+  /// **'سبت'**
   String get weekdaySaturday;
 
   /// No description provided for @weekdaySunday.
   ///
   /// In ar, this message translates to:
-  /// **'ح'**
+  /// **'أحد'**
   String get weekdaySunday;
 
   /// No description provided for @weekdayMonday.
   ///
   /// In ar, this message translates to:
-  /// **'ن'**
+  /// **'اتنين'**
   String get weekdayMonday;
 
   /// No description provided for @weekdayTuesday.
   ///
   /// In ar, this message translates to:
-  /// **'ث'**
+  /// **'ثلاثاء'**
   String get weekdayTuesday;
 
   /// No description provided for @weekdayWednesday.
   ///
   /// In ar, this message translates to:
-  /// **'ر'**
+  /// **'أربعاء'**
   String get weekdayWednesday;
 
   /// No description provided for @weekdayThursday.
   ///
   /// In ar, this message translates to:
-  /// **'خ'**
+  /// **'خميس'**
   String get weekdayThursday;
 
   /// No description provided for @weekdayFriday.
   ///
   /// In ar, this message translates to:
-  /// **'ج'**
+  /// **'جمعة'**
   String get weekdayFriday;
+
+  /// What today's cell says in the day picker, in place of its weekday and date. Today always carries it, selected or not: it is the one fixed landmark in a row whose other cells change every time the student moves a day.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get todayLabel;
 
   /// No description provided for @dashboardTitle.
   ///
@@ -1072,7 +1078,7 @@ abstract class L {
   /// No description provided for @authErrorPasswordShort.
   ///
   /// In ar, this message translates to:
-  /// **'الباسورد لازم 6 حروف على الأقل'**
+  /// **'الباسورد لازم 8 حروف على الأقل'**
   String get authErrorPasswordShort;
 
   /// No description provided for @authErrorWrongCredentials.
@@ -1122,6 +1128,132 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'الحساب'**
   String get authAccount;
+
+  /// No description provided for @authDeleteAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب'**
+  String get authDeleteAccount;
+
+  /// No description provided for @authDeleteAccountConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابك ونسختك السحابية وكل حاجة على الجهاز هتتمسح خالص. مش هينفع ترجع فيها.'**
+  String get authDeleteAccountConfirm;
+
+  /// No description provided for @authDeleteAccountOfflineWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو في بيانات لسه مترفعتش للسحابة، هتروح مع الحذف.'**
+  String get authDeleteAccountOfflineWarning;
+
+  /// No description provided for @authDeleteAccountReauthTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكّد إنه حسابك'**
+  String get authDeleteAccountReauthTitle;
+
+  /// No description provided for @authDeleteAccountReauthBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب باسورد حسابك عشان نكمل الحذف.'**
+  String get authDeleteAccountReauthBody;
+
+  /// No description provided for @authDeleteAccountReauthAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'احذف الحساب'**
+  String get authDeleteAccountReauthAction;
+
+  /// No description provided for @authDeleteAccountFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب اتمسحش. جرّب تاني.'**
+  String get authDeleteAccountFailed;
+
+  /// No description provided for @authDeleteAccountSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'منطقة الخطر'**
+  String get authDeleteAccountSection;
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصوصية'**
+  String get settingsPrivacy;
+
+  /// No description provided for @privacyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصوصيتك'**
+  String get privacyTitle;
+
+  /// No description provided for @privacyIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'التطبيق ده بيجمع أقل بيانات ممكنة. الكلام اللي تحت ده وصف حقيقي للي بيحصل فعلاً — مش وعود عامة.'**
+  String get privacyIntro;
+
+  /// No description provided for @privacyLocalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات دراستك'**
+  String get privacyLocalTitle;
+
+  /// No description provided for @privacyLocalBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبوابك ودروسك وامتحاناتك ومهامك بتتخزن على موبايلك بس، في قاعدة بيانات محلية. الكود نفسه هو اللي بيحسب الإتقان — مفيش سيرفر تاني شايف ده.'**
+  String get privacyLocalBody;
+
+  /// No description provided for @privacyAccountTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات الحساب'**
+  String get privacyAccountTitle;
+
+  /// No description provided for @privacyAccountBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان النسخة السحابية، بنطلب إيميل وباسورد (أو حساب Google). بنستخدم Firebase Auth بتاع Google لتخزينهم. إيميلك هو كل اللي بنعرفه عنك — مفيش اسم ولا سن ولا أي بيانات تانية.'**
+  String get privacyAccountBody;
+
+  /// No description provided for @privacyCloudTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخة السحابية'**
+  String get privacyCloudTitle;
+
+  /// No description provided for @privacyCloudBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو عملت حساب، بنرفع نسخة من بيانات دراستك مشفرة أثناء النقل ومحفوظة على سيرفرات Google (Firebase Firestore) باسم حسابك. محدش غيرك يقدر يوصلها — ولا إحنا.'**
+  String get privacyCloudBody;
+
+  /// No description provided for @privacyDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح بياناتك'**
+  String get privacyDeleteTitle;
+
+  /// No description provided for @privacyDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحت في آخر صفحة الإعدادات في زرار «حذف الحساب». لما تدوسه: بياناتك على الموبايل بتمسح، النسخة السحابية بتمسح، والحساب نفسه بيتشال من Firebase. نهائياً.'**
+  String get privacyDeleteBody;
+
+  /// No description provided for @privacyNoCollectTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي بنعملهش'**
+  String get privacyNoCollectTitle;
+
+  /// No description provided for @privacyNoCollectBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش إعلانات. مفيش تتبع. مفيش بيع بيانات. مفيش تحليلات ولا تقارير أخطاء لجهة خارجية. التطبيق شغال من غير نت أصلاً معظم الوقت.'**
+  String get privacyNoCollectBody;
 
   /// No description provided for @lockUnlock.
   ///
@@ -1237,6 +1369,12 @@ abstract class L {
   /// **'عن التطبيق'**
   String get settingsAbout;
 
+  /// No description provided for @settingsVersionFormat.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإصدار {version}'**
+  String settingsVersionFormat(String version);
+
   /// No description provided for @backupTitle.
   ///
   /// In ar, this message translates to:
@@ -1327,10 +1465,10 @@ abstract class L {
   /// **'الحفظ مظبطش'**
   String get backupErrorUnknown;
 
-  /// No description provided for @tasksTitle.
+  /// The tasks screen's title while today is the selected day. 'النهارده' until the day picker landed under it saying 'اليوم': two words for the same day, one directly above the other. The dashboard keeps 'النهارده' — it is a different screen and nothing there contradicts it.
   ///
   /// In ar, this message translates to:
-  /// **'مهام النهارده'**
+  /// **'مهام اليوم'**
   String get tasksTitle;
 
   /// No description provided for @tasksDoneOf.

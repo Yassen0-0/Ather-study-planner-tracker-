@@ -4,7 +4,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 
 /// The header shared by the two day-shaped screens: a large title, actions on
-/// the trailing edge, and the week strip beneath.
+/// the trailing edge, and the day picker beneath.
 ///
 /// Extracted from the dashboard when the tasks screen grew the same shape. Two
 /// hand-kept copies of a header is how they start to drift by a couple of pixels
@@ -13,26 +13,36 @@ class DayHeader extends StatelessWidget {
   const DayHeader({
     super.key,
     required this.title,
-    required this.strip,
+    this.picker,
     this.actions = const <Widget>[],
   });
 
   final String title;
 
-  /// The [WeekStrip] for this screen. Passed in rather than built here: the two
-  /// screens fill its circles from different data and only one of them is a
-  /// picker.
-  final Widget strip;
+  /// The [DayPicker] for this screen, or null for a screen that does not pick a
+  /// day — which is every screen but one.
+  ///
+  /// Passed in rather than built here because the picker is fed by the tasks
+  /// screen's own data, and it is the only screen that has any: the dashboard
+  /// carried a copy of the old week strip that could not be tapped, selected
+  /// nothing, and reported a fact — "an exam happened on this day" — that the
+  /// cards directly beneath it already state in full. A row of seven circles
+  /// that answers nothing is a row the eye has to skip past to reach the screen.
+  final Widget? picker;
 
   final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
+      // The same horizontal margin as `AtherHeader` and as the page itself.
+      // These two headers are the same shape on two screens and used to
+      // disagree by 4, which on a 320 phone is the difference between
+      // "النهارده" fitting and eliding.
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xxl,
-        4,
-        AppSpacing.xxl,
+        AppSpacing.pageMargin,
+        AppSpacing.xxs,
+        AppSpacing.pageMargin,
         AppSpacing.xl,
       ),
       child: Column(
@@ -53,8 +63,13 @@ class DayHeader extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: AppSpacing.xxl),
-          strip,
+          // Both the gap and the picker go together. Keeping the gap for a
+          // screen with no picker would leave the title floating above 20 of
+          // nothing.
+          if (picker != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.xxl),
+            picker!,
+          ],
         ],
       ),
     );
