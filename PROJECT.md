@@ -1813,3 +1813,15 @@ design tokens, Cairo variable font, ar/en ARB + generated delegate, breakpoints,
 dark theme, bootstrap screen. Resolved three dependency conflicts (see §3.6) and the Cairo
 static-TTF 404 (see §3.5). `flutter analyze` clean; 2/2 tests pass including the RTL→LTR
 direction assertion.
+
+**Android release security audit (2026-08-16).** The release manifest now sets
+`android:allowBackup="false"`: local SQLite curriculum and Firebase's cached
+authentication state cannot move through Android Auto Backup or device-transfer
+channels. The authenticated Firestore mirror is deliberately the sole
+cross-device restore route. `firebase.json` was also corrected to point at the
+shipped `com.ather.app` Firebase Android client rather than the retired Sahm
+client, preventing future FlutterFire configuration from silently regenerating
+the wrong Android configuration. `test/security/security_configuration_test.dart`
+locks both properties down. The arm64 release APK built, passed signature and
+manifest inspection, installed on the API-35 emulator, and launched to the
+signed-out login gate without a crash.

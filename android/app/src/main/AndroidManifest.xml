@@ -8,10 +8,14 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
+    <!-- Local curriculum and Firebase's cached authentication state must not be
+         copied through Android's device-transfer or backup channels. Ather's
+         authenticated Firestore backup is the sole cross-device restore path. -->
     <application
         android:label="Ather"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

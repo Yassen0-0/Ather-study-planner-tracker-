@@ -7,7 +7,7 @@
       "android": {
         "default": {
           "projectId": "ather-49705",
-          "appId": "1:882606725720:android:9f14effc7ebfcedd20c82d",
+          "appId": "1:882606725720:android:f7e9109d4620e84420c82d",
           "fileOutput": "android/app/google-services.json"
         }
       },
@@ -15,7 +15,7 @@
         "lib/firebase_options.dart": {
           "projectId": "ather-49705",
           "configurations": {
-            "android": "1:882606725720:android:9f14effc7ebfcedd20c82d"
+            "android": "1:882606725720:android:f7e9109d4620e84420c82d"
           }
         }
       }
