@@ -166,6 +166,14 @@ class SettingsScreen extends ConsumerWidget {
                       context,
                       title: l.authSignOut,
                       message: l.authSignOutConfirm,
+                      // Without this the red button reads "حذف". Signing out
+                      // deletes nothing -- the sentence directly above it says
+                      // so -- and a button that contradicts its own dialog
+                      // teaches a student that Ather's warnings cannot be read
+                      // literally, which is the last thing this app can afford
+                      // when the *next* red button they meet really does erase
+                      // a chapter.
+                      confirmLabel: l.authSignOut,
                     );
                     if (!confirmed || !context.mounted) return;
                     // Push whatever has not been mirrored yet *before* the
@@ -337,6 +345,11 @@ class _BackupCardState extends ConsumerState<_BackupCard> {
       context,
       title: l.backupRestore,
       message: l.backupRestoreConfirm,
+      // "حذف" again by default, and again the wrong verb: a restore replaces
+      // the local record with the cloud one. It is destructive, which is why
+      // the button stays red -- but the student is agreeing to *restore*, and
+      // the button should say the thing they are agreeing to.
+      confirmLabel: l.backupRestore,
     );
     if (!confirmed || !mounted) return;
 

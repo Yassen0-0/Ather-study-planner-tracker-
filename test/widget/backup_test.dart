@@ -342,7 +342,10 @@ void main() {
     // The destructive confirmation the rest of the app uses, saying what goes.
     expect(find.textContaining('هيتمسح ويتحط مكانه'), findsOneWidget);
 
-    await tester.tap(find.text('حذف').hitTestable());
+    // Red, because it replaces the local record -- but labelled with the act
+    // the student is agreeing to, which is a restore and not a delete.
+    expect(find.text('حذف').hitTestable(), findsNothing);
+    await tester.tap(find.text('استرجع النسخة السحابية').hitTestable().last);
     await tester.pumpAndSettle();
 
     final snapshot = await DriftStudyRepository(db).readSnapshot();
