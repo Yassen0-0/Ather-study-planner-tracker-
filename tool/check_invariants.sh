@@ -154,6 +154,45 @@ else
   while IFS= read -r f; do note "$f"; done <<< "$markers"
 fi
 
+# --- the two ways firestore.rules can be wrong while looking right -----------
+#
+# Both were found on 2026-08-15 by running the rules against the Firestore
+# emulator rather than reading them, and both are invisible to review.
+#
+# 1. `request.resource.size()` reads as "the size of the document" and is not.
+#    On a document `size()` counts **fields**, and the backup document has four,
+#    so `request.resource.size() < 1048576` was true for every write ever made.
+#    A 1,000,000-byte payload -- past the 900 KiB the client refuses -- was
+#    accepted by both the emulator and the live project. The byte length of the
+#    blob is `request.resource.data.payload.size()`.
+#
+# 2. A rule that mentions `request.resource` at all cannot allow a **delete**:
+#    there is no incoming resource on a delete, so the condition errors and the
+#    rule denies. `allow write` covers delete, which is how a single size check
+#    made the backup document undeletable -- and `deleteCloudData()`, the third
+#    step of in-app account deletion, is exactly that delete. Deploying such a
+#    file would leave "erase my account" failing after it had already wiped the
+#    device. An explicit `allow delete` is the only shape that cannot regress
+#    into it.
+if [ -f firestore.rules ]; then
+  if grep -qE 'request\.resource\.size\(\)' firestore.rules; then
+    fail "firestore.rules uses request.resource.size(), which counts fields, not bytes"
+    note "A 900 KiB ceiling written that way is always true. Use"
+    note "request.resource.data.payload.size() for the blob's byte length."
+  else
+    pass "firestore.rules has no field-count masquerading as a byte ceiling"
+  fi
+
+  if grep -qE '^\s*allow delete:' firestore.rules; then
+    pass "firestore.rules grants delete explicitly (account deletion depends on it)"
+  else
+    fail "firestore.rules has no explicit 'allow delete'"
+    note "deleteCloudData() is step three of in-app account deletion. Without an"
+    note "allow delete that does not touch request.resource, deploying these"
+    note "rules breaks erasure after the local database has already been wiped."
+  fi
+fi
+
 echo
 if [ "$failures" -ne 0 ]; then
   echo "$failures check(s) failed."
