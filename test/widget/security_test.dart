@@ -135,6 +135,12 @@ void main() {
     await tester.pumpAndSettle();
 
     await openSettings(tester);
+    await tester.scrollUntilVisible(
+      find.text('تسجيل الخروج'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('تسجيل الخروج'));
     await tester.pumpAndSettle();
 
@@ -144,8 +150,7 @@ void main() {
     // lesson they must not learn before the next one really does erase a
     // chapter.
     expect(find.text('حذف'), findsNothing);
-    expect(find.text('بياناتك محفوظة على الجهاز ومش هتتمسح.'), findsNothing);
-    expect(find.textContaining('مش هتتمسح'), findsOneWidget);
+    expect(find.textContaining('ولن تُحذف'), findsOneWidget);
 
     await closeApp(tester);
   });
