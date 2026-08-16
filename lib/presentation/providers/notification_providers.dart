@@ -9,6 +9,7 @@ import '../../app/router.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../data/notifications/review_notification_service.dart';
 import 'app_providers.dart';
+import 'auth_providers.dart';
 
 final notificationServiceProvider = Provider<ReviewNotificationService>((ref) {
   return ReviewNotificationService(FlutterLocalNotificationsPlugin());
@@ -125,7 +126,20 @@ class _ReviewSchedulerState extends ConsumerState<ReviewScheduler>
       await service.reschedule(
         snapshot: ref.read(snapshotValueProvider),
         now: ref.read(clockProvider).now(),
-        enabled: ref.read(notificationsEnabledProvider),
+        // Signed out counts as off, and this is a leak rather than a tidiness
+        // point. A reminder's body is the lesson's name and its chapter's --
+        // "راجع درس التحليل الكهربي من باب الكيمياء الكهربية" -- and it lands
+        // on the lock screen of a phone that is no longer being used by the
+        // student who wrote them. Signing out deliberately leaves the database
+        // in place (see BackupSyncGate), so without this line the scheduler
+        // above the auth gate keeps rebuilding the previous student's alarms on
+        // every resume, and keeps posting their lesson names, until somebody
+        // else signs in. `reschedule` cancels everything before it reads this,
+        // so a `false` here empties the queue rather than merely stopping it
+        // from growing.
+        enabled:
+            ref.read(isSignedInProvider) &&
+            ref.read(notificationsEnabledProvider),
         title: l.reviewNotificationTitle,
         buildBody: (lesson, chapter) =>
             l.reviewNotificationBody(lesson, chapter),
@@ -167,6 +181,10 @@ class _ReviewSchedulerState extends ConsumerState<ReviewScheduler>
     // Not debounced -- flipping the switch is a deliberate act and the student
     // is looking at the result.
     ref.listen(notificationsEnabledProvider, (_, _) => _sync());
+    // Nor is signing in or out. Without this the pass above only runs when the
+    // *data* changes, and signing out changes nothing about the data -- which
+    // is exactly the case where the queue has to be emptied.
+    ref.listen(accountProvider, (_, _) => _sync());
     return widget.child;
   }
 }
