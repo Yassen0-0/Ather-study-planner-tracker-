@@ -145,7 +145,6 @@ class ChapterScreen extends ConsumerWidget {
       pageBuilder: (dialogContext, _, _) => CelebrationOverlay(
         title: l.celebrationTitle,
         body: l.celebrationBody,
-        hint: l.celebrationHint,
         percentage: percentage,
         onDismiss: () => Navigator.of(dialogContext).pop(),
       ),

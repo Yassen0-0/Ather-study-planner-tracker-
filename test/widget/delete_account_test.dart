@@ -119,7 +119,7 @@ void main() {
     await tester.tap(find.text('حذف الحساب'));
     await tester.pumpAndSettle();
     // The confirmation names what goes, in words.
-    expect(find.textContaining('مش هينفع ترجع فيها'), findsOneWidget);
+    expect(find.textContaining('لا يمكن التراجع'), findsOneWidget);
     await tester.tap(find.text('حذف الحساب').last);
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 3));
@@ -150,7 +150,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The re-auth sheet, not a failure toast.
-    expect(find.textContaining('أكّد إنه حسابك'), findsOneWidget);
+    expect(find.textContaining('أكّد أنه حسابك'), findsOneWidget);
     await tester.enterText(find.byType(TextField), 'the-password');
     await tester.tap(find.text('احذف الحساب'));
     await tester.pumpAndSettle();

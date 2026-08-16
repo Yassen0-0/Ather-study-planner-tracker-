@@ -585,10 +585,6 @@ class _HistoryCard extends ConsumerWidget {
             )
           else ...<Widget>[
             const SizedBox(height: AppSpacing.xxs),
-            // Stated rather than left to be discovered: a destructive action
-            // hidden behind an unmarked tap is one a student only finds by
-            // accident.
-            Text(l.examHistoryHint, style: context.text.micro),
             for (final exam in exams) ...<Widget>[
               const SizedBox(height: AppSpacing.xxs),
               const CardDivider(),
@@ -628,6 +624,17 @@ class _HistoryCard extends ConsumerWidget {
                             exam.percentage,
                           ),
                         ),
+                      ),
+                      // Carries what a line of prose used to carry: the row
+                      // removes the exam. A sentence reading "tap an exam to
+                      // remove it" explained a control to a student looking
+                      // straight at it; the mark on the row is the control
+                      // saying so itself.
+                      const SizedBox(width: AppSpacing.md),
+                      AtherIcon(
+                        AtherGlyph.close,
+                        size: 14,
+                        color: context.colors.textTertiary,
                       ),
                     ],
                   ),

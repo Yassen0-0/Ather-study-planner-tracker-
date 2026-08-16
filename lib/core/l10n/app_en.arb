@@ -31,7 +31,7 @@
   "statMastered": "Mastered",
   "sectionSubjects": "Subjects",
   "firstRunTitle": "Start here",
-  "firstRunBody": "Open a subject, add a chapter inside it, then a lesson. Mastery comes only from your real exam results — not from finishing a lesson.",
+  "firstRunBody": "Mastery comes from your exams alone, not from finishing a lesson.",
   "firstRunAction": "Open your first subject",
   "sectionNext": "Up next",
   "actionExam": "Log exam",
@@ -106,7 +106,6 @@
   "examHistory": "Past exams",
   "examNoHistory": "No exams yet",
   "examReviewBadge": "Review",
-  "examHistoryHint": "Tap an exam to remove it if it was entered by mistake",
   "examDelete": "Remove exam",
   "examDeleteConfirm": "This exam will be removed from the record and the lesson's mastery recalculated without it. This can't be undone.",
   "toastExamDeleted": "Exam removed — mastery recalculated",
@@ -156,7 +155,6 @@
   "analyticsTitle": "Progress",
   "analyticsInsights": "Notes",
   "analyticsAllSubjects": "All subjects",
-  "analyticsAlwaysAllSubjects": "This card always compares all four subjects",
   "analyticsMasteryBySubject": "Mastery by subject",
   "analyticsMasteryByChapter": "Mastery by chapter",
   "analyticsWeakestLessons": "Weakest lessons",
@@ -176,11 +174,10 @@
 
   "celebrationTitle": "Chapter mastered!",
   "celebrationBody": "Solid work. Keep it up.",
-  "celebrationHint": "Tap anywhere to continue",
 
   "authSignInTitle": "Sign in",
   "authRegisterTitle": "New account",
-  "authSubtitle": "Sign in once — after that the app works with no connection",
+  "authSubtitle": "Sign in once, then the app works with no connection",
   "authEmail": "Email",
   "authPassword": "Password",
   "authEmailHint": "you@example.com",
@@ -208,7 +205,6 @@
   "authDeleteAccountReauthBody": "Type your password to finish deleting the account.",
   "authDeleteAccountReauthAction": "Delete account",
   "authDeleteAccountFailed": "The account was not deleted. Try again.",
-  "authDeleteAccountSection": "Danger zone",
 
   "settingsPrivacy": "Privacy",
   "privacyTitle": "Your privacy",
@@ -229,7 +225,6 @@
   "lockRefused": "That didn't unlock — try again",
   "lockLockedOut": "Too many attempts. Wait a moment and try again, or use your phone's passcode.",
   "lockSetting": "Fingerprint lock",
-  "lockSettingBody": "Ask for a fingerprint every time the app opens",
 
   "settingsTitle": "Settings",
   "settingsLanguage": "Language",
@@ -239,9 +234,7 @@
   "settingsThemeLight": "Light",
   "settingsThemeDark": "Dark",
   "settingsThemeSystem": "System",
-  "settingsThemeBody": "Pick how the app looks, or let it follow your phone",
   "settingsNotifications": "Review reminders",
-  "settingsNotificationsBody": "Remind me when a lesson is due for review",
   "settingsNotificationsBlocked": "Notifications are turned off in your phone's settings. Turn them on there to get reminders.",
   "settingsAbout": "About",
   "settingsVersionFormat": "Version {version}",
@@ -250,7 +243,6 @@
   },
 
   "backupTitle": "Cloud backup",
-  "backupBody": "Your work is saved to your account, so a new phone finds it waiting.",
   "backupNever": "Not saved yet",
   "backupSavedAt": "Last saved: {date}",
   "@backupSavedAt": {
@@ -283,7 +275,6 @@
   "deleteTask": "Delete task",
   "deleteTaskConfirm": "It will be removed from this day for good.",
   "noTasksYet": "No tasks for this day",
-  "tasksEmptyBody": "Write down what you plan to do, and tick it off as you go.",
 
   "commonSave": "Save",
   "commonSomethingWentWrong": "Something didn't work. Try again.",

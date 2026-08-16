@@ -85,7 +85,7 @@ class LEn extends L {
 
   @override
   String get firstRunBody =>
-      'Open a subject, add a chapter inside it, then a lesson. Mastery comes only from your real exam results — not from finishing a lesson.';
+      'Mastery comes from your exams alone, not from finishing a lesson.';
 
   @override
   String get firstRunAction => 'Open your first subject';
@@ -309,10 +309,6 @@ class LEn extends L {
   String get examReviewBadge => 'Review';
 
   @override
-  String get examHistoryHint =>
-      'Tap an exam to remove it if it was entered by mistake';
-
-  @override
   String get examDelete => 'Remove exam';
 
   @override
@@ -459,10 +455,6 @@ class LEn extends L {
   String get analyticsAllSubjects => 'All subjects';
 
   @override
-  String get analyticsAlwaysAllSubjects =>
-      'This card always compares all four subjects';
-
-  @override
   String get analyticsMasteryBySubject => 'Mastery by subject';
 
   @override
@@ -523,9 +515,6 @@ class LEn extends L {
   String get celebrationBody => 'Solid work. Keep it up.';
 
   @override
-  String get celebrationHint => 'Tap anywhere to continue';
-
-  @override
   String get authSignInTitle => 'Sign in';
 
   @override
@@ -533,7 +522,7 @@ class LEn extends L {
 
   @override
   String get authSubtitle =>
-      'Sign in once — after that the app works with no connection';
+      'Sign in once, then the app works with no connection';
 
   @override
   String get authEmail => 'Email';
@@ -625,9 +614,6 @@ class LEn extends L {
       'The account was not deleted. Try again.';
 
   @override
-  String get authDeleteAccountSection => 'Danger zone';
-
-  @override
   String get settingsPrivacy => 'Privacy';
 
   @override
@@ -689,10 +675,6 @@ class LEn extends L {
   String get lockSetting => 'Fingerprint lock';
 
   @override
-  String get lockSettingBody =>
-      'Ask for a fingerprint every time the app opens';
-
-  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -717,15 +699,7 @@ class LEn extends L {
   String get settingsThemeSystem => 'System';
 
   @override
-  String get settingsThemeBody =>
-      'Pick how the app looks, or let it follow your phone';
-
-  @override
   String get settingsNotifications => 'Review reminders';
-
-  @override
-  String get settingsNotificationsBody =>
-      'Remind me when a lesson is due for review';
 
   @override
   String get settingsNotificationsBlocked =>
@@ -741,10 +715,6 @@ class LEn extends L {
 
   @override
   String get backupTitle => 'Cloud backup';
-
-  @override
-  String get backupBody =>
-      'Your work is saved to your account, so a new phone finds it waiting.';
 
   @override
   String get backupNever => 'Not saved yet';
@@ -817,10 +787,6 @@ class LEn extends L {
 
   @override
   String get noTasksYet => 'No tasks for this day';
-
-  @override
-  String get tasksEmptyBody =>
-      'Write down what you plan to do, and tick it off as you go.';
 
   @override
   String get commonSave => 'Save';

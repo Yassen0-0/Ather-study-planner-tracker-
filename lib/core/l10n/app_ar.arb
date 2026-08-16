@@ -2,7 +2,7 @@
   "@@locale": "ar",
 
   "appName": "أثر",
-  "appTagline": "إنت مش بتخلص الدروس… إنت بتتقنها",
+  "appTagline": "أنت لا تُنهي الدروس، بل تُتقنها",
 
   "navHome": "الرئيسية",
   "navReview": "مراجعة",
@@ -19,7 +19,7 @@
     "description": "Short weekday name in the day picker, beside the date: 'سبت 14'. These were single letters (س ح ن ر خ ج) while the week strip showed all seven days at once and had ~41px per cell to do it in. The picker shows three to five days and gives each one a pill, so there is room for a name a student does not have to decode."
   },
   "weekdaySunday": "أحد",
-  "weekdayMonday": "اتنين",
+  "weekdayMonday": "اثنين",
   "weekdayTuesday": "ثلاثاء",
   "weekdayWednesday": "أربعاء",
   "weekdayThursday": "خميس",
@@ -30,30 +30,33 @@
     "description": "What today's cell says in the day picker, in place of its weekday and date. Today always carries it, selected or not: it is the one fixed landmark in a row whose other cells change every time the student moves a day."
   },
 
-  "dashboardTitle": "النهارده",
+  "dashboardTitle": "اليوم",
   "overallMastery": "الإتقان العام",
-  "statLessonsRemaining": "دروس فاضلة",
-  "statNeedsReview": "محتاج مراجعة",
-  "statMastered": "متقن",
+  "statLessonsRemaining": "دروس متبقّية",
+  "statNeedsReview": "يحتاج مراجعة",
+  "statMastered": "متقَن",
   "sectionSubjects": "المواد",
   "firstRunTitle": "ابدأ من هنا",
-  "firstRunBody": "افتح مادة، ضيف فيها باب، وبعدين درس. الإتقان بيتحسب من امتحاناتك الحقيقية بس — مش من إنك خلصت الدرس.",
+  "firstRunBody": "الإتقان يُحسب من امتحاناتك وحدها، لا من إنهاء الدرس.",
+  "@firstRunBody": {
+    "description": "Halved deliberately. The walkthrough half -- open a subject, add a chapter, then a lesson -- told a student to do the only thing the empty screen allows. What survives is the product's one claim, which a student genuinely cannot guess from the interface."
+  },
   "firstRunAction": "افتح أول مادة",
-  "sectionNext": "اللي بعده",
+  "sectionNext": "التالي",
   "actionExam": "امتحن",
-  "notStartedYet": "لسه مبدأتش",
-  "subjectHasOverdueLesson": "فات ميعاد مراجعة درس",
+  "notStartedYet": "لم تبدأ بعد",
+  "subjectHasOverdueLesson": "تأخّرت مراجعة درس",
 
-  "lessonCount": "{count, plural, =1{درس واحد} =2{درسين} few{{count} دروس} many{{count} درس} other{{count} درس}}",
+  "lessonCount": "{count, plural, =1{درس واحد} =2{درسان} few{{count} دروس} many{{count} درساً} other{{count} درس}}",
   "@lessonCount": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "chapterCount": "{count, plural, =1{باب واحد} =2{بابين} few{{count} أبواب} many{{count} باب} other{{count} باب}}",
+  "chapterCount": "{count, plural, =1{باب واحد} =2{بابان} few{{count} أبواب} many{{count} باباً} other{{count} باب}}",
   "@chapterCount": {
     "placeholders": { "count": { "type": "int" } }
   },
 
-  "chaptersMasteredOf": "{mastered} من {total} باب اتقنتها",
+  "chaptersMasteredOf": "أتقنت {mastered} من {total} باب",
   "@chaptersMasteredOf": {
     "placeholders": {
       "mastered": { "type": "String" },
@@ -67,14 +70,14 @@
       "total": { "type": "String" }
     }
   },
-  "lessonsExaminedOf": "{examined} من {total} درس متمتحن",
+  "lessonsExaminedOf": "{examined} من {total} درس بامتحان",
   "@lessonsExaminedOf": {
     "placeholders": {
       "examined": { "type": "String" },
       "total": { "type": "String" }
     }
   },
-  "lessonsOnTimeOf": "{onTime} من {total} درس في وقتها",
+  "lessonsOnTimeOf": "{onTime} من {total} درس في موعده",
   "@lessonsOnTimeOf": {
     "placeholders": {
       "onTime": { "type": "String" },
@@ -86,96 +89,95 @@
   "sectionLessons": "الدروس",
   "addChapter": "+ إضافة باب",
   "addLesson": "+ إضافة درس",
-  "noChaptersYet": "مفيش أبواب لسه",
-  "noLessonsYet": "مفيش دروس لسه",
+  "noChaptersYet": "لا توجد أبواب بعد",
+  "noLessonsYet": "لا توجد دروس بعد",
   "chapterName": "اسم الباب",
   "lessonName": "اسم الدرس",
-  "chapterNameHint": "مثلاً: الباب الأول — الخلية",
-  "lessonNameHint": "مثلاً: تركيب الغشاء البلازمي",
+  "chapterNameHint": "مثال: الباب الأول — الخلية",
+  "lessonNameHint": "مثال: تركيب الغشاء البلازمي",
   "renameChapter": "تعديل اسم الباب",
   "renameLesson": "تعديل اسم الدرس",
   "deleteChapter": "حذف الباب",
   "deleteLesson": "حذف الدرس",
-  "deleteChapterConfirm": "هيتحذف الباب وكل الدروس والامتحانات اللي جواه. مش هينفع ترجع فيها.",
-  "deleteLessonConfirm": "هيتحذف الدرس وكل امتحاناته. مش هينفع ترجع فيها.",
+  "deleteChapterConfirm": "سيُحذف الباب وكل الدروس والامتحانات التي بداخله. لا يمكن التراجع.",
+  "deleteLessonConfirm": "سيُحذف الدرس وكل امتحاناته. لا يمكن التراجع.",
 
   "averageExamScore": "متوسط الامتحانات",
-  "chapterNeedsReview": "محتاج مراجعة",
-  "chapterMasteredAt": "اتقنته في {date}",
+  "chapterNeedsReview": "يحتاج مراجعة",
+  "chapterMasteredAt": "أتقنته في {date}",
   "@chapterMasteredAt": {
     "placeholders": { "date": { "type": "String" } }
   },
   "masterChapter": "أتقنت الباب",
-  "viewChapterReport": "شوف تقرير الباب",
-  "notReadyGate": "لسه مش جاهز — اعرف ليه",
-  "notReadyTitle": "لسه مش جاهز",
-  "notReadyBody": "عشان تتقن الباب لازم كل الدروس تتمتحن والإتقان يوصل {threshold} على الأقل.",
+  "viewChapterReport": "تقرير الباب",
+  "notReadyGate": "لم يكتمل بعد — اعرف السبب",
+  "notReadyTitle": "لم يكتمل بعد",
+  "notReadyBody": "لإتقان الباب يجب أن يكون لكل درس امتحان، وأن يبلغ الإتقان {threshold} على الأقل.",
   "@notReadyBody": {
     "placeholders": { "threshold": { "type": "String" } }
   },
-  "noExamShort": "مفيش امتحان",
+  "noExamShort": "لا امتحان",
 
-  "lessonNoExamYet": "لسه مفيش امتحان",
-  "dueInDays": "باقي {days} يوم",
+  "lessonNoExamYet": "لا يوجد امتحان بعد",
+  "dueInDays": "بقي {days} يوم",
   "@dueInDays": {
     "placeholders": { "days": { "type": "String" } }
   },
-  "dueInDaysLong": "باقي {days} يوم على المراجعة",
+  "dueInDaysLong": "بقي {days} يوم على المراجعة",
   "@dueInDaysLong": {
     "placeholders": { "days": { "type": "String" } }
   },
-  "overdueByDays": "متأخر {days} يوم",
+  "overdueByDays": "متأخّر {days} يوم",
   "@overdueByDays": {
     "placeholders": { "days": { "type": "String" } }
   },
-  "masteryCaptionWithExams": "الإتقان محسوب من آخر امتحان {last} ومتوسط اللي قبله {rest}",
+  "masteryCaptionWithExams": "الإتقان محسوب من آخر امتحان {last} ومتوسط ما قبله {rest}",
   "@masteryCaptionWithExams": {
     "placeholders": {
       "last": { "type": "String" },
       "rest": { "type": "String" }
     }
   },
-  "masteryCaptionNoExams": "الإتقان بيتحسب من الامتحانات بس — سجّل أول امتحان عشان تبدأ",
+  "masteryCaptionNoExams": "الإتقان يُحسب من الامتحانات وحدها — سجّل أول امتحان",
 
   "checklistTitle": "خطوات المذاكرة",
   "checklistWatched": "شاهدت الدرس",
-  "checklistReadNotes": "قريت الملازم",
-  "checklistDidHomework": "حليت الواجب",
-  "checklistDidExam": "حليت الامتحان",
+  "checklistReadNotes": "قرأت الملازم",
+  "checklistDidHomework": "حللت الواجب",
+  "checklistDidExam": "حللت الامتحان",
   "checklistReviewedNotes": "راجعت الملازم",
 
   "homeworkTitle": "الواجب",
-  "homeworkAdd": "سجل درجة واجب",
+  "homeworkAdd": "سجّل درجة واجب",
   "homeworkScore": "الدرجة",
   "homeworkMax": "من",
-  "homeworkNotReady": "لسه محتاج تذاكر أكتر قبل ما تدخل الامتحان",
-  "homeworkReady": "تمام، جاهز تدخل الامتحان",
-  "homeworkNone": "مفيش واجبات متسجلة",
-  "homeworkNote": "الواجب مش بيدخل في حساب الإتقان — ده مؤشر استعداد بس",
-  "homeworkInvalid": "الدرجة لازم تكون من صفر لـ «من»، و«من» أكبر من صفر",
+  "homeworkNotReady": "تحتاج مذاكرة أكثر قبل دخول الامتحان",
+  "homeworkReady": "جاهز لدخول الامتحان",
+  "homeworkNone": "لا واجبات مسجّلة",
+  "homeworkNote": "الواجب لا يدخل في حساب الإتقان — هو مؤشر استعداد فقط",
+  "homeworkInvalid": "الدرجة بين صفر و«من»، و«من» أكبر من صفر",
 
   "examHistory": "الامتحانات السابقة",
-  "examNoHistory": "مفيش امتحانات لسه",
+  "examNoHistory": "لا امتحانات بعد",
   "examReviewBadge": "مراجعة",
-  "examHistoryHint": "دوس على امتحان عشان تشيله لو اتسجل غلط",
-  "examDelete": "شيل الامتحان",
-  "examDeleteConfirm": "هيتشال الامتحان من السجل وإتقان الدرس هيتحسب من غيره. مش هينفع ترجع فيها.",
-  "toastExamDeleted": "اتشال الامتحان — الإتقان اتحسب من الأول",
+  "examDelete": "حذف الامتحان",
+  "examDeleteConfirm": "سيُحذف الامتحان من السجل ويُعاد حساب إتقان الدرس بدونه. لا يمكن التراجع.",
+  "toastExamDeleted": "حُذف الامتحان — أُعيد حساب الإتقان",
   "examStart": "ابدأ الامتحان",
-  "examRecordResult": "سجل نتيجة امتحان",
-  "examRecordReview": "سجل امتحان المراجعة",
+  "examRecordResult": "سجّل نتيجة امتحان",
+  "examRecordReview": "سجّل امتحان المراجعة",
 
   "examStep1Title": "عدد الأسئلة الكلي",
-  "examStep1Hint": "الامتحان فيه كام سؤال؟",
+  "examStep1Hint": "كم سؤالاً في الامتحان؟",
   "examStep2Title": "درجات الأسئلة",
-  "examStep2Hint": "اقسم الأسئلة: كام سؤال بكام درجة",
-  "examStep3Title": "إجاباتك الصح",
-  "examStep3Hint": "كام سؤال جاوبته صح في كل مجموعة",
+  "examStep2Hint": "وزّع الأسئلة: كم سؤالاً بكم درجة",
+  "examStep3Title": "إجاباتك الصحيحة",
+  "examStep3Hint": "كم سؤالاً أجبته صحيحاً في كل مجموعة",
   "examStep4Title": "النتيجة",
   "examGroupQuestions": "عدد الأسئلة",
   "examGroupPoints": "درجة السؤال",
   "examAddGroup": "+ إضافة مجموعة",
-  "examRemoveGroup": "شيل المجموعة",
+  "examRemoveGroup": "حذف المجموعة",
   "examGroupLabel": "{count} أسئلة × {points} درجة",
   "@examGroupLabel": {
     "placeholders": {
@@ -191,33 +193,33 @@
   "examMasteryAfter": "الإتقان بعد",
   "examSave": "احفظ النتيجة",
   "examSaveReview": "احفظ امتحان المراجعة",
-  "examSaveFailed": "مقدرناش نحفظ الامتحان. أرقامك لسه موجودة — جرّب تاني.",
-  "examDiscardTitle": "تسيب الامتحان؟",
-  "examDiscardBody": "اللي كتبته هيروح. مش هينفع ترجع فيها.",
-  "examDiscardLeave": "سيبه",
-  "examDiscardStay": "كمّل",
+  "examSaveFailed": "تعذّر حفظ الامتحان. أرقامك لم تَضِع — حاول مرة أخرى.",
+  "examDiscardTitle": "تترك الامتحان؟",
+  "examDiscardBody": "ما كتبته سيضيع. لا يمكن التراجع.",
+  "examDiscardLeave": "اترك",
+  "examDiscardStay": "أكمل",
 
-  "examErrorNeedAtLeastOneQuestion": "لازم سؤال واحد على الأقل",
-  "examErrorGroupInvalid": "كل مجموعة لازم يكون فيها عدد أسئلة ودرجة أكبر من صفر",
-  "examErrorSumMismatch": "مجموع الأسئلة ({assigned}) لازم يساوي العدد الكلي ({total})",
+  "examErrorNeedAtLeastOneQuestion": "سؤال واحد على الأقل",
+  "examErrorGroupInvalid": "كل مجموعة تحتاج عدد أسئلة ودرجة أكبر من صفر",
+  "examErrorSumMismatch": "مجموع الأسئلة ({assigned}) يجب أن يساوي العدد الكلي ({total})",
   "@examErrorSumMismatch": {
     "placeholders": {
       "assigned": { "type": "String" },
       "total": { "type": "String" }
     }
   },
-  "examErrorCorrectExceeds": "عدد الصح مينفعش يزيد عن عدد الأسئلة",
+  "examErrorCorrectExceeds": "عدد الإجابات الصحيحة لا يتجاوز عدد الأسئلة",
 
-  "toastExamSaved": "اتسجّل الامتحان — عداد المراجعة بدأ من جديد",
-  "toastHomeworkSaved": "اتسجّلت درجة الواجب",
+  "toastExamSaved": "حُفظ الامتحان — بدأ عدّاد المراجعة من جديد",
+  "toastHomeworkSaved": "حُفظت درجة الواجب",
 
-  "reviewTitle": "محتاج مراجعة",
-  "reviewEmptyTitle": "مفيش حاجة محتاجة مراجعة",
-  "reviewEmptyBody": "كل دروسك في وقتها. استمر.",
+  "reviewTitle": "يحتاج مراجعة",
+  "reviewEmptyTitle": "لا شيء يحتاج مراجعة",
+  "reviewEmptyBody": "كل دروسك في موعدها.",
   "reviewReasonWeak": "مستوى ضعيف",
-  "reviewReasonDeclining": "مستواك بينزل",
+  "reviewReasonDeclining": "مستواك ينخفض",
   "reviewNotificationTitle": "وقت المراجعة",
-  "reviewNotificationBody": "وقت مراجعة درس {lesson} في {chapter}",
+  "reviewNotificationBody": "حان وقت مراجعة درس {lesson} في {chapter}",
   "@reviewNotificationBody": {
     "placeholders": {
       "lesson": { "type": "String" },
@@ -228,35 +230,34 @@
   "analyticsTitle": "تقدمك",
   "analyticsInsights": "ملاحظات",
   "analyticsAllSubjects": "كل المواد",
-  "analyticsAlwaysAllSubjects": "الكارت ده بيقارن المواد الأربعة دايماً",
   "analyticsMasteryBySubject": "الإتقان حسب المادة",
   "analyticsMasteryByChapter": "الإتقان حسب الباب",
   "analyticsWeakestLessons": "أضعف الدروس",
   "analyticsReviewDiscipline": "الالتزام بالمراجعة",
-  "analyticsNotEnoughData": "لسه مفيش بيانات كفاية",
+  "analyticsNotEnoughData": "لا توجد بيانات كافية بعد",
 
-  "insightStrongestSubject": "{subject} أقوى مادة عندك دلوقتي — {value}",
+  "insightStrongestSubject": "{subject} أقوى موادك الآن — {value}",
   "@insightStrongestSubject": {
     "placeholders": {
       "subject": { "type": "String" },
       "value": { "type": "String" }
     }
   },
-  "insightChapterWeak": "«{chapter}» لسه ضعيف — {value}",
+  "insightChapterWeak": "«{chapter}» ما زال ضعيفاً — {value}",
   "@insightChapterWeak": {
     "placeholders": {
       "chapter": { "type": "String" },
       "value": { "type": "String" }
     }
   },
-  "insightLessonNotReviewed": "مراجعتش «{lesson}» من {days} يوم",
+  "insightLessonNotReviewed": "لم تراجع «{lesson}» منذ {days} يوم",
   "@insightLessonNotReviewed": {
     "placeholders": {
       "lesson": { "type": "String" },
       "days": { "type": "String" }
     }
   },
-  "insightSubjectImproved": "{subject} اتحسنت {delta} الشهر ده",
+  "insightSubjectImproved": "{subject} تحسّنت {delta} هذا الشهر",
   "@insightSubjectImproved": {
     "placeholders": {
       "subject": { "type": "String" },
@@ -265,79 +266,76 @@
   },
 
   "chapterReportTitle": "تقرير الباب",
-  "trendUp": "اتحسنت من {from} لـ {to}",
+  "trendUp": "ارتفعت من {from} إلى {to}",
   "@trendUp": {
     "placeholders": {
       "from": { "type": "String" },
       "to": { "type": "String" }
     }
   },
-  "trendDown": "نزلت من {from} لـ {to}",
+  "trendDown": "انخفضت من {from} إلى {to}",
   "@trendDown": {
     "placeholders": {
       "from": { "type": "String" },
       "to": { "type": "String" }
     }
   },
-  "trendFlat": "محتاج امتحانات أكتر عشان نقيس التقدم",
+  "trendFlat": "تحتاج امتحانات أكثر لقياس التقدّم",
   "weakestLessonBadge": "أضعف درس",
 
   "celebrationTitle": "أتقنت الباب!",
-  "celebrationBody": "شغل محترم. كمّل على كده.",
-  "celebrationHint": "دوس في أي حتة تكمّل",
+  "celebrationBody": "عمل ممتاز. واصِل.",
 
   "authSignInTitle": "تسجيل الدخول",
   "authRegisterTitle": "حساب جديد",
-  "authSubtitle": "سجّل دخولك مرة واحدة بس — بعد كده التطبيق هيشتغل من غير نت",
-  "authEmail": "الإيميل",
-  "authPassword": "الباسورد",
+  "authSubtitle": "تسجيل دخول واحد، ثم يعمل التطبيق دون اتصال",
+  "authEmail": "البريد الإلكتروني",
+  "authPassword": "كلمة السر",
   "authEmailHint": "you@example.com",
   "authSignIn": "دخول",
   "authRegister": "إنشاء حساب",
-  "authGoogle": "كمّل بحساب Google",
-  "authToRegister": "لسه مش عامل حساب؟ اعمل واحد",
-  "authToSignIn": "عندك حساب؟ سجّل دخول",
-  "authForgotPassword": "نسيت الباسورد؟",
-  "authResetSent": "بعتنالك رابط على الإيميل تغيّر بيه الباسورد",
-  "authErrorEmailInvalid": "الإيميل مش مظبوط",
-  "authErrorPasswordShort": "الباسورد لازم 8 حروف على الأقل",
-  "authErrorWrongCredentials": "الإيميل أو الباسورد غلط",
-  "authErrorEmailInUse": "الإيميل ده مستخدم قبل كده",
-  "authErrorNoNetwork": "مفيش اتصال بالنت. تسجيل الدخول أول مرة بس محتاج نت — بعد كده التطبيق بيشتغل أوفلاين.",
-  "authErrorTooManyAttempts": "محاولات كتير. استنى شوية وجرّب تاني",
-  "authErrorGeneric": "مقدرناش نكمّل. جرّب تاني",
+  "authGoogle": "المتابعة بحساب Google",
+  "authToRegister": "لا حساب لديك؟ أنشئ واحداً",
+  "authToSignIn": "لديك حساب؟ سجّل الدخول",
+  "authForgotPassword": "نسيت كلمة السر؟",
+  "authResetSent": "أرسلنا رابطاً إلى بريدك لتغيير كلمة السر",
+  "authErrorEmailInvalid": "البريد الإلكتروني غير صحيح",
+  "authErrorPasswordShort": "كلمة السر ٨ أحرف على الأقل",
+  "authErrorWrongCredentials": "البريد الإلكتروني أو كلمة السر غير صحيحة",
+  "authErrorEmailInUse": "هذا البريد مستخدم بالفعل",
+  "authErrorNoNetwork": "لا يوجد اتصال. تسجيل الدخول أول مرة فقط يحتاج اتصالاً — بعدها يعمل التطبيق دون إنترنت.",
+  "authErrorTooManyAttempts": "محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى",
+  "authErrorGeneric": "تعذّر إتمام العملية. حاول مرة أخرى",
   "authSignOut": "تسجيل الخروج",
-  "authSignOutConfirm": "هتحتاج نت عشان تسجّل دخول تاني. بياناتك محفوظة على الجهاز ومش هتتمسح.",
+  "authSignOutConfirm": "ستحتاج اتصالاً لتسجيل الدخول مرة أخرى. بياناتك محفوظة على الجهاز ولن تُحذف.",
   "authAccount": "الحساب",
   "authDeleteAccount": "حذف الحساب",
-  "authDeleteAccountConfirm": "حسابك ونسختك السحابية وكل حاجة على الجهاز هتتمسح خالص. مش هينفع ترجع فيها.",
-  "authDeleteAccountOfflineWarning": "لو في بيانات لسه مترفعتش للسحابة، هتروح مع الحذف.",
-  "authDeleteAccountReauthTitle": "أكّد إنه حسابك",
-  "authDeleteAccountReauthBody": "اكتب باسورد حسابك عشان نكمل الحذف.",
+  "authDeleteAccountConfirm": "سيُحذف حسابك ونسختك السحابية وكل شيء على الجهاز نهائياً. لا يمكن التراجع.",
+  "authDeleteAccountOfflineWarning": "ما لم يُرفع إلى السحابة بعد سيضيع مع الحذف.",
+  "authDeleteAccountReauthTitle": "أكّد أنه حسابك",
+  "authDeleteAccountReauthBody": "اكتب كلمة سر حسابك لإتمام الحذف.",
   "authDeleteAccountReauthAction": "احذف الحساب",
-  "authDeleteAccountFailed": "الحساب اتمسحش. جرّب تاني.",
-  "authDeleteAccountSection": "منطقة الخطر",
+  "authDeleteAccountFailed": "لم يُحذف الحساب. حاول مرة أخرى.",
 
   "settingsPrivacy": "الخصوصية",
   "privacyTitle": "خصوصيتك",
-  "privacyIntro": "التطبيق ده بيجمع أقل بيانات ممكنة. الكلام اللي تحت ده وصف حقيقي للي بيحصل فعلاً — مش وعود عامة.",
+  "privacyIntro": "هذا التطبيق يجمع أقل قدر ممكن من البيانات. ما يلي وصف لما يحدث فعلاً، لا وعود عامة.",
   "privacyLocalTitle": "بيانات دراستك",
-  "privacyLocalBody": "أبوابك ودروسك وامتحاناتك ومهامك بتتخزن على موبايلك بس، في قاعدة بيانات محلية. الكود نفسه هو اللي بيحسب الإتقان — مفيش سيرفر تاني شايف ده.",
+  "privacyLocalBody": "أبوابك ودروسك وامتحاناتك ومهامك محفوظة على هاتفك وحده، في قاعدة بيانات محلية. الإتقان يُحسب على جهازك — لا يراه أي خادم آخر.",
   "privacyAccountTitle": "بيانات الحساب",
-  "privacyAccountBody": "عشان النسخة السحابية، بنطلب إيميل وباسورد (أو حساب Google). بنستخدم Firebase Auth بتاع Google لتخزينهم. إيميلك هو كل اللي بنعرفه عنك — مفيش اسم ولا سن ولا أي بيانات تانية.",
+  "privacyAccountBody": "للنسخة السحابية نطلب بريداً إلكترونياً وكلمة سر (أو حساب Google)، وتُحفظ لدى Firebase Auth من Google. بريدك هو كل ما نعرفه عنك — لا اسم ولا عمر ولا أي بيانات أخرى.",
   "privacyCloudTitle": "النسخة السحابية",
-  "privacyCloudBody": "لو عملت حساب، بنرفع نسخة من بيانات دراستك مشفرة أثناء النقل ومحفوظة على سيرفرات Google (Firebase Firestore) باسم حسابك. محدش غيرك يقدر يوصلها — ولا إحنا.",
-  "privacyDeleteTitle": "مسح بياناتك",
-  "privacyDeleteBody": "تحت في آخر صفحة الإعدادات في زرار «حذف الحساب». لما تدوسه: بياناتك على الموبايل بتمسح، النسخة السحابية بتمسح، والحساب نفسه بيتشال من Firebase. نهائياً.",
-  "privacyNoCollectTitle": "اللي بنعملهش",
-  "privacyNoCollectBody": "مفيش إعلانات. مفيش تتبع. مفيش بيع بيانات. مفيش تحليلات ولا تقارير أخطاء لجهة خارجية. التطبيق شغال من غير نت أصلاً معظم الوقت.",
+  "privacyCloudBody": "إن أنشأت حساباً، تُرفع نسخة من بيانات دراستك مشفّرة أثناء النقل وتُحفظ على خوادم Google (Firebase Firestore) باسم حسابك. لا يصل إليها أحد سواك — ولا نحن.",
+  "privacyDeleteTitle": "حذف بياناتك",
+  "privacyDeleteBody": "في أسفل صفحة الإعدادات زر «حذف الحساب». عند الضغط عليه: تُمحى بياناتك على الهاتف، وتُمحى النسخة السحابية، ويُزال الحساب نفسه من Firebase. نهائياً.",
+  "privacyNoCollectTitle": "ما لا نفعله",
+  "privacyNoCollectBody": "لا إعلانات. لا تتبّع. لا بيع للبيانات. لا تحليلات ولا تقارير أخطاء لجهة خارجية.",
 
   "lockUnlock": "افتح",
-  "lockReason": "افتح Ather",
-  "lockRefused": "مفتحش — جرّب تاني",
-  "lockLockedOut": "حاولت كتير. استنى شوية وجرّب تاني، أو افتح بكود القفل بتاع التليفون.",
+  "lockReason": "افتح أثر",
+  "lockRefused": "لم يُفتح. حاول مرة أخرى.",
+  "lockLockedOut": "محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى، أو استخدم رمز قفل هاتفك.",
   "lockSetting": "قفل بالبصمة",
-  "lockSettingBody": "اطلب بصمة كل ما تفتح التطبيق",
 
   "settingsTitle": "الإعدادات",
   "settingsLanguage": "اللغة",
@@ -347,10 +345,8 @@
   "settingsThemeLight": "فاتح",
   "settingsThemeDark": "داكن",
   "settingsThemeSystem": "النظام",
-  "settingsThemeBody": "اختار مظهر التطبيق، أو سيبه يمشي مع إعدادات الموبايل",
   "settingsNotifications": "إشعارات المراجعة",
-  "settingsNotificationsBody": "ذكّرني لما يجي وقت مراجعة درس",
-  "settingsNotificationsBlocked": "التنبيهات مقفولة من إعدادات التليفون. افتحها من هناك عشان التذكير يوصلك.",
+  "settingsNotificationsBlocked": "الإشعارات مغلقة من إعدادات الهاتف. افتحها من هناك ليصلك التذكير.",
   "settingsAbout": "عن التطبيق",
   "settingsVersionFormat": "الإصدار {version}",
   "@settingsVersionFormat": {
@@ -358,29 +354,28 @@
   },
 
   "backupTitle": "النسخة السحابية",
-  "backupBody": "بياناتك بتتحفظ على حسابك، فلو غيّرت التليفون تلاقيها زي ما هي.",
-  "backupNever": "لسه متحفظتش",
+  "backupNever": "لم تُحفظ بعد",
   "backupSavedAt": "آخر حفظ: {date}",
   "@backupSavedAt": {
     "placeholders": { "date": { "type": "String" } }
   },
-  "backupSaving": "بيحفظ…",
-  "backupSaveNow": "احفظ دلوقتي",
-  "backupRestore": "استرجع النسخة السحابية",
-  "backupRestoreConfirm": "اللي على التليفون ده هيتمسح ويتحط مكانه اللي في النسخة السحابية.",
-  "backupRestoreDone": "رجّعنا بياناتك",
-  "backupRestoreEmpty": "مفيش نسخة سحابية لسه",
-  "backupErrorOffline": "مفيش نت — هيتحفظ أول ما النت يرجع",
-  "backupErrorPermission": "الصلاحيات مظبوطتش على السيرفر",
-  "backupErrorTooLarge": "بياناتك أكبر من إن نحفظها مرة واحدة",
-  "backupErrorUnreadable": "النسخة السحابية مش مقروءة",
-  "backupErrorUnknown": "الحفظ مظبطش",
+  "backupSaving": "جارٍ الحفظ…",
+  "backupSaveNow": "احفظ الآن",
+  "backupRestore": "استرجاع النسخة السحابية",
+  "backupRestoreConfirm": "سيُمحى ما على هذا الهاتف ويحل محله ما في النسخة السحابية.",
+  "backupRestoreDone": "استُرجعت بياناتك",
+  "backupRestoreEmpty": "لا توجد نسخة سحابية بعد",
+  "backupErrorOffline": "لا يوجد اتصال — سيُحفظ فور عودة الشبكة",
+  "backupErrorPermission": "صلاحيات الخادم غير مضبوطة",
+  "backupErrorTooLarge": "بياناتك أكبر من أن تُحفظ دفعة واحدة",
+  "backupErrorUnreadable": "النسخة السحابية غير مقروءة",
+  "backupErrorUnknown": "لم ينجح الحفظ",
 
   "tasksTitle": "مهام اليوم",
   "@tasksTitle": {
-    "description": "The tasks screen's title while today is the selected day. 'النهارده' until the day picker landed under it saying 'اليوم': two words for the same day, one directly above the other. The dashboard keeps 'النهارده' — it is a different screen and nothing there contradicts it."
+    "description": "The tasks screen's title while today is the selected day. The day picker sitting under it says 'اليوم' for today's cell, so the title names what the list is rather than repeating the day."
   },
-  "tasksDoneOf": "{done} من {total} خلصتهم",
+  "tasksDoneOf": "أنجزت {done} من {total}",
   "@tasksDoneOf": {
     "placeholders": {
       "done": { "type": "String" },
@@ -389,16 +384,15 @@
   },
   "addTask": "+ إضافة مهمة",
   "addTaskTitle": "مهمة جديدة",
-  "taskNameHint": "هتعمل إيه النهارده؟",
+  "taskNameHint": "ماذا ستفعل اليوم؟",
   "renameTask": "تعديل المهمة",
   "deleteTask": "حذف المهمة",
-  "deleteTaskConfirm": "هتتشال من مهام اليوم ده خالص.",
-  "noTasksYet": "مفيش مهام لليوم ده",
-  "tasksEmptyBody": "اكتب اللي ناوي تعمله، وشيله لما تخلصه.",
+  "deleteTaskConfirm": "ستُحذف من مهام هذا اليوم نهائياً.",
+  "noTasksYet": "لا مهام لهذا اليوم",
 
   "commonSave": "حفظ",
-  "commonSomethingWentWrong": "في حاجة مامشتش صح. جرّب تاني.",
-  "nameRequired": "اكتب اسم الأول",
+  "commonSomethingWentWrong": "تعذّر إتمام العملية. حاول مرة أخرى.",
+  "nameRequired": "اكتب اسماً أولاً",
   "authShowPassword": "إظهار كلمة السر",
   "authHidePassword": "إخفاء كلمة السر",
   "commonCancel": "إلغاء",

@@ -78,12 +78,12 @@ void main() {
 
     expect(find.text('تسجيل الدخول'), findsWidgets);
     expect(
-      find.text('سجّل دخولك مرة واحدة بس — بعد كده التطبيق هيشتغل من غير نت'),
+      find.text('تسجيل دخول واحد، ثم يعمل التطبيق دون اتصال'),
       findsOneWidget,
       reason: 'the screen has to state the deal: one sign-in, then offline',
     );
     // Nothing of the study app leaks past the gate.
-    expect(find.text('النهارده'), findsNothing);
+    expect(find.text('اليوم'), findsNothing);
   });
 
   testWidgets('a cached session opens straight into the app', (tester) async {
@@ -95,7 +95,7 @@ void main() {
 
     // No network was available to this test at any point -- the gate answered
     // from the session alone.
-    expect(find.text('النهارده'), findsOneWidget);
+    expect(find.text('اليوم'), findsOneWidget);
     expect(find.text('تسجيل الدخول'), findsNothing);
   });
 
@@ -111,7 +111,7 @@ void main() {
     await tester.tap(find.text('دخول'));
     await tester.pumpAndSettle();
 
-    expect(find.text('النهارده'), findsOneWidget);
+    expect(find.text('اليوم'), findsOneWidget);
   });
 
   testWidgets('a bad password is explained, not swallowed', (tester) async {
@@ -127,8 +127,8 @@ void main() {
     await tester.tap(find.text('دخول'));
     await tester.pumpAndSettle();
 
-    expect(find.text('الإيميل أو الباسورد غلط'), findsOneWidget);
-    expect(find.text('النهارده'), findsNothing);
+    expect(find.text('البريد الإلكتروني أو كلمة السر غير صحيحة'), findsOneWidget);
+    expect(find.text('اليوم'), findsNothing);
   });
 
   testWidgets('being offline says exactly that, and why it matters', (
@@ -146,7 +146,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.textContaining('مفيش اتصال بالنت'),
+      find.textContaining('لا يوجد اتصال'),
       findsOneWidget,
       reason: 'the one moment this app needs a network must be named plainly',
     );
@@ -165,7 +165,7 @@ void main() {
     await tester.enterText(find.byType(TextField).at(1), 'password123');
     await tester.tap(find.text('دخول'));
     await tester.pumpAndSettle();
-    expect(find.text('الإيميل مش مظبوط'), findsOneWidget);
+    expect(find.text('البريد الإلكتروني غير صحيح'), findsOneWidget);
 
     // A short password on **sign-in** is not refused here, and that is
     // deliberate. The minimum used to apply to both paths; raising it to 8 with
@@ -178,7 +178,7 @@ void main() {
     await tester.tap(find.text('دخول'));
     await tester.pumpAndSettle();
     expect(
-      find.text('الباسورد لازم 8 حروف على الأقل'),
+      find.text('كلمة السر ٨ أحرف على الأقل'),
       findsNothing,
       reason: 'the server decides whether an existing password is right',
     );
@@ -194,7 +194,7 @@ void main() {
     // The mode toggle sits at the bottom of a scrolling form, below the fold on
     // the default test viewport, so it has to be brought into view the same way
     // a student would.
-    final toggle = find.text('لسه مش عامل حساب؟ اعمل واحد');
+    final toggle = find.text('لا حساب لديك؟ أنشئ واحداً');
     await tester.ensureVisible(toggle);
     await tester.pumpAndSettle();
     await tester.tap(toggle);
@@ -210,7 +210,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(submit);
     await tester.pumpAndSettle();
-    expect(find.text('الباسورد لازم 8 حروف على الأقل'), findsOneWidget);
+    expect(find.text('كلمة السر ٨ أحرف على الأقل'), findsOneWidget);
 
     // And nothing was sent: validation refuses before the network is touched.
     expect(auth.currentAccount, isNull);
@@ -275,6 +275,6 @@ void main() {
 
     // The very first frame is the lock, never a glimpse of the dashboard.
     expect(find.text('أثر'), findsOneWidget);
-    expect(find.text('النهارده'), findsNothing);
+    expect(find.text('اليوم'), findsNothing);
   });
 }

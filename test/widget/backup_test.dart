@@ -122,7 +122,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The dashboard is there, not an error screen and not a spinner.
-    expect(find.text('النهارده'), findsOneWidget);
+    expect(find.text('اليوم'), findsOneWidget);
 
     // And the student can still build their curriculum, which is the part that
     // has to keep working when the network does not.
@@ -161,12 +161,12 @@ void main() {
 
     expect(find.text('النسخة السحابية'), findsOneWidget);
 
-    await tester.tap(find.text('احفظ دلوقتي'));
+    await tester.tap(find.text('احفظ الآن'));
     await tester.pumpAndSettle();
 
     // Rules never published looks exactly like "sync quietly does nothing"
     // unless it is named, which is why BackupFailure distinguishes it.
-    expect(find.text('الصلاحيات مظبوطتش على السيرفر'), findsOneWidget);
+    expect(find.text('صلاحيات الخادم غير مضبوطة'), findsOneWidget);
 
     await closeApp(tester);
   });
@@ -336,13 +336,15 @@ void main() {
     await tester.pumpAndSettle();
     await openSettings(tester);
 
-    await tester.tap(find.text('استرجع النسخة السحابية'));
+    await tester.tap(find.text('استرجاع النسخة السحابية'));
     await tester.pumpAndSettle();
 
     // The destructive confirmation the rest of the app uses, saying what goes.
-    expect(find.textContaining('هيتمسح ويتحط مكانه'), findsOneWidget);
+    expect(find.textContaining('ويحل محله'), findsOneWidget);
 
-    await tester.tap(find.text('حذف').hitTestable());
+    // Red, but labelled with the act: a restore, not a delete.
+    expect(find.text('حذف').hitTestable(), findsNothing);
+    await tester.tap(find.text('استرجاع النسخة السحابية').hitTestable().last);
     await tester.pumpAndSettle();
 
     final snapshot = await DriftStudyRepository(db).readSnapshot();
@@ -362,7 +364,7 @@ void main() {
     await tester.pumpAndSettle();
     await openSettings(tester);
 
-    await tester.tap(find.text('استرجع النسخة السحابية'));
+    await tester.tap(find.text('استرجاع النسخة السحابية'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('إلغاء').hitTestable());
     await tester.pumpAndSettle();

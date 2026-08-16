@@ -12,7 +12,7 @@ class LAr extends L {
   String get appName => 'أثر';
 
   @override
-  String get appTagline => 'إنت مش بتخلص الدروس… إنت بتتقنها';
+  String get appTagline => 'أنت لا تُنهي الدروس، بل تُتقنها';
 
   @override
   String get navHome => 'الرئيسية';
@@ -45,7 +45,7 @@ class LAr extends L {
   String get weekdaySunday => 'أحد';
 
   @override
-  String get weekdayMonday => 'اتنين';
+  String get weekdayMonday => 'اثنين';
 
   @override
   String get weekdayTuesday => 'ثلاثاء';
@@ -63,19 +63,19 @@ class LAr extends L {
   String get todayLabel => 'اليوم';
 
   @override
-  String get dashboardTitle => 'النهارده';
+  String get dashboardTitle => 'اليوم';
 
   @override
   String get overallMastery => 'الإتقان العام';
 
   @override
-  String get statLessonsRemaining => 'دروس فاضلة';
+  String get statLessonsRemaining => 'دروس متبقّية';
 
   @override
-  String get statNeedsReview => 'محتاج مراجعة';
+  String get statNeedsReview => 'يحتاج مراجعة';
 
   @override
-  String get statMastered => 'متقن';
+  String get statMastered => 'متقَن';
 
   @override
   String get sectionSubjects => 'المواد';
@@ -85,22 +85,22 @@ class LAr extends L {
 
   @override
   String get firstRunBody =>
-      'افتح مادة، ضيف فيها باب، وبعدين درس. الإتقان بيتحسب من امتحاناتك الحقيقية بس — مش من إنك خلصت الدرس.';
+      'الإتقان يُحسب من امتحاناتك وحدها، لا من إنهاء الدرس.';
 
   @override
   String get firstRunAction => 'افتح أول مادة';
 
   @override
-  String get sectionNext => 'اللي بعده';
+  String get sectionNext => 'التالي';
 
   @override
   String get actionExam => 'امتحن';
 
   @override
-  String get notStartedYet => 'لسه مبدأتش';
+  String get notStartedYet => 'لم تبدأ بعد';
 
   @override
-  String get subjectHasOverdueLesson => 'فات ميعاد مراجعة درس';
+  String get subjectHasOverdueLesson => 'تأخّرت مراجعة درس';
 
   @override
   String lessonCount(int count) {
@@ -108,9 +108,9 @@ class LAr extends L {
       count,
       locale: localeName,
       other: '$count درس',
-      many: '$count درس',
+      many: '$count درساً',
       few: '$count دروس',
-      two: 'درسين',
+      two: 'درسان',
       one: 'درس واحد',
     );
     return '$_temp0';
@@ -122,9 +122,9 @@ class LAr extends L {
       count,
       locale: localeName,
       other: '$count باب',
-      many: '$count باب',
+      many: '$count باباً',
       few: '$count أبواب',
-      two: 'بابين',
+      two: 'بابان',
       one: 'باب واحد',
     );
     return '$_temp0';
@@ -132,7 +132,7 @@ class LAr extends L {
 
   @override
   String chaptersMasteredOf(String mastered, String total) {
-    return '$mastered من $total باب اتقنتها';
+    return 'أتقنت $mastered من $total باب';
   }
 
   @override
@@ -142,12 +142,12 @@ class LAr extends L {
 
   @override
   String lessonsExaminedOf(String examined, String total) {
-    return '$examined من $total درس متمتحن';
+    return '$examined من $total درس بامتحان';
   }
 
   @override
   String lessonsOnTimeOf(String onTime, String total) {
-    return '$onTime من $total درس في وقتها';
+    return '$onTime من $total درس في موعده';
   }
 
   @override
@@ -163,10 +163,10 @@ class LAr extends L {
   String get addLesson => '+ إضافة درس';
 
   @override
-  String get noChaptersYet => 'مفيش أبواب لسه';
+  String get noChaptersYet => 'لا توجد أبواب بعد';
 
   @override
-  String get noLessonsYet => 'مفيش دروس لسه';
+  String get noLessonsYet => 'لا توجد دروس بعد';
 
   @override
   String get chapterName => 'اسم الباب';
@@ -175,10 +175,10 @@ class LAr extends L {
   String get lessonName => 'اسم الدرس';
 
   @override
-  String get chapterNameHint => 'مثلاً: الباب الأول — الخلية';
+  String get chapterNameHint => 'مثال: الباب الأول — الخلية';
 
   @override
-  String get lessonNameHint => 'مثلاً: تركيب الغشاء البلازمي';
+  String get lessonNameHint => 'مثال: تركيب الغشاء البلازمي';
 
   @override
   String get renameChapter => 'تعديل اسم الباب';
@@ -194,69 +194,69 @@ class LAr extends L {
 
   @override
   String get deleteChapterConfirm =>
-      'هيتحذف الباب وكل الدروس والامتحانات اللي جواه. مش هينفع ترجع فيها.';
+      'سيُحذف الباب وكل الدروس والامتحانات التي بداخله. لا يمكن التراجع.';
 
   @override
   String get deleteLessonConfirm =>
-      'هيتحذف الدرس وكل امتحاناته. مش هينفع ترجع فيها.';
+      'سيُحذف الدرس وكل امتحاناته. لا يمكن التراجع.';
 
   @override
   String get averageExamScore => 'متوسط الامتحانات';
 
   @override
-  String get chapterNeedsReview => 'محتاج مراجعة';
+  String get chapterNeedsReview => 'يحتاج مراجعة';
 
   @override
   String chapterMasteredAt(String date) {
-    return 'اتقنته في $date';
+    return 'أتقنته في $date';
   }
 
   @override
   String get masterChapter => 'أتقنت الباب';
 
   @override
-  String get viewChapterReport => 'شوف تقرير الباب';
+  String get viewChapterReport => 'تقرير الباب';
 
   @override
-  String get notReadyGate => 'لسه مش جاهز — اعرف ليه';
+  String get notReadyGate => 'لم يكتمل بعد — اعرف السبب';
 
   @override
-  String get notReadyTitle => 'لسه مش جاهز';
+  String get notReadyTitle => 'لم يكتمل بعد';
 
   @override
   String notReadyBody(String threshold) {
-    return 'عشان تتقن الباب لازم كل الدروس تتمتحن والإتقان يوصل $threshold على الأقل.';
+    return 'لإتقان الباب يجب أن يكون لكل درس امتحان، وأن يبلغ الإتقان $threshold على الأقل.';
   }
 
   @override
-  String get noExamShort => 'مفيش امتحان';
+  String get noExamShort => 'لا امتحان';
 
   @override
-  String get lessonNoExamYet => 'لسه مفيش امتحان';
+  String get lessonNoExamYet => 'لا يوجد امتحان بعد';
 
   @override
   String dueInDays(String days) {
-    return 'باقي $days يوم';
+    return 'بقي $days يوم';
   }
 
   @override
   String dueInDaysLong(String days) {
-    return 'باقي $days يوم على المراجعة';
+    return 'بقي $days يوم على المراجعة';
   }
 
   @override
   String overdueByDays(String days) {
-    return 'متأخر $days يوم';
+    return 'متأخّر $days يوم';
   }
 
   @override
   String masteryCaptionWithExams(String last, String rest) {
-    return 'الإتقان محسوب من آخر امتحان $last ومتوسط اللي قبله $rest';
+    return 'الإتقان محسوب من آخر امتحان $last ومتوسط ما قبله $rest';
   }
 
   @override
   String get masteryCaptionNoExams =>
-      'الإتقان بيتحسب من الامتحانات بس — سجّل أول امتحان عشان تبدأ';
+      'الإتقان يُحسب من الامتحانات وحدها — سجّل أول امتحان';
 
   @override
   String get checklistTitle => 'خطوات المذاكرة';
@@ -265,13 +265,13 @@ class LAr extends L {
   String get checklistWatched => 'شاهدت الدرس';
 
   @override
-  String get checklistReadNotes => 'قريت الملازم';
+  String get checklistReadNotes => 'قرأت الملازم';
 
   @override
-  String get checklistDidHomework => 'حليت الواجب';
+  String get checklistDidHomework => 'حللت الواجب';
 
   @override
-  String get checklistDidExam => 'حليت الامتحان';
+  String get checklistDidExam => 'حللت الامتحان';
 
   @override
   String get checklistReviewedNotes => 'راجعت الملازم';
@@ -280,7 +280,7 @@ class LAr extends L {
   String get homeworkTitle => 'الواجب';
 
   @override
-  String get homeworkAdd => 'سجل درجة واجب';
+  String get homeworkAdd => 'سجّل درجة واجب';
 
   @override
   String get homeworkScore => 'الدرجة';
@@ -289,70 +289,66 @@ class LAr extends L {
   String get homeworkMax => 'من';
 
   @override
-  String get homeworkNotReady => 'لسه محتاج تذاكر أكتر قبل ما تدخل الامتحان';
+  String get homeworkNotReady => 'تحتاج مذاكرة أكثر قبل دخول الامتحان';
 
   @override
-  String get homeworkReady => 'تمام، جاهز تدخل الامتحان';
+  String get homeworkReady => 'جاهز لدخول الامتحان';
 
   @override
-  String get homeworkNone => 'مفيش واجبات متسجلة';
+  String get homeworkNone => 'لا واجبات مسجّلة';
 
   @override
   String get homeworkNote =>
-      'الواجب مش بيدخل في حساب الإتقان — ده مؤشر استعداد بس';
+      'الواجب لا يدخل في حساب الإتقان — هو مؤشر استعداد فقط';
 
   @override
-  String get homeworkInvalid =>
-      'الدرجة لازم تكون من صفر لـ «من»، و«من» أكبر من صفر';
+  String get homeworkInvalid => 'الدرجة بين صفر و«من»، و«من» أكبر من صفر';
 
   @override
   String get examHistory => 'الامتحانات السابقة';
 
   @override
-  String get examNoHistory => 'مفيش امتحانات لسه';
+  String get examNoHistory => 'لا امتحانات بعد';
 
   @override
   String get examReviewBadge => 'مراجعة';
 
   @override
-  String get examHistoryHint => 'دوس على امتحان عشان تشيله لو اتسجل غلط';
-
-  @override
-  String get examDelete => 'شيل الامتحان';
+  String get examDelete => 'حذف الامتحان';
 
   @override
   String get examDeleteConfirm =>
-      'هيتشال الامتحان من السجل وإتقان الدرس هيتحسب من غيره. مش هينفع ترجع فيها.';
+      'سيُحذف الامتحان من السجل ويُعاد حساب إتقان الدرس بدونه. لا يمكن التراجع.';
 
   @override
-  String get toastExamDeleted => 'اتشال الامتحان — الإتقان اتحسب من الأول';
+  String get toastExamDeleted => 'حُذف الامتحان — أُعيد حساب الإتقان';
 
   @override
   String get examStart => 'ابدأ الامتحان';
 
   @override
-  String get examRecordResult => 'سجل نتيجة امتحان';
+  String get examRecordResult => 'سجّل نتيجة امتحان';
 
   @override
-  String get examRecordReview => 'سجل امتحان المراجعة';
+  String get examRecordReview => 'سجّل امتحان المراجعة';
 
   @override
   String get examStep1Title => 'عدد الأسئلة الكلي';
 
   @override
-  String get examStep1Hint => 'الامتحان فيه كام سؤال؟';
+  String get examStep1Hint => 'كم سؤالاً في الامتحان؟';
 
   @override
   String get examStep2Title => 'درجات الأسئلة';
 
   @override
-  String get examStep2Hint => 'اقسم الأسئلة: كام سؤال بكام درجة';
+  String get examStep2Hint => 'وزّع الأسئلة: كم سؤالاً بكم درجة';
 
   @override
-  String get examStep3Title => 'إجاباتك الصح';
+  String get examStep3Title => 'إجاباتك الصحيحة';
 
   @override
-  String get examStep3Hint => 'كام سؤال جاوبته صح في كل مجموعة';
+  String get examStep3Hint => 'كم سؤالاً أجبته صحيحاً في كل مجموعة';
 
   @override
   String get examStep4Title => 'النتيجة';
@@ -367,7 +363,7 @@ class LAr extends L {
   String get examAddGroup => '+ إضافة مجموعة';
 
   @override
-  String get examRemoveGroup => 'شيل المجموعة';
+  String get examRemoveGroup => 'حذف المجموعة';
 
   @override
   String examGroupLabel(String count, String points) {
@@ -393,62 +389,63 @@ class LAr extends L {
 
   @override
   String get examSaveFailed =>
-      'مقدرناش نحفظ الامتحان. أرقامك لسه موجودة — جرّب تاني.';
+      'تعذّر حفظ الامتحان. أرقامك لم تَضِع — حاول مرة أخرى.';
 
   @override
-  String get examDiscardTitle => 'تسيب الامتحان؟';
+  String get examDiscardTitle => 'تترك الامتحان؟';
 
   @override
-  String get examDiscardBody => 'اللي كتبته هيروح. مش هينفع ترجع فيها.';
+  String get examDiscardBody => 'ما كتبته سيضيع. لا يمكن التراجع.';
 
   @override
-  String get examDiscardLeave => 'سيبه';
+  String get examDiscardLeave => 'اترك';
 
   @override
-  String get examDiscardStay => 'كمّل';
+  String get examDiscardStay => 'أكمل';
 
   @override
-  String get examErrorNeedAtLeastOneQuestion => 'لازم سؤال واحد على الأقل';
+  String get examErrorNeedAtLeastOneQuestion => 'سؤال واحد على الأقل';
 
   @override
   String get examErrorGroupInvalid =>
-      'كل مجموعة لازم يكون فيها عدد أسئلة ودرجة أكبر من صفر';
+      'كل مجموعة تحتاج عدد أسئلة ودرجة أكبر من صفر';
 
   @override
   String examErrorSumMismatch(String assigned, String total) {
-    return 'مجموع الأسئلة ($assigned) لازم يساوي العدد الكلي ($total)';
+    return 'مجموع الأسئلة ($assigned) يجب أن يساوي العدد الكلي ($total)';
   }
 
   @override
-  String get examErrorCorrectExceeds => 'عدد الصح مينفعش يزيد عن عدد الأسئلة';
+  String get examErrorCorrectExceeds =>
+      'عدد الإجابات الصحيحة لا يتجاوز عدد الأسئلة';
 
   @override
-  String get toastExamSaved => 'اتسجّل الامتحان — عداد المراجعة بدأ من جديد';
+  String get toastExamSaved => 'حُفظ الامتحان — بدأ عدّاد المراجعة من جديد';
 
   @override
-  String get toastHomeworkSaved => 'اتسجّلت درجة الواجب';
+  String get toastHomeworkSaved => 'حُفظت درجة الواجب';
 
   @override
-  String get reviewTitle => 'محتاج مراجعة';
+  String get reviewTitle => 'يحتاج مراجعة';
 
   @override
-  String get reviewEmptyTitle => 'مفيش حاجة محتاجة مراجعة';
+  String get reviewEmptyTitle => 'لا شيء يحتاج مراجعة';
 
   @override
-  String get reviewEmptyBody => 'كل دروسك في وقتها. استمر.';
+  String get reviewEmptyBody => 'كل دروسك في موعدها.';
 
   @override
   String get reviewReasonWeak => 'مستوى ضعيف';
 
   @override
-  String get reviewReasonDeclining => 'مستواك بينزل';
+  String get reviewReasonDeclining => 'مستواك ينخفض';
 
   @override
   String get reviewNotificationTitle => 'وقت المراجعة';
 
   @override
   String reviewNotificationBody(String lesson, String chapter) {
-    return 'وقت مراجعة درس $lesson في $chapter';
+    return 'حان وقت مراجعة درس $lesson في $chapter';
   }
 
   @override
@@ -459,10 +456,6 @@ class LAr extends L {
 
   @override
   String get analyticsAllSubjects => 'كل المواد';
-
-  @override
-  String get analyticsAlwaysAllSubjects =>
-      'الكارت ده بيقارن المواد الأربعة دايماً';
 
   @override
   String get analyticsMasteryBySubject => 'الإتقان حسب المادة';
@@ -477,26 +470,26 @@ class LAr extends L {
   String get analyticsReviewDiscipline => 'الالتزام بالمراجعة';
 
   @override
-  String get analyticsNotEnoughData => 'لسه مفيش بيانات كفاية';
+  String get analyticsNotEnoughData => 'لا توجد بيانات كافية بعد';
 
   @override
   String insightStrongestSubject(String subject, String value) {
-    return '$subject أقوى مادة عندك دلوقتي — $value';
+    return '$subject أقوى موادك الآن — $value';
   }
 
   @override
   String insightChapterWeak(String chapter, String value) {
-    return '«$chapter» لسه ضعيف — $value';
+    return '«$chapter» ما زال ضعيفاً — $value';
   }
 
   @override
   String insightLessonNotReviewed(String lesson, String days) {
-    return 'مراجعتش «$lesson» من $days يوم';
+    return 'لم تراجع «$lesson» منذ $days يوم';
   }
 
   @override
   String insightSubjectImproved(String subject, String delta) {
-    return '$subject اتحسنت $delta الشهر ده';
+    return '$subject تحسّنت $delta هذا الشهر';
   }
 
   @override
@@ -504,16 +497,16 @@ class LAr extends L {
 
   @override
   String trendUp(String from, String to) {
-    return 'اتحسنت من $from لـ $to';
+    return 'ارتفعت من $from إلى $to';
   }
 
   @override
   String trendDown(String from, String to) {
-    return 'نزلت من $from لـ $to';
+    return 'انخفضت من $from إلى $to';
   }
 
   @override
-  String get trendFlat => 'محتاج امتحانات أكتر عشان نقيس التقدم';
+  String get trendFlat => 'تحتاج امتحانات أكثر لقياس التقدّم';
 
   @override
   String get weakestLessonBadge => 'أضعف درس';
@@ -522,10 +515,7 @@ class LAr extends L {
   String get celebrationTitle => 'أتقنت الباب!';
 
   @override
-  String get celebrationBody => 'شغل محترم. كمّل على كده.';
-
-  @override
-  String get celebrationHint => 'دوس في أي حتة تكمّل';
+  String get celebrationBody => 'عمل ممتاز. واصِل.';
 
   @override
   String get authSignInTitle => 'تسجيل الدخول';
@@ -534,14 +524,13 @@ class LAr extends L {
   String get authRegisterTitle => 'حساب جديد';
 
   @override
-  String get authSubtitle =>
-      'سجّل دخولك مرة واحدة بس — بعد كده التطبيق هيشتغل من غير نت';
+  String get authSubtitle => 'تسجيل دخول واحد، ثم يعمل التطبيق دون اتصال';
 
   @override
-  String get authEmail => 'الإيميل';
+  String get authEmail => 'البريد الإلكتروني';
 
   @override
-  String get authPassword => 'الباسورد';
+  String get authPassword => 'كلمة السر';
 
   @override
   String get authEmailHint => 'you@example.com';
@@ -553,48 +542,50 @@ class LAr extends L {
   String get authRegister => 'إنشاء حساب';
 
   @override
-  String get authGoogle => 'كمّل بحساب Google';
+  String get authGoogle => 'المتابعة بحساب Google';
 
   @override
-  String get authToRegister => 'لسه مش عامل حساب؟ اعمل واحد';
+  String get authToRegister => 'لا حساب لديك؟ أنشئ واحداً';
 
   @override
-  String get authToSignIn => 'عندك حساب؟ سجّل دخول';
+  String get authToSignIn => 'لديك حساب؟ سجّل الدخول';
 
   @override
-  String get authForgotPassword => 'نسيت الباسورد؟';
+  String get authForgotPassword => 'نسيت كلمة السر؟';
 
   @override
-  String get authResetSent => 'بعتنالك رابط على الإيميل تغيّر بيه الباسورد';
+  String get authResetSent => 'أرسلنا رابطاً إلى بريدك لتغيير كلمة السر';
 
   @override
-  String get authErrorEmailInvalid => 'الإيميل مش مظبوط';
+  String get authErrorEmailInvalid => 'البريد الإلكتروني غير صحيح';
 
   @override
-  String get authErrorPasswordShort => 'الباسورد لازم 8 حروف على الأقل';
+  String get authErrorPasswordShort => 'كلمة السر ٨ أحرف على الأقل';
 
   @override
-  String get authErrorWrongCredentials => 'الإيميل أو الباسورد غلط';
+  String get authErrorWrongCredentials =>
+      'البريد الإلكتروني أو كلمة السر غير صحيحة';
 
   @override
-  String get authErrorEmailInUse => 'الإيميل ده مستخدم قبل كده';
+  String get authErrorEmailInUse => 'هذا البريد مستخدم بالفعل';
 
   @override
   String get authErrorNoNetwork =>
-      'مفيش اتصال بالنت. تسجيل الدخول أول مرة بس محتاج نت — بعد كده التطبيق بيشتغل أوفلاين.';
+      'لا يوجد اتصال. تسجيل الدخول أول مرة فقط يحتاج اتصالاً — بعدها يعمل التطبيق دون إنترنت.';
 
   @override
-  String get authErrorTooManyAttempts => 'محاولات كتير. استنى شوية وجرّب تاني';
+  String get authErrorTooManyAttempts =>
+      'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى';
 
   @override
-  String get authErrorGeneric => 'مقدرناش نكمّل. جرّب تاني';
+  String get authErrorGeneric => 'تعذّر إتمام العملية. حاول مرة أخرى';
 
   @override
   String get authSignOut => 'تسجيل الخروج';
 
   @override
   String get authSignOutConfirm =>
-      'هتحتاج نت عشان تسجّل دخول تاني. بياناتك محفوظة على الجهاز ومش هتتمسح.';
+      'ستحتاج اتصالاً لتسجيل الدخول مرة أخرى. بياناتك محفوظة على الجهاز ولن تُحذف.';
 
   @override
   String get authAccount => 'الحساب';
@@ -604,27 +595,23 @@ class LAr extends L {
 
   @override
   String get authDeleteAccountConfirm =>
-      'حسابك ونسختك السحابية وكل حاجة على الجهاز هتتمسح خالص. مش هينفع ترجع فيها.';
+      'سيُحذف حسابك ونسختك السحابية وكل شيء على الجهاز نهائياً. لا يمكن التراجع.';
 
   @override
   String get authDeleteAccountOfflineWarning =>
-      'لو في بيانات لسه مترفعتش للسحابة، هتروح مع الحذف.';
+      'ما لم يُرفع إلى السحابة بعد سيضيع مع الحذف.';
 
   @override
-  String get authDeleteAccountReauthTitle => 'أكّد إنه حسابك';
+  String get authDeleteAccountReauthTitle => 'أكّد أنه حسابك';
 
   @override
-  String get authDeleteAccountReauthBody =>
-      'اكتب باسورد حسابك عشان نكمل الحذف.';
+  String get authDeleteAccountReauthBody => 'اكتب كلمة سر حسابك لإتمام الحذف.';
 
   @override
   String get authDeleteAccountReauthAction => 'احذف الحساب';
 
   @override
-  String get authDeleteAccountFailed => 'الحساب اتمسحش. جرّب تاني.';
-
-  @override
-  String get authDeleteAccountSection => 'منطقة الخطر';
+  String get authDeleteAccountFailed => 'لم يُحذف الحساب. حاول مرة أخرى.';
 
   @override
   String get settingsPrivacy => 'الخصوصية';
@@ -634,61 +621,58 @@ class LAr extends L {
 
   @override
   String get privacyIntro =>
-      'التطبيق ده بيجمع أقل بيانات ممكنة. الكلام اللي تحت ده وصف حقيقي للي بيحصل فعلاً — مش وعود عامة.';
+      'هذا التطبيق يجمع أقل قدر ممكن من البيانات. ما يلي وصف لما يحدث فعلاً، لا وعود عامة.';
 
   @override
   String get privacyLocalTitle => 'بيانات دراستك';
 
   @override
   String get privacyLocalBody =>
-      'أبوابك ودروسك وامتحاناتك ومهامك بتتخزن على موبايلك بس، في قاعدة بيانات محلية. الكود نفسه هو اللي بيحسب الإتقان — مفيش سيرفر تاني شايف ده.';
+      'أبوابك ودروسك وامتحاناتك ومهامك محفوظة على هاتفك وحده، في قاعدة بيانات محلية. الإتقان يُحسب على جهازك — لا يراه أي خادم آخر.';
 
   @override
   String get privacyAccountTitle => 'بيانات الحساب';
 
   @override
   String get privacyAccountBody =>
-      'عشان النسخة السحابية، بنطلب إيميل وباسورد (أو حساب Google). بنستخدم Firebase Auth بتاع Google لتخزينهم. إيميلك هو كل اللي بنعرفه عنك — مفيش اسم ولا سن ولا أي بيانات تانية.';
+      'للنسخة السحابية نطلب بريداً إلكترونياً وكلمة سر (أو حساب Google)، وتُحفظ لدى Firebase Auth من Google. بريدك هو كل ما نعرفه عنك — لا اسم ولا عمر ولا أي بيانات أخرى.';
 
   @override
   String get privacyCloudTitle => 'النسخة السحابية';
 
   @override
   String get privacyCloudBody =>
-      'لو عملت حساب، بنرفع نسخة من بيانات دراستك مشفرة أثناء النقل ومحفوظة على سيرفرات Google (Firebase Firestore) باسم حسابك. محدش غيرك يقدر يوصلها — ولا إحنا.';
+      'إن أنشأت حساباً، تُرفع نسخة من بيانات دراستك مشفّرة أثناء النقل وتُحفظ على خوادم Google (Firebase Firestore) باسم حسابك. لا يصل إليها أحد سواك — ولا نحن.';
 
   @override
-  String get privacyDeleteTitle => 'مسح بياناتك';
+  String get privacyDeleteTitle => 'حذف بياناتك';
 
   @override
   String get privacyDeleteBody =>
-      'تحت في آخر صفحة الإعدادات في زرار «حذف الحساب». لما تدوسه: بياناتك على الموبايل بتمسح، النسخة السحابية بتمسح، والحساب نفسه بيتشال من Firebase. نهائياً.';
+      'في أسفل صفحة الإعدادات زر «حذف الحساب». عند الضغط عليه: تُمحى بياناتك على الهاتف، وتُمحى النسخة السحابية، ويُزال الحساب نفسه من Firebase. نهائياً.';
 
   @override
-  String get privacyNoCollectTitle => 'اللي بنعملهش';
+  String get privacyNoCollectTitle => 'ما لا نفعله';
 
   @override
   String get privacyNoCollectBody =>
-      'مفيش إعلانات. مفيش تتبع. مفيش بيع بيانات. مفيش تحليلات ولا تقارير أخطاء لجهة خارجية. التطبيق شغال من غير نت أصلاً معظم الوقت.';
+      'لا إعلانات. لا تتبّع. لا بيع للبيانات. لا تحليلات ولا تقارير أخطاء لجهة خارجية.';
 
   @override
   String get lockUnlock => 'افتح';
 
   @override
-  String get lockReason => 'افتح Ather';
+  String get lockReason => 'افتح أثر';
 
   @override
-  String get lockRefused => 'مفتحش — جرّب تاني';
+  String get lockRefused => 'لم يُفتح. حاول مرة أخرى.';
 
   @override
   String get lockLockedOut =>
-      'حاولت كتير. استنى شوية وجرّب تاني، أو افتح بكود القفل بتاع التليفون.';
+      'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى، أو استخدم رمز قفل هاتفك.';
 
   @override
   String get lockSetting => 'قفل بالبصمة';
-
-  @override
-  String get lockSettingBody => 'اطلب بصمة كل ما تفتح التطبيق';
 
   @override
   String get settingsTitle => 'الإعدادات';
@@ -715,18 +699,11 @@ class LAr extends L {
   String get settingsThemeSystem => 'النظام';
 
   @override
-  String get settingsThemeBody =>
-      'اختار مظهر التطبيق، أو سيبه يمشي مع إعدادات الموبايل';
-
-  @override
   String get settingsNotifications => 'إشعارات المراجعة';
 
   @override
-  String get settingsNotificationsBody => 'ذكّرني لما يجي وقت مراجعة درس';
-
-  @override
   String get settingsNotificationsBlocked =>
-      'التنبيهات مقفولة من إعدادات التليفون. افتحها من هناك عشان التذكير يوصلك.';
+      'الإشعارات مغلقة من إعدادات الهاتف. افتحها من هناك ليصلك التذكير.';
 
   @override
   String get settingsAbout => 'عن التطبيق';
@@ -740,11 +717,7 @@ class LAr extends L {
   String get backupTitle => 'النسخة السحابية';
 
   @override
-  String get backupBody =>
-      'بياناتك بتتحفظ على حسابك، فلو غيّرت التليفون تلاقيها زي ما هي.';
-
-  @override
-  String get backupNever => 'لسه متحفظتش';
+  String get backupNever => 'لم تُحفظ بعد';
 
   @override
   String backupSavedAt(String date) {
@@ -752,45 +725,45 @@ class LAr extends L {
   }
 
   @override
-  String get backupSaving => 'بيحفظ…';
+  String get backupSaving => 'جارٍ الحفظ…';
 
   @override
-  String get backupSaveNow => 'احفظ دلوقتي';
+  String get backupSaveNow => 'احفظ الآن';
 
   @override
-  String get backupRestore => 'استرجع النسخة السحابية';
+  String get backupRestore => 'استرجاع النسخة السحابية';
 
   @override
   String get backupRestoreConfirm =>
-      'اللي على التليفون ده هيتمسح ويتحط مكانه اللي في النسخة السحابية.';
+      'سيُمحى ما على هذا الهاتف ويحل محله ما في النسخة السحابية.';
 
   @override
-  String get backupRestoreDone => 'رجّعنا بياناتك';
+  String get backupRestoreDone => 'استُرجعت بياناتك';
 
   @override
-  String get backupRestoreEmpty => 'مفيش نسخة سحابية لسه';
+  String get backupRestoreEmpty => 'لا توجد نسخة سحابية بعد';
 
   @override
-  String get backupErrorOffline => 'مفيش نت — هيتحفظ أول ما النت يرجع';
+  String get backupErrorOffline => 'لا يوجد اتصال — سيُحفظ فور عودة الشبكة';
 
   @override
-  String get backupErrorPermission => 'الصلاحيات مظبوطتش على السيرفر';
+  String get backupErrorPermission => 'صلاحيات الخادم غير مضبوطة';
 
   @override
-  String get backupErrorTooLarge => 'بياناتك أكبر من إن نحفظها مرة واحدة';
+  String get backupErrorTooLarge => 'بياناتك أكبر من أن تُحفظ دفعة واحدة';
 
   @override
-  String get backupErrorUnreadable => 'النسخة السحابية مش مقروءة';
+  String get backupErrorUnreadable => 'النسخة السحابية غير مقروءة';
 
   @override
-  String get backupErrorUnknown => 'الحفظ مظبطش';
+  String get backupErrorUnknown => 'لم ينجح الحفظ';
 
   @override
   String get tasksTitle => 'مهام اليوم';
 
   @override
   String tasksDoneOf(String done, String total) {
-    return '$done من $total خلصتهم';
+    return 'أنجزت $done من $total';
   }
 
   @override
@@ -800,7 +773,7 @@ class LAr extends L {
   String get addTaskTitle => 'مهمة جديدة';
 
   @override
-  String get taskNameHint => 'هتعمل إيه النهارده؟';
+  String get taskNameHint => 'ماذا ستفعل اليوم؟';
 
   @override
   String get renameTask => 'تعديل المهمة';
@@ -809,22 +782,19 @@ class LAr extends L {
   String get deleteTask => 'حذف المهمة';
 
   @override
-  String get deleteTaskConfirm => 'هتتشال من مهام اليوم ده خالص.';
+  String get deleteTaskConfirm => 'ستُحذف من مهام هذا اليوم نهائياً.';
 
   @override
-  String get noTasksYet => 'مفيش مهام لليوم ده';
-
-  @override
-  String get tasksEmptyBody => 'اكتب اللي ناوي تعمله، وشيله لما تخلصه.';
+  String get noTasksYet => 'لا مهام لهذا اليوم';
 
   @override
   String get commonSave => 'حفظ';
 
   @override
-  String get commonSomethingWentWrong => 'في حاجة مامشتش صح. جرّب تاني.';
+  String get commonSomethingWentWrong => 'تعذّر إتمام العملية. حاول مرة أخرى.';
 
   @override
-  String get nameRequired => 'اكتب اسم الأول';
+  String get nameRequired => 'اكتب اسماً أولاً';
 
   @override
   String get authShowPassword => 'إظهار كلمة السر';

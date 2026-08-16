@@ -106,7 +106,7 @@ abstract class L {
   /// No description provided for @appTagline.
   ///
   /// In ar, this message translates to:
-  /// **'إنت مش بتخلص الدروس… إنت بتتقنها'**
+  /// **'أنت لا تُنهي الدروس، بل تُتقنها'**
   String get appTagline;
 
   /// No description provided for @navHome.
@@ -172,7 +172,7 @@ abstract class L {
   /// No description provided for @weekdayMonday.
   ///
   /// In ar, this message translates to:
-  /// **'اتنين'**
+  /// **'اثنين'**
   String get weekdayMonday;
 
   /// No description provided for @weekdayTuesday.
@@ -208,7 +208,7 @@ abstract class L {
   /// No description provided for @dashboardTitle.
   ///
   /// In ar, this message translates to:
-  /// **'النهارده'**
+  /// **'اليوم'**
   String get dashboardTitle;
 
   /// No description provided for @overallMastery.
@@ -220,19 +220,19 @@ abstract class L {
   /// No description provided for @statLessonsRemaining.
   ///
   /// In ar, this message translates to:
-  /// **'دروس فاضلة'**
+  /// **'دروس متبقّية'**
   String get statLessonsRemaining;
 
   /// No description provided for @statNeedsReview.
   ///
   /// In ar, this message translates to:
-  /// **'محتاج مراجعة'**
+  /// **'يحتاج مراجعة'**
   String get statNeedsReview;
 
   /// No description provided for @statMastered.
   ///
   /// In ar, this message translates to:
-  /// **'متقن'**
+  /// **'متقَن'**
   String get statMastered;
 
   /// No description provided for @sectionSubjects.
@@ -247,10 +247,10 @@ abstract class L {
   /// **'ابدأ من هنا'**
   String get firstRunTitle;
 
-  /// No description provided for @firstRunBody.
+  /// Halved deliberately. The walkthrough half -- open a subject, add a chapter, then a lesson -- told a student to do the only thing the empty screen allows. What survives is the product's one claim, which a student genuinely cannot guess from the interface.
   ///
   /// In ar, this message translates to:
-  /// **'افتح مادة، ضيف فيها باب، وبعدين درس. الإتقان بيتحسب من امتحاناتك الحقيقية بس — مش من إنك خلصت الدرس.'**
+  /// **'الإتقان يُحسب من امتحاناتك وحدها، لا من إنهاء الدرس.'**
   String get firstRunBody;
 
   /// No description provided for @firstRunAction.
@@ -262,7 +262,7 @@ abstract class L {
   /// No description provided for @sectionNext.
   ///
   /// In ar, this message translates to:
-  /// **'اللي بعده'**
+  /// **'التالي'**
   String get sectionNext;
 
   /// No description provided for @actionExam.
@@ -274,31 +274,31 @@ abstract class L {
   /// No description provided for @notStartedYet.
   ///
   /// In ar, this message translates to:
-  /// **'لسه مبدأتش'**
+  /// **'لم تبدأ بعد'**
   String get notStartedYet;
 
   /// No description provided for @subjectHasOverdueLesson.
   ///
   /// In ar, this message translates to:
-  /// **'فات ميعاد مراجعة درس'**
+  /// **'تأخّرت مراجعة درس'**
   String get subjectHasOverdueLesson;
 
   /// No description provided for @lessonCount.
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{درس واحد} =2{درسين} few{{count} دروس} many{{count} درس} other{{count} درس}}'**
+  /// **'{count, plural, =1{درس واحد} =2{درسان} few{{count} دروس} many{{count} درساً} other{{count} درس}}'**
   String lessonCount(int count);
 
   /// No description provided for @chapterCount.
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{باب واحد} =2{بابين} few{{count} أبواب} many{{count} باب} other{{count} باب}}'**
+  /// **'{count, plural, =1{باب واحد} =2{بابان} few{{count} أبواب} many{{count} باباً} other{{count} باب}}'**
   String chapterCount(int count);
 
   /// No description provided for @chaptersMasteredOf.
   ///
   /// In ar, this message translates to:
-  /// **'{mastered} من {total} باب اتقنتها'**
+  /// **'أتقنت {mastered} من {total} باب'**
   String chaptersMasteredOf(String mastered, String total);
 
   /// No description provided for @chaptersOfShort.
@@ -310,13 +310,13 @@ abstract class L {
   /// No description provided for @lessonsExaminedOf.
   ///
   /// In ar, this message translates to:
-  /// **'{examined} من {total} درس متمتحن'**
+  /// **'{examined} من {total} درس بامتحان'**
   String lessonsExaminedOf(String examined, String total);
 
   /// No description provided for @lessonsOnTimeOf.
   ///
   /// In ar, this message translates to:
-  /// **'{onTime} من {total} درس في وقتها'**
+  /// **'{onTime} من {total} درس في موعده'**
   String lessonsOnTimeOf(String onTime, String total);
 
   /// No description provided for @sectionChapters.
@@ -346,13 +346,13 @@ abstract class L {
   /// No description provided for @noChaptersYet.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش أبواب لسه'**
+  /// **'لا توجد أبواب بعد'**
   String get noChaptersYet;
 
   /// No description provided for @noLessonsYet.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش دروس لسه'**
+  /// **'لا توجد دروس بعد'**
   String get noLessonsYet;
 
   /// No description provided for @chapterName.
@@ -370,13 +370,13 @@ abstract class L {
   /// No description provided for @chapterNameHint.
   ///
   /// In ar, this message translates to:
-  /// **'مثلاً: الباب الأول — الخلية'**
+  /// **'مثال: الباب الأول — الخلية'**
   String get chapterNameHint;
 
   /// No description provided for @lessonNameHint.
   ///
   /// In ar, this message translates to:
-  /// **'مثلاً: تركيب الغشاء البلازمي'**
+  /// **'مثال: تركيب الغشاء البلازمي'**
   String get lessonNameHint;
 
   /// No description provided for @renameChapter.
@@ -406,13 +406,13 @@ abstract class L {
   /// No description provided for @deleteChapterConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'هيتحذف الباب وكل الدروس والامتحانات اللي جواه. مش هينفع ترجع فيها.'**
+  /// **'سيُحذف الباب وكل الدروس والامتحانات التي بداخله. لا يمكن التراجع.'**
   String get deleteChapterConfirm;
 
   /// No description provided for @deleteLessonConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'هيتحذف الدرس وكل امتحاناته. مش هينفع ترجع فيها.'**
+  /// **'سيُحذف الدرس وكل امتحاناته. لا يمكن التراجع.'**
   String get deleteLessonConfirm;
 
   /// No description provided for @averageExamScore.
@@ -424,13 +424,13 @@ abstract class L {
   /// No description provided for @chapterNeedsReview.
   ///
   /// In ar, this message translates to:
-  /// **'محتاج مراجعة'**
+  /// **'يحتاج مراجعة'**
   String get chapterNeedsReview;
 
   /// No description provided for @chapterMasteredAt.
   ///
   /// In ar, this message translates to:
-  /// **'اتقنته في {date}'**
+  /// **'أتقنته في {date}'**
   String chapterMasteredAt(String date);
 
   /// No description provided for @masterChapter.
@@ -442,67 +442,67 @@ abstract class L {
   /// No description provided for @viewChapterReport.
   ///
   /// In ar, this message translates to:
-  /// **'شوف تقرير الباب'**
+  /// **'تقرير الباب'**
   String get viewChapterReport;
 
   /// No description provided for @notReadyGate.
   ///
   /// In ar, this message translates to:
-  /// **'لسه مش جاهز — اعرف ليه'**
+  /// **'لم يكتمل بعد — اعرف السبب'**
   String get notReadyGate;
 
   /// No description provided for @notReadyTitle.
   ///
   /// In ar, this message translates to:
-  /// **'لسه مش جاهز'**
+  /// **'لم يكتمل بعد'**
   String get notReadyTitle;
 
   /// No description provided for @notReadyBody.
   ///
   /// In ar, this message translates to:
-  /// **'عشان تتقن الباب لازم كل الدروس تتمتحن والإتقان يوصل {threshold} على الأقل.'**
+  /// **'لإتقان الباب يجب أن يكون لكل درس امتحان، وأن يبلغ الإتقان {threshold} على الأقل.'**
   String notReadyBody(String threshold);
 
   /// No description provided for @noExamShort.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش امتحان'**
+  /// **'لا امتحان'**
   String get noExamShort;
 
   /// No description provided for @lessonNoExamYet.
   ///
   /// In ar, this message translates to:
-  /// **'لسه مفيش امتحان'**
+  /// **'لا يوجد امتحان بعد'**
   String get lessonNoExamYet;
 
   /// No description provided for @dueInDays.
   ///
   /// In ar, this message translates to:
-  /// **'باقي {days} يوم'**
+  /// **'بقي {days} يوم'**
   String dueInDays(String days);
 
   /// No description provided for @dueInDaysLong.
   ///
   /// In ar, this message translates to:
-  /// **'باقي {days} يوم على المراجعة'**
+  /// **'بقي {days} يوم على المراجعة'**
   String dueInDaysLong(String days);
 
   /// No description provided for @overdueByDays.
   ///
   /// In ar, this message translates to:
-  /// **'متأخر {days} يوم'**
+  /// **'متأخّر {days} يوم'**
   String overdueByDays(String days);
 
   /// No description provided for @masteryCaptionWithExams.
   ///
   /// In ar, this message translates to:
-  /// **'الإتقان محسوب من آخر امتحان {last} ومتوسط اللي قبله {rest}'**
+  /// **'الإتقان محسوب من آخر امتحان {last} ومتوسط ما قبله {rest}'**
   String masteryCaptionWithExams(String last, String rest);
 
   /// No description provided for @masteryCaptionNoExams.
   ///
   /// In ar, this message translates to:
-  /// **'الإتقان بيتحسب من الامتحانات بس — سجّل أول امتحان عشان تبدأ'**
+  /// **'الإتقان يُحسب من الامتحانات وحدها — سجّل أول امتحان'**
   String get masteryCaptionNoExams;
 
   /// No description provided for @checklistTitle.
@@ -520,19 +520,19 @@ abstract class L {
   /// No description provided for @checklistReadNotes.
   ///
   /// In ar, this message translates to:
-  /// **'قريت الملازم'**
+  /// **'قرأت الملازم'**
   String get checklistReadNotes;
 
   /// No description provided for @checklistDidHomework.
   ///
   /// In ar, this message translates to:
-  /// **'حليت الواجب'**
+  /// **'حللت الواجب'**
   String get checklistDidHomework;
 
   /// No description provided for @checklistDidExam.
   ///
   /// In ar, this message translates to:
-  /// **'حليت الامتحان'**
+  /// **'حللت الامتحان'**
   String get checklistDidExam;
 
   /// No description provided for @checklistReviewedNotes.
@@ -550,7 +550,7 @@ abstract class L {
   /// No description provided for @homeworkAdd.
   ///
   /// In ar, this message translates to:
-  /// **'سجل درجة واجب'**
+  /// **'سجّل درجة واجب'**
   String get homeworkAdd;
 
   /// No description provided for @homeworkScore.
@@ -568,31 +568,31 @@ abstract class L {
   /// No description provided for @homeworkNotReady.
   ///
   /// In ar, this message translates to:
-  /// **'لسه محتاج تذاكر أكتر قبل ما تدخل الامتحان'**
+  /// **'تحتاج مذاكرة أكثر قبل دخول الامتحان'**
   String get homeworkNotReady;
 
   /// No description provided for @homeworkReady.
   ///
   /// In ar, this message translates to:
-  /// **'تمام، جاهز تدخل الامتحان'**
+  /// **'جاهز لدخول الامتحان'**
   String get homeworkReady;
 
   /// No description provided for @homeworkNone.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش واجبات متسجلة'**
+  /// **'لا واجبات مسجّلة'**
   String get homeworkNone;
 
   /// No description provided for @homeworkNote.
   ///
   /// In ar, this message translates to:
-  /// **'الواجب مش بيدخل في حساب الإتقان — ده مؤشر استعداد بس'**
+  /// **'الواجب لا يدخل في حساب الإتقان — هو مؤشر استعداد فقط'**
   String get homeworkNote;
 
   /// No description provided for @homeworkInvalid.
   ///
   /// In ar, this message translates to:
-  /// **'الدرجة لازم تكون من صفر لـ «من»، و«من» أكبر من صفر'**
+  /// **'الدرجة بين صفر و«من»، و«من» أكبر من صفر'**
   String get homeworkInvalid;
 
   /// No description provided for @examHistory.
@@ -604,7 +604,7 @@ abstract class L {
   /// No description provided for @examNoHistory.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش امتحانات لسه'**
+  /// **'لا امتحانات بعد'**
   String get examNoHistory;
 
   /// No description provided for @examReviewBadge.
@@ -613,28 +613,22 @@ abstract class L {
   /// **'مراجعة'**
   String get examReviewBadge;
 
-  /// No description provided for @examHistoryHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'دوس على امتحان عشان تشيله لو اتسجل غلط'**
-  String get examHistoryHint;
-
   /// No description provided for @examDelete.
   ///
   /// In ar, this message translates to:
-  /// **'شيل الامتحان'**
+  /// **'حذف الامتحان'**
   String get examDelete;
 
   /// No description provided for @examDeleteConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'هيتشال الامتحان من السجل وإتقان الدرس هيتحسب من غيره. مش هينفع ترجع فيها.'**
+  /// **'سيُحذف الامتحان من السجل ويُعاد حساب إتقان الدرس بدونه. لا يمكن التراجع.'**
   String get examDeleteConfirm;
 
   /// No description provided for @toastExamDeleted.
   ///
   /// In ar, this message translates to:
-  /// **'اتشال الامتحان — الإتقان اتحسب من الأول'**
+  /// **'حُذف الامتحان — أُعيد حساب الإتقان'**
   String get toastExamDeleted;
 
   /// No description provided for @examStart.
@@ -646,13 +640,13 @@ abstract class L {
   /// No description provided for @examRecordResult.
   ///
   /// In ar, this message translates to:
-  /// **'سجل نتيجة امتحان'**
+  /// **'سجّل نتيجة امتحان'**
   String get examRecordResult;
 
   /// No description provided for @examRecordReview.
   ///
   /// In ar, this message translates to:
-  /// **'سجل امتحان المراجعة'**
+  /// **'سجّل امتحان المراجعة'**
   String get examRecordReview;
 
   /// No description provided for @examStep1Title.
@@ -664,7 +658,7 @@ abstract class L {
   /// No description provided for @examStep1Hint.
   ///
   /// In ar, this message translates to:
-  /// **'الامتحان فيه كام سؤال؟'**
+  /// **'كم سؤالاً في الامتحان؟'**
   String get examStep1Hint;
 
   /// No description provided for @examStep2Title.
@@ -676,19 +670,19 @@ abstract class L {
   /// No description provided for @examStep2Hint.
   ///
   /// In ar, this message translates to:
-  /// **'اقسم الأسئلة: كام سؤال بكام درجة'**
+  /// **'وزّع الأسئلة: كم سؤالاً بكم درجة'**
   String get examStep2Hint;
 
   /// No description provided for @examStep3Title.
   ///
   /// In ar, this message translates to:
-  /// **'إجاباتك الصح'**
+  /// **'إجاباتك الصحيحة'**
   String get examStep3Title;
 
   /// No description provided for @examStep3Hint.
   ///
   /// In ar, this message translates to:
-  /// **'كام سؤال جاوبته صح في كل مجموعة'**
+  /// **'كم سؤالاً أجبته صحيحاً في كل مجموعة'**
   String get examStep3Hint;
 
   /// No description provided for @examStep4Title.
@@ -718,7 +712,7 @@ abstract class L {
   /// No description provided for @examRemoveGroup.
   ///
   /// In ar, this message translates to:
-  /// **'شيل المجموعة'**
+  /// **'حذف المجموعة'**
   String get examRemoveGroup;
 
   /// No description provided for @examGroupLabel.
@@ -760,85 +754,85 @@ abstract class L {
   /// No description provided for @examSaveFailed.
   ///
   /// In ar, this message translates to:
-  /// **'مقدرناش نحفظ الامتحان. أرقامك لسه موجودة — جرّب تاني.'**
+  /// **'تعذّر حفظ الامتحان. أرقامك لم تَضِع — حاول مرة أخرى.'**
   String get examSaveFailed;
 
   /// No description provided for @examDiscardTitle.
   ///
   /// In ar, this message translates to:
-  /// **'تسيب الامتحان؟'**
+  /// **'تترك الامتحان؟'**
   String get examDiscardTitle;
 
   /// No description provided for @examDiscardBody.
   ///
   /// In ar, this message translates to:
-  /// **'اللي كتبته هيروح. مش هينفع ترجع فيها.'**
+  /// **'ما كتبته سيضيع. لا يمكن التراجع.'**
   String get examDiscardBody;
 
   /// No description provided for @examDiscardLeave.
   ///
   /// In ar, this message translates to:
-  /// **'سيبه'**
+  /// **'اترك'**
   String get examDiscardLeave;
 
   /// No description provided for @examDiscardStay.
   ///
   /// In ar, this message translates to:
-  /// **'كمّل'**
+  /// **'أكمل'**
   String get examDiscardStay;
 
   /// No description provided for @examErrorNeedAtLeastOneQuestion.
   ///
   /// In ar, this message translates to:
-  /// **'لازم سؤال واحد على الأقل'**
+  /// **'سؤال واحد على الأقل'**
   String get examErrorNeedAtLeastOneQuestion;
 
   /// No description provided for @examErrorGroupInvalid.
   ///
   /// In ar, this message translates to:
-  /// **'كل مجموعة لازم يكون فيها عدد أسئلة ودرجة أكبر من صفر'**
+  /// **'كل مجموعة تحتاج عدد أسئلة ودرجة أكبر من صفر'**
   String get examErrorGroupInvalid;
 
   /// No description provided for @examErrorSumMismatch.
   ///
   /// In ar, this message translates to:
-  /// **'مجموع الأسئلة ({assigned}) لازم يساوي العدد الكلي ({total})'**
+  /// **'مجموع الأسئلة ({assigned}) يجب أن يساوي العدد الكلي ({total})'**
   String examErrorSumMismatch(String assigned, String total);
 
   /// No description provided for @examErrorCorrectExceeds.
   ///
   /// In ar, this message translates to:
-  /// **'عدد الصح مينفعش يزيد عن عدد الأسئلة'**
+  /// **'عدد الإجابات الصحيحة لا يتجاوز عدد الأسئلة'**
   String get examErrorCorrectExceeds;
 
   /// No description provided for @toastExamSaved.
   ///
   /// In ar, this message translates to:
-  /// **'اتسجّل الامتحان — عداد المراجعة بدأ من جديد'**
+  /// **'حُفظ الامتحان — بدأ عدّاد المراجعة من جديد'**
   String get toastExamSaved;
 
   /// No description provided for @toastHomeworkSaved.
   ///
   /// In ar, this message translates to:
-  /// **'اتسجّلت درجة الواجب'**
+  /// **'حُفظت درجة الواجب'**
   String get toastHomeworkSaved;
 
   /// No description provided for @reviewTitle.
   ///
   /// In ar, this message translates to:
-  /// **'محتاج مراجعة'**
+  /// **'يحتاج مراجعة'**
   String get reviewTitle;
 
   /// No description provided for @reviewEmptyTitle.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش حاجة محتاجة مراجعة'**
+  /// **'لا شيء يحتاج مراجعة'**
   String get reviewEmptyTitle;
 
   /// No description provided for @reviewEmptyBody.
   ///
   /// In ar, this message translates to:
-  /// **'كل دروسك في وقتها. استمر.'**
+  /// **'كل دروسك في موعدها.'**
   String get reviewEmptyBody;
 
   /// No description provided for @reviewReasonWeak.
@@ -850,7 +844,7 @@ abstract class L {
   /// No description provided for @reviewReasonDeclining.
   ///
   /// In ar, this message translates to:
-  /// **'مستواك بينزل'**
+  /// **'مستواك ينخفض'**
   String get reviewReasonDeclining;
 
   /// No description provided for @reviewNotificationTitle.
@@ -862,7 +856,7 @@ abstract class L {
   /// No description provided for @reviewNotificationBody.
   ///
   /// In ar, this message translates to:
-  /// **'وقت مراجعة درس {lesson} في {chapter}'**
+  /// **'حان وقت مراجعة درس {lesson} في {chapter}'**
   String reviewNotificationBody(String lesson, String chapter);
 
   /// No description provided for @analyticsTitle.
@@ -882,12 +876,6 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'كل المواد'**
   String get analyticsAllSubjects;
-
-  /// No description provided for @analyticsAlwaysAllSubjects.
-  ///
-  /// In ar, this message translates to:
-  /// **'الكارت ده بيقارن المواد الأربعة دايماً'**
-  String get analyticsAlwaysAllSubjects;
 
   /// No description provided for @analyticsMasteryBySubject.
   ///
@@ -916,31 +904,31 @@ abstract class L {
   /// No description provided for @analyticsNotEnoughData.
   ///
   /// In ar, this message translates to:
-  /// **'لسه مفيش بيانات كفاية'**
+  /// **'لا توجد بيانات كافية بعد'**
   String get analyticsNotEnoughData;
 
   /// No description provided for @insightStrongestSubject.
   ///
   /// In ar, this message translates to:
-  /// **'{subject} أقوى مادة عندك دلوقتي — {value}'**
+  /// **'{subject} أقوى موادك الآن — {value}'**
   String insightStrongestSubject(String subject, String value);
 
   /// No description provided for @insightChapterWeak.
   ///
   /// In ar, this message translates to:
-  /// **'«{chapter}» لسه ضعيف — {value}'**
+  /// **'«{chapter}» ما زال ضعيفاً — {value}'**
   String insightChapterWeak(String chapter, String value);
 
   /// No description provided for @insightLessonNotReviewed.
   ///
   /// In ar, this message translates to:
-  /// **'مراجعتش «{lesson}» من {days} يوم'**
+  /// **'لم تراجع «{lesson}» منذ {days} يوم'**
   String insightLessonNotReviewed(String lesson, String days);
 
   /// No description provided for @insightSubjectImproved.
   ///
   /// In ar, this message translates to:
-  /// **'{subject} اتحسنت {delta} الشهر ده'**
+  /// **'{subject} تحسّنت {delta} هذا الشهر'**
   String insightSubjectImproved(String subject, String delta);
 
   /// No description provided for @chapterReportTitle.
@@ -952,19 +940,19 @@ abstract class L {
   /// No description provided for @trendUp.
   ///
   /// In ar, this message translates to:
-  /// **'اتحسنت من {from} لـ {to}'**
+  /// **'ارتفعت من {from} إلى {to}'**
   String trendUp(String from, String to);
 
   /// No description provided for @trendDown.
   ///
   /// In ar, this message translates to:
-  /// **'نزلت من {from} لـ {to}'**
+  /// **'انخفضت من {from} إلى {to}'**
   String trendDown(String from, String to);
 
   /// No description provided for @trendFlat.
   ///
   /// In ar, this message translates to:
-  /// **'محتاج امتحانات أكتر عشان نقيس التقدم'**
+  /// **'تحتاج امتحانات أكثر لقياس التقدّم'**
   String get trendFlat;
 
   /// No description provided for @weakestLessonBadge.
@@ -982,14 +970,8 @@ abstract class L {
   /// No description provided for @celebrationBody.
   ///
   /// In ar, this message translates to:
-  /// **'شغل محترم. كمّل على كده.'**
+  /// **'عمل ممتاز. واصِل.'**
   String get celebrationBody;
-
-  /// No description provided for @celebrationHint.
-  ///
-  /// In ar, this message translates to:
-  /// **'دوس في أي حتة تكمّل'**
-  String get celebrationHint;
 
   /// No description provided for @authSignInTitle.
   ///
@@ -1006,19 +988,19 @@ abstract class L {
   /// No description provided for @authSubtitle.
   ///
   /// In ar, this message translates to:
-  /// **'سجّل دخولك مرة واحدة بس — بعد كده التطبيق هيشتغل من غير نت'**
+  /// **'تسجيل دخول واحد، ثم يعمل التطبيق دون اتصال'**
   String get authSubtitle;
 
   /// No description provided for @authEmail.
   ///
   /// In ar, this message translates to:
-  /// **'الإيميل'**
+  /// **'البريد الإلكتروني'**
   String get authEmail;
 
   /// No description provided for @authPassword.
   ///
   /// In ar, this message translates to:
-  /// **'الباسورد'**
+  /// **'كلمة السر'**
   String get authPassword;
 
   /// No description provided for @authEmailHint.
@@ -1042,73 +1024,73 @@ abstract class L {
   /// No description provided for @authGoogle.
   ///
   /// In ar, this message translates to:
-  /// **'كمّل بحساب Google'**
+  /// **'المتابعة بحساب Google'**
   String get authGoogle;
 
   /// No description provided for @authToRegister.
   ///
   /// In ar, this message translates to:
-  /// **'لسه مش عامل حساب؟ اعمل واحد'**
+  /// **'لا حساب لديك؟ أنشئ واحداً'**
   String get authToRegister;
 
   /// No description provided for @authToSignIn.
   ///
   /// In ar, this message translates to:
-  /// **'عندك حساب؟ سجّل دخول'**
+  /// **'لديك حساب؟ سجّل الدخول'**
   String get authToSignIn;
 
   /// No description provided for @authForgotPassword.
   ///
   /// In ar, this message translates to:
-  /// **'نسيت الباسورد؟'**
+  /// **'نسيت كلمة السر؟'**
   String get authForgotPassword;
 
   /// No description provided for @authResetSent.
   ///
   /// In ar, this message translates to:
-  /// **'بعتنالك رابط على الإيميل تغيّر بيه الباسورد'**
+  /// **'أرسلنا رابطاً إلى بريدك لتغيير كلمة السر'**
   String get authResetSent;
 
   /// No description provided for @authErrorEmailInvalid.
   ///
   /// In ar, this message translates to:
-  /// **'الإيميل مش مظبوط'**
+  /// **'البريد الإلكتروني غير صحيح'**
   String get authErrorEmailInvalid;
 
   /// No description provided for @authErrorPasswordShort.
   ///
   /// In ar, this message translates to:
-  /// **'الباسورد لازم 8 حروف على الأقل'**
+  /// **'كلمة السر ٨ أحرف على الأقل'**
   String get authErrorPasswordShort;
 
   /// No description provided for @authErrorWrongCredentials.
   ///
   /// In ar, this message translates to:
-  /// **'الإيميل أو الباسورد غلط'**
+  /// **'البريد الإلكتروني أو كلمة السر غير صحيحة'**
   String get authErrorWrongCredentials;
 
   /// No description provided for @authErrorEmailInUse.
   ///
   /// In ar, this message translates to:
-  /// **'الإيميل ده مستخدم قبل كده'**
+  /// **'هذا البريد مستخدم بالفعل'**
   String get authErrorEmailInUse;
 
   /// No description provided for @authErrorNoNetwork.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش اتصال بالنت. تسجيل الدخول أول مرة بس محتاج نت — بعد كده التطبيق بيشتغل أوفلاين.'**
+  /// **'لا يوجد اتصال. تسجيل الدخول أول مرة فقط يحتاج اتصالاً — بعدها يعمل التطبيق دون إنترنت.'**
   String get authErrorNoNetwork;
 
   /// No description provided for @authErrorTooManyAttempts.
   ///
   /// In ar, this message translates to:
-  /// **'محاولات كتير. استنى شوية وجرّب تاني'**
+  /// **'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى'**
   String get authErrorTooManyAttempts;
 
   /// No description provided for @authErrorGeneric.
   ///
   /// In ar, this message translates to:
-  /// **'مقدرناش نكمّل. جرّب تاني'**
+  /// **'تعذّر إتمام العملية. حاول مرة أخرى'**
   String get authErrorGeneric;
 
   /// No description provided for @authSignOut.
@@ -1120,7 +1102,7 @@ abstract class L {
   /// No description provided for @authSignOutConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'هتحتاج نت عشان تسجّل دخول تاني. بياناتك محفوظة على الجهاز ومش هتتمسح.'**
+  /// **'ستحتاج اتصالاً لتسجيل الدخول مرة أخرى. بياناتك محفوظة على الجهاز ولن تُحذف.'**
   String get authSignOutConfirm;
 
   /// No description provided for @authAccount.
@@ -1138,25 +1120,25 @@ abstract class L {
   /// No description provided for @authDeleteAccountConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'حسابك ونسختك السحابية وكل حاجة على الجهاز هتتمسح خالص. مش هينفع ترجع فيها.'**
+  /// **'سيُحذف حسابك ونسختك السحابية وكل شيء على الجهاز نهائياً. لا يمكن التراجع.'**
   String get authDeleteAccountConfirm;
 
   /// No description provided for @authDeleteAccountOfflineWarning.
   ///
   /// In ar, this message translates to:
-  /// **'لو في بيانات لسه مترفعتش للسحابة، هتروح مع الحذف.'**
+  /// **'ما لم يُرفع إلى السحابة بعد سيضيع مع الحذف.'**
   String get authDeleteAccountOfflineWarning;
 
   /// No description provided for @authDeleteAccountReauthTitle.
   ///
   /// In ar, this message translates to:
-  /// **'أكّد إنه حسابك'**
+  /// **'أكّد أنه حسابك'**
   String get authDeleteAccountReauthTitle;
 
   /// No description provided for @authDeleteAccountReauthBody.
   ///
   /// In ar, this message translates to:
-  /// **'اكتب باسورد حسابك عشان نكمل الحذف.'**
+  /// **'اكتب كلمة سر حسابك لإتمام الحذف.'**
   String get authDeleteAccountReauthBody;
 
   /// No description provided for @authDeleteAccountReauthAction.
@@ -1168,14 +1150,8 @@ abstract class L {
   /// No description provided for @authDeleteAccountFailed.
   ///
   /// In ar, this message translates to:
-  /// **'الحساب اتمسحش. جرّب تاني.'**
+  /// **'لم يُحذف الحساب. حاول مرة أخرى.'**
   String get authDeleteAccountFailed;
-
-  /// No description provided for @authDeleteAccountSection.
-  ///
-  /// In ar, this message translates to:
-  /// **'منطقة الخطر'**
-  String get authDeleteAccountSection;
 
   /// No description provided for @settingsPrivacy.
   ///
@@ -1192,7 +1168,7 @@ abstract class L {
   /// No description provided for @privacyIntro.
   ///
   /// In ar, this message translates to:
-  /// **'التطبيق ده بيجمع أقل بيانات ممكنة. الكلام اللي تحت ده وصف حقيقي للي بيحصل فعلاً — مش وعود عامة.'**
+  /// **'هذا التطبيق يجمع أقل قدر ممكن من البيانات. ما يلي وصف لما يحدث فعلاً، لا وعود عامة.'**
   String get privacyIntro;
 
   /// No description provided for @privacyLocalTitle.
@@ -1204,7 +1180,7 @@ abstract class L {
   /// No description provided for @privacyLocalBody.
   ///
   /// In ar, this message translates to:
-  /// **'أبوابك ودروسك وامتحاناتك ومهامك بتتخزن على موبايلك بس، في قاعدة بيانات محلية. الكود نفسه هو اللي بيحسب الإتقان — مفيش سيرفر تاني شايف ده.'**
+  /// **'أبوابك ودروسك وامتحاناتك ومهامك محفوظة على هاتفك وحده، في قاعدة بيانات محلية. الإتقان يُحسب على جهازك — لا يراه أي خادم آخر.'**
   String get privacyLocalBody;
 
   /// No description provided for @privacyAccountTitle.
@@ -1216,7 +1192,7 @@ abstract class L {
   /// No description provided for @privacyAccountBody.
   ///
   /// In ar, this message translates to:
-  /// **'عشان النسخة السحابية، بنطلب إيميل وباسورد (أو حساب Google). بنستخدم Firebase Auth بتاع Google لتخزينهم. إيميلك هو كل اللي بنعرفه عنك — مفيش اسم ولا سن ولا أي بيانات تانية.'**
+  /// **'للنسخة السحابية نطلب بريداً إلكترونياً وكلمة سر (أو حساب Google)، وتُحفظ لدى Firebase Auth من Google. بريدك هو كل ما نعرفه عنك — لا اسم ولا عمر ولا أي بيانات أخرى.'**
   String get privacyAccountBody;
 
   /// No description provided for @privacyCloudTitle.
@@ -1228,31 +1204,31 @@ abstract class L {
   /// No description provided for @privacyCloudBody.
   ///
   /// In ar, this message translates to:
-  /// **'لو عملت حساب، بنرفع نسخة من بيانات دراستك مشفرة أثناء النقل ومحفوظة على سيرفرات Google (Firebase Firestore) باسم حسابك. محدش غيرك يقدر يوصلها — ولا إحنا.'**
+  /// **'إن أنشأت حساباً، تُرفع نسخة من بيانات دراستك مشفّرة أثناء النقل وتُحفظ على خوادم Google (Firebase Firestore) باسم حسابك. لا يصل إليها أحد سواك — ولا نحن.'**
   String get privacyCloudBody;
 
   /// No description provided for @privacyDeleteTitle.
   ///
   /// In ar, this message translates to:
-  /// **'مسح بياناتك'**
+  /// **'حذف بياناتك'**
   String get privacyDeleteTitle;
 
   /// No description provided for @privacyDeleteBody.
   ///
   /// In ar, this message translates to:
-  /// **'تحت في آخر صفحة الإعدادات في زرار «حذف الحساب». لما تدوسه: بياناتك على الموبايل بتمسح، النسخة السحابية بتمسح، والحساب نفسه بيتشال من Firebase. نهائياً.'**
+  /// **'في أسفل صفحة الإعدادات زر «حذف الحساب». عند الضغط عليه: تُمحى بياناتك على الهاتف، وتُمحى النسخة السحابية، ويُزال الحساب نفسه من Firebase. نهائياً.'**
   String get privacyDeleteBody;
 
   /// No description provided for @privacyNoCollectTitle.
   ///
   /// In ar, this message translates to:
-  /// **'اللي بنعملهش'**
+  /// **'ما لا نفعله'**
   String get privacyNoCollectTitle;
 
   /// No description provided for @privacyNoCollectBody.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش إعلانات. مفيش تتبع. مفيش بيع بيانات. مفيش تحليلات ولا تقارير أخطاء لجهة خارجية. التطبيق شغال من غير نت أصلاً معظم الوقت.'**
+  /// **'لا إعلانات. لا تتبّع. لا بيع للبيانات. لا تحليلات ولا تقارير أخطاء لجهة خارجية.'**
   String get privacyNoCollectBody;
 
   /// No description provided for @lockUnlock.
@@ -1264,19 +1240,19 @@ abstract class L {
   /// No description provided for @lockReason.
   ///
   /// In ar, this message translates to:
-  /// **'افتح Ather'**
+  /// **'افتح أثر'**
   String get lockReason;
 
   /// No description provided for @lockRefused.
   ///
   /// In ar, this message translates to:
-  /// **'مفتحش — جرّب تاني'**
+  /// **'لم يُفتح. حاول مرة أخرى.'**
   String get lockRefused;
 
   /// No description provided for @lockLockedOut.
   ///
   /// In ar, this message translates to:
-  /// **'حاولت كتير. استنى شوية وجرّب تاني، أو افتح بكود القفل بتاع التليفون.'**
+  /// **'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى، أو استخدم رمز قفل هاتفك.'**
   String get lockLockedOut;
 
   /// No description provided for @lockSetting.
@@ -1284,12 +1260,6 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'قفل بالبصمة'**
   String get lockSetting;
-
-  /// No description provided for @lockSettingBody.
-  ///
-  /// In ar, this message translates to:
-  /// **'اطلب بصمة كل ما تفتح التطبيق'**
-  String get lockSettingBody;
 
   /// No description provided for @settingsTitle.
   ///
@@ -1339,28 +1309,16 @@ abstract class L {
   /// **'النظام'**
   String get settingsThemeSystem;
 
-  /// No description provided for @settingsThemeBody.
-  ///
-  /// In ar, this message translates to:
-  /// **'اختار مظهر التطبيق، أو سيبه يمشي مع إعدادات الموبايل'**
-  String get settingsThemeBody;
-
   /// No description provided for @settingsNotifications.
   ///
   /// In ar, this message translates to:
   /// **'إشعارات المراجعة'**
   String get settingsNotifications;
 
-  /// No description provided for @settingsNotificationsBody.
-  ///
-  /// In ar, this message translates to:
-  /// **'ذكّرني لما يجي وقت مراجعة درس'**
-  String get settingsNotificationsBody;
-
   /// No description provided for @settingsNotificationsBlocked.
   ///
   /// In ar, this message translates to:
-  /// **'التنبيهات مقفولة من إعدادات التليفون. افتحها من هناك عشان التذكير يوصلك.'**
+  /// **'الإشعارات مغلقة من إعدادات الهاتف. افتحها من هناك ليصلك التذكير.'**
   String get settingsNotificationsBlocked;
 
   /// No description provided for @settingsAbout.
@@ -1381,16 +1339,10 @@ abstract class L {
   /// **'النسخة السحابية'**
   String get backupTitle;
 
-  /// No description provided for @backupBody.
-  ///
-  /// In ar, this message translates to:
-  /// **'بياناتك بتتحفظ على حسابك، فلو غيّرت التليفون تلاقيها زي ما هي.'**
-  String get backupBody;
-
   /// No description provided for @backupNever.
   ///
   /// In ar, this message translates to:
-  /// **'لسه متحفظتش'**
+  /// **'لم تُحفظ بعد'**
   String get backupNever;
 
   /// No description provided for @backupSavedAt.
@@ -1402,70 +1354,70 @@ abstract class L {
   /// No description provided for @backupSaving.
   ///
   /// In ar, this message translates to:
-  /// **'بيحفظ…'**
+  /// **'جارٍ الحفظ…'**
   String get backupSaving;
 
   /// No description provided for @backupSaveNow.
   ///
   /// In ar, this message translates to:
-  /// **'احفظ دلوقتي'**
+  /// **'احفظ الآن'**
   String get backupSaveNow;
 
   /// No description provided for @backupRestore.
   ///
   /// In ar, this message translates to:
-  /// **'استرجع النسخة السحابية'**
+  /// **'استرجاع النسخة السحابية'**
   String get backupRestore;
 
   /// No description provided for @backupRestoreConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'اللي على التليفون ده هيتمسح ويتحط مكانه اللي في النسخة السحابية.'**
+  /// **'سيُمحى ما على هذا الهاتف ويحل محله ما في النسخة السحابية.'**
   String get backupRestoreConfirm;
 
   /// No description provided for @backupRestoreDone.
   ///
   /// In ar, this message translates to:
-  /// **'رجّعنا بياناتك'**
+  /// **'استُرجعت بياناتك'**
   String get backupRestoreDone;
 
   /// No description provided for @backupRestoreEmpty.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش نسخة سحابية لسه'**
+  /// **'لا توجد نسخة سحابية بعد'**
   String get backupRestoreEmpty;
 
   /// No description provided for @backupErrorOffline.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش نت — هيتحفظ أول ما النت يرجع'**
+  /// **'لا يوجد اتصال — سيُحفظ فور عودة الشبكة'**
   String get backupErrorOffline;
 
   /// No description provided for @backupErrorPermission.
   ///
   /// In ar, this message translates to:
-  /// **'الصلاحيات مظبوطتش على السيرفر'**
+  /// **'صلاحيات الخادم غير مضبوطة'**
   String get backupErrorPermission;
 
   /// No description provided for @backupErrorTooLarge.
   ///
   /// In ar, this message translates to:
-  /// **'بياناتك أكبر من إن نحفظها مرة واحدة'**
+  /// **'بياناتك أكبر من أن تُحفظ دفعة واحدة'**
   String get backupErrorTooLarge;
 
   /// No description provided for @backupErrorUnreadable.
   ///
   /// In ar, this message translates to:
-  /// **'النسخة السحابية مش مقروءة'**
+  /// **'النسخة السحابية غير مقروءة'**
   String get backupErrorUnreadable;
 
   /// No description provided for @backupErrorUnknown.
   ///
   /// In ar, this message translates to:
-  /// **'الحفظ مظبطش'**
+  /// **'لم ينجح الحفظ'**
   String get backupErrorUnknown;
 
-  /// The tasks screen's title while today is the selected day. 'النهارده' until the day picker landed under it saying 'اليوم': two words for the same day, one directly above the other. The dashboard keeps 'النهارده' — it is a different screen and nothing there contradicts it.
+  /// The tasks screen's title while today is the selected day. The day picker sitting under it says 'اليوم' for today's cell, so the title names what the list is rather than repeating the day.
   ///
   /// In ar, this message translates to:
   /// **'مهام اليوم'**
@@ -1474,7 +1426,7 @@ abstract class L {
   /// No description provided for @tasksDoneOf.
   ///
   /// In ar, this message translates to:
-  /// **'{done} من {total} خلصتهم'**
+  /// **'أنجزت {done} من {total}'**
   String tasksDoneOf(String done, String total);
 
   /// No description provided for @addTask.
@@ -1492,7 +1444,7 @@ abstract class L {
   /// No description provided for @taskNameHint.
   ///
   /// In ar, this message translates to:
-  /// **'هتعمل إيه النهارده؟'**
+  /// **'ماذا ستفعل اليوم؟'**
   String get taskNameHint;
 
   /// No description provided for @renameTask.
@@ -1510,20 +1462,14 @@ abstract class L {
   /// No description provided for @deleteTaskConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'هتتشال من مهام اليوم ده خالص.'**
+  /// **'ستُحذف من مهام هذا اليوم نهائياً.'**
   String get deleteTaskConfirm;
 
   /// No description provided for @noTasksYet.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش مهام لليوم ده'**
+  /// **'لا مهام لهذا اليوم'**
   String get noTasksYet;
-
-  /// No description provided for @tasksEmptyBody.
-  ///
-  /// In ar, this message translates to:
-  /// **'اكتب اللي ناوي تعمله، وشيله لما تخلصه.'**
-  String get tasksEmptyBody;
 
   /// No description provided for @commonSave.
   ///
@@ -1534,13 +1480,13 @@ abstract class L {
   /// No description provided for @commonSomethingWentWrong.
   ///
   /// In ar, this message translates to:
-  /// **'في حاجة مامشتش صح. جرّب تاني.'**
+  /// **'تعذّر إتمام العملية. حاول مرة أخرى.'**
   String get commonSomethingWentWrong;
 
   /// No description provided for @nameRequired.
   ///
   /// In ar, this message translates to:
-  /// **'اكتب اسم الأول'**
+  /// **'اكتب اسماً أولاً'**
   String get nameRequired;
 
   /// No description provided for @authShowPassword.

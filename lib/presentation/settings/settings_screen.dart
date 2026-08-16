@@ -100,8 +100,6 @@ class SettingsScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(l.settingsTheme, style: AppTypography.cardTitle),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(l.settingsThemeBody, style: context.text.sublabel),
               const SizedBox(height: AppSpacing.xl),
               SegmentedControl(
                 labels: <String>[
@@ -130,8 +128,6 @@ class SettingsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(l.lockSetting, style: AppTypography.cardTitle),
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(l.lockSettingBody, style: context.text.sublabel),
                     ],
                   ),
                 ),
@@ -245,11 +241,6 @@ class _NotificationsCard extends ConsumerWidget {
                       l.settingsNotifications,
                       style: AppTypography.cardTitle,
                     ),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      l.settingsNotificationsBody,
-                      style: context.text.sublabel,
-                    ),
                   ],
                 ),
               ),
@@ -327,6 +318,9 @@ class _BackupCardState extends ConsumerState<_BackupCard> {
       context,
       title: l.backupRestore,
       message: l.backupRestoreConfirm,
+      // Red, because it replaces the local record -- but the student is
+      // agreeing to a restore, not a delete, and the button says so.
+      confirmLabel: l.backupRestore,
     );
     if (!confirmed || !mounted) return;
 
@@ -390,8 +384,6 @@ class _BackupCardState extends ConsumerState<_BackupCard> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(l.backupTitle, style: AppTypography.cardTitle),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(l.backupBody, style: context.text.sublabel),
           const SizedBox(height: AppSpacing.md),
           Text(
             status,
@@ -511,8 +503,6 @@ class _DeleteAccountSectionState extends ConsumerState<_DeleteAccountSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        SectionTitle(l.authDeleteAccountSection),
-        const SizedBox(height: AppSpacing.md),
         PrimaryButton(
           label: l.authDeleteAccount,
           tone: PrimaryButtonTone.wrong,
