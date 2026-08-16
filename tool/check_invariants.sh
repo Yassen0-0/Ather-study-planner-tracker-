@@ -75,6 +75,21 @@ else
   fi
 fi
 
+# --- 3a. the version shown in Settings matches pubspec ------------------------
+# SettingsScreen.appVersion is written by hand. Without this check it drifts
+# silently, and the one place a student can report "I am on version X" lies.
+settings_version="$(grep -m1 "static const String appVersion = '" lib/presentation/settings/settings_screen.dart | sed "s/.*appVersion = '\\(.*\\)'.*/\\1/")"
+if [ -n "$settings_version" ]; then
+  if [ "$settings_version" = "$current_version" ]; then
+    pass "Settings appVersion matches pubspec ($current_version)"
+  else
+    fail "Settings appVersion ('$settings_version') != pubspec version ('$current_version')"
+    note "A student reporting a bug quotes the Settings screen; keep it honest."
+  fi
+else
+  fail "cannot read appVersion from settings_screen.dart"
+fi
+
 # --- 4. the schema and its migration move together ----------------------------
 # Bumping one without the other opens the app against a database missing a table
 # it is about to read.

@@ -12,6 +12,7 @@ import '../presentation/chapter_report/chapter_report_screen.dart';
 import '../presentation/dashboard/dashboard_screen.dart';
 import '../presentation/exam_entry/exam_entry_screen.dart';
 import '../presentation/lesson/lesson_screen.dart';
+import '../presentation/privacy/privacy_screen.dart';
 import '../presentation/review_center/review_center_screen.dart';
 import '../presentation/settings/settings_screen.dart';
 import '../presentation/shell/app_shell.dart';
@@ -25,6 +26,7 @@ abstract final class Routes {
   static const String analytics = '/analytics';
   static const String tasks = '/tasks';
   static const String settings = '/settings';
+  static const String privacy = '/settings/privacy';
   static const String login = '/login';
 
   static String subject(int id) => '/subject/$id';
@@ -279,6 +281,14 @@ GoRouter createRouter({
         parentNavigatorKey: rootNavigatorKey,
         pageBuilder: (context, state) =>
             atherPage(state, const SettingsScreen()),
+        routes: <RouteBase>[
+          GoRoute(
+            path: 'privacy',
+            parentNavigatorKey: rootNavigatorKey,
+            pageBuilder: (context, state) =>
+                atherPage(state, const PrivacyScreen()),
+          ),
+        ],
       ),
     ],
   );

@@ -1123,6 +1123,144 @@ abstract class L {
   /// **'الحساب'**
   String get authAccount;
 
+  /// No description provided for @authDeleteAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب'**
+  String get authDeleteAccount;
+
+  /// No description provided for @authDeleteAccountConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابك ونسختك السحابية وكل حاجة على الجهاز هتتمسح خالص. مش هينفع ترجع فيها.'**
+  String get authDeleteAccountConfirm;
+
+  /// No description provided for @authDeleteAccountOfflineWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو في بيانات لسه مترفعتش للسحابة، هتروح مع الحذف.'**
+  String get authDeleteAccountOfflineWarning;
+
+  /// No description provided for @authDeleteAccountReauthTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكّد إنه حسابك'**
+  String get authDeleteAccountReauthTitle;
+
+  /// No description provided for @authDeleteAccountReauthBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب باسورد حسابك عشان نكمل الحذف.'**
+  String get authDeleteAccountReauthBody;
+
+  /// No description provided for @authDeleteAccountReauthAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'احذف الحساب'**
+  String get authDeleteAccountReauthAction;
+
+  /// No description provided for @authDeleteAccountGoogle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب ده معمول بحساب Google — دوس الزر وهيطلب منك التأكيد.'**
+  String get authDeleteAccountGoogle;
+
+  /// No description provided for @authDeleteAccountFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب اتمسحش. جرّب تاني.'**
+  String get authDeleteAccountFailed;
+
+  /// No description provided for @authDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب اتمسح. نتمنى لك التوفيق.'**
+  String get authDeleted;
+
+  /// No description provided for @authDeleteAccountSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'منطقة الخطر'**
+  String get authDeleteAccountSection;
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصوصية'**
+  String get settingsPrivacy;
+
+  /// No description provided for @privacyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصوصيتك'**
+  String get privacyTitle;
+
+  /// No description provided for @privacyIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'التطبيق ده بيجمع أقل بيانات ممكنة. الكلام اللي تحت ده وصف حقيقي للي بيحصل فعلاً — مش وعود عامة.'**
+  String get privacyIntro;
+
+  /// No description provided for @privacyLocalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات دراستك'**
+  String get privacyLocalTitle;
+
+  /// No description provided for @privacyLocalBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبوابك ودروسك وامتحاناتك ومهامك بتتخزن على موبايلك بس، في قاعدة بيانات محلية. الكود نفسه هو اللي بيحسب الإتقان — مفيش سيرفر تاني شايف ده.'**
+  String get privacyLocalBody;
+
+  /// No description provided for @privacyAccountTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات الحساب'**
+  String get privacyAccountTitle;
+
+  /// No description provided for @privacyAccountBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان النسخة السحابية، بنطلب إيميل وباسورد (أو حساب Google). بنستخدم Firebase Auth بتاع Google لتخزينهم. إيميلك هو كل اللي بنعرفه عنك — مفيش اسم ولا سن ولا أي بيانات تانية.'**
+  String get privacyAccountBody;
+
+  /// No description provided for @privacyCloudTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخة السحابية'**
+  String get privacyCloudTitle;
+
+  /// No description provided for @privacyCloudBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو عملت حساب، بنرفع نسخة من بيانات دراستك مشفرة أثناء النقل ومحفوظة على سيرفرات Google (Firebase Firestore) باسم حسابك. محدش غيرك يقدر يوصلها — ولا إحنا.'**
+  String get privacyCloudBody;
+
+  /// No description provided for @privacyDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح بياناتك'**
+  String get privacyDeleteTitle;
+
+  /// No description provided for @privacyDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحت في آخر صفحة الإعدادات في زرار «حذف الحساب». لما تدوسه: بياناتك على الموبايل بتمسح، النسخة السحابية بتمسح، والحساب نفسه بيتشال من Firebase. نهائياً.'**
+  String get privacyDeleteBody;
+
+  /// No description provided for @privacyNoCollectTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي بنعملهش'**
+  String get privacyNoCollectTitle;
+
+  /// No description provided for @privacyNoCollectBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش إعلانات. مفيش تتبع. مفيش بيع بيانات. مفيش تحليلات ولا تقارير أخطاء لجهة خارجية. التطبيق شغال من غير نت أصلاً معظم الوقت.'**
+  String get privacyNoCollectBody;
+
   /// No description provided for @lockUnlock.
   ///
   /// In ar, this message translates to:
@@ -1236,6 +1374,12 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'عن التطبيق'**
   String get settingsAbout;
+
+  /// No description provided for @settingsVersionFormat.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإصدار {version}'**
+  String settingsVersionFormat(String version);
 
   /// No description provided for @backupTitle.
   ///

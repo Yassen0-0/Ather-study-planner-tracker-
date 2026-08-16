@@ -56,4 +56,14 @@ class FakeBackupRepository implements BackupRepository {
     if (failure != null) throw BackupException(failure!);
     stored = backup;
   }
+
+  int deleteCloudCount = 0;
+
+  @override
+  Future<void> deleteCloudData() async {
+    deleteCloudCount++;
+    if (failure != null) throw BackupException(failure!);
+    stored = null;
+    metadata = null;
+  }
 }

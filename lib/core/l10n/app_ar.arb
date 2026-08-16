@@ -302,6 +302,31 @@
   "authSignOutConfirm": "هتحتاج نت عشان تسجّل دخول تاني. بياناتك محفوظة على الجهاز ومش هتتمسح.",
   "authAccount": "الحساب",
 
+  "authDeleteAccount": "حذف الحساب",
+  "authDeleteAccountConfirm": "حسابك ونسختك السحابية وكل حاجة على الجهاز هتتمسح خالص. مش هينفع ترجع فيها.",
+  "authDeleteAccountOfflineWarning": "لو في بيانات لسه مترفعتش للسحابة، هتروح مع الحذف.",
+  "authDeleteAccountReauthTitle": "أكّد إنه حسابك",
+  "authDeleteAccountReauthBody": "اكتب باسورد حسابك عشان نكمل الحذف.",
+  "authDeleteAccountReauthAction": "احذف الحساب",
+  "authDeleteAccountGoogle": "الحساب ده معمول بحساب Google — دوس الزر وهيطلب منك التأكيد.",
+  "authDeleteAccountFailed": "الحساب اتمسحش. جرّب تاني.",
+  "authDeleted": "الحساب اتمسح. نتمنى لك التوفيق.",
+  "authDeleteAccountSection": "منطقة الخطر",
+
+  "settingsPrivacy": "الخصوصية",
+  "privacyTitle": "خصوصيتك",
+  "privacyIntro": "التطبيق ده بيجمع أقل بيانات ممكنة. الكلام اللي تحت ده وصف حقيقي للي بيحصل فعلاً — مش وعود عامة.",
+  "privacyLocalTitle": "بيانات دراستك",
+  "privacyLocalBody": "أبوابك ودروسك وامتحاناتك ومهامك بتتخزن على موبايلك بس، في قاعدة بيانات محلية. الكود نفسه هو اللي بيحسب الإتقان — مفيش سيرفر تاني شايف ده.",
+  "privacyAccountTitle": "بيانات الحساب",
+  "privacyAccountBody": "عشان النسخة السحابية، بنطلب إيميل وباسورد (أو حساب Google). بنستخدم Firebase Auth بتاع Google لتخزينهم. إيميلك هو كل اللي بنعرفه عنك — مفيش اسم ولا سن ولا أي بيانات تانية.",
+  "privacyCloudTitle": "النسخة السحابية",
+  "privacyCloudBody": "لو عملت حساب، بنرفع نسخة من بيانات دراستك مشفرة أثناء النقل ومحفوظة على سيرفرات Google (Firebase Firestore) باسم حسابك. محدش غيرك يقدر يوصلها — ولا إحنا.",
+  "privacyDeleteTitle": "مسح بياناتك",
+  "privacyDeleteBody": "تحت في آخر صفحة الإعدادات في زرار «حذف الحساب». لما تدوسه: بياناتك على الموبايل بتمسح، النسخة السحابية بتمسح، والحساب نفسه بيتشال من Firebase. نهائياً.",
+  "privacyNoCollectTitle": "اللي بنعملهش",
+  "privacyNoCollectBody": "مفيش إعلانات. مفيش تتبع. مفيش بيع بيانات. مفيش تحليلات ولا تقارير أخطاء لجهة خارجية. التطبيق شغال من غير نت أصلاً معظم الوقت.",
+
   "lockUnlock": "افتح",
   "lockReason": "افتح Ather",
   "lockRefused": "مفتحش — جرّب تاني",
@@ -322,6 +347,10 @@
   "settingsNotificationsBody": "ذكّرني لما يجي وقت مراجعة درس",
   "settingsNotificationsBlocked": "التنبيهات مقفولة من إعدادات التليفون. افتحها من هناك عشان التذكير يوصلك.",
   "settingsAbout": "عن التطبيق",
+  "settingsVersionFormat": "الإصدار {version}",
+  "@settingsVersionFormat": {
+    "placeholders": { "version": { "type": "String" } }
+  },
 
   "backupTitle": "النسخة السحابية",
   "backupBody": "بياناتك بتتحفظ على حسابك، فلو غيّرت التليفون تلاقيها زي ما هي.",

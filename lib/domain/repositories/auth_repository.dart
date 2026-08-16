@@ -27,6 +27,12 @@ enum AuthFailure {
   /// nothing at all for this.
   cancelled,
 
+  /// The account exists but Firebase will not delete it until the student
+  /// proves they are its owner again. Surfaces a re-authentication step, never
+  /// a dead button: Google Play requires in-app account deletion, and a delete
+  /// that fails silently is worse than none.
+  requiresRecentLogin,
+
   unknown,
 }
 
@@ -60,4 +66,16 @@ abstract interface class AuthRepository {
   Future<void> sendPasswordReset(String email);
 
   Future<void> signOut();
+
+  /// Deletes the account **and the credentials Firebase holds for it**.
+  ///
+  /// Throws [AuthException] with [AuthFailure.requiresRecentLogin] when the
+  /// sign-in is too old; the caller must re-authenticate and retry — never
+  /// swallow it, because Google Play requires in-app account deletion and a
+  /// delete that quietly does nothing is a dead button.
+  Future<void> deleteAccount();
+
+  /// [deleteAccount] after re-proving ownership with a password — the second
+  /// attempt, offered when the first reported [AuthFailure.requiresRecentLogin].
+  Future<void> deleteAccountWithPassword(String password);
 }

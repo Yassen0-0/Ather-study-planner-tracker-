@@ -69,4 +69,9 @@ abstract interface class BackupRepository {
   Future<StudyBackup?> download();
 
   Future<void> upload(StudyBackup backup);
+
+  /// Removes the cloud mirror entirely — the counterpart of account deletion,
+  /// not of sign-out. Must be idempotent: called after the auth account may
+  /// already be gone, so "no such document" is success.
+  Future<void> deleteCloudData();
 }

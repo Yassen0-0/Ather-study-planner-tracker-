@@ -52,6 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     AuthFailure.emailInUse => l.authErrorEmailInUse,
     AuthFailure.network => l.authErrorNoNetwork,
     AuthFailure.tooManyRequests => l.authErrorTooManyAttempts,
+    AuthFailure.requiresRecentLogin => l.authErrorGeneric,
     AuthFailure.cancelled || AuthFailure.unknown => l.authErrorGeneric,
   };
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/branding/ather_logo.dart';
+import '../../core/branding/ather_logo.dart' as brand;
 import '../../core/l10n/formatting.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
@@ -10,25 +10,40 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/ather_card.dart';
 import '../../core/widgets/ather_controls.dart';
+import '../../core/widgets/ather_icons.dart';
 import '../../core/widgets/ather_scaffold.dart';
+import '../../core/widgets/ather_sheet.dart';
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/error_banner.dart';
+import '../../domain/entities/account.dart';
+import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/backup_repository.dart';
+import '../../app/router.dart';
 import '../common/prompts.dart';
 import '../common/write_guard.dart';
 import '../providers/app_providers.dart';
 import '../providers/auth_providers.dart';
 import '../providers/backup_providers.dart';
 import '../providers/notification_providers.dart';
+import '../providers/task_providers.dart';
 
 /// A short list of cards and nothing else.
 ///
 /// There is no subject management (the four are fixed) and no "mark as
 /// reviewed" hiding in an advanced section — the only way to reset a review
 /// clock is to sit an exam.
+///
+/// [appVersion] is the one place the version is written by hand; the
+/// release-invariants script is the thing that notices when it drifts from
+/// pubspec.yaml. (A package_info dependency for one string on one screen
+/// would be a dependency bought with nothing.)
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
+
+  /// Must match `version:` in pubspec.yaml. Checked by
+  /// `tool/check_invariants.sh`.
+  static const String appVersion = '1.3.1+8';
 
   /// The order the three options appear in, and the only place that order is
   /// written down. The segmented control renders it and reads a tap back
@@ -149,41 +164,24 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           const _BackupCard(),
           const SizedBox(height: AppSpacing.md),
-          AtherCard(
-            padding: AppSpacing.cardPaddingLarge,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Text(l.authAccount, style: AppTypography.cardTitle),
-                const SizedBox(height: 6),
-                Text(account.email, style: context.text.secondary),
-                const SizedBox(height: AppSpacing.lg),
-                PrimaryButton(
-                  label: l.authSignOut,
-                  tone: PrimaryButtonTone.wrong,
-                  onTap: () async {
-                    final confirmed = await confirmDestructive(
-                      context,
-                      title: l.authSignOut,
-                      message: l.authSignOutConfirm,
-                    );
-                    if (!confirmed || !context.mounted) return;
-                    // Push whatever has not been mirrored yet *before* the
-                    // session goes: after sign-out there is no uid to upload
-                    // under, and the debounce may still be holding the last
-                    // twenty seconds of work.
-                    await ref.read(backupSyncProvider.notifier).flush();
-                    if (!context.mounted) return;
-                    await runWrite(
-                      context,
-                      () => ref.read(authRepositoryProvider).signOut(),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
+          _AccountCard(account: account),
         ],
+        const SizedBox(height: AppSpacing.md),
+        // The policy, one tap away from every other setting. Google Play
+        // expects to find it; a student expecting honesty finds it too.
+        AtherCard(
+          padding: AppSpacing.cardPaddingLarge,
+          onTap: () => context.push(Routes.privacy),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(l.settingsPrivacy, style: AppTypography.rowTitle),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              const AtherIcon(AtherGlyph.chevron, size: 20),
+            ],
+          ),
+        ),
         const SizedBox(height: AppSpacing.md),
         AtherCard(
           padding: AppSpacing.cardPaddingLarge,
@@ -195,7 +193,7 @@ class SettingsScreen extends ConsumerWidget {
               // would put a grey square inside a white card.
               Row(
                 children: <Widget>[
-                  const AtherGlyph(size: 26),
+                  const brand.AtherGlyph(size: 26),
                   const SizedBox(width: AppSpacing.sm),
                   Text(l.settingsAbout, style: AppTypography.cardTitle),
                 ],
@@ -206,10 +204,20 @@ class SettingsScreen extends ConsumerWidget {
                 style: context.text.secondary.copyWith(height: 1.6),
               ),
               const SizedBox(height: AppSpacing.sm),
-              Text(l.homeworkNote, style: context.text.micro),
+              Text(
+                '${l.homeworkNote} · ${l.settingsVersionFormat(appVersion)}',
+                style: context.text.micro,
+              ),
             ],
           ),
         ),
+        // The delete-account control is last on purpose: past every setting,
+        // where a deliberate scroll is the difference between "I want this"
+        // and "I was looking for notifications". See _DeleteAccountSection.
+        if (account != null) ...<Widget>[
+          const SizedBox(height: AppSpacing.section),
+          const _DeleteAccountSection(),
+        ],
       ],
     );
   }
@@ -440,5 +448,301 @@ class _BackupCardState extends ConsumerState<_BackupCard> {
         ],
       ),
     );
+  }
+}
+
+/// The account card: who is signed in, and the everyday way out. The
+/// destructive way out — deleting the account — is not here; it sits at the
+/// very bottom of the Settings page, where a scroll is a second thought and
+/// no one erases two years of exams by landing on the wrong button.
+class _AccountCard extends ConsumerStatefulWidget {
+  const _AccountCard({required this.account});
+
+  final Account account;
+
+  @override
+  ConsumerState<_AccountCard> createState() => _AccountCardState();
+}
+
+class _AccountCardState extends ConsumerState<_AccountCard> {
+  @override
+  Widget build(BuildContext context) {
+    final l = L.of(context);
+    final account = widget.account;
+
+    return AtherCard(
+      padding: AppSpacing.cardPaddingLarge,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(l.authAccount, style: AppTypography.cardTitle),
+          const SizedBox(height: 6),
+          Text(account.email, style: context.text.secondary),
+          const SizedBox(height: AppSpacing.lg),
+          PrimaryButton(
+            label: l.authSignOut,
+            tone: PrimaryButtonTone.secondary,
+            onTap: () => _signOut(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    final l = L.of(context);
+    final confirmed = await confirmDestructive(
+      context,
+      title: l.authSignOut,
+      message: l.authSignOutConfirm,
+      confirmLabel: l.authSignOut,
+    );
+    if (!confirmed || !context.mounted) return;
+
+    // Push whatever has not been mirrored yet *before* the session goes:
+    // after sign-out there is no uid to upload under, and the debounce may
+    // still be holding the last twenty seconds of work.
+    await ref.read(backupSyncProvider.notifier).flush();
+    if (!context.mounted) return;
+    await runWrite(context, () => ref.read(authRepositoryProvider).signOut());
+  }
+}
+
+/// Account deletion, in its own visible section at the bottom of Settings.
+///
+/// Google Play requires the delete path to be findable, and a destructive
+/// action buried mid-list fails both tests at once: students who need it
+/// cannot find it, and students who do not can hit it by accident. The bottom
+/// of the page — past every setting, where a deliberate scroll is required —
+/// is the honest position for both.
+///
+/// The deletion order is deliberate: confirm in words what disappears, flush
+/// anything that has not reached the cloud yet (deleting the cloud copy first
+/// would orphan the flush), wipe the device, delete the cloud mirror, and only
+/// then delete the account itself. An account deleted before its data leaves
+/// a student whose cloud copy outlives their ability to ever reach it again.
+class _DeleteAccountSection extends ConsumerStatefulWidget {
+  const _DeleteAccountSection();
+
+  @override
+  ConsumerState<_DeleteAccountSection> createState() =>
+      _DeleteAccountSectionState();
+}
+
+class _DeleteAccountSectionState extends ConsumerState<_DeleteAccountSection> {
+  bool _deleting = false;
+  String? _reauthPassword;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SectionTitle(l.authDeleteAccountSection),
+        const SizedBox(height: AppSpacing.md),
+        PrimaryButton(
+          label: l.authDeleteAccount,
+          tone: PrimaryButtonTone.wrong,
+          busy: _deleting,
+          onTap: _confirmDelete,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _confirmDelete() async {
+    final l = L.of(context);
+
+    // The one honest extra line worth adding: if the last cloud sync failed
+    // or never happened while there is data on the device, deletion destroys
+    // work that exists nowhere else. `flush()` runs first and will retry it,
+    // but an offline phone cannot be fixed by a retry.
+    final sync = ref.read(backupSyncProvider);
+    final unsaved =
+        (sync.failure != null || sync.lastSavedAt == null) &&
+        // Nothing recorded locally means nothing can be lost.
+        !(ref.read(snapshotValueProvider).isEmpty);
+
+    final confirmed = await confirmDestructive(
+      context,
+      title: l.authDeleteAccount,
+      message: unsaved
+          ? '${l.authDeleteAccountConfirm}\n\n${l.authDeleteAccountOfflineWarning}'
+          : l.authDeleteAccountConfirm,
+      confirmLabel: l.authDeleteAccount,
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() => _deleting = true);
+    try {
+      await _deleteEverything();
+    } on AuthException catch (e) {
+      // Stop the ring before anything else: it is the only spinner in the
+      // app, and a ring left running under the re-auth sheet both freezes
+      // tests and reads as an action still in flight while the student is
+      // being asked to type a password.
+      if (mounted) setState(() => _deleting = false);
+      if (!mounted) return;
+      if (e.failure == AuthFailure.requiresRecentLogin) {
+        // Firebase wants fresh proof of ownership. Ask for it rather than
+        // reporting failure: the student asked to delete their account and
+        // "try again later" is not an answer to that request.
+        final retry = await _askReauth();
+        if (retry && mounted && _reauthPassword != null) {
+          await _retryWithPassword();
+        }
+        return;
+      }
+      _reportFailure(l);
+    } on Object {
+      if (!mounted) return;
+      _reportFailure(l);
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
+
+  /// Flush → wipe device → delete cloud mirror → delete account. Each step
+  /// only runs if the one before it succeeded, so a failure anywhere leaves
+  /// a state that can be retried rather than half-deleted.
+  Future<void> _deleteEverything() async {
+    final repository = ref.read(authRepositoryProvider);
+    await ref.read(backupSyncProvider.notifier).flush();
+    await ref.read(studyRepositoryProvider).clear();
+    await ref.read(taskRepositoryProvider).clearTasks();
+    await ref.read(backupRepositoryProvider).deleteCloudData();
+    await repository.deleteAccount();
+  }
+
+  /// The password retry after `requires-recent-login`. Same order minus the
+  /// flush — the first attempt already pushed what it could.
+  Future<void> _retryWithPassword() async {
+    final l = L.of(context);
+    setState(() => _deleting = true);
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      await ref.read(studyRepositoryProvider).clear();
+      await ref.read(taskRepositoryProvider).clearTasks();
+      await ref.read(backupRepositoryProvider).deleteCloudData();
+      await repository.deleteAccountWithPassword(_reauthPassword!);
+    } on Object {
+      if (mounted) _reportFailure(l);
+    } finally {
+      _reauthPassword = null;
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
+
+  /// The sheet Firebase's `requires-recent-login` demands. Returns whether
+  /// the student gave a password; [_retryWithPassword] uses it.
+  Future<bool> _askReauth() {
+    return showAtherSheet<bool>(
+      context: context,
+      builder: (sheetContext) => _ReauthSheet(
+        onSubmit: (password) {
+          _reauthPassword = password;
+          Navigator.of(sheetContext).pop(true);
+        },
+      ),
+    ).then((value) => value ?? false);
+  }
+
+  void _reportFailure(L l) {
+    final messenger = Overlay.of(context, rootOverlay: true);
+    showAtherToastOn(
+      messenger,
+      Directionality.of(context),
+      l.authDeleteAccountFailed,
+      tone: ToastTone.failed,
+    );
+  }
+}
+
+/// A password field in the app's one modal shape, for the one action that
+/// must re-prove ownership before it erases everything.
+class _ReauthSheet extends StatefulWidget {
+  const _ReauthSheet({required this.onSubmit});
+
+  final ValueChanged<String> onSubmit;
+
+  @override
+  State<_ReauthSheet> createState() => _ReauthSheetState();
+}
+
+class _ReauthSheetState extends State<_ReauthSheet> {
+  late final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.of(context);
+    final hasText = _controller.text.isNotEmpty;
+
+    return AtherSheetBody(
+      title: l.authDeleteAccountReauthTitle,
+      body: l.authDeleteAccountReauthBody,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Container(
+            decoration: BoxDecoration(
+              color: context.colors.muted,
+              borderRadius: BorderRadius.circular(AppRadius.input),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: 2,
+            ),
+            child: TextField(
+              controller: _controller,
+              autofocus: true,
+              obscureText: true,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(),
+              onChanged: (_) => setState(() {}),
+              style: AppTypography.body,
+              cursorColor: context.colors.textPrimary,
+              decoration: InputDecoration(
+                isDense: true,
+                filled: false,
+                counterText: '',
+                hintText: l.authPassword,
+                hintStyle: AppTypography.body.copyWith(
+                  color: context.colors.textNoData,
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.lg,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+          PrimaryButton(
+            label: l.authDeleteAccountReauthAction,
+            tone: hasText
+                ? PrimaryButtonTone.wrong
+                : PrimaryButtonTone.unearned,
+            onTap: _submit,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _submit() {
+    final value = _controller.text;
+    if (value.isEmpty) return;
+    widget.onSubmit(value);
   }
 }

@@ -207,7 +207,10 @@ void main() {
     // "sign out" on a study app will assume the opposite.
     expect(find.textContaining('بياناتك محفوظة على الجهاز'), findsOneWidget);
 
-    await tester.tap(find.text('حذف').hitTestable());
+    // The confirm button names the act ("تسجيل الخروج"), not a generic "حذف"
+    // — sign-out deletes nothing, and a red button called Delete would say it
+    // does.
+    await tester.tap(find.text('تسجيل الخروج').hitTestable().last);
     await tester.pumpAndSettle();
 
     expect(auth.signOutCount, 1);
