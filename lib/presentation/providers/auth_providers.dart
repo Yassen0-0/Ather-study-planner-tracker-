@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 
+import '../../core/platform/secure_window.dart';
 import '../../data/auth/firebase_auth_repository.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -124,6 +125,11 @@ class _AppLockObserverState extends ConsumerState<AppLockObserver>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Before the first frame the platform could snapshot. The lock preference
+    // is read from disk synchronously at startup, so this is already the right
+    // answer on a cold start rather than a correction made after the dashboard
+    // has been drawn once.
+    SecureWindow.set(secure: ref.read(appLockEnabledProvider));
   }
 
   @override
@@ -141,5 +147,14 @@ class _AppLockObserverState extends ConsumerState<AppLockObserver>
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    // Follows the switch. Turning the lock on has to take effect on the window
+    // straight away: the student may background the app in the next second, and
+    // the thumbnail Android keeps is the one drawn before they do.
+    ref.listen<bool>(
+      appLockEnabledProvider,
+      (_, enabled) => SecureWindow.set(secure: enabled),
+    );
+    return widget.child;
+  }
 }
