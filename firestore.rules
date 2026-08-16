@@ -30,9 +30,27 @@ service cloud.firestore {
       // so a student gets a real error instead of a rejection they cannot read.
       // It is repeated here because a client-side limit is a courtesy, not a
       // control — the server must not depend on the app being the one asking.
-      allow write: if request.auth != null
-                   && request.auth.uid == uid
-                   && request.resource.size() < 1048576;
+      //
+      // **It has to be `data.payload.size()`, not `resource.size()`.** The
+      // latter was here first and enforced nothing at all: on a document,
+      // `size()` counts *fields*, and this document has four of them, so
+      // `4 < 1048576` was true for every write ever made. Measured against the
+      // Firestore emulator on 2026-08-15: a single 1,000,000-byte `payload` —
+      // well past the 900 KiB the client refuses — was accepted. On a `bytes`
+      // value `size()` is the byte length, which is the number this was always
+      // meant to be reading.
+      //
+      // Delete is split out for a second reason the old line hid: on a delete
+      // there is no `request.resource` at all, so any condition touching it
+      // evaluates to an error and denies. `allow write` covers delete, so the
+      // backup document could never be removed — which is not a theoretical
+      // loss, it is the operation an "erase my data" feature is made of.
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && request.resource.data.payload is bytes
+                            && request.resource.data.payload.size() <= 921600;
+
+      allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
     // Nothing else in this project is reachable from a client. Written
