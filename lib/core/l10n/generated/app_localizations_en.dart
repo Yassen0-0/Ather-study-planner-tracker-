@@ -784,6 +784,9 @@ class LEn extends L {
       'Notifications are turned off in your phone\'s settings. Turn them on there to get reminders.';
 
   @override
+  String get settingsAboutSection => 'About Ather';
+
+  @override
   String get settingsAbout => 'About';
 
   @override

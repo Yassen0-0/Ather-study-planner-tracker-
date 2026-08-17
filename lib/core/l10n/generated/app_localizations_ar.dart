@@ -787,6 +787,9 @@ class LAr extends L {
       'الإشعارات مغلقة من إعدادات الهاتف. افتحها من هناك ليصلك التذكير.';
 
   @override
+  String get settingsAboutSection => 'عن أثر';
+
+  @override
   String get settingsAbout => 'عن التطبيق';
 
   @override

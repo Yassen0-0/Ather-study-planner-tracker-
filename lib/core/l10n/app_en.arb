@@ -264,6 +264,7 @@
   "settingsThemeSystem": "System",
   "settingsNotifications": "Review reminders",
   "settingsNotificationsBlocked": "Notifications are turned off in your phone's settings. Turn them on there to get reminders.",
+  "settingsAboutSection": "About Ather",
   "settingsAbout": "About",
   "settingsVersionFormat": "Version {version}",
   "@settingsVersionFormat": {

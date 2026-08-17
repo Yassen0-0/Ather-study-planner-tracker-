@@ -146,7 +146,11 @@ class SettingsScreen extends ConsumerWidget {
         const _NotificationsWarning(),
         const SizedBox(height: AppSpacing.xxl),
         SettingsGroup(
-          title: l.settingsAbout,
+          // Named for the app, not for the row inside it. The heading and the
+          // "عن التطبيق" row below it both read `settingsAbout` at first, which
+          // is a group announcing one of its own children -- and two widgets
+          // carrying identical text on one screen, which is its own bug.
+          title: l.settingsAboutSection,
           children: <Widget>[
             // The policy, one tap away from every other setting. Google Play
             // expects to find it; a student expecting honesty finds it too.

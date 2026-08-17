@@ -1453,6 +1453,12 @@ abstract class L {
   /// **'الإشعارات مغلقة من إعدادات الهاتف. افتحها من هناك ليصلك التذكير.'**
   String get settingsNotificationsBlocked;
 
+  /// No description provided for @settingsAboutSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'عن أثر'**
+  String get settingsAboutSection;
+
   /// No description provided for @settingsAbout.
   ///
   /// In ar, this message translates to:

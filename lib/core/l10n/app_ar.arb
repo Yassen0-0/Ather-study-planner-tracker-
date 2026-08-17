@@ -375,6 +375,7 @@
   "settingsThemeSystem": "النظام",
   "settingsNotifications": "إشعارات المراجعة",
   "settingsNotificationsBlocked": "الإشعارات مغلقة من إعدادات الهاتف. افتحها من هناك ليصلك التذكير.",
+  "settingsAboutSection": "عن أثر",
   "settingsAbout": "عن التطبيق",
   "settingsVersionFormat": "الإصدار {version}",
   "@settingsVersionFormat": {
