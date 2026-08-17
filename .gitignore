@@ -66,4 +66,11 @@ dist/
 android/key.properties
 *.jks
 *.keystore
+
+# The APK served from the site. Firebase Hosting deploys whatever is in
+# `public/`, so the file has to be there at deploy time -- but a 24MB binary
+# committed once per release makes the repository grow by a quarter of a
+# gigabyte a year, and git keeps every copy forever. `public/README.md` has the
+# one-line copy step that puts it there.
+public/*.apk
 .commandcode/
