@@ -1267,6 +1267,66 @@ abstract class L {
   /// **'الإعدادات'**
   String get settingsTitle;
 
+  /// No description provided for @subjectsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواد'**
+  String get subjectsTitle;
+
+  /// No description provided for @subjectCountLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{مادة واحدة} =2{مادتان} few{{count} مواد} many{{count} مادة} other{{count} مادة}}'**
+  String subjectCountLabel(int count);
+
+  /// No description provided for @subjectAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'+ إضافة مادة'**
+  String get subjectAdd;
+
+  /// No description provided for @subjectNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: رياضيات'**
+  String get subjectNameHint;
+
+  /// No description provided for @subjectRename.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الاسم'**
+  String get subjectRename;
+
+  /// No description provided for @subjectHide.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء المادة'**
+  String get subjectHide;
+
+  /// No description provided for @subjectUnhide.
+  ///
+  /// In ar, this message translates to:
+  /// **'إظهار المادة'**
+  String get subjectUnhide;
+
+  /// No description provided for @subjectDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف المادة'**
+  String get subjectDelete;
+
+  /// No description provided for @subjectsHidden.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواد مخفية'**
+  String get subjectsHidden;
+
+  /// No description provided for @subjectsHiddenNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'المادة المخفية لا تظهر ولا تدخل في حساب الإتقان، وأبوابها وامتحاناتها محفوظة كما هي.'**
+  String get subjectsHiddenNote;
+
   /// No description provided for @settingsPreferences.
   ///
   /// In ar, this message translates to:

@@ -20,6 +20,7 @@ import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/mastery_bar.dart';
 import '../../domain/services/summaries.dart';
 import '../common/settings_button.dart';
+import '../common/subject_mark.dart';
 import '../common/subject_presentation.dart';
 import '../providers/navigation_providers.dart';
 import '../providers/summary_providers.dart';
@@ -342,7 +343,7 @@ class _SubjectRow extends StatelessWidget {
       onTap: () => context.push(Routes.subject(summary.subject.id)),
       child: Row(
         children: <Widget>[
-          AtherIcon(summary.subject.code.glyph, size: 26),
+          SubjectMark(subject: summary.subject),
           const SizedBox(width: AppSpacing.xl),
           Expanded(
             child: Column(
@@ -352,7 +353,7 @@ class _SubjectRow extends StatelessWidget {
                   children: <Widget>[
                     Flexible(
                       child: Text(
-                        summary.subject.code.label(l),
+                        summary.subject.label(l),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.rowTitle,

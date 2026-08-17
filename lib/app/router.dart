@@ -17,6 +17,7 @@ import '../presentation/review_center/review_center_screen.dart';
 import '../presentation/settings/about_screen.dart';
 import '../presentation/settings/backup_screen.dart';
 import '../presentation/settings/settings_screen.dart';
+import '../presentation/settings/subjects_screen.dart';
 import '../presentation/shell/app_shell.dart';
 import '../presentation/subject/subject_screen.dart';
 import '../presentation/tasks/tasks_screen.dart';
@@ -31,6 +32,7 @@ abstract final class Routes {
   static const String privacy = '/settings/privacy';
   static const String backup = '/settings/backup';
   static const String about = '/settings/about';
+  static const String subjects = '/settings/subjects';
   static const String login = '/login';
 
   static String subject(int id) => '/subject/$id';
@@ -303,6 +305,12 @@ GoRouter createRouter({
             parentNavigatorKey: rootNavigatorKey,
             pageBuilder: (context, state) =>
                 atherPage(state, const AboutScreen()),
+          ),
+          GoRoute(
+            path: 'subjects',
+            parentNavigatorKey: rootNavigatorKey,
+            pageBuilder: (context, state) =>
+                atherPage(state, const SubjectsScreen()),
           ),
         ],
       ),

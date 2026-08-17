@@ -107,7 +107,7 @@ class LessonScreen extends ConsumerWidget {
     final exams = snapshot.examsFor(lessonId);
 
     final subtitle = <String>[
-      if (subject != null) subject.code.label(l),
+      if (subject != null) subject.label(l),
       if (chapter != null) chapter.name,
     ].join(' · ');
 

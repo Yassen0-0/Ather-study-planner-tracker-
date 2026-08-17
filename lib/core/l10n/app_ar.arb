@@ -338,6 +338,19 @@
   "lockSetting": "قفل بالبصمة",
 
   "settingsTitle": "الإعدادات",
+  "subjectsTitle": "المواد",
+  "subjectCountLabel": "{count, plural, =1{مادة واحدة} =2{مادتان} few{{count} مواد} many{{count} مادة} other{{count} مادة}}",
+  "@subjectCountLabel": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "subjectAdd": "+ إضافة مادة",
+  "subjectNameHint": "مثال: رياضيات",
+  "subjectRename": "تعديل الاسم",
+  "subjectHide": "إخفاء المادة",
+  "subjectUnhide": "إظهار المادة",
+  "subjectDelete": "حذف المادة",
+  "subjectsHidden": "مواد مخفية",
+  "subjectsHiddenNote": "المادة المخفية لا تظهر ولا تدخل في حساب الإتقان، وأبوابها وامتحاناتها محفوظة كما هي.",
   "settingsPreferences": "التفضيلات",
   "settingsLanguage": "اللغة",
   "settingsLanguageArabic": "العربية",

@@ -262,8 +262,16 @@ abstract final class Summaries {
     // lesson below. This is the call the whole `masteries` parameter exists for.
     final masteries = MasteryCalculator.lessonMasteries(snapshot);
 
+    // Archived subjects are excluded from every figure on this screen, not
+    // merely hidden from the list. A student who archives a subject they are
+    // not taking has said it should stop counting; leaving it in the overall
+    // mean would drag their number down with a 0 for work they never intended
+    // to do, which is the opposite of what the control promised.
+    //
+    // Nothing under an archived subject is deleted, so unarchiving restores
+    // every number here exactly as it was.
     final subjects = <SubjectSummary>[
-      for (final s in snapshot.subjects)
+      for (final s in snapshot.activeSubjects)
         Summaries.subject(snapshot, s, now, masteries: masteries),
     ];
 

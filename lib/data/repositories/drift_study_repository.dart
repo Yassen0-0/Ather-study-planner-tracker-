@@ -89,6 +89,76 @@ class DriftStudyRepository implements StudyRepository {
     );
   }
 
+  // --- Subjects -------------------------------------------------------------
+
+  @override
+  Future<int> createSubject({required String name}) async {
+    // `max(id) + 1` rather than an autoincrement: the column was declared as a
+    // plain integer primary key so the seed could write fixed ids, and
+    // changing that now would mean rewriting the table the whole curriculum
+    // hangs off. Inside a transaction, so two quick taps cannot both read the
+    // same maximum.
+    return _db.transaction(() async {
+      final rows = await _db.select(_db.subjects).get();
+      final nextId = rows.fold<int>(0, (m, r) => r.id > m ? r.id : m) + 1;
+      final nextOrder =
+          rows.fold<int>(-1, (m, r) => r.sortOrder > m ? r.sortOrder : m) + 1;
+
+      await _db
+          .into(_db.subjects)
+          .insert(
+            SubjectsCompanion.insert(
+              id: Value(nextId),
+              code: kCustomSubjectCode,
+              name: Value(name.trim()),
+              sortOrder: nextOrder,
+            ),
+          );
+      return nextId;
+    });
+  }
+
+  @override
+  Future<void> renameSubject({
+    required int subjectId,
+    required String name,
+  }) async {
+    // Scoped to custom subjects in SQL, not just in the screen: a seeded
+    // subject's name lives in the ARB files, and a row that disagreed with
+    // them would show one language's name under the other language's toggle.
+    await (_db.update(_db.subjects)..where(
+          (t) => t.id.equals(subjectId) & t.code.equals(kCustomSubjectCode),
+        ))
+        .write(SubjectsCompanion(name: Value(name.trim())));
+  }
+
+  @override
+  Future<void> setSubjectArchived({
+    required int subjectId,
+    required DateTime? at,
+  }) async {
+    await (_db.update(_db.subjects)..where((t) => t.id.equals(subjectId)))
+        .write(SubjectsCompanion(archivedAt: Value(at)));
+  }
+
+  @override
+  Future<bool> deleteEmptySubject(int subjectId) {
+    return _db.transaction(() async {
+      final chapters =
+          await (_db.select(
+            _db.chapters,
+          )..where((t) => t.subjectId.equals(subjectId))).get();
+      // The guard that makes this operation safe to offer at all. Chapters
+      // cascade, so without it one confirmation could take every exam a
+      // student has ever recorded under this subject.
+      if (chapters.isNotEmpty) return false;
+
+      await (_db.delete(_db.subjects)..where((t) => t.id.equals(subjectId)))
+          .go();
+      return true;
+    });
+  }
+
   // --- Chapters -------------------------------------------------------------
 
   @override
@@ -365,12 +435,33 @@ class DriftStudyRepository implements StudyRepository {
     // delete the student's data before knowing the inserts will succeed.
     return _db.transaction(() async {
       // Chapters cascade to lessons, exams, groups and homework, so this one
-      // delete empties everything a backup owns -- and only what it owns. The
-      // seeded subjects are deliberately left alone. Daily tasks have no foreign
+      // delete empties everything a backup owns. Daily tasks have no foreign
       // key and are handled by DriftTaskRepository.restore.
       await _db.delete(_db.chapters).go();
 
+      // Subjects are replaced wholesale, and only when the backup carries them
+      // -- a version 1 file has none, and wiping the seeded four on its behalf
+      // would leave every chapter it is about to insert pointing at nothing.
+      //
+      // Safe to delete first because the chapters that referenced them are
+      // already gone in this same transaction; doing it in the other order
+      // would trip the foreign key or cascade the incoming chapters away.
+      if (backup.subjects.isNotEmpty) {
+        await _db.delete(_db.subjects).go();
+      }
+
       await _db.batch((Batch batch) {
+        batch.insertAll(_db.subjects, <SubjectsCompanion>[
+          for (final s in backup.subjects)
+            SubjectsCompanion.insert(
+              id: Value(s.id),
+              code: s.code?.name ?? kCustomSubjectCode,
+              name: Value(s.name),
+              archivedAt: Value(s.archivedAt),
+              sortOrder: s.sortOrder,
+            ),
+        ]);
+
         batch.insertAll(_db.chapters, <ChaptersCompanion>[
           for (final c in backup.chapters)
             ChaptersCompanion.insert(
@@ -443,18 +534,31 @@ class DriftStudyRepository implements StudyRepository {
 
   @override
   Future<void> clear() {
-    // Chapters cascade to lessons, exams, groups and homework -- the same one
-    // delete `restore` opens with, and for the same reason: it empties exactly
-    // what a backup owns and leaves the seeded subjects alone.
-    return _db.delete(_db.chapters).go();
+    // Account deletion. Chapters cascade to lessons, exams, groups and
+    // homework, and the subjects go back to the four Ather ships with --
+    // including any the student added, which are as much "everything on this
+    // device" as a chapter is.
+    //
+    // Reset rather than delete: the seed only runs on create and on the 2 -> 3
+    // migration, so an emptied table stays empty, and the student would sign in
+    // again to an app with no subjects at all.
+    return _db.transaction(() async {
+      await _db.delete(_db.chapters).go();
+      await _db.resetSubjectsToSeed();
+    });
   }
 
   // --- Mappers --------------------------------------------------------------
 
+  /// An unrecognised code is a subject the student added, not an error. It has
+  /// to stay that way: a row written by a newer build must never crash an
+  /// older one on read.
   Subject _toSubject(SubjectRow r) => Subject(
     id: r.id,
-    code: SubjectCode.fromName(r.code),
+    code: SubjectCode.tryFromName(r.code),
+    name: r.name,
     sortOrder: r.sortOrder,
+    archivedAt: r.archivedAt,
   );
 
   Chapter _toChapter(ChapterRow r) => Chapter(

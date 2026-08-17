@@ -678,6 +678,48 @@ class LAr extends L {
   String get settingsTitle => 'الإعدادات';
 
   @override
+  String get subjectsTitle => 'المواد';
+
+  @override
+  String subjectCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مادة',
+      many: '$count مادة',
+      few: '$count مواد',
+      two: 'مادتان',
+      one: 'مادة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get subjectAdd => '+ إضافة مادة';
+
+  @override
+  String get subjectNameHint => 'مثال: رياضيات';
+
+  @override
+  String get subjectRename => 'تعديل الاسم';
+
+  @override
+  String get subjectHide => 'إخفاء المادة';
+
+  @override
+  String get subjectUnhide => 'إظهار المادة';
+
+  @override
+  String get subjectDelete => 'حذف المادة';
+
+  @override
+  String get subjectsHidden => 'مواد مخفية';
+
+  @override
+  String get subjectsHiddenNote =>
+      'المادة المخفية لا تظهر ولا تدخل في حساب الإتقان، وأبوابها وامتحاناتها محفوظة كما هي.';
+
+  @override
   String get settingsPreferences => 'التفضيلات';
 
   @override

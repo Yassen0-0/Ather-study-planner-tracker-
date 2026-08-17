@@ -4,6 +4,7 @@ import 'exam_entry.dart';
 import 'homework_entry.dart';
 import 'lesson.dart';
 import 'study_snapshot.dart';
+import 'subject.dart';
 
 /// Everything a student has recorded, in a form that can leave the device.
 ///
@@ -12,13 +13,17 @@ import 'study_snapshot.dart';
 /// network or a database, which matters because a serialisation bug here loses
 /// a student's whole record silently.
 ///
-/// **The four subjects are deliberately not included.** They are seeded
-/// identically on every install with fixed ids 1-4 (`kSeededSubjects`), so
-/// carrying them would be carrying four rows that the receiving device has
-/// already created for itself -- and would introduce a way for a restore to
-/// disagree with the seed.
+/// **Subjects are carried now, and were not before.** While the only subjects
+/// were the four seeded identically on every install at fixed ids 1-4, sending
+/// them would have been sending four rows the receiving device had already
+/// created for itself. Once a student can add their own, the opposite is true:
+/// every chapter names a `subjectId`, so a restore onto a new phone that did
+/// not carry the subjects would land chapters pointing at rows that do not
+/// exist -- a foreign key failure at best, and a silently emptied subject at
+/// worst.
 final class StudyBackup {
   const StudyBackup({
+    required this.subjects,
     required this.chapters,
     required this.lessons,
     required this.exams,
@@ -31,7 +36,16 @@ final class StudyBackup {
   /// A backup written by a *newer* version is refused outright rather than
   /// half-read: reading four of six fields and silently dropping the rest is
   /// how a restore quietly deletes two years of exams.
-  static const int formatVersion = 1;
+  ///
+  /// 2 added `subjects`. The bump is what stops an older build from accepting
+  /// this file: it would ignore the key it does not know, then try to insert
+  /// chapters under subject ids that only exist on the phone that wrote them.
+  /// A refusal a student can read beats a restore that half-lands.
+  static const int formatVersion = 2;
+
+  /// Empty in a version 1 backup, which is not a loss: every subject that could
+  /// exist when those were written is seeded on the receiving device already.
+  final List<Subject> subjects;
 
   final List<Chapter> chapters;
   final List<Lesson> lessons;
@@ -52,6 +66,7 @@ final class StudyBackup {
     List<DailyTask> tasks,
   ) {
     return StudyBackup(
+      subjects: snapshot.subjects,
       chapters: snapshot.chapters,
       lessons: snapshot.lessons,
       exams: snapshot.exams,
@@ -62,6 +77,19 @@ final class StudyBackup {
 
   Map<String, Object?> toJson() => <String, Object?>{
     'formatVersion': formatVersion,
+    'subjects': <Object?>[
+      for (final s in subjects)
+        <String, Object?>{
+          'id': s.id,
+          // The enum's name, or the custom sentinel. Written as a string so a
+          // build that does not know a future code can still read the row and
+          // treat it as custom rather than failing.
+          'code': s.code?.name ?? kCustomSubjectCode,
+          'name': s.name,
+          'sortOrder': s.sortOrder,
+          'archivedAt': _epochOrNull(s.archivedAt),
+        },
+    ],
     'chapters': <Object?>[
       for (final c in chapters)
         <String, Object?>{
@@ -147,6 +175,17 @@ final class StudyBackup {
       );
     }
 
+    final subjects = <Subject>[
+      for (final raw in _list(json['subjects']))
+        Subject(
+          id: raw['id']! as int,
+          code: SubjectCode.tryFromName((raw['code'] ?? '') as String),
+          name: raw['name'] as String?,
+          sortOrder: (raw['sortOrder'] ?? 0) as int,
+          archivedAt: _dateOrNull(raw['archivedAt']),
+        ),
+    ];
+
     final exams = <ExamEntry>[];
     for (final raw in _list(json['exams'])) {
       final id = raw['id']! as int;
@@ -191,6 +230,7 @@ final class StudyBackup {
     }
 
     return StudyBackup(
+      subjects: subjects,
       chapters: <Chapter>[
         for (final c in _list(json['chapters']))
           Chapter(

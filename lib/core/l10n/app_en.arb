@@ -227,6 +227,19 @@
   "lockSetting": "Fingerprint lock",
 
   "settingsTitle": "Settings",
+  "subjectsTitle": "Subjects",
+  "subjectCountLabel": "{count, plural, =1{1 subject} other{{count} subjects}}",
+  "@subjectCountLabel": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "subjectAdd": "+ Add subject",
+  "subjectNameHint": "e.g. Maths",
+  "subjectRename": "Rename",
+  "subjectHide": "Hide subject",
+  "subjectUnhide": "Show subject",
+  "subjectDelete": "Delete subject",
+  "subjectsHidden": "Hidden subjects",
+  "subjectsHiddenNote": "A hidden subject is not shown and does not count toward mastery. Its chapters and exams are kept exactly as they were.",
   "settingsPreferences": "Preferences",
   "settingsLanguage": "Language",
   "settingsLanguageArabic": "العربية",

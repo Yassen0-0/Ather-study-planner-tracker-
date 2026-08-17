@@ -143,7 +143,7 @@ class _InsightsCard extends ConsumerWidget {
   ) {
     final snapshot = ref.read(snapshotValueProvider);
 
-    String subjectName(int id) => snapshot.subjectById(id)?.code.label(l) ?? '';
+    String subjectName(int id) => snapshot.subjectById(id)?.label(l) ?? '';
 
     return switch (insight) {
       StrongestSubjectInsight(:final subjectId, :final mastery) => (
@@ -246,7 +246,7 @@ class _FilterRow extends StatelessWidget {
           for (final subject in subjects) ...<Widget>[
             const SizedBox(width: AppSpacing.xs),
             AtherFilterChip(
-              label: subject.subject.code.label(l),
+              label: subject.subject.label(l),
               selected: selected == subject.subject.id,
               onTap: () => onSelect(subject.subject.id),
             ),
@@ -284,7 +284,7 @@ class _SubjectBarsCard extends StatelessWidget {
                   for (final subject in subjects) ...<Widget>[
                     Expanded(
                       child: _VerticalBar(
-                        label: subject.subject.code.label(l),
+                        label: subject.subject.label(l),
                         mastery: subject.mastery,
                         hasData: subject.hasAnyExam,
                         needsReview: subject.needsReview,
@@ -485,7 +485,7 @@ class _WeakestCard extends StatelessWidget {
                           ),
                           const SizedBox(height: AppSpacing.xxs),
                           Text(
-                            entry.subject.subject.code.label(l),
+                            entry.subject.subject.label(l),
                             style: context.text.small,
                           ),
                         ],

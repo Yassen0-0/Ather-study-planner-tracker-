@@ -66,7 +66,7 @@ class SubjectScreen extends ConsumerWidget {
 
     return AtherScreen(
       header: AtherHeader(
-        title: summary.subject.code.label(l),
+        title: summary.subject.label(l),
         onBack: () => context.pop(),
       ),
       children: <Widget>[

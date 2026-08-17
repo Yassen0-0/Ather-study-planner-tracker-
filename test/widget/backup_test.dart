@@ -14,6 +14,7 @@ import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/study_backup.dart';
+import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/domain/repositories/backup_repository.dart';
 import 'package:ather/presentation/common/settings_button.dart';
 import 'package:ather/presentation/dashboard/dashboard_screen.dart';
@@ -97,6 +98,9 @@ void main() {
   }
 
   StudyBackup cloudCopy() => StudyBackup(
+    subjects: const <Subject>[
+      Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+    ],
     chapters: <Chapter>[
       Chapter(id: 1, subjectId: 1, name: 'باب من السحابة', createdAt: now),
     ],

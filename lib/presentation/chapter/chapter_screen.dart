@@ -252,7 +252,7 @@ class ChapterScreen extends ConsumerWidget {
     return AtherScreen(
       header: AtherHeader(
         title: summary.chapter.name,
-        subtitle: subject?.code.label(l),
+        subtitle: subject?.label(l),
         onBack: () => context.pop(),
         actions: <Widget>[
           CircleHeaderButton(

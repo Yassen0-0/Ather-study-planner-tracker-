@@ -46,9 +46,9 @@ import '../providers/task_providers.dart';
 ///   the red are what protect a student, along with the confirmation dialogs,
 ///   which are unchanged.
 ///
-/// There is still no subject management here (the four are fixed) and no "mark
-/// as reviewed" hiding in an advanced section — the only way to reset a review
-/// clock is to sit an exam.
+/// Subject management lives here now, one row into the preferences group. There
+/// is still no "mark as reviewed" hiding in an advanced section — the only way
+/// to reset a review clock is to sit an exam.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -112,6 +112,13 @@ class SettingsScreen extends ConsumerWidget {
         SettingsGroup(
           title: l.settingsPreferences,
           children: <Widget>[
+            SettingsRow(
+              label: l.subjectsTitle,
+              value: l.subjectCountLabel(
+                ref.watch(snapshotValueProvider).activeSubjects.length,
+              ),
+              onTap: () => context.push(Routes.subjects),
+            ),
             SettingsRow(
               label: l.settingsLanguage,
               value: locale.languageCode == 'en'

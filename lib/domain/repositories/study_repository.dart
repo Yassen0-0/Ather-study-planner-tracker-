@@ -17,6 +17,36 @@ abstract interface class StudyRepository {
   /// scheduling, the lifecycle reconciliation pass).
   Future<StudySnapshot> readSnapshot();
 
+  // --- Subjects -------------------------------------------------------------
+  /// Adds a subject the student named. Returns its new id.
+  ///
+  /// The id is `max(id) + 1` rather than an autoincrement, because the seeded
+  /// four hold fixed ids 1-4 and the column was never declared as one.
+  Future<int> createSubject({required String name});
+
+  /// Only a subject the student created can be renamed. The seeded four take
+  /// their names from the ARB files, so a name written here would freeze one
+  /// language into a database the toggle cannot reach.
+  Future<void> renameSubject({required int subjectId, required String name});
+
+  /// Hides a subject without touching anything under it, or brings it back.
+  ///
+  /// This is the ordinary way to remove a subject from view, and it is what
+  /// the interface offers first, because `Chapters.subjectId` cascades: a real
+  /// delete takes every chapter, lesson and exam beneath it.
+  Future<void> setSubjectArchived({
+    required int subjectId,
+    required DateTime? at,
+  });
+
+  /// Deletes a subject **only if it has no chapters**, and answers whether it
+  /// did.
+  ///
+  /// The guard is in the repository rather than in the screen so that no
+  /// future caller can route around it. A subject with a single chapter under
+  /// it has a whole tree of exams under that, and there is no undo in this app.
+  Future<bool> deleteEmptySubject(int subjectId);
+
   // --- Chapters -------------------------------------------------------------
   /// [at] comes from the injectable [Clock], like every other timestamp the app
   /// writes. `createChapter` and `createLesson` used to call `DateTime.now()`

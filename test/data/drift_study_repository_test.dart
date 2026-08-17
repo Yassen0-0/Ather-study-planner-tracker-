@@ -581,9 +581,114 @@ void main() {
       expect(snap.lessons, isEmpty);
       expect(snap.exams, isEmpty);
       expect(snap.homework, isEmpty);
-      // The four subjects are seeded, not owned by the student, and every
-      // chapter's foreign key points at them.
+      // Back to the four Ather ships with -- including any the student added,
+      // which are as much "everything on this device" as a chapter is. Reset
+      // rather than emptied: the seed only runs on create and on the 2 -> 3
+      // migration, so an emptied table would still be empty at the next
+      // sign-in.
       expect(snap.subjects, hasLength(4));
+      expect(snap.subjects.every((s) => s.isSeeded), isTrue);
+    });
+
+    test('clear takes the subjects the student added with it', () async {
+      final id = await repo.createSubject(name: 'رياضيات');
+      expect((await repo.readSnapshot()).subjects, hasLength(5));
+
+      await repo.clear();
+      final snap = await repo.readSnapshot();
+
+      expect(snap.subjects, hasLength(4));
+      expect(snap.subjectById(id), isNull);
+    });
+  });
+
+  group('subjects the student adds', () {
+    test('a new subject lands after the seeded four and keeps its name', () async {
+      final id = await repo.createSubject(name: '  رياضيات  ');
+      final subject = (await repo.readSnapshot()).subjectById(id)!;
+
+      expect(id, 5, reason: 'max(id) + 1 over the seeded 1-4');
+      expect(subject.name, 'رياضيات', reason: 'trimmed on the way in');
+      expect(subject.code, isNull, reason: 'not one of the four');
+      expect(subject.isSeeded, isFalse);
+      expect(subject.sortOrder, 4);
+    });
+
+    test('two subjects added back to back do not collide', () async {
+      final first = await repo.createSubject(name: 'رياضيات');
+      final second = await repo.createSubject(name: 'تاريخ');
+
+      expect(first, isNot(second));
+      expect((await repo.readSnapshot()).subjects, hasLength(6));
+    });
+
+    test('renaming is refused for the seeded four', () async {
+      // Their names come from the ARB files so the language toggle can reach
+      // them. A name written here would freeze one language into the database.
+      await repo.renameSubject(subjectId: 1, name: 'حاجة تانية');
+      expect((await repo.readSnapshot()).subjectById(1)!.name, isNull);
+
+      final id = await repo.createSubject(name: 'رياضيات');
+      await repo.renameSubject(subjectId: id, name: 'رياضيات بحتة');
+      expect(
+        (await repo.readSnapshot()).subjectById(id)!.name,
+        'رياضيات بحتة',
+      );
+    });
+
+    test('hiding a subject keeps everything under it', () async {
+      final chapterId = await repo.createChapter(
+        subjectId: 1,
+        name: 'باب',
+        at: kSeedInstant,
+      );
+      await repo.createLesson(
+        chapterId: chapterId,
+        name: 'درس',
+        at: kSeedInstant,
+      );
+
+      await repo.setSubjectArchived(subjectId: 1, at: DateTime(2026, 8, 17));
+      var snap = await repo.readSnapshot();
+
+      expect(snap.subjectById(1)!.isArchived, isTrue);
+      expect(
+        snap.activeSubjects.map((s) => s.id),
+        isNot(contains(1)),
+        reason: 'hidden means out of every figure the student reads',
+      );
+      // Nothing was destroyed, which is the whole difference between this and
+      // a delete.
+      expect(snap.chapters, hasLength(1));
+      expect(snap.lessons, hasLength(1));
+
+      await repo.setSubjectArchived(subjectId: 1, at: null);
+      snap = await repo.readSnapshot();
+      expect(snap.activeSubjects.map((s) => s.id), contains(1));
+      expect(snap.chapters, hasLength(1));
+    });
+
+    test('a subject with any chapter under it refuses to be deleted', () async {
+      final id = await repo.createSubject(name: 'رياضيات');
+      await repo.createChapter(
+        subjectId: id,
+        name: 'باب',
+        at: kSeedInstant,
+      );
+
+      // The guard lives in the repository, not the screen, so no future caller
+      // can route around it. Chapters cascade: without this, one confirmation
+      // takes every exam ever recorded under the subject.
+      expect(await repo.deleteEmptySubject(id), isFalse);
+      expect((await repo.readSnapshot()).subjectById(id), isNotNull);
+      expect((await repo.readSnapshot()).chapters, hasLength(1));
+    });
+
+    test('an empty subject deletes cleanly', () async {
+      final id = await repo.createSubject(name: 'أُضيفت بالغلط');
+
+      expect(await repo.deleteEmptySubject(id), isTrue);
+      expect((await repo.readSnapshot()).subjectById(id), isNull);
     });
   });
 }

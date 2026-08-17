@@ -68,6 +68,18 @@ final class StudySnapshot {
 
   bool get isEmpty => chapters.isEmpty && lessons.isEmpty;
 
+  /// Every subject the student has not archived, in sort order.
+  ///
+  /// **This, not [subjects], is what the app should be reading almost
+  /// everywhere.** [subjects] is the whole table, and it exists for the two
+  /// jobs that genuinely need the archived ones: writing the backup, and the
+  /// screen that manages subjects. Every figure a student reads -- overall
+  /// mastery, the insights, the next lesson to sit -- has to skip them, or
+  /// archiving a subject would hide it from the list while still counting it
+  /// as a 0 in the mean, which is the opposite of what the control promises.
+  List<Subject> get activeSubjects =>
+      <Subject>[for (final s in subjects) if (!s.isArchived) s];
+
   /// Exams for a lesson, newest first. Never null -- an unexamined lesson
   /// yields an empty list, which the mastery formula reads as 0.
   List<ExamEntry> examsFor(int lessonId) =>

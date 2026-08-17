@@ -678,6 +678,45 @@ class LEn extends L {
   String get settingsTitle => 'Settings';
 
   @override
+  String get subjectsTitle => 'Subjects';
+
+  @override
+  String subjectCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count subjects',
+      one: '1 subject',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get subjectAdd => '+ Add subject';
+
+  @override
+  String get subjectNameHint => 'e.g. Maths';
+
+  @override
+  String get subjectRename => 'Rename';
+
+  @override
+  String get subjectHide => 'Hide subject';
+
+  @override
+  String get subjectUnhide => 'Show subject';
+
+  @override
+  String get subjectDelete => 'Delete subject';
+
+  @override
+  String get subjectsHidden => 'Hidden subjects';
+
+  @override
+  String get subjectsHiddenNote =>
+      'A hidden subject is not shown and does not count toward mastery. Its chapters and exams are kept exactly as they were.';
+
+  @override
   String get settingsPreferences => 'Preferences';
 
   @override

@@ -7,6 +7,7 @@ import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/study_backup.dart';
+import 'package:ather/domain/entities/subject.dart';
 
 /// The serialisation, on its own, with no network and no database.
 ///
@@ -18,6 +19,9 @@ void main() {
   final DateTime t0 = DateTime.fromMillisecondsSinceEpoch(1754300000000);
 
   StudyBackup populated() => StudyBackup(
+    subjects: const <Subject>[
+      Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+    ],
     chapters: <Chapter>[
       Chapter(
         id: 7,
@@ -131,6 +135,7 @@ void main() {
 
   test('an empty backup round-trips to an empty backup', () {
     const empty = StudyBackup(
+      subjects: <Subject>[],
       chapters: <Chapter>[],
       lessons: <Lesson>[],
       exams: <ExamEntry>[],
