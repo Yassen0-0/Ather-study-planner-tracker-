@@ -87,7 +87,7 @@ void main() {
     await tester.tap(find.text('قوانين مندل'));
     await shot(tester, '04-lesson');
 
-    await tester.tap(find.text('سجل نتيجة امتحان'));
+    await tester.tap(find.text('سجّل نتيجة امتحان'));
     await shot(tester, '05-exam-step1');
 
     await tester.enterText(find.byType(TextField).first, '8');
@@ -100,7 +100,7 @@ void main() {
     // input to lose, leaving asks first. Answering it is part of the script.
     await tester.tap(find.text('رجوع'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('سيبه'));
+    await tester.tap(find.text('اترك'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('مراجعة'));

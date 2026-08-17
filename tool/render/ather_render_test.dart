@@ -164,7 +164,7 @@ void main() {
     await tester.tap(find.text('قوانين مندل'));
     await shot(tester, '04-lesson');
 
-    await tester.tap(find.text('سجل نتيجة امتحان'));
+    await tester.tap(find.text('سجّل نتيجة امتحان'));
     await shot(tester, '05-exam-step1');
 
     await tester.enterText(find.byType(TextField).first, '8');
@@ -177,7 +177,7 @@ void main() {
     // input to lose, leaving asks first. Answering it is part of the script.
     await tester.tap(find.text('رجوع'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('سيبه'));
+    await tester.tap(find.text('اترك'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('مراجعة'));
@@ -217,7 +217,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('قوانين مندل'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('سجل نتيجة امتحان'));
+    await tester.tap(find.text('سجّل نتيجة امتحان'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, '8');
@@ -258,7 +258,7 @@ void main() {
     await tester.pumpAndSettle();
     await shot(tester, '16-chapter-not-ready');
 
-    await tester.tap(find.text('لسه مش جاهز — اعرف ليه'));
+    await tester.tap(find.text('لم يكتمل بعد — اعرف السبب'));
     await shot(tester, '17-not-ready-sheet');
 
     await tester.tapAt(const Offset(200, 60));
@@ -274,7 +274,7 @@ void main() {
     await tester.pumpAndSettle();
     await shot(tester, '18-chapter-mastered');
 
-    await tester.tap(find.text('شوف تقرير الباب'));
+    await tester.tap(find.text('تقرير الباب'));
     await shot(tester, '19-chapter-report');
   });
 
@@ -292,7 +292,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('English'));
+    // The language row shows the current choice and offers the alternatives in
+    // a sheet, so "English" appears on both -- aim at the sheet's copy.
+    await tester.tap(find.text('اللغة'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English').hitTestable().last);
     await tester.pumpAndSettle();
     await tester.tap(find.byType(BackChevron));
     await shot(tester, '20-dashboard-en');
