@@ -110,7 +110,7 @@ abstract final class InsightsGenerator {
     int? bestSubject;
     var bestDelta = 0.0;
 
-    for (final subject in snapshot.subjects) {
+    for (final subject in snapshot.activeSubjects) {
       final before = _subjectMasteryAsOf(snapshot, subject.id, cutoff);
       // A subject with no exam history before the window has nothing to improve
       // *from* -- reporting "up 90%" on a first-ever exam is meaningless.
@@ -176,7 +176,7 @@ abstract final class InsightsGenerator {
   ) {
     ({int id, String name, int days})? stalest;
 
-    for (final lesson in snapshot.lessons) {
+    for (final lesson in snapshot.activeLessons) {
       final days = ReviewCycleService.daysSinceReview(lesson, now);
       if (days == null || days < _stalenessDays) continue;
       if (stalest == null || days > stalest.days) {
@@ -199,7 +199,7 @@ abstract final class InsightsGenerator {
     int? best;
     var bestMastery = 0.0;
 
-    for (final subject in snapshot.subjects) {
+    for (final subject in snapshot.activeSubjects) {
       final mastery = MasteryCalculator.subjectMasteryOf(snapshot, subject.id);
       if (mastery > bestMastery) {
         bestMastery = mastery;

@@ -17,6 +17,46 @@ abstract interface class StudyRepository {
   /// scheduling, the lifecycle reconciliation pass).
   Future<StudySnapshot> readSnapshot();
 
+  // --- Subjects -------------------------------------------------------------
+  /// Adds a subject the student named. Returns its new id.
+  ///
+  /// The id is `max(id) + 1` rather than an autoincrement, because the seeded
+  /// four hold fixed ids 1-4 and the column was never declared as one.
+  Future<int> createSubject({required String name});
+
+  /// Only a subject the student created can be renamed. The seeded four take
+  /// their names from the ARB files, so a name written here would freeze one
+  /// language into a database the toggle cannot reach.
+  Future<void> renameSubject({required int subjectId, required String name});
+
+  /// Archives a subject, or brings it back. Touches nothing beneath it.
+  ///
+  /// "I am done with this, put it away" — a deliberate act on a subject the
+  /// student is keeping.
+  Future<void> setSubjectArchived({
+    required int subjectId,
+    required DateTime? at,
+  });
+
+  /// Moves a subject to the recycle bin, or restores it. Touches nothing
+  /// beneath it either.
+  ///
+  /// "I did not mean to have this" — the other intention, and the reason these
+  /// are two operations rather than one. `Chapters.subjectId` cascades, so a
+  /// real delete here would take every chapter, lesson and exam beneath it and
+  /// there is no undo anywhere in this app. Deferring the cascade to
+  /// [purgeSubject] is what makes offering "delete" honest.
+  Future<void> setSubjectDeleted({
+    required int subjectId,
+    required DateTime? at,
+  });
+
+  /// Destroys a subject and everything beneath it, for real.
+  ///
+  /// The single irreversible operation in the whole feature, reachable only
+  /// from inside the recycle bin. Everything else is a flag.
+  Future<void> purgeSubject(int subjectId);
+
   // --- Chapters -------------------------------------------------------------
   /// [at] comes from the injectable [Clock], like every other timestamp the app
   /// writes. `createChapter` and `createLesson` used to call `DateTime.now()`

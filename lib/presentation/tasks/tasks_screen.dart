@@ -149,7 +149,6 @@ class TasksScreen extends ConsumerWidget {
         if (tasks.isEmpty)
           EmptyState(
             title: l.noTasksYet,
-            body: l.tasksEmptyBody,
             action: DashedAddButton(
               label: l.addTask,
               onTap: () => _add(context, ref),

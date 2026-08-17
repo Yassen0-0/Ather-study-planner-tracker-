@@ -95,13 +95,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           onSelect: (id) => setState(() => _subjectFilter = id),
         ),
         const SizedBox(height: AppSpacing.xl),
-        // The one card that deliberately ignores the filter, and says so: it
-        // exists to compare the four subjects against each other, and a
-        // comparison of one subject with itself is not a chart.
-        _SubjectBarsCard(
-          subjects: subjects,
-          comparingAll: _subjectFilter != null,
-        ),
+        // The one card that deliberately ignores the filter: it exists to
+        // compare the subjects against each other, and a comparison of one
+        // subject with itself is not a chart.
+        _SubjectBarsCard(subjects: subjects),
         const SizedBox(height: AppSpacing.xl),
         if (chapters.isNotEmpty) ...<Widget>[
           _ChapterBarsCard(chapters: chapters),
@@ -146,7 +143,7 @@ class _InsightsCard extends ConsumerWidget {
   ) {
     final snapshot = ref.read(snapshotValueProvider);
 
-    String subjectName(int id) => snapshot.subjectById(id)?.code.label(l) ?? '';
+    String subjectName(int id) => snapshot.subjectById(id)?.label(l) ?? '';
 
     return switch (insight) {
       StrongestSubjectInsight(:final subjectId, :final mastery) => (
@@ -249,7 +246,7 @@ class _FilterRow extends StatelessWidget {
           for (final subject in subjects) ...<Widget>[
             const SizedBox(width: AppSpacing.xs),
             AtherFilterChip(
-              label: subject.subject.code.label(l),
+              label: subject.subject.label(l),
               selected: selected == subject.subject.id,
               onTap: () => onSelect(subject.subject.id),
             ),
@@ -261,14 +258,9 @@ class _FilterRow extends StatelessWidget {
 }
 
 class _SubjectBarsCard extends StatelessWidget {
-  const _SubjectBarsCard({required this.subjects, required this.comparingAll});
+  const _SubjectBarsCard({required this.subjects});
 
   final List<SubjectSummary> subjects;
-
-  /// A subject filter is active and this card is showing all four anyway.
-  /// Stated in a line under the title rather than left for the student to
-  /// notice, or not notice.
-  final bool comparingAll;
 
   @override
   Widget build(BuildContext context) {
@@ -280,10 +272,6 @@ class _SubjectBarsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(l.analyticsMasteryBySubject, style: AppTypography.cardTitle),
-          if (comparingAll) ...<Widget>[
-            const SizedBox(height: AppSpacing.xxs),
-            Text(l.analyticsAlwaysAllSubjects, style: context.text.micro),
-          ],
           const SizedBox(height: AppSpacing.xl),
           // Forced LTR so the four subjects keep the same left-to-right order
           // as every other chart, and a comparison never silently mirrors.
@@ -296,7 +284,7 @@ class _SubjectBarsCard extends StatelessWidget {
                   for (final subject in subjects) ...<Widget>[
                     Expanded(
                       child: _VerticalBar(
-                        label: subject.subject.code.label(l),
+                        label: subject.subject.label(l),
                         mastery: subject.mastery,
                         hasData: subject.hasAnyExam,
                         needsReview: subject.needsReview,
@@ -497,7 +485,7 @@ class _WeakestCard extends StatelessWidget {
                           ),
                           const SizedBox(height: AppSpacing.xxs),
                           Text(
-                            entry.subject.subject.code.label(l),
+                            entry.subject.subject.label(l),
                             style: context.text.small,
                           ),
                         ],

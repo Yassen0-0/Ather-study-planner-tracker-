@@ -59,10 +59,10 @@ StudySnapshot seeded() {
 
   return StudySnapshot(
     subjects: const <Subject>[
-      Subject(id: 1, code: SubjectCode.biology, sortOrder: 0),
-      Subject(id: 2, code: SubjectCode.physics, sortOrder: 1),
-      Subject(id: 3, code: SubjectCode.chemistry, sortOrder: 2),
-      Subject(id: 4, code: SubjectCode.english, sortOrder: 3),
+      Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+      Subject.seeded(id: 2, code: SubjectCode.physics, sortOrder: 1),
+      Subject.seeded(id: 3, code: SubjectCode.chemistry, sortOrder: 2),
+      Subject.seeded(id: 4, code: SubjectCode.english, sortOrder: 3),
     ],
     chapters: <Chapter>[
       Chapter(

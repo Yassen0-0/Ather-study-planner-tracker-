@@ -37,6 +37,17 @@ migrate_working_dir/
 build/
 .gradle/
 
+# A release APK copied out of build/ to be renamed and uploaded.
+#
+# `build/` above does not cover it: the publishing step copies the artifact to
+# the repository root under its release name, which is outside every ignored
+# directory. Two of those were already sitting untracked in two worktrees when
+# this rule was written, and one `git add -A` — a command this repository's own
+# workflow runs — would have put 23 MB of binary into the history permanently,
+# where it cannot be removed without rewriting every commit after it.
+*.apk
+*.aab
+
 # Symbolication related
 app.*.symbols
 
@@ -66,4 +77,11 @@ dist/
 android/key.properties
 *.jks
 *.keystore
+
+# The APK served from the site. Firebase Hosting deploys whatever is in
+# `public/`, so the file has to be there at deploy time -- but a 24MB binary
+# committed once per release makes the repository grow by a quarter of a
+# gigabyte a year, and git keeps every copy forever. `public/README.md` has the
+# one-line copy step that puts it there.
+public/*.apk
 .commandcode/

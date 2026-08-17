@@ -1,10 +1,10 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ather/core/theme/app_colors.dart';
 import 'package:ather/core/theme/app_spacing.dart';
-import 'package:ather/core/widgets/ather_icons.dart';
 import 'package:ather/core/widgets/icon_motion.dart';
 
 /// The design decisions that keep getting undone, asserted mechanically.
@@ -159,17 +159,40 @@ void main() {
   });
 
   group('the tab bar has four slots and no raised "+"', () {
-    test('the plus glyph no longer exists in the icon set', () {
-      // The "+" asked the student which lesson they meant, after the fact, from
-      // a context that had none, and was dead whenever nothing was recordable
-      // (PROJECT.md §3.28). Deleting the glyph is what stops it being drawn
-      // again by habit: there is nothing left to draw.
+    test('the tab bar draws four destinations and no "+"', () {
+      // The raised centre "+" asked the student which lesson they meant, after
+      // the fact, from a context that had none, and was dead whenever nothing
+      // was recordable (PROJECT.md §3.28).
+      //
+      // This used to be asserted by demanding that `AtherGlyph.plus` not exist
+      // at all, on the reasoning that a glyph nobody can draw cannot come back
+      // by habit. That guard has now outlived its accuracy: adding a subject
+      // needed a "+" beside the subjects heading on the dashboard, which is a
+      // different control in a different place answering a question the raised
+      // button never could.
+      //
+      // So the invariant is asserted where it actually lives -- the tab bar's
+      // own source -- rather than by the absence of a shape. Four glyphs, and
+      // none of them a plus.
+      final source = File(
+        'lib/presentation/shell/app_shell.dart',
+      ).readAsStringSync();
+      final glyphs = RegExp(
+        r'glyph: AtherGlyph\.(\w+)',
+      ).allMatches(source).map((m) => m.group(1)).toList();
+
       expect(
-        AtherGlyph.values.map((g) => g.name),
+        glyphs,
+        hasLength(4),
+        reason: 'the tab bar is four destinations — see PROJECT.md §3.28',
+      );
+      expect(
+        glyphs,
         isNot(contains('plus')),
         reason:
-            'AtherGlyph.plus is back. It existed only for the raised centre '
-            'button the approved design removed — see PROJECT.md §3.28.',
+            'the raised centre "+" is back in the tab bar. It asked which '
+            'lesson the student meant from a context that had none — see '
+            'PROJECT.md §3.28.',
       );
     });
   });

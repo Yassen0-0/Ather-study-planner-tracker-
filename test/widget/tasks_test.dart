@@ -161,7 +161,7 @@ void main() {
     await openTasks(tester);
 
     expect(find.text('مهام اليوم'), findsOneWidget);
-    expect(find.text('مفيش مهام لليوم ده'), findsOneWidget);
+    expect(find.text('لا مهام لهذا اليوم'), findsOneWidget);
     // Nothing here measures anything: no percentage, no mastery bar.
     expect(find.textContaining('%'), findsNothing);
 
@@ -175,13 +175,13 @@ void main() {
     await addTask(tester, 'أذاكر الباب الأول');
     expect(find.text('أذاكر الباب الأول'), findsOneWidget);
     // The count line, in the app's "X من Y" grammar with isolated numbers.
-    expect(find.text('${iso(0)} من ${iso(1)} خلصتهم'), findsOneWidget);
+    expect(find.text('أنجزت ${iso(0)} من ${iso(1)}'), findsOneWidget);
 
     // Tapping the row is the primary act — the whole card, not a small disc.
     await tester.tap(find.text('أذاكر الباب الأول'));
     await tester.pumpAndSettle();
 
-    expect(find.text('${iso(1)} من ${iso(1)} خلصتهم'), findsOneWidget);
+    expect(find.text('أنجزت ${iso(1)} من ${iso(1)}'), findsOneWidget);
     expect((await tasksOn(tester, now)).single.done, isTrue);
 
     // And it toggles back off, rather than being a one-way door.
@@ -216,7 +216,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(await tasksOn(tester, now), isEmpty);
-    expect(find.text('مفيش مهام لليوم ده'), findsOneWidget);
+    expect(find.text('لا مهام لهذا اليوم'), findsOneWidget);
 
     await closeApp(tester);
   });
@@ -268,7 +268,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('مهمة النهارده'), findsNothing);
-    expect(find.text('مفيش مهام لليوم ده'), findsOneWidget);
+    expect(find.text('لا مهام لهذا اليوم'), findsOneWidget);
     // The title stops claiming to be today the moment another day is picked.
     expect(find.text('مهام اليوم'), findsNothing);
 

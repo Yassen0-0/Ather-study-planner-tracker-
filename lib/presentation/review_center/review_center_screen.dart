@@ -71,7 +71,7 @@ String _crumb(L l, StudySnapshot snapshot, ReviewItem item) {
   final subject = snapshot.subjectById(item.subjectId);
   final chapter = snapshot.chapterById(item.chapterId);
   return <String>[
-    if (subject != null) subject.code.label(l),
+    if (subject != null) subject.label(l),
     if (chapter != null) chapter.name,
   ].join(' · ');
 }

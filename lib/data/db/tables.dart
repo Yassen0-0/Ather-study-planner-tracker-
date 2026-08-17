@@ -1,19 +1,44 @@
 import 'package:drift/drift.dart';
 
-/// The four fixed subjects.
+/// The student's subjects: four seeded on a fresh install, plus any they add.
 ///
-/// Only structural data lives here. Display names are in the ARB files (so the
-/// ar/en toggle needs no migration) and icon/colour are presentation constants
-/// keyed off [code]. The table exists mainly to give [Chapters] a real foreign
-/// key to hang off.
+/// Display names for the seeded four are in the ARB files (so the ar/en toggle
+/// needs no migration) and their icons are presentation constants keyed off
+/// [code]. A subject the student created cannot use either -- nobody can
+/// translate a name they invented -- so it carries its own [name] and the
+/// sentinel code `custom`.
 @DataClassName('SubjectRow')
 class Subjects extends Table {
-  /// Stable, hand-assigned ids (1..4) rather than autoIncrement: the seed must
-  /// be idempotent across launches and migrations.
+  /// Hand-assigned rather than autoIncrement: the seed writes 1..4 at fixed
+  /// ids so it is idempotent across launches and migrations, and a chapter
+  /// never ends up pointing at a renumbered subject. New subjects take
+  /// `max(id) + 1`, computed in the repository.
   IntColumn get id => integer()();
 
-  /// `SubjectCode.name` -- biology / physics / chemistry / english.
+  /// `SubjectCode.name` -- biology / physics / chemistry / english -- or
+  /// `custom` for a subject the student added.
   TextColumn get code => text().withLength(min: 1, max: 24)();
+
+  /// The student's own name for a subject they created. Null for the seeded
+  /// four, whose names are translated rather than stored.
+  TextColumn get name => text().withLength(min: 1, max: 60).nullable()();
+
+  /// Set when the student **archives** a subject: puts it away deliberately,
+  /// because they are done with it. Nothing under it is touched.
+  DateTimeColumn get archivedAt => dateTime().nullable()();
+
+  /// Set when the student **deletes** a subject. Also touches nothing under it
+  /// -- the row simply stops being visible anywhere and moves to the recycle
+  /// bin, where it can be restored or destroyed for real.
+  ///
+  /// The two columns are separate because archiving and deleting are different
+  /// intentions, not two words for hiding: archive is "I am done with this",
+  /// trash is "I did not mean to have this". Collapsing them into one flag
+  /// would force one list to answer both questions.
+  ///
+  /// The actual cascade -- the one that takes every chapter, lesson and exam
+  /// underneath -- happens only when the bin is emptied.
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 
   IntColumn get sortOrder => integer()();
 

@@ -164,7 +164,7 @@ abstract final class ReviewCycleService {
     int withinDays = 7,
   }) {
     var count = 0;
-    for (final lesson in snapshot.lessons) {
+    for (final lesson in snapshot.activeLessons) {
       final remaining = daysUntilDue(lesson, now);
       if (remaining != null && remaining <= withinDays) count++;
     }

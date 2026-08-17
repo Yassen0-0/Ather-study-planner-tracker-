@@ -84,7 +84,7 @@ void main() {
       isTrue,
       reason: 'back must not reach the router underneath the gate',
     );
-    expect(find.text('النهارده'), findsNothing);
+    expect(find.text('اليوم'), findsNothing);
   });
 
   testWidgets('a refused prompt keeps the lock on and says so', (tester) async {
@@ -94,8 +94,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(locked(tester), isTrue);
-    expect(find.text('مفتحش — جرّب تاني'), findsOneWidget);
-    expect(find.text('النهارده'), findsNothing);
+    expect(find.text('لم يُفتح. حاول مرة أخرى.'), findsOneWidget);
+    expect(find.text('اليوم'), findsNothing);
   });
 
   testWidgets('being locked out does not unlock the app', (tester) async {
@@ -109,8 +109,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(locked(tester), isTrue);
-    expect(find.textContaining('حاولت كتير'), findsOneWidget);
-    expect(find.text('النهارده'), findsNothing);
+    expect(find.textContaining('محاولات كثيرة'), findsOneWidget);
+    expect(find.text('اليوم'), findsNothing);
   });
 
   testWidgets('an unrecognised platform failure keeps the lock on', (
@@ -126,7 +126,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(locked(tester), isTrue);
-    expect(find.text('النهارده'), findsNothing);
+    expect(find.text('اليوم'), findsNothing);
   });
 
   testWidgets('a device with nothing enrolled releases the lock', (
@@ -143,7 +143,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(locked(tester), isFalse);
-    expect(find.text('النهارده'), findsOneWidget);
+    expect(find.text('اليوم'), findsOneWidget);
   });
 
   testWidgets('a successful prompt opens the app', (tester) async {
@@ -153,7 +153,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(locked(tester), isFalse);
-    expect(find.text('النهارده'), findsOneWidget);
+    expect(find.text('اليوم'), findsOneWidget);
     expect(localAuth.attempts, 1);
   });
 
@@ -169,6 +169,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(locked(tester), isFalse);
-    expect(find.text('النهارده'), findsOneWidget);
+    expect(find.text('اليوم'), findsOneWidget);
   });
 }

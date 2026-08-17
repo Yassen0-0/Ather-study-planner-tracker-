@@ -11,6 +11,7 @@ import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/study_backup.dart';
+import 'package:ather/domain/entities/subject.dart';
 
 /// Restore, against real SQLite.
 ///
@@ -35,6 +36,19 @@ void main() {
   tearDown(() => db.close());
 
   StudyBackup backup({int chapterId = 7, int lessonId = 20}) => StudyBackup(
+    subjects: const <Subject>[
+      Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+      Subject.seeded(id: 2, code: SubjectCode.physics, sortOrder: 1),
+      Subject.seeded(id: 3, code: SubjectCode.chemistry, sortOrder: 2),
+      Subject.seeded(id: 4, code: SubjectCode.english, sortOrder: 3),
+      Subject(
+        id: 5,
+        code: null,
+        name: 'رياضيات',
+        sortOrder: 4,
+        archivedAt: null,
+      ),
+    ],
     chapters: <Chapter>[
       Chapter(
         id: chapterId,
@@ -133,11 +147,36 @@ void main() {
     expect(snapshot.chapters.single.name, 'الباب الأول');
   });
 
-  test('the four seeded subjects are left alone', () async {
+  test('a restore brings the subjects the student added with it', () async {
     await study.restore(backup());
-    // A backup carries no subjects, so a restore that cleared them would leave
-    // the app with four missing rows every chapter points at.
-    expect((await study.readSnapshot()).subjects, hasLength(4));
+    final snapshot = await study.readSnapshot();
+
+    // The whole reason subjects joined the backup format. Every chapter names
+    // a subjectId; a restore onto a new phone that did not carry the subjects
+    // would land chapters pointing at rows that do not exist.
+    expect(snapshot.subjects, hasLength(5));
+    expect(snapshot.subjectById(5)!.name, 'رياضيات');
+    expect(snapshot.subjectById(5)!.isSeeded, isFalse);
+  });
+
+  test('a version 1 backup leaves the seeded four alone', () async {
+    // Written before subjects were carried. Wiping the seeded four on its
+    // behalf would leave every chapter it is about to insert pointing at
+    // nothing, so an empty subject list means "do not touch them".
+    await study.restore(
+      StudyBackup(
+        subjects: const <Subject>[],
+        chapters: backup().chapters,
+        lessons: backup().lessons,
+        exams: const <ExamEntry>[],
+        homework: const <HomeworkEntry>[],
+        tasks: const <DailyTask>[],
+      ),
+    );
+
+    final snapshot = await study.readSnapshot();
+    expect(snapshot.subjects, hasLength(4));
+    expect(snapshot.chapters, hasLength(1));
   });
 
   test('a restore that fails part-way leaves the database untouched', () async {
@@ -155,6 +194,9 @@ void main() {
     // A lesson pointing at a chapter that is not in the backup: the foreign key
     // rejects it, part-way through the insert batch and after the delete.
     final broken = StudyBackup(
+    subjects: const <Subject>[
+      Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+    ],
       chapters: backup().chapters,
       lessons: <Lesson>[
         Lesson(
@@ -193,6 +235,12 @@ void main() {
 
     await study.restore(
       const StudyBackup(
+        subjects: <Subject>[
+          Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+          Subject.seeded(id: 2, code: SubjectCode.physics, sortOrder: 1),
+          Subject.seeded(id: 3, code: SubjectCode.chemistry, sortOrder: 2),
+          Subject.seeded(id: 4, code: SubjectCode.english, sortOrder: 3),
+        ],
         chapters: <Chapter>[],
         lessons: <Lesson>[],
         exams: <ExamEntry>[],
@@ -204,6 +252,8 @@ void main() {
     final snapshot = await study.readSnapshot();
     expect(snapshot.chapters, isEmpty);
     expect(snapshot.lessons, isEmpty);
+    // The subject the student added is gone with the rest: an empty record is
+    // an empty record, and the four seeded ones came back with the backup.
     expect(snapshot.subjects, hasLength(4));
   });
 }

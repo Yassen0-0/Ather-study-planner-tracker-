@@ -18,10 +18,15 @@ import '../../core/widgets/day_header.dart';
 import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/mastery_bar.dart';
+import '../../core/widgets/pressable.dart';
 import '../../domain/services/summaries.dart';
+import '../common/prompts.dart';
 import '../common/settings_button.dart';
+import '../common/subject_mark.dart';
 import '../common/subject_presentation.dart';
+import '../common/write_guard.dart';
 import '../providers/navigation_providers.dart';
+import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
 
 /// The home screen.
@@ -39,6 +44,7 @@ class DashboardScreen extends ConsumerWidget {
     final dashboard = ref.watch(dashboardProvider);
     final stats = ref.watch(homeStatsProvider);
     final next = ref.watch(nextTargetProvider);
+    final profileName = ref.watch(profileNameProvider);
 
     return AtherScreen(
       // No week strip. The dashboard's copy was inert -- nothing to select and
@@ -48,7 +54,13 @@ class DashboardScreen extends ConsumerWidget {
       // student and the screen. The tasks screen keeps its strip, because there
       // it picks the day the list belongs to.
       header: DayHeader(
-        title: l.dashboardTitle,
+        // The student's own name once they have given one, and the date's own
+        // word until then. Not both: two headings stacked would push the first
+        // number -- which is the reason this screen exists -- further down for
+        // a greeting nobody opens the app to read.
+        title: profileName.isEmpty
+            ? l.dashboardTitle
+            : l.profileGreeting(profileName),
         actions: const <Widget>[SettingsButton()],
       ),
       children: <Widget>[
@@ -70,7 +82,7 @@ class DashboardScreen extends ConsumerWidget {
           _StatsCard(stats: stats),
         ],
         const SizedBox(height: AppSpacing.xxxl),
-        SectionTitle(l.sectionSubjects),
+        SectionTitle(l.sectionSubjects, trailing: const _AddSubjectButton()),
         const SizedBox(height: AppSpacing.md),
         for (final (i, subject) in dashboard.subjects.indexed) ...<Widget>[
           ListEntrance(
@@ -308,6 +320,63 @@ class _Stat extends StatelessWidget {
   }
 }
 
+/// "+", beside the subjects heading.
+///
+/// Adding a subject lived only in Settings, which is the wrong place for it:
+/// the student is looking at their subjects when they notice one is missing,
+/// and Settings is three taps and a different mental mode away. `SectionTitle`
+/// already takes a `trailing` widget and places it after an `Expanded`, so in
+/// Arabic this lands on the left -- the far end of the heading, which is where
+/// an "add" control belongs in either direction.
+///
+/// Deliberately small and quiet. It sits above a list of subjects a student
+/// reads every day and adds to perhaps five times ever, so it must not compete
+/// with the rows under it.
+class _AddSubjectButton extends ConsumerWidget {
+  const _AddSubjectButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = L.of(context);
+
+    return Pressable(
+      onTap: () => _add(context, ref),
+      semanticLabel: l.subjectAdd,
+      // Drawn small, hit at the full target: the artwork is 20px inside a 48px
+      // finger, the same arrangement CircleHeaderButton uses.
+      minTarget: kMinTarget,
+      child: Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: context.colors.muted,
+          shape: BoxShape.circle,
+        ),
+        child: AtherIcon(
+          AtherGlyph.plus,
+          size: 16,
+          color: context.colors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _add(BuildContext context, WidgetRef ref) async {
+    final l = L.of(context);
+    final name = await showNamePrompt(
+      context,
+      title: l.subjectAdd,
+      hint: l.subjectNameHint,
+    );
+    if (name == null || !context.mounted) return;
+    await runWrite(
+      context,
+      () => ref.read(studyRepositoryProvider).createSubject(name: name),
+    );
+  }
+}
+
 class _SubjectRow extends StatelessWidget {
   const _SubjectRow({required this.summary});
 
@@ -342,7 +411,7 @@ class _SubjectRow extends StatelessWidget {
       onTap: () => context.push(Routes.subject(summary.subject.id)),
       child: Row(
         children: <Widget>[
-          AtherIcon(summary.subject.code.glyph, size: 26),
+          SubjectMark(subject: summary.subject),
           const SizedBox(width: AppSpacing.xl),
           Expanded(
             child: Column(
@@ -352,7 +421,7 @@ class _SubjectRow extends StatelessWidget {
                   children: <Widget>[
                     Flexible(
                       child: Text(
-                        summary.subject.code.label(l),
+                        summary.subject.label(l),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.rowTitle,

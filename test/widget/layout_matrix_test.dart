@@ -63,13 +63,35 @@ void main() {
         expect(tester.takeException(), isNull, reason: '$tab at $name');
       }
 
-      // Settings carries the two segmented controls and the longest sublabels,
-      // and it is reached from the home tab's header.
+      // Settings carries the longest labels in the app, and it is reached from
+      // the home tab's header.
       await tester.tap(find.text(l.navHome));
       await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel(l.settingsTitle).first);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull, reason: 'settings at $name');
+
+      // And the screens it opens onto. A settings row is one line by
+      // construction, so the page that used to hold everything cannot overflow
+      // -- but the detail screens it pushed the content down to now can, and
+      // they are exactly where nobody would think to look.
+      for (final screen in <String>[
+        l.subjectsTitle,
+        l.settingsPrivacy,
+        l.settingsAbout,
+      ]) {
+        await tester.scrollUntilVisible(
+          find.text(screen),
+          200,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.tap(find.text(screen).hitTestable().first);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: '$screen at $name');
+
+        await tester.tap(find.bySemanticsLabel(l.commonBack).first);
+        await tester.pumpAndSettle();
+      }
     });
   }
 
