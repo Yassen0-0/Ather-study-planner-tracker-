@@ -1,11 +1,11 @@
 # Ather (أثر)
 
-> «إنت مش بتخلص الدروس… إنت بتتقنها»
+> «أنت لا تُنهي الدروس، بل تُتقنها»
 
-An offline-first Flutter app that measures **mastery** for Egyptian Thanaweya Amma students
-(علمي علوم). The student builds their own curriculum inside four fixed subjects, then proves
-understanding by entering real exam results question by question. Mastery is derived from
-exam performance and nothing else, and it decays after 30 days — there is no
+An offline-first Flutter app that measures **mastery** for Egyptian Thanaweya Amma students.
+The student builds their own curriculum — their own subjects, chapters and lessons — then
+proves understanding by entering real exam results question by question. Mastery is derived
+from exam performance and nothing else, and it decays after 30 days — there is no
 "mark as reviewed" button anywhere in the app.
 
 Read **[PROJECT.md](PROJECT.md)** before changing anything: it carries the product rules, the

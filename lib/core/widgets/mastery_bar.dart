@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 import '../l10n/formatting.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
 import 'animated_percentage.dart';
 import 'reduced_motion.dart';
 
@@ -61,11 +60,17 @@ class MasteryBar extends StatelessWidget {
   }
 }
 
-/// The dominant number on a summary card: `87` `/ 100`.
+/// The dominant number on a summary card: `87%`.
 ///
-/// The "/ 100" is part of the composition, not decoration -- it is what makes a
-/// bare number read as a score out of a hundred without the word "percent"
-/// appearing anywhere.
+/// It used to append a grey `/ 100`, and the comment here defended it as the
+/// thing that made a *bare* number read as a score out of a hundred "without
+/// the word percent appearing anywhere". That was true when it was written.
+/// `percentLabel` later grew a `%`, and nothing came back to this composition,
+/// so the card rendered `38% / 100` -- a percentage divided by a hundred, two
+/// notations for one number, on the largest type on the screen.
+///
+/// The `%` won because the rest of the app already speaks it: every subject
+/// row, every exam result, every chart label. One notation.
 class MasteryNumber extends StatelessWidget {
   const MasteryNumber({
     super.key,
@@ -96,13 +101,6 @@ class MasteryNumber extends StatelessWidget {
             hasData: hasData,
             color: color,
             style: style,
-          ),
-          const SizedBox(width: AppSpacing.textGap),
-          Text(
-            '/ 100',
-            style: AppTypography.cardLabel.copyWith(
-              color: context.colors.textSecondary,
-            ),
           ),
         ],
       ),

@@ -111,7 +111,16 @@ class AtherSwitch extends StatelessWidget {
             width: 50,
             height: 30,
             decoration: BoxDecoration(
-              color: value ? context.colors.right : context.colors.switchOff,
+              // The **brand accent**, not `right`. `right` is the mastery
+              // green -- it means "you scored 90 or above", and it is the only
+              // green in the palette. Spending it on "this preference is on"
+              // says nothing about mastery and drains the one colour that does.
+              //
+              // It also read as the stock platform switch, which is the single
+              // most template-looking control an app can have: every other
+              // control here is drawn, and this one arrived green by default
+              // and stayed.
+              color: value ? context.colors.accent : context.colors.switchOff,
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
             child: AnimatedAlign(
