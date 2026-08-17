@@ -51,6 +51,9 @@ dependencies:
   # enforced.
   firebase_app_check: ^0.4.2
 
+  # Crash reporting and analytics
+  firebase_crashlytics: ^5.2.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
