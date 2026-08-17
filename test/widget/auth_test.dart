@@ -39,9 +39,14 @@ StudySnapshot emptySnapshot() => StudySnapshot(
   homework: const <dynamic>[].cast(),
 );
 
-Future<Widget> boot(FakeAuthRepository auth, {bool lockOn = false}) async {
+Future<Widget> boot(
+  FakeAuthRepository auth, {
+  bool lockOn = false,
+  String profileName = '',
+}) async {
   SharedPreferences.setMockInitialValues(<String, Object>{
     'app_lock_enabled': lockOn,
+    if (profileName.isNotEmpty) 'profile_name': profileName,
   });
   final preferences = await SharedPreferences.getInstance();
 
@@ -221,6 +226,53 @@ void main() {
     await tester.tap(submit);
     await tester.pumpAndSettle();
     expect(auth.currentAccount, isNotNull);
+  });
+
+  testWidgets('the profile names the student and never leaves the device', (
+    tester,
+  ) async {
+    final auth = FakeAuthRepository.signedIn();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth, profileName: 'ياسين'));
+    await tester.pumpAndSettle();
+
+    // The dashboard greets by name instead of naming the day. Not both: two
+    // headings would push the first number further down for a greeting nobody
+    // opens the app to read.
+    expect(find.text('أهلاً، ياسين'), findsOneWidget);
+    expect(find.text('اليوم'), findsNothing);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(DashboardScreen),
+        matching: find.byType(SettingsButton),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The header carries the name over the email, and opens the profile.
+    expect(find.text('ياسين'), findsOneWidget);
+    await tester.tap(find.text('ياسين'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ملفك'), findsOneWidget);
+    // The claim that decided where this is stored, stated on the screen that
+    // stores it. If this line ever stops being true, this test fails first.
+    expect(
+      find.textContaining('محفوظة على هذا الجهاز وحده'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a student with no name still gets a heading', (tester) async {
+    final auth = FakeAuthRepository.signedIn();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth));
+    await tester.pumpAndSettle();
+
+    expect(find.text('اليوم'), findsOneWidget);
   });
 
   testWidgets('signing out returns to the gate', (tester) async {

@@ -7,11 +7,13 @@ import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/ather_icons.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/ather_sheet.dart';
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/error_banner.dart';
+import '../../core/widgets/pressable.dart';
 import '../../core/widgets/settings_list.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -240,49 +242,74 @@ Future<T?> _pickOne<T>(
   );
 }
 
-/// Who is signed in, at the top of the page.
+/// Who is signed in, at the top of the page, and the way into the profile.
 ///
-/// The block a profile will sit in: a name, a picture and a school year all
-/// belong here and the layout is already shaped for them. Until there is a
-/// profile it carries the one thing the account actually knows — the email —
-/// and it is deliberately **not tappable**, because a chevron pointing at a
-/// screen that does not exist is worse than no chevron.
-class _AccountHeader extends StatelessWidget {
+/// The name is the heading once there is one; until then the email is, because
+/// a block about the person looking at it must never be blank. Both lines are
+/// shown when both exist — the name is what a student recognises, the email is
+/// what identifies the account, and on this screen they want the second as
+/// often as the first.
+class _AccountHeader extends ConsumerWidget {
   const _AccountHeader({required this.account});
 
   final Account account;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
+    final name = ref.watch(profileNameProvider);
     final email = account.email;
-    final initial = email.isEmpty ? '?' : email.substring(0, 1).toUpperCase();
+    final source = name.isNotEmpty ? name : email;
+    final initial = source.isEmpty ? '؟' : source.substring(0, 1).toUpperCase();
 
-    return Row(
-      children: <Widget>[
-        Container(
-          width: 52,
-          height: 52,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: colors.accentSoft,
-            shape: BoxShape.circle,
+    return Pressable(
+      onTap: () => context.push(Routes.profile),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colors.accentSoft,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              initial,
+              style: AppTypography.rowNumber.copyWith(color: colors.accent),
+            ),
           ),
-          child: Text(
-            initial,
-            style: AppTypography.rowNumber.copyWith(color: colors.accent),
+          const SizedBox(width: AppSpacing.xl),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  source,
+                  style: AppTypography.cardLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (name.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    email,
+                    style: context.text.sublabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
           ),
-        ),
-        const SizedBox(width: AppSpacing.xl),
-        Expanded(
-          child: Text(
-            email,
-            style: AppTypography.cardLabel,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          const SizedBox(width: AppSpacing.xs),
+          AtherIcon(
+            AtherGlyph.chevron,
+            size: 18,
+            color: colors.textTertiary,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

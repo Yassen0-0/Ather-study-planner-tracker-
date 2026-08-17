@@ -678,6 +678,42 @@ class LEn extends L {
   String get settingsTitle => 'Settings';
 
   @override
+  String get profileTitle => 'Your profile';
+
+  @override
+  String get profileName => 'Name';
+
+  @override
+  String get profileNameHint => 'Type your name';
+
+  @override
+  String get profileNameUnset => 'Not set';
+
+  @override
+  String get profileYear => 'School year';
+
+  @override
+  String get profileYearUnset => 'Not set';
+
+  @override
+  String get profileYearFirst => 'Year 1';
+
+  @override
+  String get profileYearSecond => 'Year 2';
+
+  @override
+  String get profileYearThird => 'Year 3';
+
+  @override
+  String get profileLocalNote =>
+      'This is kept on this device only and is never uploaded to any server.';
+
+  @override
+  String profileGreeting(String name) {
+    return 'Hello, $name';
+  }
+
+  @override
   String get subjectsTitle => 'Subjects';
 
   @override

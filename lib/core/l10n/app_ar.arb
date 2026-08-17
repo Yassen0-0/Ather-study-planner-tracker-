@@ -338,6 +338,20 @@
   "lockSetting": "قفل بالبصمة",
 
   "settingsTitle": "الإعدادات",
+  "profileTitle": "ملفك",
+  "profileName": "الاسم",
+  "profileNameHint": "اكتب اسمك",
+  "profileNameUnset": "لم تكتبه بعد",
+  "profileYear": "السنة الدراسية",
+  "profileYearUnset": "لم تحددها",
+  "profileYearFirst": "الأول الثانوي",
+  "profileYearSecond": "الثاني الثانوي",
+  "profileYearThird": "الثالث الثانوي",
+  "profileLocalNote": "هذه البيانات محفوظة على هذا الجهاز وحده، ولا تُرفع إلى أي خادم.",
+  "profileGreeting": "أهلاً، {name}",
+  "@profileGreeting": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "subjectsTitle": "المواد",
   "subjectCountLabel": "{count, plural, =1{مادة واحدة} =2{مادتان} few{{count} مواد} many{{count} مادة} other{{count} مادة}}",
   "@subjectCountLabel": {

@@ -1267,6 +1267,72 @@ abstract class L {
   /// **'الإعدادات'**
   String get settingsTitle;
 
+  /// No description provided for @profileTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملفك'**
+  String get profileTitle;
+
+  /// No description provided for @profileName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get profileName;
+
+  /// No description provided for @profileNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمك'**
+  String get profileNameHint;
+
+  /// No description provided for @profileNameUnset.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تكتبه بعد'**
+  String get profileNameUnset;
+
+  /// No description provided for @profileYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'السنة الدراسية'**
+  String get profileYear;
+
+  /// No description provided for @profileYearUnset.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تحددها'**
+  String get profileYearUnset;
+
+  /// No description provided for @profileYearFirst.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأول الثانوي'**
+  String get profileYearFirst;
+
+  /// No description provided for @profileYearSecond.
+  ///
+  /// In ar, this message translates to:
+  /// **'الثاني الثانوي'**
+  String get profileYearSecond;
+
+  /// No description provided for @profileYearThird.
+  ///
+  /// In ar, this message translates to:
+  /// **'الثالث الثانوي'**
+  String get profileYearThird;
+
+  /// No description provided for @profileLocalNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه البيانات محفوظة على هذا الجهاز وحده، ولا تُرفع إلى أي خادم.'**
+  String get profileLocalNote;
+
+  /// No description provided for @profileGreeting.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً، {name}'**
+  String profileGreeting(String name);
+
   /// No description provided for @subjectsTitle.
   ///
   /// In ar, this message translates to:

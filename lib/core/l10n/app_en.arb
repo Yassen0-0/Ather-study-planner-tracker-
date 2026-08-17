@@ -227,6 +227,20 @@
   "lockSetting": "Fingerprint lock",
 
   "settingsTitle": "Settings",
+  "profileTitle": "Your profile",
+  "profileName": "Name",
+  "profileNameHint": "Type your name",
+  "profileNameUnset": "Not set",
+  "profileYear": "School year",
+  "profileYearUnset": "Not set",
+  "profileYearFirst": "Year 1",
+  "profileYearSecond": "Year 2",
+  "profileYearThird": "Year 3",
+  "profileLocalNote": "This is kept on this device only and is never uploaded to any server.",
+  "profileGreeting": "Hello, {name}",
+  "@profileGreeting": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "subjectsTitle": "Subjects",
   "subjectCountLabel": "{count, plural, =1{1 subject} other{{count} subjects}}",
   "@subjectCountLabel": {

@@ -23,6 +23,7 @@ import '../common/settings_button.dart';
 import '../common/subject_mark.dart';
 import '../common/subject_presentation.dart';
 import '../providers/navigation_providers.dart';
+import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
 
 /// The home screen.
@@ -40,6 +41,7 @@ class DashboardScreen extends ConsumerWidget {
     final dashboard = ref.watch(dashboardProvider);
     final stats = ref.watch(homeStatsProvider);
     final next = ref.watch(nextTargetProvider);
+    final profileName = ref.watch(profileNameProvider);
 
     return AtherScreen(
       // No week strip. The dashboard's copy was inert -- nothing to select and
@@ -49,7 +51,13 @@ class DashboardScreen extends ConsumerWidget {
       // student and the screen. The tasks screen keeps its strip, because there
       // it picks the day the list belongs to.
       header: DayHeader(
-        title: l.dashboardTitle,
+        // The student's own name once they have given one, and the date's own
+        // word until then. Not both: two headings stacked would push the first
+        // number -- which is the reason this screen exists -- further down for
+        // a greeting nobody opens the app to read.
+        title: profileName.isEmpty
+            ? l.dashboardTitle
+            : l.profileGreeting(profileName),
         actions: const <Widget>[SettingsButton()],
       ),
       children: <Widget>[

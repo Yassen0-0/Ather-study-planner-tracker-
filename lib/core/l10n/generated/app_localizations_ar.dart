@@ -678,6 +678,42 @@ class LAr extends L {
   String get settingsTitle => 'الإعدادات';
 
   @override
+  String get profileTitle => 'ملفك';
+
+  @override
+  String get profileName => 'الاسم';
+
+  @override
+  String get profileNameHint => 'اكتب اسمك';
+
+  @override
+  String get profileNameUnset => 'لم تكتبه بعد';
+
+  @override
+  String get profileYear => 'السنة الدراسية';
+
+  @override
+  String get profileYearUnset => 'لم تحددها';
+
+  @override
+  String get profileYearFirst => 'الأول الثانوي';
+
+  @override
+  String get profileYearSecond => 'الثاني الثانوي';
+
+  @override
+  String get profileYearThird => 'الثالث الثانوي';
+
+  @override
+  String get profileLocalNote =>
+      'هذه البيانات محفوظة على هذا الجهاز وحده، ولا تُرفع إلى أي خادم.';
+
+  @override
+  String profileGreeting(String name) {
+    return 'أهلاً، $name';
+  }
+
+  @override
   String get subjectsTitle => 'المواد';
 
   @override
