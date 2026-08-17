@@ -30,12 +30,33 @@ files, and keeps the policy on infrastructure we already depend on.
 |---|---|
 | Publisher | `Yassen Yousry` — must stay identical to the developer name on the Play listing; a policy naming a different entity than the store page is a rejection reason |
 | Contact | `yassen.y.mohamed.s@gmail.com` |
-| Download | `https://github.com/Yassen0-0/Ather/releases/latest` |
+| Download | `./ather-latest.apk`, served from this same site |
 
-The download button points at `releases/latest` rather than a pinned `.apk`
-asset, so it keeps working on every future release without anyone editing this
-page. It only works once a **GitHub Release actually exists** — a repository
-with no releases answers that URL with a 404.
+## The APK is served from here, and is not in git
+
+The download button points at `ather-latest.apk` on this host rather than at a
+GitHub release, for a plain reason: **this repository is private.** A release on
+a private repository is invisible to anyone without access, so the button on a
+public page would answer 404 for every student it was built for. Serving the
+file beside the pages that describe it needs no repository to become public and
+no second place to administer.
+
+The filename is fixed rather than versioned so the page never has to be edited
+to ship a build. The version a student is getting is printed under the button,
+which is the only place it needs to be accurate.
+
+`public/*.apk` is **git-ignored** — a 24MB binary committed once per release
+grows the repository by a quarter of a gigabyte a year, and git keeps every copy
+forever. So the file has to be put in place before each deploy:
+
+```bash
+flutter build apk --release
+cp build/app/outputs/flutter-apk/app-release.apk public/ather-latest.apk
+```
+
+Do that, update the version under the button in `index.html`, and then deploy.
+Deploying without the copy step leaves the previous build in place, which is a
+quiet failure: the page still works and hands out a stale app.
 
 ## Deploying
 

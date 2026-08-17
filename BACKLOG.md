@@ -16,8 +16,17 @@ public internet, so it is deliberately not automated:
 firebase deploy --only hosting --project ather-49705
 ```
 
-The download button points at `https://github.com/Yassen0-0/Ather/releases/latest`,
-which works as soon as a release exists.
+**Put the APK in place first.** The download button serves `ather-latest.apk`
+from this same host, because the GitHub repository is private and a release on
+a private repository is invisible to the students the button exists for:
+
+```bash
+flutter build apk --release
+cp build/app/outputs/flutter-apk/app-release.apk public/ather-latest.apk
+```
+
+`public/*.apk` is git-ignored, so deploying without that copy step silently
+ships whatever was there before. `public/README.md` has the whole procedure.
 
 ---
 
