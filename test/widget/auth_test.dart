@@ -311,6 +311,7 @@ void main() {
     // The confirm button names the act ("تسجيل الخروج"), not a generic "حذف"
     // — sign-out deletes nothing, and a red button called Delete would say it
     // does.
+    expect(find.text('حذف').hitTestable(), findsNothing);
     await tester.tap(find.text('تسجيل الخروج').hitTestable().last);
     await tester.pumpAndSettle();
 

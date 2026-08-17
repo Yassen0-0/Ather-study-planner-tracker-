@@ -266,6 +266,32 @@ firebase deploy --only firestore:rules
 Do this **before** the app reaches students who do not know each other. It is the one thing in
 this project where the failure is invisible from the inside: the app works perfectly either way.
 
+### Deploying is half of it. Verify afterwards.
+
+"Nobody can tell by reading this repository" stopped being true on 2026-08-16, when the security
+audit measured it: **the deployed rules and the committed file did not match.** The file refused a
+student deleting their own backup; the live project allowed it. That gap is not cosmetic —
+`deleteCloudData()` is the third step of in-app account deletion, and it runs *after* the local
+database has been wiped. A deploy of the file as it then stood would have turned "erase my
+account" into "erase my phone, then fail".
+
+So the deploy has a second half:
+
+```bash
+tool/check_deployed_rules.sh <emailA> <passwordA> <emailB> <passwordB>
+```
+
+Two throwaway accounts on this project, never a real student's. It asks the live project the seven
+questions the rules exist to answer — one student cannot read, overwrite or reach around another's
+document; the owner can read, write **and delete** their own — and it writes to and deletes only
+account A's own backup document.
+
+The delete check is the one worth understanding rather than just running. On a delete there is no
+`request.resource` at all, so a rule condition that touches it evaluates to an error and denies.
+`allow write` covers delete, so a single size check on `request.resource` silently made the backup
+document undeletable. `tool/check_invariants.sh` now refuses to let that shape back into the file;
+this script is what confirms the same is true of what is actually running.
+
 ## 5. Before the first public release
 
 Open items recorded in PROJECT.md §9, all of which block Play rather than
