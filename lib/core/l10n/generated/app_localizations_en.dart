@@ -628,14 +628,14 @@ class LEn extends L {
 
   @override
   String get privacyLocalBody =>
-      'Your chapters, lessons, exams and tasks are stored on your phone only, in a local database. Mastery is computed on your device — no other server ever sees it.';
+      'Your subjects, chapters, lessons, exams and tasks are stored on your phone, in a local database. Mastery is computed on your device. Your name and school year from the profile are kept on this device only and are never uploaded.';
 
   @override
   String get privacyAccountTitle => 'Account data';
 
   @override
   String get privacyAccountBody =>
-      'For the cloud backup we ask for an email and password (or a Google account). They are stored by Google Firebase Auth. Your email is everything we know about you — no name, no age, no other personal data.';
+      'For the cloud backup we ask for an email and password (or a Google account). They are stored by Google Firebase Auth. Your email is everything we know about you on the server — no name, no age, no other personal data.';
 
   @override
   String get privacyCloudTitle => 'The cloud backup';

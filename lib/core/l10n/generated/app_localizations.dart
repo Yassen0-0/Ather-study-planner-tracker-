@@ -1180,7 +1180,7 @@ abstract class L {
   /// No description provided for @privacyLocalBody.
   ///
   /// In ar, this message translates to:
-  /// **'أبوابك ودروسك وامتحاناتك ومهامك محفوظة على هاتفك وحده، في قاعدة بيانات محلية. الإتقان يُحسب على جهازك — لا يراه أي خادم آخر.'**
+  /// **'موادك وأبوابك ودروسك وامتحاناتك ومهامك محفوظة على هاتفك، في قاعدة بيانات محلية. الإتقان يُحسب على جهازك. واسمك وسنتك الدراسية في «ملفك» محفوظان على هذا الجهاز وحده ولا يُرفعان إلى أي خادم.'**
   String get privacyLocalBody;
 
   /// No description provided for @privacyAccountTitle.
@@ -1192,7 +1192,7 @@ abstract class L {
   /// No description provided for @privacyAccountBody.
   ///
   /// In ar, this message translates to:
-  /// **'للنسخة السحابية نطلب بريداً إلكترونياً وكلمة سر (أو حساب Google)، وتُحفظ لدى Firebase Auth من Google. بريدك هو كل ما نعرفه عنك — لا اسم ولا عمر ولا أي بيانات أخرى.'**
+  /// **'للنسخة السحابية نطلب بريداً إلكترونياً وكلمة سر (أو حساب Google)، وتُحفظ لدى Firebase Auth من Google. بريدك هو كل ما نعرفه عنك على الخادم — لا اسم ولا عمر ولا أي بيانات أخرى.'**
   String get privacyAccountBody;
 
   /// No description provided for @privacyCloudTitle.
