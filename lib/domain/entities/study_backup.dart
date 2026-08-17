@@ -4,6 +4,7 @@ import 'exam_entry.dart';
 import 'homework_entry.dart';
 import 'lesson.dart';
 import 'study_snapshot.dart';
+import 'subject.dart';
 
 /// Everything a student has recorded, in a form that can leave the device.
 ///
@@ -12,13 +13,17 @@ import 'study_snapshot.dart';
 /// network or a database, which matters because a serialisation bug here loses
 /// a student's whole record silently.
 ///
-/// **The four subjects are deliberately not included.** They are seeded
-/// identically on every install with fixed ids 1-4 (`kSeededSubjects`), so
-/// carrying them would be carrying four rows that the receiving device has
-/// already created for itself -- and would introduce a way for a restore to
-/// disagree with the seed.
+/// **Subjects are carried now, and were not before.** While the only subjects
+/// were the four seeded identically on every install at fixed ids 1-4, sending
+/// them would have been sending four rows the receiving device had already
+/// created for itself. Once a student can add their own, the opposite is true:
+/// every chapter names a `subjectId`, so a restore onto a new phone that did
+/// not carry the subjects would land chapters pointing at rows that do not
+/// exist -- a foreign key failure at best, and a silently emptied subject at
+/// worst.
 final class StudyBackup {
   const StudyBackup({
+    required this.subjects,
     required this.chapters,
     required this.lessons,
     required this.exams,
@@ -31,7 +36,16 @@ final class StudyBackup {
   /// A backup written by a *newer* version is refused outright rather than
   /// half-read: reading four of six fields and silently dropping the rest is
   /// how a restore quietly deletes two years of exams.
-  static const int formatVersion = 1;
+  ///
+  /// 2 added `subjects`. The bump is what stops an older build from accepting
+  /// this file: it would ignore the key it does not know, then try to insert
+  /// chapters under subject ids that only exist on the phone that wrote them.
+  /// A refusal a student can read beats a restore that half-lands.
+  static const int formatVersion = 2;
+
+  /// Empty in a version 1 backup, which is not a loss: every subject that could
+  /// exist when those were written is seeded on the receiving device already.
+  final List<Subject> subjects;
 
   final List<Chapter> chapters;
   final List<Lesson> lessons;
@@ -52,6 +66,7 @@ final class StudyBackup {
     List<DailyTask> tasks,
   ) {
     return StudyBackup(
+      subjects: snapshot.subjects,
       chapters: snapshot.chapters,
       lessons: snapshot.lessons,
       exams: snapshot.exams,
@@ -62,6 +77,20 @@ final class StudyBackup {
 
   Map<String, Object?> toJson() => <String, Object?>{
     'formatVersion': formatVersion,
+    'subjects': <Object?>[
+      for (final s in subjects)
+        <String, Object?>{
+          'id': s.id,
+          // The enum's name, or the custom sentinel. Written as a string so a
+          // build that does not know a future code can still read the row and
+          // treat it as custom rather than failing.
+          'code': s.code?.name ?? kCustomSubjectCode,
+          'name': s.name,
+          'sortOrder': s.sortOrder,
+          'archivedAt': _epochOrNull(s.archivedAt),
+          'deletedAt': _epochOrNull(s.deletedAt),
+        },
+    ],
     'chapters': <Object?>[
       for (final c in chapters)
         <String, Object?>{
@@ -147,26 +176,57 @@ final class StudyBackup {
       );
     }
 
+    final subjects = <Subject>[
+      for (final raw in _list(json['subjects']))
+        Subject(
+          id: raw['id']! as int,
+          code: SubjectCode.tryFromName((raw['code'] ?? '') as String),
+          name: raw['name'] as String?,
+          sortOrder: (raw['sortOrder'] ?? 0) as int,
+          archivedAt: _dateOrNull(raw['archivedAt']),
+          // Absent in anything written before the recycle bin existed, which
+          // reads back as null -- an active subject, which is what it was.
+          deletedAt: _dateOrNull(raw['deletedAt']),
+        ),
+    ];
+
     final exams = <ExamEntry>[];
     for (final raw in _list(json['exams'])) {
       final id = raw['id']! as int;
+      final possible = raw['totalPossiblePoints']! as int;
       exams.add(
         ExamEntry(
           id: id,
           lessonId: raw['lessonId']! as int,
           isReviewExam: raw['isReviewExam']! as bool,
-          totalPossiblePoints: raw['totalPossiblePoints']! as int,
-          correctPoints: raw['correctPoints']! as int,
-          percentage: (raw['percentage']! as num).toDouble(),
+          totalPossiblePoints: possible < 0 ? 0 : possible,
+          correctPoints: _clampInt(raw['correctPoints']! as int, 0, possible),
+          percentage: _clampPercent((raw['percentage']! as num).toDouble()),
           createdAt: _date(raw['createdAt']),
           groups: <ExamQuestionGroup>[
             for (final g in _list(raw['groups']))
+              // Same repair, one level down: `percentageOf` divides earned by
+              // possible, so a group claiming more correct answers than it has
+              // questions is what produces a percentage above 100 in the first
+              // place.
               ExamQuestionGroup(
                 id: g['id']! as int,
                 examId: id,
-                pointsPerQuestion: g['pointsPerQuestion']! as int,
-                questionCount: g['questionCount']! as int,
-                correctCount: g['correctCount']! as int,
+                pointsPerQuestion: _clampInt(
+                  g['pointsPerQuestion']! as int,
+                  0,
+                  1 << 31,
+                ),
+                questionCount: _clampInt(
+                  g['questionCount']! as int,
+                  0,
+                  1 << 31,
+                ),
+                correctCount: _clampInt(
+                  g['correctCount']! as int,
+                  0,
+                  _clampInt(g['questionCount']! as int, 0, 1 << 31),
+                ),
               ),
           ],
         ),
@@ -174,6 +234,7 @@ final class StudyBackup {
     }
 
     return StudyBackup(
+      subjects: subjects,
       chapters: <Chapter>[
         for (final c in _list(json['chapters']))
           Chapter(
@@ -225,6 +286,41 @@ final class StudyBackup {
           ),
       ],
     );
+  }
+
+  /// Brings a restored score back inside the range the app's own arithmetic can
+  /// produce.
+  ///
+  /// Nothing in the wizard can write a score above 100 or below 0 -- step 3
+  /// refuses `correct > count` -- so a value outside that range did not come
+  /// from Ather. It can still arrive here: this method parses a blob fetched
+  /// from Firestore, and a document under a student's own uid can be written by
+  /// anything holding that student's token, including a modified build of this
+  /// app or a hand-crafted REST call.
+  ///
+  /// Verified on an emulator on 2026-08-15 by writing `correct_points = 9999`
+  /// against `total_possible_points = 10` with `percentage = 999` straight into
+  /// the SQLite file: the app did not crash, and the dashboard rendered the
+  /// subject at **333%** and overall mastery at 83%. There is no privilege
+  /// behind that number -- no leaderboard, no unlock, nothing a student gains
+  /// by inflating it -- which is why this is repair rather than rejection.
+  ///
+  /// **Clamped, never dropped.** Refusing the exam would delete a row from a
+  /// restore, and a restore that quietly loses exams is the one failure this
+  /// feature must not have (see the note on `formatVersion` above). A clamped
+  /// score is wrong by a few points; a missing one is wrong by a whole exam.
+  static double _clampPercent(double value) {
+    if (value.isNaN) return 0;
+    return value < 0
+        ? 0
+        : value > 100
+        ? 100
+        : value;
+  }
+
+  static int _clampInt(int value, int low, int high) {
+    if (high < low) return low;
+    return value < low ? low : (value > high ? high : value);
   }
 
   /// Epoch milliseconds, UTC. Not an ISO string: it is shorter, it cannot be

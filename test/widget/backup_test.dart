@@ -14,6 +14,7 @@ import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/study_backup.dart';
+import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/domain/repositories/backup_repository.dart';
 import 'package:ather/presentation/common/settings_button.dart';
 import 'package:ather/presentation/dashboard/dashboard_screen.dart';
@@ -88,7 +89,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// The backup left the Settings page for a screen of its own: the row there
+  /// shows only when it last saved, which is the part read at a glance.
+  Future<void> openBackup(WidgetTester tester) async {
+    await openSettings(tester);
+    await tester.tap(find.text('النسخة السحابية'));
+    await tester.pumpAndSettle();
+  }
+
   StudyBackup cloudCopy() => StudyBackup(
+    subjects: const <Subject>[
+      Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+    ],
     chapters: <Chapter>[
       Chapter(id: 1, subjectId: 1, name: 'باب من السحابة', createdAt: now),
     ],
@@ -122,7 +134,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The dashboard is there, not an error screen and not a spinner.
-    expect(find.text('النهارده'), findsOneWidget);
+    expect(find.text('اليوم'), findsOneWidget);
 
     // And the student can still build their curriculum, which is the part that
     // has to keep working when the network does not.
@@ -157,16 +169,14 @@ void main() {
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();
-    await openSettings(tester);
+    await openBackup(tester);
 
-    expect(find.text('النسخة السحابية'), findsOneWidget);
-
-    await tester.tap(find.text('احفظ دلوقتي'));
+    await tester.tap(find.text('احفظ الآن'));
     await tester.pumpAndSettle();
 
     // Rules never published looks exactly like "sync quietly does nothing"
     // unless it is named, which is why BackupFailure distinguishes it.
-    expect(find.text('الصلاحيات مظبوطتش على السيرفر'), findsOneWidget);
+    expect(find.text('صلاحيات الخادم غير مضبوطة'), findsOneWidget);
 
     await closeApp(tester);
   });
@@ -334,15 +344,17 @@ void main() {
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();
-    await openSettings(tester);
+    await openBackup(tester);
 
-    await tester.tap(find.text('استرجع النسخة السحابية'));
+    await tester.tap(find.text('استرجاع النسخة السحابية'));
     await tester.pumpAndSettle();
 
     // The destructive confirmation the rest of the app uses, saying what goes.
-    expect(find.textContaining('هيتمسح ويتحط مكانه'), findsOneWidget);
+    expect(find.textContaining('ويحل محله'), findsOneWidget);
 
-    await tester.tap(find.text('حذف').hitTestable());
+    // Red, but labelled with the act: a restore, not a delete.
+    expect(find.text('حذف').hitTestable(), findsNothing);
+    await tester.tap(find.text('استرجاع النسخة السحابية').hitTestable().last);
     await tester.pumpAndSettle();
 
     final snapshot = await DriftStudyRepository(db).readSnapshot();
@@ -360,9 +372,9 @@ void main() {
 
     await tester.pumpWidget(await boot(backup));
     await tester.pumpAndSettle();
-    await openSettings(tester);
+    await openBackup(tester);
 
-    await tester.tap(find.text('استرجع النسخة السحابية'));
+    await tester.tap(find.text('استرجاع النسخة السحابية'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('إلغاء').hitTestable());
     await tester.pumpAndSettle();

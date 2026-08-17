@@ -185,6 +185,8 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
 const String _kLocaleKey = 'locale_code';
 const String _kNotificationsKey = 'notifications_enabled';
 const String _kThemeModeKey = 'theme_mode';
+const String _kProfileNameKey = 'profile_name';
+const String _kProfileYearKey = 'profile_year';
 
 /// The uid whose data is currently on this device.
 ///
@@ -217,6 +219,62 @@ class LocaleNotifier extends Notifier<Locale> {
 
 final localeProvider = NotifierProvider<LocaleNotifier, Locale>(
   LocaleNotifier.new,
+);
+
+/// The student's own name, and the year they are sitting.
+///
+/// **Stored on the device and nowhere else.** It would have been easy to put
+/// this in the account, where it would follow a student to a new phone -- and
+/// that is exactly why it is worth writing down why it is not there.
+///
+/// The account currently knows one thing about a student: their email. That is
+/// a genuinely strong position, and the privacy policy says so in plain words.
+/// A name and a school year are personal data about someone who is very often
+/// a minor; syncing them would put that data on a server, change what the
+/// policy has to say, change the Play Data safety answers, and add a row to
+/// everything the deletion path has to reach. The thing bought in exchange is
+/// not having to retype a name once, on a phone the student is already setting
+/// up.
+///
+/// If this is ever reversed, it rides in the existing `StudyBackup` blob rather
+/// than a second document, and the delete-account sequence already wipes that.
+class ProfileNameNotifier extends Notifier<String> {
+  @override
+  String build() =>
+      ref.watch(sharedPreferencesProvider).getString(_kProfileNameKey) ?? '';
+
+  Future<void> set(String name) async {
+    final trimmed = name.trim();
+    state = trimmed;
+    await ref
+        .read(sharedPreferencesProvider)
+        .setString(_kProfileNameKey, trimmed);
+  }
+}
+
+final profileNameProvider = NotifierProvider<ProfileNameNotifier, String>(
+  ProfileNameNotifier.new,
+);
+
+/// Which year of Thanaweya Amma. 0 means the student has not said.
+///
+/// A plain int rather than an enum because it is a number the student picks
+/// from three, and nothing in the app branches on it -- it is shown back to
+/// them and nothing more. The day it starts driving behaviour is the day it
+/// should become an enum.
+class ProfileYearNotifier extends Notifier<int> {
+  @override
+  int build() =>
+      ref.watch(sharedPreferencesProvider).getInt(_kProfileYearKey) ?? 0;
+
+  Future<void> set(int year) async {
+    state = year;
+    await ref.read(sharedPreferencesProvider).setInt(_kProfileYearKey, year);
+  }
+}
+
+final profileYearProvider = NotifierProvider<ProfileYearNotifier, int>(
+  ProfileYearNotifier.new,
 );
 
 /// Whether the student wants review reminders. Independent of the OS-level

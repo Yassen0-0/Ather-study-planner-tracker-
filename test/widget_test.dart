@@ -42,10 +42,10 @@ StudySnapshot snapshotWith({
 }) {
   return StudySnapshot(
     subjects: const <Subject>[
-      Subject(id: 1, code: SubjectCode.biology, sortOrder: 0),
-      Subject(id: 2, code: SubjectCode.physics, sortOrder: 1),
-      Subject(id: 3, code: SubjectCode.chemistry, sortOrder: 2),
-      Subject(id: 4, code: SubjectCode.english, sortOrder: 3),
+      Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+      Subject.seeded(id: 2, code: SubjectCode.physics, sortOrder: 1),
+      Subject.seeded(id: 3, code: SubjectCode.chemistry, sortOrder: 2),
+      Subject.seeded(id: 4, code: SubjectCode.english, sortOrder: 3),
     ],
     chapters: chapters,
     lessons: lessons,
@@ -185,7 +185,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('English'));
+    // The language row shows the current choice and offers the alternatives in
+    // a sheet; "English" appears on both, so aim at the sheet's copy.
+    await tester.tap(find.text('اللغة'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English').hitTestable().last);
     await tester.pumpAndSettle();
 
     // Settings is pushed over the shell; return to the dashboard to confirm the
@@ -210,7 +214,7 @@ void main() {
     // who just installed the app must not be shown four failing subjects.
     expect(find.text('—'), findsWidgets);
     expect(find.text('0%'), findsNothing);
-    expect(find.text('لسه مبدأتش'), findsWidgets);
+    expect(find.text('لم تبدأ بعد'), findsWidgets);
   });
 
   testWidgets('an overdue lesson is called out on the dashboard', (
@@ -220,7 +224,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('فات ميعاد مراجعة درس'),
+      find.text('تأخّرت مراجعة درس'),
       findsOneWidget,
       reason: 'decay must be visible without opening the Review tab',
     );
@@ -267,7 +271,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Nothing to lose, so nothing to ask about.
-      expect(find.text('تسيب الامتحان؟'), findsNothing);
+      expect(find.text('تترك الامتحان؟'), findsNothing);
       expect(find.text('عدد الأسئلة الكلي'), findsNothing);
     });
 
@@ -279,10 +283,10 @@ void main() {
       await tester.tap(find.byType(CircleHeaderButton).first);
       await tester.pumpAndSettle();
 
-      expect(find.text('تسيب الامتحان؟'), findsOneWidget);
+      expect(find.text('تترك الامتحان؟'), findsOneWidget);
 
       // Backing out of the question leaves the entry exactly where it was.
-      await tester.tap(find.text('كمّل'));
+      await tester.tap(find.text('أكمل'));
       await tester.pumpAndSettle();
       expect(find.text('عدد الأسئلة الكلي'), findsOneWidget);
       expect(find.text('8'), findsOneWidget);
@@ -311,7 +315,7 @@ void main() {
         findsOneWidget,
         reason: 'system back must mean the same thing as the Back button',
       );
-      expect(find.text('تسيب الامتحان؟'), findsNothing);
+      expect(find.text('تترك الامتحان؟'), findsNothing);
     });
   });
 
@@ -322,8 +326,8 @@ void main() {
     await tester.tap(find.text('مراجعة'));
     await tester.pumpAndSettle();
 
-    expect(find.text('مفيش حاجة محتاجة مراجعة'), findsOneWidget);
-    expect(find.text('كل دروسك في وقتها. استمر.'), findsOneWidget);
+    expect(find.text('لا شيء يحتاج مراجعة'), findsOneWidget);
+    expect(find.text('كل دروسك في موعدها.'), findsOneWidget);
   });
 
   testWidgets('renders without overflow on a small phone viewport', (
@@ -392,7 +396,7 @@ void main() {
     // name, and on the lock screen it is the only word on the page.
     expect(ar.appName, 'أثر');
     expect(en.appName, 'Ather');
-    expect(ar.dashboardTitle, 'النهارده');
+    expect(ar.dashboardTitle, 'اليوم');
     expect(ar.masterChapter, 'أتقنت الباب');
     expect(en.examErrorCorrectExceeds, isNotEmpty);
   });
@@ -401,11 +405,14 @@ void main() {
     final ar = await L.delegate.load(const Locale('ar'));
 
     expect(ar.lessonCount(1), 'درس واحد');
-    expect(ar.lessonCount(2), 'درسين');
+    expect(ar.lessonCount(2), 'درسان');
     expect(ar.lessonCount(5), '5 دروس');
-    expect(ar.lessonCount(11), '11 درس');
+    // 11-99 take the accusative singular in MSA -- أحد عشر درساً -- which the
+    // colloquial the app used to speak did not mark. The rule the name of this
+    // test refers to now applies at the top of the range as well as the bottom.
+    expect(ar.lessonCount(11), '11 درساً');
     expect(ar.chapterCount(1), 'باب واحد');
-    expect(ar.chapterCount(2), 'بابين');
+    expect(ar.chapterCount(2), 'بابان');
     expect(ar.chapterCount(3), '3 أبواب');
   });
 }

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>أثر — لا تكتفِ بإنهاء الدرس / Ather</title>
+<meta name="description" content="أثر تطبيق يقيس إتقانك من امتحاناتك الحقيقية، لا من عدد الدروس التي أنهيتها. يعمل دون إنترنت.">
+<style>
+  :root {
+    --ground: #F7F8FA; --surface: #FFFFFF; --ink: #171B22; --ink-soft: #4A515E;
+    --rule: #D8DCE4; --accent: #1F5FE0; --sunk: #EDEFF3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #12151B; --surface: #191D25; --ink: #E9ECF2; --ink-soft: #AAB2C0;
+      --rule: #2E3540; --accent: #7BA5F5; --sunk: #21262F;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: "Segoe UI", Tahoma, system-ui, -apple-system, sans-serif;
+    font-size: 16.5px; line-height: 1.75;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+  h1 { font-size: clamp(2rem, 7vw, 3rem); line-height: 1.15; margin: 0 0 .6rem; }
+  h2 {
+    font-size: 1.2rem; margin: 2.6rem 0 .6rem; padding-top: 1.1rem;
+    border-top: 1px solid var(--rule);
+  }
+  p, li { margin: .5rem 0; }
+  .lede { font-size: 1.15rem; color: var(--ink-soft); margin-bottom: 2rem; }
+  .langbar {
+    display: flex; gap: .5rem; margin-bottom: 2rem; padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .langbar a {
+    padding: .35rem .8rem; border: 1px solid var(--rule); border-radius: 3px;
+    text-decoration: none; color: var(--accent); font-size: .9rem;
+  }
+  .claim {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
+    padding: 1.1rem 1.2rem; margin: 1rem 0;
+  }
+  .claim strong { display: block; margin-bottom: .2rem; }
+  .cta {
+    display: inline-block; margin: 1.5rem 0 .4rem; padding: .8rem 1.6rem;
+    background: var(--accent); color: #fff; text-decoration: none;
+    border-radius: 8px; font-weight: 600;
+  }
+  .cta-note { color: var(--ink-soft); font-size: .9rem; margin-top: .2rem; }
+  section[lang="en"] { direction: ltr; text-align: left; margin-top: 4.5rem; }
+  a { color: var(--accent); }
+  footer {
+    margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--rule);
+    color: var(--ink-soft); font-size: .9rem; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="langbar">
+  <a href="#ar">العربية</a>
+  <a href="#en">English</a>
+</nav>
+
+<section id="ar" lang="ar" dir="rtl">
+
+<h1>أنت لا تُنهي الدروس، بل تُتقنها</h1>
+<p class="lede">
+  أثر يقيس إتقانك من امتحاناتك الحقيقية وحدها — لا من عدد الدروس التي شطبتها.
+</p>
+
+<h2>لماذا هو مختلف</h2>
+
+<div class="claim">
+  <strong>الإتقان يُحسب من الامتحانات، لا من غيرها.</strong>
+  لا يوجد في التطبيق زر «راجعت الدرس» يرفع رقمك. الطريقة الوحيدة لتحريك الرقم أن
+  تدخل امتحاناً وتسجّل نتيجته. الواجب يُسجَّل ولا يدخل في الحساب — هو مؤشر استعداد
+  فقط، لأن درجة واجب جيدة أسهل ما يُخلط بينه وبين الفهم.
+</div>
+
+<div class="claim">
+  <strong>وينخفض إذا تركته.</strong>
+  لكل درس عدّاد مراجعة مدته 30 يوماً. إذا مرّ الموعد، يقول لك التطبيق ذلك ولا يجمّل
+  الرقم. عدّاد المراجعة لا يُصفَّر إلا بامتحان جديد.
+</div>
+
+<div class="claim">
+  <strong>يعمل دون إنترنت.</strong>
+  كل شيء محفوظ على هاتفك في قاعدة بيانات محلية، والحساب يُطلب مرة واحدة عند أول
+  تسجيل دخول. بعدها يعمل التطبيق كاملاً وأنت في الأتوبيس.
+</div>
+
+<div class="claim">
+  <strong>ولا يبيعك لأحد.</strong>
+  لا إعلانات، ولا تتبّع، ولا تحليلات، ولا مشاركة مع طرف ثالث. سجل دراستك موجود في
+  موضعين فقط: هاتفك، ونسخة احتياطية على حسابك أنت وحدك تصل إليها.
+</div>
+
+<h2>ماذا تسجّل فيه</h2>
+<p>
+  موادك — الأربعة التي يبدأ بها التطبيق أو ما تضيفه أنت — ثم الأبواب، ثم الدروس،
+  ثم نتائج الامتحانات. ومعها مهام يومك، وتقارير تقول لك أي باب أضعف وأي درس تأخّرت
+  عن مراجعته.
+</p>
+
+<a class="cta" href="https://github.com/Yassen0-0/Ather/releases/latest">حمّل أثر</a>
+<p class="cta-note">أندرويد · مجاني · بالعربية والإنجليزية</p>
+
+<h2>للتواصل</h2>
+<p>
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> —
+  <a href="./privacy.html">سياسة الخصوصية</a> ·
+  <a href="./account-deletion.html">حذف حسابك</a>
+</p>
+
+</section>
+
+<section id="en" lang="en" dir="ltr">
+
+<h1>You don't finish lessons, you master them</h1>
+<p class="lede">
+  Ather measures mastery from your real exam results alone — not from how many
+  lessons you have ticked off.
+</p>
+
+<h2>Why it is different</h2>
+
+<div class="claim">
+  <strong>Mastery comes from exams and nothing else.</strong>
+  There is no "I reviewed this" button anywhere in the app that raises your number.
+  The only way to move it is to sit an exam and record the result. Homework is
+  logged but never counted — it is a readiness signal, because a good homework
+  score is the easiest thing to mistake for understanding.
+</div>
+
+<div class="claim">
+  <strong>And it decays if you leave it.</strong>
+  Every lesson carries a 30-day review clock. Once it passes, the app says so
+  rather than flattering the number. Nothing resets that clock but another exam.
+</div>
+
+<div class="claim">
+  <strong>It works with no connection.</strong>
+  Everything lives on your phone in a local database. An account is asked for once,
+  at first sign-in; after that the whole app works on the bus.
+</div>
+
+<div class="claim">
+  <strong>And it does not sell you.</strong>
+  No ads, no tracking, no analytics, no third-party sharing. Your study record
+  exists in exactly two places: your phone, and a backup under your own account
+  that only you can reach.
+</div>
+
+<h2>What you record in it</h2>
+<p>
+  Your subjects — the four it ships with, or any you add — then chapters, then
+  lessons, then exam results. Alongside them: a daily task list, and reports naming
+  your weakest chapter and the lessons you are overdue to review.
+</p>
+
+<a class="cta" href="https://github.com/Yassen0-0/Ather/releases/latest">Get Ather</a>
+<p class="cta-note">Android · Free · Arabic and English</p>
+
+<h2>Contact</h2>
+<p>
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> —
+  <a href="./privacy.html">Privacy Policy</a> ·
+  <a href="./account-deletion.html">Delete your account</a>
+</p>
+
+</section>
+
+<footer>
+  أثر · Ather
+</footer>
+
+</div>
+</body>
+</html>

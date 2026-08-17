@@ -348,6 +348,19 @@ class AppTextStyles {
     color: colors.weekLabel,
   );
 
+  /// The heading over a block of settings rows — "الحساب", "التفضيلات".
+  ///
+  /// Deliberately far quieter than [AppTypography.sectionTitle], which names a
+  /// screen's content ("المواد"). These name a *drawer*: they are read once on
+  /// the way past, and a 22/700 heading over four one-line rows makes the
+  /// label louder than the thing it labels.
+  TextStyle get groupHeading => AppTypography.style(
+    size: 13,
+    weight: AppTypography.semiBold,
+    height: 1.3,
+    color: colors.textSecondary,
+  );
+
   /// Fine print, e.g. the homework disclaimer.
   TextStyle get micro => AppTypography.style(
     size: 11,

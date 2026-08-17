@@ -2,23 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/branding/ather_logo.dart' as brand;
 import '../../core/l10n/formatting.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/widgets/ather_card.dart';
-import '../../core/widgets/ather_controls.dart';
 import '../../core/widgets/ather_icons.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/ather_sheet.dart';
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/error_banner.dart';
+import '../../core/widgets/pressable.dart';
+import '../../core/widgets/settings_list.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../../domain/repositories/backup_repository.dart';
 import '../../app/router.dart';
 import '../common/prompts.dart';
 import '../common/write_guard.dart';
@@ -28,31 +26,53 @@ import '../providers/backup_providers.dart';
 import '../providers/notification_providers.dart';
 import '../providers/task_providers.dart';
 
-/// A short list of cards and nothing else.
+/// Grouped rows, in the shape every app a student already uses has settled on.
 ///
-/// There is no subject management (the four are fixed) and no "mark as
-/// reviewed" hiding in an advanced section — the only way to reset a review
-/// clock is to sit an exam.
+/// It was nine free-standing cards in a column — two segmented controls, two
+/// switch rows, a card with two full-width buttons inside it, a link row, an
+/// about block, and a bare red slab under a heading reading "منطقة الخطر".
+/// Nothing grouped and no two entries were the same height, so the page read
+/// as a pile of unrelated things rather than a list of settings.
 ///
-/// [appVersion] is the one place the version is written by hand; the
-/// release-invariants script is the thing that notices when it drifts from
-/// pubspec.yaml. (A package_info dependency for one string on one screen
-/// would be a dependency bought with nothing.)
+/// Three rules hold it together now:
+///
+/// * **A row is one line.** Anything with more to say gets a screen of its own
+///   (the backup, the about page) or a sheet ([_pickOne]). The row shows the
+///   current answer, which is more useful at a glance than a control showing
+///   all three options at once.
+/// * **No filled buttons in the list.** They were the loudest thing on the
+///   page, and two of them were large and red for actions almost nobody takes.
+///   Destructive now means a red *label*, in the last block.
+/// * **The destructive block is last, and it is not announced.** "منطقة الخطر"
+///   as a heading is a developer's framing; the position past every setting and
+///   the red are what protect a student, along with the confirmation dialogs,
+///   which are unchanged.
+///
+/// Subject management lives here now, one row into the preferences group. There
+/// is still no "mark as reviewed" hiding in an advanced section — the only way
+/// to reset a review clock is to sit an exam.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   /// Must match `version:` in pubspec.yaml. Checked by
-  /// `tool/check_invariants.sh`.
-  static const String appVersion = '1.6.0+11';
+  /// `tool/check_invariants.sh`, which looks for it on this class — which is
+  /// why it stays declared here even though the About screen is what displays
+  /// it now.
+  static const String appVersion = '1.7.0+12';
 
-  /// The order the three options appear in, and the only place that order is
-  /// written down. The segmented control renders it and reads a tap back
-  /// through the same list, so an index can never drift from a mode.
+  /// The order the three theme options appear in, and the only place that
+  /// order is written down.
   static const List<ThemeMode> _themeModes = <ThemeMode>[
     ThemeMode.light,
     ThemeMode.dark,
     ThemeMode.system,
   ];
+
+  static String _themeLabel(L l, ThemeMode mode) => switch (mode) {
+    ThemeMode.light => l.settingsThemeLight,
+    ThemeMode.dark => l.settingsThemeDark,
+    ThemeMode.system => l.settingsThemeSystem,
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -67,156 +87,288 @@ class SettingsScreen extends ConsumerWidget {
     final biometricsAvailable =
         ref.watch(biometricsAvailableProvider).value ?? false;
 
+    final sync = ref.watch(backupSyncProvider);
+    final cloud = ref.watch(backupMetadataProvider).value;
+    final lastSaved = sync.lastSavedAt ?? cloud?.updatedAt;
+
     return AtherScreen(
       header: AtherHeader(title: l.settingsTitle, onBack: () => context.pop()),
       children: <Widget>[
-        AtherCard(
-          padding: AppSpacing.cardPadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        if (account != null) ...<Widget>[
+          _AccountHeader(account: account),
+          const SizedBox(height: AppSpacing.xxl),
+          SettingsGroup(
+            title: l.authAccount,
             children: <Widget>[
-              Text(l.settingsLanguage, style: AppTypography.cardTitle),
-              const SizedBox(height: AppSpacing.xl),
-              SegmentedControl(
-                labels: <String>[
-                  l.settingsLanguageArabic,
-                  l.settingsLanguageEnglish,
-                ],
-                selectedIndex: locale.languageCode == 'en' ? 1 : 0,
-                onSelect: (index) => ref
-                    .read(localeProvider.notifier)
-                    .set(Locale(index == 1 ? 'en' : 'ar')),
+              SettingsRow(
+                label: l.backupTitle,
+                // The one part of the backup a student checks in passing. The
+                // rest of it is a tap away.
+                value: lastSaved == null ? l.backupNever : dateLabel(lastSaved),
+                onTap: () => context.push(Routes.backup),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        // Built from the same card and the same segmented control as the
-        // language row above it, deliberately: a second way of presenting a
-        // three-way choice would be a new pattern to learn for no gain.
-        AtherCard(
-          padding: AppSpacing.cardPadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(l.settingsTheme, style: AppTypography.cardTitle),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(l.settingsThemeBody, style: context.text.sublabel),
-              const SizedBox(height: AppSpacing.xl),
-              SegmentedControl(
-                labels: <String>[
-                  l.settingsThemeLight,
-                  l.settingsThemeDark,
-                  l.settingsThemeSystem,
-                ],
-                selectedIndex: _themeModes.indexOf(themeMode),
-                onSelect: (index) => ref
-                    .read(themeModeProvider.notifier)
-                    .set(_themeModes[index]),
+          const SizedBox(height: AppSpacing.xxl),
+        ],
+        SettingsGroup(
+          title: l.settingsPreferences,
+          children: <Widget>[
+            SettingsRow(
+              label: l.subjectsTitle,
+              value: l.subjectCountLabel(
+                ref.watch(snapshotValueProvider).activeSubjects.length,
               ),
-            ],
-          ),
+              onTap: () => context.push(Routes.subjects),
+            ),
+            // Directly under Subjects, so the bin sits beside the thing that
+            // fills it. Shown only when there is something in it: a row
+            // reading "0" is a row that teaches the student to ignore it.
+            if (ref.watch(snapshotValueProvider).deletedSubjects.isNotEmpty)
+              SettingsRow(
+                label: l.binTitle,
+                value: l.subjectCountLabel(
+                  ref.watch(snapshotValueProvider).deletedSubjects.length,
+                ),
+                onTap: () => context.push(Routes.recycleBin),
+              ),
+            SettingsRow(
+              label: l.settingsLanguage,
+              value: locale.languageCode == 'en'
+                  ? l.settingsLanguageEnglish
+                  : l.settingsLanguageArabic,
+              onTap: () => _pickLanguage(context, ref, locale),
+            ),
+            SettingsRow(
+              label: l.settingsTheme,
+              value: _themeLabel(l, themeMode),
+              onTap: () => _pickTheme(context, ref, themeMode),
+            ),
+            const _NotificationsRow(),
+            if (biometricsAvailable)
+              SettingsRow.toggle(
+                label: l.lockSetting,
+                toggle: lockEnabled,
+                onToggle: (value) =>
+                    ref.read(appLockEnabledProvider.notifier).set(value),
+              ),
+          ],
         ),
-        const SizedBox(height: AppSpacing.md),
-        const _NotificationsCard(),
-        if (biometricsAvailable) ...<Widget>[
-          const SizedBox(height: AppSpacing.md),
-          AtherCard(
-            padding: AppSpacing.cardPadding,
-            child: Row(
+        const _NotificationsWarning(),
+        const SizedBox(height: AppSpacing.xxl),
+        SettingsGroup(
+          // Named for the app, not for the row inside it. The heading and the
+          // "عن التطبيق" row below it both read `settingsAbout` at first, which
+          // is a group announcing one of its own children -- and two widgets
+          // carrying identical text on one screen, which is its own bug.
+          title: l.settingsAboutSection,
+          children: <Widget>[
+            // The policy, one tap away from every other setting. Google Play
+            // expects to find it; a student expecting honesty finds it too.
+            SettingsRow(
+              label: l.settingsPrivacy,
+              onTap: () => context.push(Routes.privacy),
+            ),
+            SettingsRow(
+              label: l.settingsAbout,
+              onTap: () => context.push(Routes.about),
+            ),
+          ],
+        ),
+        // Past every setting, where a deliberate scroll is the difference
+        // between "I want this" and "I was looking for notifications".
+        if (account != null) ...<Widget>[
+          const SizedBox(height: AppSpacing.xxxl),
+          const _AccountActions(),
+        ],
+        const SizedBox(height: AppSpacing.xxl),
+        SettingsFootnote(l.settingsVersionFormat(appVersion)),
+      ],
+    );
+  }
+
+  Future<void> _pickLanguage(
+    BuildContext context,
+    WidgetRef ref,
+    Locale current,
+  ) async {
+    final l = L.of(context);
+    final picked = await _pickOne<String>(
+      context,
+      title: l.settingsLanguage,
+      options: <(String, String)>[
+        ('ar', l.settingsLanguageArabic),
+        ('en', l.settingsLanguageEnglish),
+      ],
+      selected: current.languageCode == 'en' ? 'en' : 'ar',
+    );
+    if (picked == null) return;
+    await ref.read(localeProvider.notifier).set(Locale(picked));
+  }
+
+  Future<void> _pickTheme(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode current,
+  ) async {
+    final l = L.of(context);
+    final picked = await _pickOne<ThemeMode>(
+      context,
+      title: l.settingsTheme,
+      options: <(ThemeMode, String)>[
+        for (final mode in _themeModes) (mode, _themeLabel(l, mode)),
+      ],
+      selected: current,
+    );
+    if (picked == null) return;
+    await ref.read(themeModeProvider.notifier).set(picked);
+  }
+}
+
+/// The app's one "pick one of these" modal.
+///
+/// A sheet rather than a screen: choosing a language is a question with a short
+/// answer, and a whole page for two rows is a page a student has to leave. Rows
+/// rather than a segmented control, because the row in Settings is already
+/// showing the answer — this only has to offer the alternatives, and here there
+/// is room to spell them out.
+Future<T?> _pickOne<T>(
+  BuildContext context, {
+  required String title,
+  required List<(T, String)> options,
+  required T selected,
+}) {
+  return showAtherSheet<T>(
+    context: context,
+    builder: (sheetContext) => AtherSheetBody(
+      title: title,
+      child: SettingsGroup(
+        children: <Widget>[
+          for (final (value, label) in options)
+            SettingsRow(
+              label: label,
+              value: value == selected ? '✓' : null,
+              trailing: SettingsRowTrailing.none,
+              onTap: () => Navigator.of(sheetContext).pop(value),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Who is signed in, at the top of the page, and the way into the profile.
+///
+/// The name is the heading once there is one; until then the email is, because
+/// a block about the person looking at it must never be blank. Both lines are
+/// shown when both exist — the name is what a student recognises, the email is
+/// what identifies the account, and on this screen they want the second as
+/// often as the first.
+class _AccountHeader extends ConsumerWidget {
+  const _AccountHeader({required this.account});
+
+  final Account account;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final name = ref.watch(profileNameProvider);
+    final email = account.email;
+    final source = name.isNotEmpty ? name : email;
+    final initial = source.isEmpty ? '؟' : source.substring(0, 1).toUpperCase();
+
+    return Pressable(
+      onTap: () => context.push(Routes.profile),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colors.accentSoft,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              initial,
+              style: AppTypography.rowNumber.copyWith(color: colors.accent),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xl),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(l.lockSetting, style: AppTypography.cardTitle),
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(l.lockSettingBody, style: context.text.sublabel),
-                    ],
+                Text(
+                  source,
+                  style: AppTypography.cardLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (name.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    email,
+                    style: context.text.sublabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(width: AppSpacing.xl),
-                AtherSwitch(
-                  value: lockEnabled,
-                  semanticLabel: l.lockSetting,
-                  onChanged: (value) =>
-                      ref.read(appLockEnabledProvider.notifier).set(value),
-                ),
+                ],
               ],
             ),
           ),
-        ],
-        if (account != null) ...<Widget>[
-          const SizedBox(height: AppSpacing.md),
-          const _BackupCard(),
-          const SizedBox(height: AppSpacing.md),
-          _AccountCard(account: account),
-        ],
-        const SizedBox(height: AppSpacing.md),
-        // The policy, one tap away from every other setting. Google Play
-        // expects to find it; a student expecting honesty finds it too.
-        AtherCard(
-          padding: AppSpacing.cardPadding,
-          onTap: () => context.push(Routes.privacy),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(l.settingsPrivacy, style: AppTypography.rowTitle),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              const AtherIcon(AtherGlyph.chevron, size: 20),
-            ],
+          const SizedBox(width: AppSpacing.xs),
+          AtherIcon(
+            AtherGlyph.chevron,
+            size: 18,
+            color: colors.textTertiary,
           ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        AtherCard(
-          padding: AppSpacing.cardPadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              // The About card is where the app names itself, so it is where
-              // the mark belongs. Glyph on the card's white -- the plated icon
-              // would put a grey square inside a white card.
-              Row(
-                children: <Widget>[
-                  const brand.AtherGlyph(size: 26),
-                  const SizedBox(width: AppSpacing.md),
-                  Text(l.settingsAbout, style: AppTypography.cardTitle),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.textGap),
-              Text(
-                '${l.appName} — ${l.appTagline}',
-                style: context.text.secondary,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                '${l.homeworkNote} · ${l.settingsVersionFormat(appVersion)}',
-                style: context.text.micro,
-              ),
-            ],
-          ),
-        ),
-        // The delete-account control is last on purpose: past every setting,
-        // where a deliberate scroll is the difference between "I want this"
-        // and "I was looking for notifications". See _DeleteAccountSection.
-        if (account != null) ...<Widget>[
-          const SizedBox(height: AppSpacing.xxxl),
-          const _DeleteAccountSection(),
         ],
-      ],
+      ),
     );
   }
 }
 
-/// The review-reminder switch, and the one line that tells the truth when the
-/// switch and the operating system disagree.
-///
-/// Flipping it on is the clearest possible moment to ask for the OS permission:
-/// the student has just said, in words, that they want reminders. Nothing used
-/// to ask at all, which is why no reminder had ever been scheduled.
-class _NotificationsCard extends ConsumerWidget {
-  const _NotificationsCard();
+/// The review-reminder switch. Flipping it on is the clearest possible moment
+/// to ask for the OS permission: the student has just said, in words, that they
+/// want reminders. Nothing used to ask at all, which is why no reminder had
+/// ever been scheduled.
+class _NotificationsRow extends ConsumerWidget {
+  const _NotificationsRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = L.of(context);
+
+    return SettingsRow.toggle(
+      label: l.settingsNotifications,
+      toggle: ref.watch(notificationsEnabledProvider),
+      onToggle: (value) => _set(ref, value),
+    );
+  }
+
+  Future<void> _set(WidgetRef ref, bool value) async {
+    await ref.read(notificationsEnabledProvider.notifier).set(value);
+    if (!value) return;
+
+    // Android only ever prompts once per install; after a refusal this returns
+    // false without showing anything, which is precisely when the warning below
+    // has to appear instead.
+    try {
+      await ref.read(notificationServiceProvider).requestPermission();
+    } catch (_) {
+      // A platform that cannot be asked is a platform that answers "no".
+    }
+    ref.invalidate(osNotificationsAllowedProvider);
+  }
+}
+
+/// The one line that tells the truth when the switch and the operating system
+/// disagree. It sits under the group rather than inside it because a row is one
+/// line by construction, and this is the exception that proves why: it is not a
+/// setting, it is a report about one.
+class _NotificationsWarning extends ConsumerWidget {
+  const _NotificationsWarning();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -229,298 +381,87 @@ class _NotificationsCard extends ConsumerWidget {
     // about a problem the student does not have.
     final blocked =
         enabled && !allowed && ref.watch(hasScheduledReviewsProvider);
+    if (!blocked) return const SizedBox.shrink();
 
-    return AtherCard(
-      padding: AppSpacing.cardPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      l.settingsNotifications,
-                      style: AppTypography.cardTitle,
-                    ),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      l.settingsNotificationsBody,
-                      style: context.text.sublabel,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xl),
-              AtherSwitch(
-                value: enabled,
-                semanticLabel: l.settingsNotifications,
-                onChanged: (value) => _set(ref, value),
-              ),
-            ],
-          ),
-          if (blocked) ...<Widget>[
-            const SizedBox(height: AppSpacing.md),
-            ErrorBanner(height: 1.5, message: l.settingsNotificationsBlocked),
-          ],
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: ErrorBanner(height: 1.5, message: l.settingsNotificationsBlocked),
     );
-  }
-
-  Future<void> _set(WidgetRef ref, bool value) async {
-    await ref.read(notificationsEnabledProvider.notifier).set(value);
-    if (!value) return;
-
-    // Android only ever prompts once per install; after a refusal this returns
-    // false without showing anything, which is precisely when the line above
-    // has to appear instead.
-    try {
-      await ref.read(notificationServiceProvider).requestPermission();
-    } catch (_) {
-      // A platform that cannot be asked is a platform that answers "no".
-    }
-    ref.invalidate(osNotificationsAllowedProvider);
   }
 }
 
-/// The cloud backup card.
+/// The two ways out of an account, in the block that closes the page.
 ///
-/// Deliberately quiet. Sync is not a feature a student should have to think
-/// about -- the card exists so they know it is happening and can force it, not
-/// so they have to manage it. There is no toggle: a backup the student can
-/// switch off is a backup they will find missing on the day their phone dies.
-class _BackupCard extends ConsumerStatefulWidget {
-  const _BackupCard();
-
-  @override
-  ConsumerState<_BackupCard> createState() => _BackupCardState();
-}
-
-class _BackupCardState extends ConsumerState<_BackupCard> {
-  /// A restore is a download plus a full database replacement, and it is the
-  /// most destructive thing in the app. It used to run with no feedback at all:
-  /// the button stayed live, took further taps, and the student had no way to
-  /// tell a slow network from a dead control.
-  bool _restoring = false;
-
-  /// Turns a failure into a sentence, here rather than in the data layer --
-  /// which has no localisation, which is why [BackupFailure] is an enum.
-  String _failureLabel(L l, BackupFailure failure) => switch (failure) {
-    BackupFailure.offline => l.backupErrorOffline,
-    BackupFailure.permissionDenied => l.backupErrorPermission,
-    BackupFailure.tooLarge => l.backupErrorTooLarge,
-    BackupFailure.unreadable => l.backupErrorUnreadable,
-    BackupFailure.notSignedIn || BackupFailure.unknown => l.backupErrorUnknown,
-  };
-
-  Future<void> _restore() async {
-    if (_restoring) return;
-
-    final l = L.of(context);
-    final messenger = Overlay.of(context, rootOverlay: true);
-    final direction = Directionality.of(context);
-
-    final confirmed = await confirmDestructive(
-      context,
-      title: l.backupRestore,
-      message: l.backupRestoreConfirm,
-    );
-    if (!confirmed || !mounted) return;
-
-    setState(() => _restoring = true);
-    try {
-      final backup = await ref.read(backupRepositoryProvider).download();
-      if (backup == null) {
-        showAtherToastOn(messenger, direction, l.backupRestoreEmpty);
-        return;
-      }
-      await ref.read(backupSyncProvider.notifier).restore(backup);
-      showAtherToastOn(messenger, direction, l.backupRestoreDone);
-    } on BackupException catch (e) {
-      showAtherToastOn(messenger, direction, _failureLabel(l, e.failure));
-    } on Object catch (error, stack) {
-      // Only BackupException was caught before, so a failure from the *local*
-      // write half -- the drift transaction that replaces the database -- went
-      // unhandled and told the student nothing. The transaction rolls back, so
-      // their data is intact; they just have to be told it did not happen.
-      debugPrint('Ather: restore failed -- $error\n$stack');
-      showAtherToastOn(
-        messenger,
-        direction,
-        l.commonSomethingWentWrong,
-        tone: ToastTone.failed,
-      );
-    } finally {
-      if (mounted) setState(() => _restoring = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = L.of(context);
-    final sync = ref.watch(backupSyncProvider);
-    final cloud = ref.watch(backupMetadataProvider).value;
-
-    // Precedence: a live failure outranks a timestamp, because "saved 3 days
-    // ago" beside a silent failure reads as everything being fine.
-    final String status;
-    final Color statusColor;
-    if (sync.status == SyncStatus.saving) {
-      status = l.backupSaving;
-      statusColor = context.colors.textSecondary;
-    } else if (sync.failure != null) {
-      status = _failureLabel(l, sync.failure!);
-      // Offline is not an error -- it is the normal state of an offline-first
-      // app, and colouring it red would teach students to ignore red.
-      statusColor = sync.failure == BackupFailure.offline
-          ? context.colors.textSecondary
-          : context.colors.wrong;
-    } else {
-      final at = sync.lastSavedAt ?? cloud?.updatedAt;
-      status = at == null ? l.backupNever : l.backupSavedAt(dateLabel(at));
-      statusColor = context.colors.textSecondary;
-    }
-
-    return AtherCard(
-      padding: AppSpacing.cardPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(l.backupTitle, style: AppTypography.cardTitle),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(l.backupBody, style: context.text.sublabel),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            status,
-            style: AppTypography.statusLine.copyWith(color: statusColor),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          PrimaryButton(
-            label: l.backupSaveNow,
-            tone: PrimaryButtonTone.secondary,
-            busy: sync.status == SyncStatus.saving,
-            onTap: () => ref.read(backupSyncProvider.notifier).flush(),
-          ),
-          // Only offered once something is actually up there. A restore button
-          // that can only say "nothing to restore" is a button that teaches the
-          // student the feature does not work.
-          if (cloud != null) ...<Widget>[
-            const SizedBox(height: AppSpacing.md),
-            PrimaryButton(
-              label: l.backupRestore,
-              tone: PrimaryButtonTone.wrong,
-              busy: _restoring,
-              onTap: _restore,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// The account card: who is signed in, and the everyday way out. The
-/// destructive way out — deleting the account — is not here; it sits at the
-/// very bottom of the Settings page, where a scroll is a second thought and
-/// no one erases two years of exams by landing on the wrong button.
-class _AccountCard extends ConsumerStatefulWidget {
-  const _AccountCard({required this.account});
-
-  final Account account;
-
-  @override
-  ConsumerState<_AccountCard> createState() => _AccountCardState();
-}
-
-class _AccountCardState extends ConsumerState<_AccountCard> {
-  @override
-  Widget build(BuildContext context) {
-    final l = L.of(context);
-    final account = widget.account;
-
-    return AtherCard(
-      padding: AppSpacing.cardPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(l.authAccount, style: AppTypography.cardTitle),
-          const SizedBox(height: AppSpacing.textGap),
-          Text(account.email, style: context.text.secondary),
-          const SizedBox(height: AppSpacing.xl),
-          PrimaryButton(
-            label: l.authSignOut,
-            tone: PrimaryButtonTone.secondary,
-            onTap: () => _signOut(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _signOut(BuildContext context) async {
-    final l = L.of(context);
-    final confirmed = await confirmDestructive(
-      context,
-      title: l.authSignOut,
-      message: l.authSignOutConfirm,
-      confirmLabel: l.authSignOut,
-    );
-    if (!confirmed || !context.mounted) return;
-
-    // Push whatever has not been mirrored yet *before* the session goes:
-    // after sign-out there is no uid to upload under, and the debounce may
-    // still be holding the last twenty seconds of work.
-    await ref.read(backupSyncProvider.notifier).flush();
-    if (!context.mounted) return;
-    await runWrite(context, () => ref.read(authRepositoryProvider).signOut());
-  }
-}
-
-/// Account deletion, in its own visible section at the bottom of Settings.
+/// Signing out is not destructive — the copy in its own dialog has always said
+/// the data survives — so it is a plain row. Deleting the account is, so it is
+/// red. Neither is a filled slab any more.
 ///
-/// Google Play requires the delete path to be findable, and a destructive
-/// action buried mid-list fails both tests at once: students who need it
-/// cannot find it, and students who do not can hit it by accident. The bottom
-/// of the page — past every setting, where a deliberate scroll is required —
-/// is the honest position for both.
-///
-/// The deletion order is deliberate: confirm in words what disappears, flush
-/// anything that has not reached the cloud yet (deleting the cloud copy first
-/// would orphan the flush), wipe the device, delete the cloud mirror, and only
-/// then delete the account itself. An account deleted before its data leaves
-/// a student whose cloud copy outlives their ability to ever reach it again.
-class _DeleteAccountSection extends ConsumerStatefulWidget {
-  const _DeleteAccountSection();
+/// The deletion order is deliberate and unchanged: confirm in words what
+/// disappears, flush anything that has not reached the cloud yet (deleting the
+/// cloud copy first would orphan the flush), wipe the device, delete the cloud
+/// mirror, and only then delete the account itself. An account deleted before
+/// its data leaves a student whose cloud copy outlives their ability to ever
+/// reach it again.
+class _AccountActions extends ConsumerStatefulWidget {
+  const _AccountActions();
 
   @override
-  ConsumerState<_DeleteAccountSection> createState() =>
-      _DeleteAccountSectionState();
+  ConsumerState<_AccountActions> createState() => _AccountActionsState();
 }
 
-class _DeleteAccountSectionState extends ConsumerState<_DeleteAccountSection> {
+class _AccountActionsState extends ConsumerState<_AccountActions> {
   bool _deleting = false;
+  bool _signingOut = false;
   String? _reauthPassword;
 
   @override
   Widget build(BuildContext context) {
     final l = L.of(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return SettingsGroup(
       children: <Widget>[
-        SectionTitle(l.authDeleteAccountSection),
-        const SizedBox(height: AppSpacing.md),
-        PrimaryButton(
+        SettingsRow(
+          label: l.authSignOut,
+          trailing: SettingsRowTrailing.none,
+          busy: _signingOut,
+          onTap: _signOut,
+        ),
+        SettingsRow(
           label: l.authDeleteAccount,
-          tone: PrimaryButtonTone.wrong,
+          destructive: true,
+          trailing: SettingsRowTrailing.none,
           busy: _deleting,
           onTap: _confirmDelete,
         ),
       ],
     );
+  }
+
+  Future<void> _signOut() async {
+    final l = L.of(context);
+    final confirmed = await confirmDestructive(
+      context,
+      title: l.authSignOut,
+      message: l.authSignOutConfirm,
+      // Without this the red button reads "حذف". Signing out deletes nothing
+      // -- the sentence directly above it says so -- and a button that
+      // contradicts its own dialog teaches a student that Ather's warnings
+      // cannot be read literally.
+      confirmLabel: l.authSignOut,
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() => _signingOut = true);
+    try {
+      // Push whatever has not been mirrored yet *before* the session goes:
+      // after sign-out there is no uid to upload under, and the debounce may
+      // still be holding the last twenty seconds of work.
+      await ref.read(backupSyncProvider.notifier).flush();
+      if (!mounted) return;
+      await runWrite(context, () => ref.read(authRepositoryProvider).signOut());
+    } finally {
+      if (mounted) setState(() => _signingOut = false);
+    }
   }
 
   Future<void> _confirmDelete() async {
@@ -550,10 +491,9 @@ class _DeleteAccountSectionState extends ConsumerState<_DeleteAccountSection> {
     try {
       await _deleteEverything();
     } on AuthException catch (e) {
-      // Stop the ring before anything else: it is the only spinner in the
-      // app, and a ring left running under the re-auth sheet both freezes
-      // tests and reads as an action still in flight while the student is
-      // being asked to type a password.
+      // Stop the ring before anything else: a ring left running under the
+      // re-auth sheet both freezes tests and reads as an action still in
+      // flight while the student is being asked to type a password.
       if (mounted) setState(() => _deleting = false);
       if (!mounted) return;
       if (e.failure == AuthFailure.requiresRecentLogin) {

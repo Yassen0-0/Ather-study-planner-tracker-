@@ -7,6 +7,7 @@ import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/study_backup.dart';
+import 'package:ather/domain/entities/subject.dart';
 
 /// The serialisation, on its own, with no network and no database.
 ///
@@ -18,6 +19,9 @@ void main() {
   final DateTime t0 = DateTime.fromMillisecondsSinceEpoch(1754300000000);
 
   StudyBackup populated() => StudyBackup(
+    subjects: const <Subject>[
+      Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+    ],
     chapters: <Chapter>[
       Chapter(
         id: 7,
@@ -131,6 +135,7 @@ void main() {
 
   test('an empty backup round-trips to an empty backup', () {
     const empty = StudyBackup(
+      subjects: <Subject>[],
       chapters: <Chapter>[],
       lessons: <Lesson>[],
       exams: <ExamEntry>[],
@@ -178,5 +183,79 @@ void main() {
     expect(backup.chapterCount, 2);
     expect(backup.examCount, 1);
     expect(backup.isEmpty, isFalse);
+  });
+
+  // --- Security audit, 2026-08-15 -------------------------------------------
+  //
+  // A blob arriving from Firestore is data from outside the device. It is
+  // written under the student's own uid, so nothing here is a defence against
+  // another student -- the rules already handle that, and they were tested
+  // against the emulator on the same day. What it defends against is a score
+  // the app's own arithmetic cannot produce reaching the mastery calculation.
+  //
+  // Proven on an emulator before the fix: `correct_points = 9999` against
+  // `total_possible_points = 10` with `percentage = 999` rendered the subject
+  // at 333% and overall mastery at 83%, with no crash and no complaint.
+
+  Map<String, Object?> withExam(Map<String, Object?> overrides) {
+    final json = populated().toJson();
+    final exams = (json['exams']! as List<Object?>).cast<Map<String, Object?>>();
+    exams[0].addAll(overrides);
+    return json;
+  }
+
+  test('a restored score above 100% is brought back to 100, not carried', () {
+    final restored = StudyBackup.fromJson(
+      withExam(<String, Object?>{'percentage': 999.0}),
+    );
+    expect(restored.exams.single.percentage, 100);
+  });
+
+  test('a negative restored score becomes zero rather than a negative bar', () {
+    final restored = StudyBackup.fromJson(
+      withExam(<String, Object?>{'percentage': -40.0}),
+    );
+    expect(restored.exams.single.percentage, 0);
+  });
+
+  test('more correct points than the exam had is capped at the total', () {
+    final restored = StudyBackup.fromJson(
+      withExam(<String, Object?>{
+        'totalPossiblePoints': 10,
+        'correctPoints': 9999,
+      }),
+    );
+    expect(restored.exams.single.totalPossiblePoints, 10);
+    expect(restored.exams.single.correctPoints, 10);
+  });
+
+  test('a group claiming more right answers than it has questions is capped', () {
+    final json = populated().toJson();
+    final exams = (json['exams']! as List<Object?>).cast<Map<String, Object?>>();
+    final groups = (exams[0]['groups']! as List<Object?>)
+        .cast<Map<String, Object?>>();
+    groups[0]
+      ..['questionCount'] = 5
+      ..['correctCount'] = 500;
+
+    final group = StudyBackup.fromJson(json).exams.single.groups.first;
+    expect(group.questionCount, 5);
+    expect(group.correctCount, 5);
+    // And the arithmetic that reads it can no longer exceed 100.
+    expect(
+      ExamEntry.percentageOf(StudyBackup.fromJson(json).exams.single.groups),
+      lessThanOrEqualTo(100),
+    );
+  });
+
+  test('an ordinary exam is not touched by any of that clamping', () {
+    final restored = StudyBackup.fromJson(populated().toJson());
+    final original = populated().exams.single;
+    expect(restored.exams.single.percentage, original.percentage);
+    expect(restored.exams.single.correctPoints, original.correctPoints);
+    expect(
+      restored.exams.single.totalPossiblePoints,
+      original.totalPossiblePoints,
+    );
   });
 }

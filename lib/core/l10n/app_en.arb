@@ -31,7 +31,7 @@
   "statMastered": "Mastered",
   "sectionSubjects": "Subjects",
   "firstRunTitle": "Start here",
-  "firstRunBody": "Open a subject, add a chapter inside it, then a lesson. Mastery comes only from your real exam results — not from finishing a lesson.",
+  "firstRunBody": "Mastery comes from your exams alone, not from finishing a lesson.",
   "firstRunAction": "Open your first subject",
   "sectionNext": "Up next",
   "actionExam": "Log exam",
@@ -106,7 +106,6 @@
   "examHistory": "Past exams",
   "examNoHistory": "No exams yet",
   "examReviewBadge": "Review",
-  "examHistoryHint": "Tap an exam to remove it if it was entered by mistake",
   "examDelete": "Remove exam",
   "examDeleteConfirm": "This exam will be removed from the record and the lesson's mastery recalculated without it. This can't be undone.",
   "toastExamDeleted": "Exam removed — mastery recalculated",
@@ -156,7 +155,6 @@
   "analyticsTitle": "Progress",
   "analyticsInsights": "Notes",
   "analyticsAllSubjects": "All subjects",
-  "analyticsAlwaysAllSubjects": "This card always compares all four subjects",
   "analyticsMasteryBySubject": "Mastery by subject",
   "analyticsMasteryByChapter": "Mastery by chapter",
   "analyticsWeakestLessons": "Weakest lessons",
@@ -176,11 +174,10 @@
 
   "celebrationTitle": "Chapter mastered!",
   "celebrationBody": "Solid work. Keep it up.",
-  "celebrationHint": "Tap anywhere to continue",
 
   "authSignInTitle": "Sign in",
   "authRegisterTitle": "New account",
-  "authSubtitle": "Sign in once — after that the app works with no connection",
+  "authSubtitle": "Sign in once, then the app works with no connection",
   "authEmail": "Email",
   "authPassword": "Password",
   "authEmailHint": "you@example.com",
@@ -208,15 +205,14 @@
   "authDeleteAccountReauthBody": "Type your password to finish deleting the account.",
   "authDeleteAccountReauthAction": "Delete account",
   "authDeleteAccountFailed": "The account was not deleted. Try again.",
-  "authDeleteAccountSection": "Danger zone",
 
   "settingsPrivacy": "Privacy",
   "privacyTitle": "Your privacy",
   "privacyIntro": "This app collects as little as possible. Everything below describes what actually happens — not generic promises.",
   "privacyLocalTitle": "Your study data",
-  "privacyLocalBody": "Your chapters, lessons, exams and tasks are stored on your phone only, in a local database. Mastery is computed on your device — no other server ever sees it.",
+  "privacyLocalBody": "Your subjects, chapters, lessons, exams and tasks are stored on your phone, in a local database. Mastery is computed on your device. Your name and school year from the profile are kept on this device only and are never uploaded.",
   "privacyAccountTitle": "Account data",
-  "privacyAccountBody": "For the cloud backup we ask for an email and password (or a Google account). They are stored by Google Firebase Auth. Your email is everything we know about you — no name, no age, no other personal data.",
+  "privacyAccountBody": "For the cloud backup we ask for an email and password (or a Google account). They are stored by Google Firebase Auth. Your email is everything we know about you on the server — no name, no age, no other personal data.",
   "privacyCloudTitle": "The cloud backup",
   "privacyCloudBody": "If you create an account, a copy of your study data, encrypted in transit, is stored on Google servers (Firebase Firestore) under your account. Nobody but you can reach it — including us.",
   "privacyDeleteTitle": "Deleting your data",
@@ -229,9 +225,61 @@
   "lockRefused": "That didn't unlock — try again",
   "lockLockedOut": "Too many attempts. Wait a moment and try again, or use your phone's passcode.",
   "lockSetting": "Fingerprint lock",
-  "lockSettingBody": "Ask for a fingerprint every time the app opens",
 
   "settingsTitle": "Settings",
+  "profileTitle": "Your profile",
+  "profileName": "Name",
+  "profileNameHint": "Type your name",
+  "profileNameUnset": "Not set",
+  "profileYear": "School year",
+  "profileYearUnset": "Not set",
+  "profileYearFirst": "Year 1",
+  "profileYearSecond": "Year 2",
+  "profileYearThird": "Year 3",
+  "profileLocalNote": "This is kept on this device only and is never uploaded to any server.",
+  "profileGreeting": "Hello, {name}",
+  "@profileGreeting": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "subjectsArchived": "Archived subjects",
+  "subjectsArchivedNote": "An archived subject is not shown, does not count toward mastery, and sends no reminders. Its chapters and exams are kept exactly as they were.",
+  "subjectArchive": "Archive subject",
+  "subjectUnarchive": "Unarchive",
+  "binTitle": "Recycle bin",
+  "binEmpty": "The bin is empty",
+  "binRestore": "Restore",
+  "binPurge": "Delete permanently",
+  "binEmptyAll": "Empty the bin",
+  "binDeletedAt": "Deleted {date}",
+  "@binDeletedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "binNote": "Subjects here are kept whole, with their chapters and exams, and are never removed on their own. Only a permanent delete erases them.",
+  "binPurgeConfirm": "This erases \"{subject}\" along with {chapters} and {exams}. It cannot be undone.",
+  "@binPurgeConfirm": {
+    "placeholders": {
+      "subject": { "type": "String" },
+      "chapters": { "type": "String" },
+      "exams": { "type": "String" }
+    }
+  },
+  "binEmptyAllConfirm": "This erases everything in the bin along with its chapters and exams. It cannot be undone.",
+  "examCountLabel": "{count, plural, =1{1 exam} other{{count} exams}}",
+  "@examCountLabel": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "subjectsTitle": "Subjects",
+  "subjectCountLabel": "{count, plural, =1{1 subject} other{{count} subjects}}",
+  "@subjectCountLabel": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "subjectAdd": "+ Add subject",
+  "subjectNameHint": "e.g. Maths",
+  "subjectRename": "Rename",
+  "subjectDelete": "Delete subject",
+  "settingsPreferences": "Preferences",
   "settingsLanguage": "Language",
   "settingsLanguageArabic": "العربية",
   "settingsLanguageEnglish": "English",
@@ -239,10 +287,9 @@
   "settingsThemeLight": "Light",
   "settingsThemeDark": "Dark",
   "settingsThemeSystem": "System",
-  "settingsThemeBody": "Pick how the app looks, or let it follow your phone",
   "settingsNotifications": "Review reminders",
-  "settingsNotificationsBody": "Remind me when a lesson is due for review",
   "settingsNotificationsBlocked": "Notifications are turned off in your phone's settings. Turn them on there to get reminders.",
+  "settingsAboutSection": "About Ather",
   "settingsAbout": "About",
   "settingsVersionFormat": "Version {version}",
   "@settingsVersionFormat": {
@@ -250,7 +297,6 @@
   },
 
   "backupTitle": "Cloud backup",
-  "backupBody": "Your work is saved to your account, so a new phone finds it waiting.",
   "backupNever": "Not saved yet",
   "backupSavedAt": "Last saved: {date}",
   "@backupSavedAt": {
@@ -283,7 +329,6 @@
   "deleteTask": "Delete task",
   "deleteTaskConfirm": "It will be removed from this day for good.",
   "noTasksYet": "No tasks for this day",
-  "tasksEmptyBody": "Write down what you plan to do, and tick it off as you go.",
 
   "commonSave": "Save",
   "commonSomethingWentWrong": "Something didn't work. Try again.",

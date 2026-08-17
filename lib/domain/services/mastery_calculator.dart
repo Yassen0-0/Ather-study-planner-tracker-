@@ -114,12 +114,17 @@ abstract final class MasteryCalculator {
   /// used for empty lessons inside a chapter. An overall figure that quietly
   /// ignored three empty subjects would tell a student they are 85% ready for
   /// Thanaweya Amma when they have only touched Biology.
+  ///
+  /// *Archived* subjects are a different case and are excluded: the student
+  /// said this subject should stop counting, and counting it as a 0 anyway
+  /// would punish them for saying so.
   static double overallMastery(StudySnapshot snapshot) {
-    if (snapshot.subjects.isEmpty) return 0;
-    final total = snapshot.subjects
+    final active = snapshot.activeSubjects;
+    if (active.isEmpty) return 0;
+    final total = active
         .map((s) => subjectMasteryOf(snapshot, s.id))
         .reduce((a, b) => a + b);
-    return total / snapshot.subjects.length;
+    return total / active.length;
   }
 
   /// Mean of the raw exam percentages under a set of lessons.

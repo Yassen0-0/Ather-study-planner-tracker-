@@ -64,119 +64,125 @@
 
 <h1>سياسة الخصوصية — أثر</h1>
 <p class="meta">
-  تاريخ السريان: 15 أغسطس 2026 · آخر تحديث: 15 أغسطس 2026<br>
-  التطبيق: أثر (<code>com.ather.app</code>) · الناشر: <strong>[[PUBLISHER_NAME]]</strong>
+  تاريخ السريان: 15 أغسطس 2026 · آخر تحديث: 17 أغسطس 2026<br>
+  التطبيق: أثر (<code>com.ather.app</code>) · الناشر: <strong>Yassen Yousry</strong>
 </p>
 
 <p>
-  أثر تطبيق لقياس إتقان طلبة الثانوية العامة. السياسة دي بتشرح بالظبط إيه البيانات
-  اللي بناخدها، ليه، وفين بتتحفظ — وإزاي تمسحها.
+  أثر تطبيق لقياس إتقان طلبة الثانوية العامة. توضّح هذه السياسة أي بيانات نجمعها،
+  ولماذا، وأين تُحفظ، وكيف تحذفها.
 </p>
 
-<h2>1. البيانات اللي بناخدها</h2>
+<h2>1. البيانات التي نجمعها</h2>
 
 <table>
-  <tr><th>البيانات</th><th>ليه</th><th>إجباري؟</th></tr>
+  <tr><th>البيانات</th><th>الغرض</th><th>إجبارية؟</th></tr>
   <tr>
-    <td>عنوان الإيميل</td>
-    <td>عشان يكون لك حساب تدخل بيه، ونقدر نبعتلك رابط تغيير الباسورد</td>
-    <td>أيوه</td>
+    <td>البريد الإلكتروني</td>
+    <td>لإنشاء حسابك وتسجيل الدخول، ولإرسال رابط تغيير كلمة السر</td>
+    <td>نعم</td>
   </tr>
   <tr>
     <td>الاسم المعروض</td>
-    <td>بيجي مع تسجيل الدخول بـ Google بس. مش بنستخدمه في أي حاجة غير إنه بيتحفظ مع حسابك</td>
-    <td>لو دخلت بـ Google</td>
+    <td>يأتي مع تسجيل الدخول بحساب Google فقط. يُحفظ مع حسابك ولا يُستخدم في شيء آخر</td>
+    <td>عند الدخول بحساب Google</td>
   </tr>
   <tr>
     <td>معرّف الحساب (uid)</td>
-    <td>رقم بيولّده Firebase، وهو اللي بيربط نسختك السحابية بحسابك</td>
-    <td>أيوه</td>
+    <td>رقم يولّده Firebase، وهو ما يربط نسختك السحابية بحسابك</td>
+    <td>نعم</td>
   </tr>
   <tr>
-    <td>سجل مذاكرتك: الأبواب، الدروس، درجات الامتحانات والواجبات، ومواعيد المراجعة</td>
-    <td>ده جوهر التطبيق. وبيترفع نسخة احتياطية عشان لو التليفون ضاع أو اتغيّر ترجعه</td>
-    <td>أيوه</td>
+    <td>سجل دراستك: المواد والأبواب والدروس ودرجات الامتحانات والواجبات ومواعيد المراجعة</td>
+    <td>هذا جوهر التطبيق، وتُرفع منه نسخة احتياطية لتستعيده إن فقدت هاتفك أو غيّرته</td>
+    <td>نعم</td>
   </tr>
 </table>
 
 <div class="note">
-  <strong>النسخة السحابية بتحصل تلقائيًا.</strong> سجل مذاكرتك بيترفع لحسابك على
-  Firestore من نفسه — بعد أي تعديل بحوالي 20 ثانية، وكل مرة تقفل التطبيق. مفيش زرار
-  بيوقّفها، وده مهم تعرفه. الاستخدام نفسه محتاج تسجيل دخول.
+  <strong>النسخة السحابية تلقائية.</strong> يُرفع سجل دراستك إلى حسابك على
+  Firestore من تلقاء نفسه — بعد أي تعديل بنحو 20 ثانية، وكلما أغلقت التطبيق. لا يوجد
+  زر يوقفها، ومن حقك أن تعرف ذلك. واستخدام التطبيق نفسه يتطلب تسجيل الدخول.
 </div>
 
-<h3>اللي مش بناخده</h3>
+<h3>ما لا نجمعه</h3>
 <ul>
-  <li><strong>مفيش إعلانات</strong>، ومفيش أي شركة إعلانات بتوصل لبياناتك.</li>
-  <li><strong>مفيش تتبّع ولا تحليلات</strong> — لا Google Analytics ولا أي SDK تتبّع.</li>
-  <li><strong>مفيش تسجيل أعطال</strong> بيبعت بيانات لبرّه.</li>
-  <li><strong>مش بناخد</strong> رقم تليفونك، ولا مكانك، ولا جهات اتصالك، ولا صورك، ولا الميكروفون أو الكاميرا.</li>
-  <li><strong>بصمتك مبتسيبش التليفون.</strong> قفل البصمة بيستخدم نظام الأندرويد نفسه؛ أثر مبيشوفش بصمتك ولا بيحفظها.</li>
-  <li><strong>مبنبيعش بياناتك</strong> ولا بنشاركها مع حد لأي غرض تجاري. خالص.</li>
+  <li><strong>لا إعلانات</strong>، ولا تصل أي شركة إعلانات إلى بياناتك.</li>
+  <li><strong>لا تتبّع ولا تحليلات</strong> — لا Google Analytics ولا أي أداة تتبّع.</li>
+  <li><strong>لا تسجيل أعطال</strong> يرسل بيانات إلى الخارج.</li>
+  <li><strong>لا نطلب</strong> رقم هاتفك ولا موقعك ولا جهات اتصالك ولا صورك ولا الميكروفون ولا الكاميرا.</li>
+  <li><strong>بصمتك لا تغادر هاتفك.</strong> قفل البصمة يستخدم نظام أندرويد نفسه؛ أثر لا يرى بصمتك ولا يحفظها.</li>
+  <li><strong>لا نبيع بياناتك</strong> ولا نشاركها مع أحد لأي غرض تجاري. إطلاقاً.</li>
 </ul>
 
-<h2>2. فين البيانات بتتحفظ</h2>
+<div class="note">
+  <strong>اسمك وسنتك الدراسية على هذا الهاتف وحده.</strong> إن كتبت اسمك أو حددت سنتك
+  الدراسية في «ملفك» داخل التطبيق، فهذه البيانات تُحفظ في إعدادات التطبيق على جهازك
+  ولا تُرفع إلى أي خادم ولا تدخل في النسخة السحابية. البريد الإلكتروني يظل كل ما
+  نعرفه عنك على الخادم.
+</div>
+
+<h2>2. أين تُحفظ البيانات</h2>
 <ul>
   <li>
-    <strong>على تليفونك</strong> — في ملف قاعدة بيانات جوه التطبيق. ده المصدر الأساسي،
-    والتطبيق بيشتغل بالكامل من غير نت.
+    <strong>على هاتفك</strong> — في ملف قاعدة بيانات داخل التطبيق. هذا هو المصدر
+    الأساسي، والتطبيق يعمل بالكامل دون اتصال بالإنترنت.
   </li>
   <li>
-    <strong>Google Firebase</strong> (Firebase Authentication و Cloud Firestore)، وهي
-    خدمات من Google بنستخدمها كمعالج بيانات. حسابك ونسختك السحابية بيتحفظوا هناك.
-    نسختك متخزنة في مكان مقفول على حسابك لوحده، وقواعد الأمان بتمنع أي حساب تاني
-    إنه يوصلها.
+    <strong>Google Firebase</strong> (خدمتا Firebase Authentication و Cloud Firestore)،
+    وهما خدمتان من Google نستخدمهما كمعالج للبيانات. يُحفظ حسابك ونسختك السحابية هناك،
+    في موضع مقصور على حسابك وحده، وقواعد الأمان تمنع أي حساب آخر من الوصول إليه.
   </li>
   <li>
-    <strong>ومفيش نسخة تانية غير كده.</strong> النسخة الاحتياطية التلقائية بتاعة
-    أندرويد (اللي بترفع بيانات التطبيقات على Google Drive) <strong>مقفولة</strong> في
-    أثر بشكل مقصود، وكذلك النقل المباشر لتليفون جديد. يعني سجل مذاكرتك موجود في
-    مكانين بس: تليفونك، وحسابك على Firestore.
+    <strong>ولا توجد نسخة ثالثة.</strong> النسخة الاحتياطية التلقائية في أندرويد
+    (التي ترفع بيانات التطبيقات إلى Google Drive) <strong>معطّلة</strong> في أثر عن
+    قصد، وكذلك النقل المباشر إلى هاتف جديد. أي أن سجل دراستك موجود في موضعين فقط:
+    هاتفك، وحسابك على Firestore.
   </li>
 </ul>
 
-<h2>3. مدة الحفظ ومسح البيانات</h2>
+<h2>3. مدة الحفظ وحذف البيانات</h2>
 <p>
-  بنحتفظ ببياناتك طول ما حسابك موجود. مفيش أي بيع أو أرشفة بعد كده.
+  نحتفظ ببياناتك ما دام حسابك قائماً. لا بيع ولا أرشفة بعد ذلك.
 </p>
-<h3>إزاي تمسح كل حاجة</h3>
+<h3>كيف تحذف كل شيء</h3>
 <p>
-  من داخل التطبيق: <strong>الإعدادات → حذف الحساب</strong>. ده بيمسح، بالترتيب ده:
-  نسختك السحابية، وحسابك نفسه، وكل اللي على التليفون. العملية مش بترجع.
+  من داخل التطبيق: <strong>الإعدادات ← حذف الحساب</strong>. يحذف ذلك، بهذا الترتيب:
+  ما على الهاتف، ثم نسختك السحابية، ثم الحساب نفسه. ولا يمكن التراجع عن العملية.
 </p>
 <p>
-  ولو مش قادر تفتح التطبيق، ابعتلنا من الإيميل المسجّل على
-  <a href="mailto:[[CONTACT_EMAIL]]">[[CONTACT_EMAIL]]</a> وهنمسحه في مدة أقصاها
-  30 يوم. تفاصيل أكتر في <a href="./account-deletion.html">صفحة حذف الحساب</a>.
+  وإن تعذّر عليك فتح التطبيق، راسلنا من البريد المسجّل على
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> وسنحذفه خلال 30 يوماً على
+  الأكثر. التفاصيل في <a href="./account-deletion.html">صفحة حذف الحساب</a>.
 </p>
 
 <h2>4. حقوقك</h2>
 <p>
-  من حقك تعرف إيه المحفوظ عنك، وتصحّحه، وتمسحه، وتاخد نسخة منه. ابعتلنا على
-  <a href="mailto:[[CONTACT_EMAIL]]">[[CONTACT_EMAIL]]</a> من الإيميل المسجّل على الحساب.
+  لك أن تعرف ما هو محفوظ عنك، وأن تصحّحه، وأن تحذفه، وأن تأخذ نسخة منه. راسلنا على
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> من البريد المسجّل على الحساب.
 </p>
 
-<h2>5. الطلبة تحت 18 سنة</h2>
+<h2>5. الطلبة دون 18 سنة</h2>
 <p>
-  أثر معمول لطلبة الثانوية العامة، ومنهم ناس أقل من 18 سنة. عشان كده التطبيق مقصود إنه
-  ياخد أقل قدر ممكن من البيانات: إيميل وسجل مذاكرة، وخلاص — مفيش إعلانات، ومفيش تتبّع،
-  ومفيش مشاركة مع أي طرف تالت.
+  أثر موجّه لطلبة الثانوية العامة، ومنهم من هم دون الثامنة عشرة. لذلك صُمّم التطبيق
+  ليجمع أقل قدر ممكن من البيانات: بريد إلكتروني وسجل دراسة، لا غير — بلا إعلانات،
+  وبلا تتبّع، وبلا مشاركة مع أي طرف ثالث.
 </p>
 <p>
-  لو إنت وليّ أمر وعايز تشوف بيانات ابنك أو تمسحها، ابعتلنا على
-  <a href="mailto:[[CONTACT_EMAIL]]">[[CONTACT_EMAIL]]</a>.
+  وإن كنت وليّ أمر وأردت الاطلاع على بيانات ابنك أو حذفها، راسلنا على
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a>.
 </p>
 
 <h2>6. تغييرات على السياسة</h2>
 <p>
-  لو غيّرنا حاجة، هنحدّث التاريخ فوق. أي تغيير جوهري في البيانات اللي بناخدها هنقوله
-  في التطبيق نفسه، مش هنسيبه هنا بس.
+  إن غيّرنا شيئاً، سنحدّث التاريخ أعلاه. وأي تغيير جوهري في البيانات التي نجمعها
+  سنذكره داخل التطبيق نفسه، لا هنا وحده.
 </p>
 
 <h2>7. للتواصل</h2>
 <p>
-  <strong>[[PUBLISHER_NAME]]</strong> —
-  <a href="mailto:[[CONTACT_EMAIL]]">[[CONTACT_EMAIL]]</a>
+  <strong>Yassen Yousry</strong> —
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a>
 </p>
 
 </section>
@@ -186,8 +192,8 @@
 
 <h1>Privacy Policy — Ather</h1>
 <p class="meta">
-  Effective: 15 August 2026 · Last updated: 15 August 2026<br>
-  App: Ather (<code>com.ather.app</code>) · Publisher: <strong>[[PUBLISHER_NAME]]</strong>
+  Effective: 15 August 2026 · Last updated: 17 August 2026<br>
+  App: Ather (<code>com.ather.app</code>) · Publisher: <strong>Yassen Yousry</strong>
 </p>
 
 <p>
@@ -215,7 +221,7 @@
     <td>Yes</td>
   </tr>
   <tr>
-    <td>Your study record: chapters, lessons, exam and homework scores, review dates</td>
+    <td>Your study record: subjects, chapters, lessons, exam and homework scores, review dates</td>
     <td>This is the product. It is also backed up so a lost or replaced phone can recover it</td>
     <td>Yes</td>
   </tr>
@@ -226,6 +232,13 @@
   Firestore document on its own — about 20 seconds after any change, and again each
   time the app is closed. There is no switch that turns this off, and you should know
   that. Using the app requires signing in.
+</div>
+
+<div class="note">
+  <strong>Your name and school year stay on this phone.</strong> If you fill in the
+  profile inside the app, that name and year are stored in the app's settings on your
+  device. They are not uploaded to any server and are not part of the cloud copy.
+  Your email address remains the only thing we know about you on the server.
 </div>
 
 <h3>What we do not collect</h3>
@@ -263,18 +276,19 @@
 <h3>How to delete everything</h3>
 <p>
   In the app: <strong>Settings → Delete account</strong>. This deletes, in this order,
-  your cloud copy, your account, and everything on the phone. It cannot be undone.
+  everything on the phone, then your cloud copy, then the account itself. It cannot be
+  undone.
 </p>
 <p>
   If you cannot open the app, email us from your registered address at
-  <a href="mailto:[[CONTACT_EMAIL]]">[[CONTACT_EMAIL]]</a> and we will delete it within
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> and we will delete it within
   30 days. See the <a href="./account-deletion.html">account deletion page</a> for details.
 </p>
 
 <h2>4. Your rights</h2>
 <p>
   You may ask what we hold about you, correct it, delete it, or receive a copy. Email
-  <a href="mailto:[[CONTACT_EMAIL]]">[[CONTACT_EMAIL]]</a> from your registered address.
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> from your registered address.
 </p>
 
 <h2>5. Students under 18</h2>
@@ -285,7 +299,7 @@
 </p>
 <p>
   If you are a parent or guardian and want to review or delete your child's data, email
-  <a href="mailto:[[CONTACT_EMAIL]]">[[CONTACT_EMAIL]]</a>.
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a>.
 </p>
 
 <h2>6. Changes to this policy</h2>
@@ -296,8 +310,8 @@
 
 <h2>7. Contact</h2>
 <p>
-  <strong>[[PUBLISHER_NAME]]</strong> —
-  <a href="mailto:[[CONTACT_EMAIL]]">[[CONTACT_EMAIL]]</a>
+  <strong>Yassen Yousry</strong> —
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a>
 </p>
 
 </section>

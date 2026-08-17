@@ -108,11 +108,32 @@ class ReviewNotificationService {
     return true;
   }
 
+  /// What the schedule currently on the device is made of, so an identical
+  /// rebuild can be skipped entirely.
+  ///
+  /// Null until the first successful pass, and cleared whenever a pass is
+  /// abandoned part-way -- an unknown device state must never look like a
+  /// matching one.
+  String? _applied;
+
   /// Rebuilds the schedule from the current data.
   ///
   /// Cancels everything and re-schedules rather than diffing: the set is at most
   /// a few hundred lessons, and a full rebuild cannot leave a reminder for a
   /// lesson that was deleted or already re-examined.
+  ///
+  /// **But it only does that when something actually moved.** This is called on
+  /// a five-second debounce after *any* change to the record, and again on
+  /// every resume, and the work is one platform round-trip per lesson plus an
+  /// AlarmManager registration each. For a student with eighty lessons that was
+  /// eighty IPC calls and eighty alarm registrations, repeatedly, to arrive at
+  /// the schedule that was already there. Renaming a chapter, ticking a
+  /// checklist box or switching away and back all triggered a full rebuild.
+  ///
+  /// So the pass is fingerprinted first. Everything the schedule depends on
+  /// goes into the fingerprint -- the lesson ids, their due times, the bodies,
+  /// and the enabled flag -- and an identical one returns before touching the
+  /// platform at all.
   Future<void> reschedule({
     required StudySnapshot snapshot,
     required DateTime now,
@@ -122,24 +143,54 @@ class ReviewNotificationService {
   }) async {
     if (!_initialised) return;
 
+    final due = <({int id, DateTime at, String body})>[];
+    if (enabled && permissionGranted) {
+      // `activeLessons`, not `lessons`: a subject the student archived or
+      // deleted must stop reminding them about itself. Its lesson names are
+      // what a reminder's body is made of, and they land on a lock screen.
+      for (final lesson in snapshot.activeLessons) {
+        final dueAt = ReviewCycleService.dueAt(lesson);
+        if (dueAt == null) continue;
+
+        // Already-overdue lessons are shown in red in-app and badged on the
+        // Review tab; firing a notification for something that came due weeks
+        // ago would be noise, not a reminder.
+        if (!dueAt.isAfter(now)) continue;
+
+        final chapter = snapshot.chapterById(lesson.chapterId);
+        due.add((
+          id: lesson.id,
+          at: dueAt,
+          body: buildBody(lesson.name, chapter?.name ?? ''),
+        ));
+      }
+    }
+
+    final fingerprint = <String>[
+      '$enabled',
+      title,
+      for (final d in due) '${d.id}@${d.at.millisecondsSinceEpoch}:${d.body}',
+    ].join('|');
+    if (fingerprint == _applied) return;
+
+    // Cleared, not set, before the platform work: if any call below throws, the
+    // device is in a state this object cannot describe, and claiming otherwise
+    // would strand the student with a stale schedule no later pass would fix.
+    _applied = null;
+
     await _plugin.cancelAll();
-    if (!enabled || !permissionGranted) return;
+    if (due.isEmpty) {
+      _applied = fingerprint;
+      return;
+    }
 
-    for (final lesson in snapshot.lessons) {
-      final dueAt = ReviewCycleService.dueAt(lesson);
-      if (dueAt == null) continue;
-
-      // Already-overdue lessons are shown in red in-app and badged on the Review
-      // tab; firing a notification for something that came due weeks ago would
-      // be noise, not a reminder.
-      if (!dueAt.isAfter(now)) continue;
-
-      final chapter = snapshot.chapterById(lesson.chapterId);
+    for (final lesson in due) {
+      final dueAt = lesson.at;
 
       await _plugin.zonedSchedule(
         id: lesson.id,
         title: title,
-        body: buildBody(lesson.name, chapter?.name ?? ''),
+        body: lesson.body,
         scheduledDate: tz.TZDateTime.from(dueAt, tz.local),
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
@@ -157,6 +208,9 @@ class ReviewNotificationService {
         payload: '${lesson.id}',
       );
     }
+
+    // Only once every call above has landed.
+    _applied = fingerprint;
   }
 
   Future<void> cancelAll() => _plugin.cancelAll();

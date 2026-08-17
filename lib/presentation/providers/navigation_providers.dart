@@ -48,7 +48,7 @@ final nextTargetProvider = Provider<NextTarget?>((ref) {
   // Walk chapters rather than the flat lesson list so the order the student
   // built their curriculum in is the order the app offers it back.
   final ordered = <Lesson>[
-    for (final subject in snapshot.subjects)
+    for (final subject in snapshot.activeSubjects)
       for (final chapter in snapshot.chaptersIn(subject.id))
         ...snapshot.lessonsIn(chapter.id),
   ];
@@ -84,7 +84,7 @@ final quickExamTargetProvider = Provider<NextTarget?>((ref) {
 
   final snapshot = ref.watch(snapshotValueProvider);
   final now = ref.watch(nowValueProvider);
-  for (final subject in snapshot.subjects) {
+  for (final subject in snapshot.activeSubjects) {
     for (final chapter in snapshot.chaptersIn(subject.id)) {
       for (final lesson in snapshot.lessonsIn(chapter.id)) {
         return NextTarget(

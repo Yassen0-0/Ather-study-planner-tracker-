@@ -85,7 +85,7 @@ class LEn extends L {
 
   @override
   String get firstRunBody =>
-      'Open a subject, add a chapter inside it, then a lesson. Mastery comes only from your real exam results — not from finishing a lesson.';
+      'Mastery comes from your exams alone, not from finishing a lesson.';
 
   @override
   String get firstRunAction => 'Open your first subject';
@@ -309,10 +309,6 @@ class LEn extends L {
   String get examReviewBadge => 'Review';
 
   @override
-  String get examHistoryHint =>
-      'Tap an exam to remove it if it was entered by mistake';
-
-  @override
   String get examDelete => 'Remove exam';
 
   @override
@@ -459,10 +455,6 @@ class LEn extends L {
   String get analyticsAllSubjects => 'All subjects';
 
   @override
-  String get analyticsAlwaysAllSubjects =>
-      'This card always compares all four subjects';
-
-  @override
   String get analyticsMasteryBySubject => 'Mastery by subject';
 
   @override
@@ -523,9 +515,6 @@ class LEn extends L {
   String get celebrationBody => 'Solid work. Keep it up.';
 
   @override
-  String get celebrationHint => 'Tap anywhere to continue';
-
-  @override
   String get authSignInTitle => 'Sign in';
 
   @override
@@ -533,7 +522,7 @@ class LEn extends L {
 
   @override
   String get authSubtitle =>
-      'Sign in once — after that the app works with no connection';
+      'Sign in once, then the app works with no connection';
 
   @override
   String get authEmail => 'Email';
@@ -625,9 +614,6 @@ class LEn extends L {
       'The account was not deleted. Try again.';
 
   @override
-  String get authDeleteAccountSection => 'Danger zone';
-
-  @override
   String get settingsPrivacy => 'Privacy';
 
   @override
@@ -642,14 +628,14 @@ class LEn extends L {
 
   @override
   String get privacyLocalBody =>
-      'Your chapters, lessons, exams and tasks are stored on your phone only, in a local database. Mastery is computed on your device — no other server ever sees it.';
+      'Your subjects, chapters, lessons, exams and tasks are stored on your phone, in a local database. Mastery is computed on your device. Your name and school year from the profile are kept on this device only and are never uploaded.';
 
   @override
   String get privacyAccountTitle => 'Account data';
 
   @override
   String get privacyAccountBody =>
-      'For the cloud backup we ask for an email and password (or a Google account). They are stored by Google Firebase Auth. Your email is everything we know about you — no name, no age, no other personal data.';
+      'For the cloud backup we ask for an email and password (or a Google account). They are stored by Google Firebase Auth. Your email is everything we know about you on the server — no name, no age, no other personal data.';
 
   @override
   String get privacyCloudTitle => 'The cloud backup';
@@ -689,11 +675,129 @@ class LEn extends L {
   String get lockSetting => 'Fingerprint lock';
 
   @override
-  String get lockSettingBody =>
-      'Ask for a fingerprint every time the app opens';
+  String get settingsTitle => 'Settings';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get profileTitle => 'Your profile';
+
+  @override
+  String get profileName => 'Name';
+
+  @override
+  String get profileNameHint => 'Type your name';
+
+  @override
+  String get profileNameUnset => 'Not set';
+
+  @override
+  String get profileYear => 'School year';
+
+  @override
+  String get profileYearUnset => 'Not set';
+
+  @override
+  String get profileYearFirst => 'Year 1';
+
+  @override
+  String get profileYearSecond => 'Year 2';
+
+  @override
+  String get profileYearThird => 'Year 3';
+
+  @override
+  String get profileLocalNote =>
+      'This is kept on this device only and is never uploaded to any server.';
+
+  @override
+  String profileGreeting(String name) {
+    return 'Hello, $name';
+  }
+
+  @override
+  String get subjectsArchived => 'Archived subjects';
+
+  @override
+  String get subjectsArchivedNote =>
+      'An archived subject is not shown, does not count toward mastery, and sends no reminders. Its chapters and exams are kept exactly as they were.';
+
+  @override
+  String get subjectArchive => 'Archive subject';
+
+  @override
+  String get subjectUnarchive => 'Unarchive';
+
+  @override
+  String get binTitle => 'Recycle bin';
+
+  @override
+  String get binEmpty => 'The bin is empty';
+
+  @override
+  String get binRestore => 'Restore';
+
+  @override
+  String get binPurge => 'Delete permanently';
+
+  @override
+  String get binEmptyAll => 'Empty the bin';
+
+  @override
+  String binDeletedAt(String date) {
+    return 'Deleted $date';
+  }
+
+  @override
+  String get binNote =>
+      'Subjects here are kept whole, with their chapters and exams, and are never removed on their own. Only a permanent delete erases them.';
+
+  @override
+  String binPurgeConfirm(String subject, String chapters, String exams) {
+    return 'This erases \"$subject\" along with $chapters and $exams. It cannot be undone.';
+  }
+
+  @override
+  String get binEmptyAllConfirm =>
+      'This erases everything in the bin along with its chapters and exams. It cannot be undone.';
+
+  @override
+  String examCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count exams',
+      one: '1 exam',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get subjectsTitle => 'Subjects';
+
+  @override
+  String subjectCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count subjects',
+      one: '1 subject',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get subjectAdd => '+ Add subject';
+
+  @override
+  String get subjectNameHint => 'e.g. Maths';
+
+  @override
+  String get subjectRename => 'Rename';
+
+  @override
+  String get subjectDelete => 'Delete subject';
+
+  @override
+  String get settingsPreferences => 'Preferences';
 
   @override
   String get settingsLanguage => 'Language';
@@ -717,19 +821,14 @@ class LEn extends L {
   String get settingsThemeSystem => 'System';
 
   @override
-  String get settingsThemeBody =>
-      'Pick how the app looks, or let it follow your phone';
-
-  @override
   String get settingsNotifications => 'Review reminders';
-
-  @override
-  String get settingsNotificationsBody =>
-      'Remind me when a lesson is due for review';
 
   @override
   String get settingsNotificationsBlocked =>
       'Notifications are turned off in your phone\'s settings. Turn them on there to get reminders.';
+
+  @override
+  String get settingsAboutSection => 'About Ather';
 
   @override
   String get settingsAbout => 'About';
@@ -741,10 +840,6 @@ class LEn extends L {
 
   @override
   String get backupTitle => 'Cloud backup';
-
-  @override
-  String get backupBody =>
-      'Your work is saved to your account, so a new phone finds it waiting.';
 
   @override
   String get backupNever => 'Not saved yet';
@@ -817,10 +912,6 @@ class LEn extends L {
 
   @override
   String get noTasksYet => 'No tasks for this day';
-
-  @override
-  String get tasksEmptyBody =>
-      'Write down what you plan to do, and tick it off as you go.';
 
   @override
   String get commonSave => 'Save';

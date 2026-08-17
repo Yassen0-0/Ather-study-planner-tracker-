@@ -1,4 +1,4 @@
-# `public/` — the two pages Play requires to have a URL
+# `public/` — the site, and the two pages Play requires to have a URL
 
 Google Play will not publish Ather without a **privacy policy URL**, and will not
 publish an app with account creation without a **web-accessible account-deletion
@@ -9,8 +9,13 @@ They are served from **Firebase Hosting**, on the project that already exists:
 
 | Page | URL once deployed |
 |---|---|
+| [index.html](index.html) | `https://ather-49705.web.app/` |
 | [privacy.html](privacy.html) | `https://ather-49705.web.app/privacy` |
 | [account-deletion.html](account-deletion.html) | `https://ather-49705.web.app/account-deletion` |
+
+The landing page states four claims and every one of them is checkable against the
+code. Keep it that way — it is the page a stranger reads first, and it is the only
+page here that can be marketing rather than fact if nobody is watching.
 
 `cleanUrls` in `firebase.json` is what drops the `.html`.
 
@@ -19,24 +24,18 @@ private**, and Pages on a private repository needs a paid plan. The Firebase
 project is already provisioned, costs nothing on the free tier for two static
 files, and keeps the policy on infrastructure we already depend on.
 
-## Before deploying — fill in the two placeholders
+## Who this is published as
 
-Both files contain `[[PUBLISHER_NAME]]` and `[[CONTACT_EMAIL]]`, deliberately left
-unfilled. **Do not deploy with them still in place** — a privacy policy that says
-`[[CONTACT_EMAIL]]` is worse than none, because it is a published promise of a
-contact route that does not exist.
+| Field | Value |
+|---|---|
+| Publisher | `Yassen Yousry` — must stay identical to the developer name on the Play listing; a policy naming a different entity than the store page is a rejection reason |
+| Contact | `yassen.y.mohamed.s@gmail.com` |
+| Download | `https://github.com/Yassen0-0/Ather/releases/latest` |
 
-```bash
-grep -rn "\[\[PUBLISHER_NAME\]\]\|\[\[CONTACT_EMAIL\]\]" public/
-```
-
-On the contact address: prefer a dedicated one (`privacy@…`, or a fresh Gmail) over
-a personal address. This goes on a public page that a scraper will find, it is the
-address parents will write to, and it is very hard to change once it is in a
-published Play listing and a policy students have already been shown.
-
-`PUBLISHER_NAME` must match the developer name on the Play listing exactly. A
-policy naming a different entity than the store page is a rejection reason.
+The download button points at `releases/latest` rather than a pinned `.apk`
+asset, so it keeps working on every future release without anyone editing this
+page. It only works once a **GitHub Release actually exists** — a repository
+with no releases answers that URL with a 404.
 
 ## Deploying
 
@@ -63,3 +62,12 @@ break if the app changes:
 - **"No ads, no tracking, no analytics, no crash reporting."** True today. Adding
   Firebase Analytics or Crashlytics — the two most natural things to reach for next —
   breaks this and the Data safety form together.
+- **"Your email is the only thing we know about you on the server."** True because the
+  profile — the student's name and school year — is written to `SharedPreferences` and
+  is not part of `StudyBackup`. Syncing the profile breaks this line, the Data safety
+  form, and the under-18 section, which leans on it hardest.
+- **The deletion order.** Both pages say device, then cloud, then account, because that
+  is the order `_deleteEverything` actually runs in. They said the reverse until
+  2026-08-17; the sequence is deliberate (an account deleted before its data leaves a
+  student whose cloud copy outlives their ability to reach it), so if the code order
+  ever changes, these pages are describing a promise that no longer holds.

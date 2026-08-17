@@ -66,7 +66,7 @@ void main() {
     // --- Build the curriculum ------------------------------------------------
     await tester.tap(find.text('أحياء'));
     await tester.pumpAndSettle();
-    expect(find.text('مفيش أبواب لسه'), findsOneWidget);
+    expect(find.text('لا توجد أبواب بعد'), findsOneWidget);
 
     await tester.tap(find.text('+ إضافة باب'));
     await tester.pumpAndSettle();
@@ -78,7 +78,7 @@ void main() {
 
     await tester.tap(find.text('الباب الأول').first);
     await tester.pumpAndSettle();
-    expect(find.text('مفيش دروس لسه'), findsOneWidget);
+    expect(find.text('لا توجد دروس بعد'), findsOneWidget);
 
     await tester.tap(find.text('+ إضافة درس'));
     await tester.pumpAndSettle();
@@ -88,7 +88,7 @@ void main() {
 
     // A chapter with an unexamined lesson can never be mastered, and the gate
     // says so instead of going quiet.
-    expect(find.text('لسه مش جاهز — اعرف ليه'), findsOneWidget);
+    expect(find.text('لم يكتمل بعد — اعرف السبب'), findsOneWidget);
 
     // --- Record the exam -----------------------------------------------------
     await tester.tap(find.text('تركيب الخلية').first);
@@ -101,7 +101,7 @@ void main() {
     // Step 1: total questions. An empty total is refused with a reason.
     await tester.tap(find.text('التالي'));
     await tester.pumpAndSettle();
-    expect(find.text('لازم سؤال واحد على الأقل'), findsOneWidget);
+    expect(find.text('سؤال واحد على الأقل'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).first, '4');
     await tester.tap(find.text('التالي'));
@@ -117,7 +117,7 @@ void main() {
     await tester.enterText(find.byType(TextField).first, '9');
     await tester.tap(find.text('التالي'));
     await tester.pumpAndSettle();
-    expect(find.text('عدد الصح مينفعش يزيد عن عدد الأسئلة'), findsOneWidget);
+    expect(find.text('عدد الإجابات الصحيحة لا يتجاوز عدد الأسئلة'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).first, '3');
     await tester.tap(find.text('التالي'));
@@ -131,12 +131,12 @@ void main() {
 
     // Back on the lesson, with the score and the confirmation.
     expect(
-      find.text('اتسجّل الامتحان — عداد المراجعة بدأ من جديد'),
+      find.text('حُفظ الامتحان — بدأ عدّاد المراجعة من جديد'),
       findsOneWidget,
     );
     expect(find.text(iso('75%')), findsWidgets);
     expect(
-      find.text('باقي ${iso('30')} يوم'),
+      find.text('بقي ${iso('30')} يوم'),
       findsOneWidget,
       reason: 'recording an exam restarts the 30-day review clock',
     );
@@ -147,7 +147,7 @@ void main() {
     // Let the toast retire itself; its 2.2s timer outlives the test otherwise.
     await tester.pump(const Duration(seconds: 3));
     expect(
-      find.text('اتسجّل الامتحان — عداد المراجعة بدأ من جديد'),
+      find.text('حُفظ الامتحان — بدأ عدّاد المراجعة من جديد'),
       findsNothing,
     );
 

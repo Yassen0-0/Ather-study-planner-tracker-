@@ -21,14 +21,12 @@ class CelebrationOverlay extends StatefulWidget {
     super.key,
     required this.title,
     required this.body,
-    required this.hint,
     required this.percentage,
     required this.onDismiss,
   });
 
   final String title;
   final String body;
-  final String hint;
   final double percentage;
   final VoidCallback onDismiss;
 
@@ -104,13 +102,6 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                 percent(widget.percentage),
                 style: AppTypography.celebrationNumber.copyWith(
                   color: context.colors.rightText,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxxl),
-              Text(
-                widget.hint,
-                style: context.text.sublabel.copyWith(
-                  color: context.colors.textTertiary,
                 ),
               ),
             ],
