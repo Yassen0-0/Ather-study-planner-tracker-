@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import '../../domain/entities/study_backup.dart';
 import '../../domain/repositories/backup_repository.dart';
@@ -100,10 +101,11 @@ class FirestoreBackupRepository implements BackupRepository {
       return StudyBackup.fromJson(json);
     } on BackupException {
       rethrow;
-    } on Object {
+    } on Object catch (e, stack) {
       // Covers a corrupt blob, invalid UTF-8, malformed JSON and a
       // BackupFormatException alike. All of them mean the same thing to the
       // caller: do not touch the local database.
+      FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
       throw const BackupException(BackupFailure.unreadable);
     }
   }
@@ -163,17 +165,20 @@ class FirestoreBackupRepository implements BackupRepository {
       return await action();
     } on BackupException {
       rethrow;
-    } on FirebaseException catch (e) {
+    } on FirebaseException catch (e, stack) {
+      FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
       throw BackupException(switch (e.code) {
         'permission-denied' => BackupFailure.permissionDenied,
         'unauthenticated' => BackupFailure.notSignedIn,
         'unavailable' || 'deadline-exceeded' => BackupFailure.offline,
         _ => BackupFailure.unknown,
       });
-    } on SocketException {
+    } on SocketException catch (e, stack) {
+      FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
       throw const BackupException(BackupFailure.offline);
-    } on Object {
+    } on Object catch (e, stack) {
       // TimeoutException lands here too, and is the offline case in practice.
+      FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
       throw const BackupException(BackupFailure.offline);
     }
   }
