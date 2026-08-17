@@ -88,6 +88,7 @@ final class StudyBackup {
           'name': s.name,
           'sortOrder': s.sortOrder,
           'archivedAt': _epochOrNull(s.archivedAt),
+          'deletedAt': _epochOrNull(s.deletedAt),
         },
     ],
     'chapters': <Object?>[
@@ -183,6 +184,9 @@ final class StudyBackup {
           name: raw['name'] as String?,
           sortOrder: (raw['sortOrder'] ?? 0) as int,
           archivedAt: _dateOrNull(raw['archivedAt']),
+          // Absent in anything written before the recycle bin existed, which
+          // reads back as null -- an active subject, which is what it was.
+          deletedAt: _dateOrNull(raw['deletedAt']),
         ),
     ];
 

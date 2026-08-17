@@ -44,6 +44,7 @@ void main() {
     await db.customStatement('DROP TABLE daily_tasks');
     await db.customStatement('ALTER TABLE subjects DROP COLUMN name');
     await db.customStatement('ALTER TABLE subjects DROP COLUMN archived_at');
+    await db.customStatement('ALTER TABLE subjects DROP COLUMN deleted_at');
     await db.customStatement('PRAGMA user_version = 1');
     await db.close();
   }
@@ -63,6 +64,7 @@ void main() {
         );
     await db.customStatement('ALTER TABLE subjects DROP COLUMN name');
     await db.customStatement('ALTER TABLE subjects DROP COLUMN archived_at');
+    await db.customStatement('ALTER TABLE subjects DROP COLUMN deleted_at');
     await db.customStatement('PRAGMA user_version = 2');
     await db.close();
   }
@@ -115,6 +117,8 @@ void main() {
     // rewritten with one -- their names come from the ARB files.
     expect(subjects.firstWhere((s) => s.id == 1).name, isNull);
     expect(subjects.every((s) => s.archivedAt == null), isTrue);
+    // Nothing arrives in the recycle bin as a side effect of upgrading.
+    expect(subjects.every((s) => s.deletedAt == null), isTrue);
 
     // And nothing the student built was touched on the way.
     final chapters = await db.select(db.chapters).get();

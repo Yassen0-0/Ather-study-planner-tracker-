@@ -121,6 +121,17 @@ class SettingsScreen extends ConsumerWidget {
               ),
               onTap: () => context.push(Routes.subjects),
             ),
+            // Directly under Subjects, so the bin sits beside the thing that
+            // fills it. Shown only when there is something in it: a row
+            // reading "0" is a row that teaches the student to ignore it.
+            if (ref.watch(snapshotValueProvider).deletedSubjects.isNotEmpty)
+              SettingsRow(
+                label: l.binTitle,
+                value: l.subjectCountLabel(
+                  ref.watch(snapshotValueProvider).deletedSubjects.length,
+                ),
+                onTap: () => context.push(Routes.recycleBin),
+              ),
             SettingsRow(
               label: l.settingsLanguage,
               value: locale.languageCode == 'en'

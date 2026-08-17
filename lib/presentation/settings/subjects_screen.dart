@@ -24,19 +24,24 @@ import '../providers/app_providers.dart';
 /// empty screen is worse than one that opens onto four subjects you can hide —
 /// but they are no longer the list.
 ///
-/// ## Why hiding comes first and deleting barely appears
+/// ## Archive and delete are two different intentions
 ///
-/// `Chapters.subjectId` cascades. Deleting a subject takes every chapter,
-/// lesson and exam under it, which for a student two years into their record is
-/// the largest single act of destruction this app is capable of — and there is
-/// no undo anywhere in it. Meanwhile the thing a student almost always means by
-/// "remove إنجليزي" is *stop showing it to me*, not *destroy the eleven exams I
-/// recorded in it*.
+/// An earlier version of this screen offered a single "hide", and refused to
+/// delete a subject that had any chapters — because `Chapters.subjectId`
+/// cascades and there is no undo anywhere in this app. The protection was
+/// real; the design around it was not. It left a dead end: a student who
+/// genuinely does not take a subject could never remove it, and "hidden" is a
+/// state nobody asked for and nobody has a word for.
 ///
-/// So the row offers **hiding**, which touches nothing and is reversible from
-/// this same screen, and the repository refuses to delete a subject that has
-/// any chapters at all. Deleting is left for the case where nothing can be
-/// lost: a subject added by mistake, five seconds ago, still empty.
+/// There are two operations now, and they mean different things:
+///
+/// * **أرشفة** — "I am done with this, put it away." A deliberate act on a
+///   subject the student is keeping.
+/// * **حذف** — "I did not mean to have this." It goes to the recycle bin,
+///   whole, and can be brought back from Settings.
+///
+/// Neither destroys anything. The cascade fires in exactly one place: emptying
+/// the bin. That is what makes offering an unguarded "delete" honest.
 class SubjectsScreen extends ConsumerWidget {
   const SubjectsScreen({super.key});
 
@@ -69,7 +74,7 @@ class SubjectsScreen extends ConsumerWidget {
         if (archived.isNotEmpty) ...<Widget>[
           const SizedBox(height: AppSpacing.xxxl),
           SettingsGroup(
-            title: l.subjectsHidden,
+            title: l.subjectsArchived,
             children: <Widget>[
               for (final subject in archived)
                 _SubjectRow(
@@ -79,7 +84,7 @@ class SubjectsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          SettingsFootnote(l.subjectsHiddenNote),
+          SettingsFootnote(l.subjectsArchivedNote),
         ],
       ],
     );
@@ -165,7 +170,9 @@ class _SubjectRow extends ConsumerWidget {
                 },
               ),
             SettingsRow(
-              label: subject.isArchived ? l.subjectUnhide : l.subjectHide,
+              label: subject.isArchived
+                  ? l.subjectUnarchive
+                  : l.subjectArchive,
               trailing: SettingsRowTrailing.none,
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -178,22 +185,25 @@ class _SubjectRow extends ConsumerWidget {
                 );
               },
             ),
-            // Offered only when there is provably nothing to lose. The
-            // repository refuses either way -- this is the screen agreeing with
-            // it rather than presenting a control that answers "no".
-            if (chapterCount == 0)
-              SettingsRow(
-                label: l.subjectDelete,
-                destructive: true,
-                trailing: SettingsRowTrailing.none,
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  runWrite(
-                    context,
-                    () => repository.deleteEmptySubject(subject.id),
-                  );
-                },
-              ),
+            // No guard and no confirmation, because nothing is destroyed: the
+            // subject goes to the recycle bin whole, and comes back from there
+            // untouched. A confirmation here would be asking a student to
+            // steel themselves for an action that is a flag.
+            SettingsRow(
+              label: l.subjectDelete,
+              destructive: true,
+              trailing: SettingsRowTrailing.none,
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                runWrite(
+                  context,
+                  () => repository.setSubjectDeleted(
+                    subjectId: subject.id,
+                    at: clock.now(),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),

@@ -352,6 +352,35 @@
   "@profileGreeting": {
     "placeholders": { "name": { "type": "String" } }
   },
+  "subjectsArchived": "مواد مؤرشفة",
+  "subjectsArchivedNote": "المادة المؤرشفة لا تظهر ولا تدخل في حساب الإتقان ولا تُرسل تنبيهاتها، وأبوابها وامتحاناتها محفوظة كما هي.",
+  "subjectArchive": "أرشفة المادة",
+  "subjectUnarchive": "إخراج من الأرشيف",
+  "binTitle": "سلة المحذوفات",
+  "binEmpty": "السلة فارغة",
+  "binRestore": "استرجاع",
+  "binPurge": "حذف نهائي",
+  "binEmptyAll": "إفراغ السلة",
+  "binDeletedAt": "حُذفت في {date}",
+  "@binDeletedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "binNote": "المواد هنا محفوظة بالكامل بأبوابها وامتحاناتها، ولا تُحذف من نفسها أبداً. الحذف النهائي وحده هو الذي يمحوها.",
+  "binPurgeConfirm": "سيُمحى «{subject}» ومعه {chapters} و{exams}. لا يمكن التراجع.",
+  "@binPurgeConfirm": {
+    "placeholders": {
+      "subject": { "type": "String" },
+      "chapters": { "type": "String" },
+      "exams": { "type": "String" }
+    }
+  },
+  "binEmptyAllConfirm": "سيُمحى كل ما في السلة ومعه أبوابه وامتحاناته. لا يمكن التراجع.",
+  "examCountLabel": "{count, plural, =1{امتحان واحد} =2{امتحانان} few{{count} امتحانات} many{{count} امتحاناً} other{{count} امتحان}}",
+  "@examCountLabel": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "subjectsTitle": "المواد",
   "subjectCountLabel": "{count, plural, =1{مادة واحدة} =2{مادتان} few{{count} مواد} many{{count} مادة} other{{count} مادة}}",
   "@subjectCountLabel": {
@@ -360,11 +389,7 @@
   "subjectAdd": "+ إضافة مادة",
   "subjectNameHint": "مثال: رياضيات",
   "subjectRename": "تعديل الاسم",
-  "subjectHide": "إخفاء المادة",
-  "subjectUnhide": "إظهار المادة",
   "subjectDelete": "حذف المادة",
-  "subjectsHidden": "مواد مخفية",
-  "subjectsHiddenNote": "المادة المخفية لا تظهر ولا تدخل في حساب الإتقان، وأبوابها وامتحاناتها محفوظة كما هي.",
   "settingsPreferences": "التفضيلات",
   "settingsLanguage": "اللغة",
   "settingsLanguageArabic": "العربية",

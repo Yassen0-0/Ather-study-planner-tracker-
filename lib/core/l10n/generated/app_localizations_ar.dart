@@ -714,6 +714,66 @@ class LAr extends L {
   }
 
   @override
+  String get subjectsArchived => 'مواد مؤرشفة';
+
+  @override
+  String get subjectsArchivedNote =>
+      'المادة المؤرشفة لا تظهر ولا تدخل في حساب الإتقان ولا تُرسل تنبيهاتها، وأبوابها وامتحاناتها محفوظة كما هي.';
+
+  @override
+  String get subjectArchive => 'أرشفة المادة';
+
+  @override
+  String get subjectUnarchive => 'إخراج من الأرشيف';
+
+  @override
+  String get binTitle => 'سلة المحذوفات';
+
+  @override
+  String get binEmpty => 'السلة فارغة';
+
+  @override
+  String get binRestore => 'استرجاع';
+
+  @override
+  String get binPurge => 'حذف نهائي';
+
+  @override
+  String get binEmptyAll => 'إفراغ السلة';
+
+  @override
+  String binDeletedAt(String date) {
+    return 'حُذفت في $date';
+  }
+
+  @override
+  String get binNote =>
+      'المواد هنا محفوظة بالكامل بأبوابها وامتحاناتها، ولا تُحذف من نفسها أبداً. الحذف النهائي وحده هو الذي يمحوها.';
+
+  @override
+  String binPurgeConfirm(String subject, String chapters, String exams) {
+    return 'سيُمحى «$subject» ومعه $chapters و$exams. لا يمكن التراجع.';
+  }
+
+  @override
+  String get binEmptyAllConfirm =>
+      'سيُمحى كل ما في السلة ومعه أبوابه وامتحاناته. لا يمكن التراجع.';
+
+  @override
+  String examCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count امتحان',
+      many: '$count امتحاناً',
+      few: '$count امتحانات',
+      two: 'امتحانان',
+      one: 'امتحان واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get subjectsTitle => 'المواد';
 
   @override
@@ -740,20 +800,7 @@ class LAr extends L {
   String get subjectRename => 'تعديل الاسم';
 
   @override
-  String get subjectHide => 'إخفاء المادة';
-
-  @override
-  String get subjectUnhide => 'إظهار المادة';
-
-  @override
   String get subjectDelete => 'حذف المادة';
-
-  @override
-  String get subjectsHidden => 'مواد مخفية';
-
-  @override
-  String get subjectsHiddenNote =>
-      'المادة المخفية لا تظهر ولا تدخل في حساب الإتقان، وأبوابها وامتحاناتها محفوظة كما هي.';
 
   @override
   String get settingsPreferences => 'التفضيلات';

@@ -17,6 +17,7 @@ import '../presentation/review_center/review_center_screen.dart';
 import '../presentation/settings/about_screen.dart';
 import '../presentation/settings/backup_screen.dart';
 import '../presentation/settings/profile_screen.dart';
+import '../presentation/settings/recycle_bin_screen.dart';
 import '../presentation/settings/settings_screen.dart';
 import '../presentation/settings/subjects_screen.dart';
 import '../presentation/shell/app_shell.dart';
@@ -35,6 +36,7 @@ abstract final class Routes {
   static const String about = '/settings/about';
   static const String subjects = '/settings/subjects';
   static const String profile = '/settings/profile';
+  static const String recycleBin = '/settings/recycle-bin';
   static const String login = '/login';
 
   static String subject(int id) => '/subject/$id';
@@ -319,6 +321,12 @@ GoRouter createRouter({
             parentNavigatorKey: rootNavigatorKey,
             pageBuilder: (context, state) =>
                 atherPage(state, const ProfileScreen()),
+          ),
+          GoRoute(
+            path: 'recycle-bin',
+            parentNavigatorKey: rootNavigatorKey,
+            pageBuilder: (context, state) =>
+                atherPage(state, const RecycleBinScreen()),
           ),
         ],
       ),

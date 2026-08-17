@@ -1333,6 +1333,90 @@ abstract class L {
   /// **'أهلاً، {name}'**
   String profileGreeting(String name);
 
+  /// No description provided for @subjectsArchived.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواد مؤرشفة'**
+  String get subjectsArchived;
+
+  /// No description provided for @subjectsArchivedNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'المادة المؤرشفة لا تظهر ولا تدخل في حساب الإتقان ولا تُرسل تنبيهاتها، وأبوابها وامتحاناتها محفوظة كما هي.'**
+  String get subjectsArchivedNote;
+
+  /// No description provided for @subjectArchive.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرشفة المادة'**
+  String get subjectArchive;
+
+  /// No description provided for @subjectUnarchive.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخراج من الأرشيف'**
+  String get subjectUnarchive;
+
+  /// No description provided for @binTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سلة المحذوفات'**
+  String get binTitle;
+
+  /// No description provided for @binEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'السلة فارغة'**
+  String get binEmpty;
+
+  /// No description provided for @binRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرجاع'**
+  String get binRestore;
+
+  /// No description provided for @binPurge.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف نهائي'**
+  String get binPurge;
+
+  /// No description provided for @binEmptyAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'إفراغ السلة'**
+  String get binEmptyAll;
+
+  /// No description provided for @binDeletedAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُذفت في {date}'**
+  String binDeletedAt(String date);
+
+  /// No description provided for @binNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواد هنا محفوظة بالكامل بأبوابها وامتحاناتها، ولا تُحذف من نفسها أبداً. الحذف النهائي وحده هو الذي يمحوها.'**
+  String get binNote;
+
+  /// No description provided for @binPurgeConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُمحى «{subject}» ومعه {chapters} و{exams}. لا يمكن التراجع.'**
+  String binPurgeConfirm(String subject, String chapters, String exams);
+
+  /// No description provided for @binEmptyAllConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيُمحى كل ما في السلة ومعه أبوابه وامتحاناته. لا يمكن التراجع.'**
+  String get binEmptyAllConfirm;
+
+  /// No description provided for @examCountLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{امتحان واحد} =2{امتحانان} few{{count} امتحانات} many{{count} امتحاناً} other{{count} امتحان}}'**
+  String examCountLabel(int count);
+
   /// No description provided for @subjectsTitle.
   ///
   /// In ar, this message translates to:
@@ -1363,35 +1447,11 @@ abstract class L {
   /// **'تعديل الاسم'**
   String get subjectRename;
 
-  /// No description provided for @subjectHide.
-  ///
-  /// In ar, this message translates to:
-  /// **'إخفاء المادة'**
-  String get subjectHide;
-
-  /// No description provided for @subjectUnhide.
-  ///
-  /// In ar, this message translates to:
-  /// **'إظهار المادة'**
-  String get subjectUnhide;
-
   /// No description provided for @subjectDelete.
   ///
   /// In ar, this message translates to:
   /// **'حذف المادة'**
   String get subjectDelete;
-
-  /// No description provided for @subjectsHidden.
-  ///
-  /// In ar, this message translates to:
-  /// **'مواد مخفية'**
-  String get subjectsHidden;
-
-  /// No description provided for @subjectsHiddenNote.
-  ///
-  /// In ar, this message translates to:
-  /// **'المادة المخفية لا تظهر ولا تدخل في حساب الإتقان، وأبوابها وامتحاناتها محفوظة كما هي.'**
-  String get subjectsHiddenNote;
 
   /// No description provided for @settingsPreferences.
   ///

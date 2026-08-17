@@ -176,7 +176,7 @@ abstract final class InsightsGenerator {
   ) {
     ({int id, String name, int days})? stalest;
 
-    for (final lesson in snapshot.lessons) {
+    for (final lesson in snapshot.activeLessons) {
       final days = ReviewCycleService.daysSinceReview(lesson, now);
       if (days == null || days < _stalenessDays) continue;
       if (stalest == null || days > stalest.days) {

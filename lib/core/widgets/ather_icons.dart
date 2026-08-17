@@ -38,6 +38,16 @@ enum AtherGlyph {
   close,
   chevron,
 
+  /// The one "add" affordance drawn as geometry.
+  ///
+  /// The enum note above says there was nothing left to draw a "+" from by
+  /// habit, because the raised centre tab-bar button was removed with the
+  /// visual refresh. This is not that button coming back: it is a 20px control
+  /// beside a section heading, and it exists because "add a subject" had no
+  /// home outside Settings. Drawn rather than typed for the reason the eye
+  /// toggle below was redrawn -- a control is not the place for a rebus.
+  plus,
+
   /// The password field's "show" toggle, and its "hide" partner below.
   ///
   /// These are the last two controls in the app that were drawn with type
@@ -296,6 +306,14 @@ class _GlyphPainter extends CustomPainter {
         canvas
           ..drawLine(const Offset(6, 6), const Offset(18, 18), stroke)
           ..drawLine(const Offset(18, 6), const Offset(6, 18), stroke);
+
+      case AtherGlyph.plus:
+        // The same two strokes as `close`, unrotated, on the same 6..18 span,
+        // so the two read as one family at the same optical weight.
+        stroke.strokeWidth = strokeWidth ?? 2.2;
+        canvas
+          ..drawLine(const Offset(12, 6), const Offset(12, 18), stroke)
+          ..drawLine(const Offset(6, 12), const Offset(18, 12), stroke);
 
       case AtherGlyph.eye:
       case AtherGlyph.eyeOff:

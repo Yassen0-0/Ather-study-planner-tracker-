@@ -241,6 +241,35 @@
   "@profileGreeting": {
     "placeholders": { "name": { "type": "String" } }
   },
+  "subjectsArchived": "Archived subjects",
+  "subjectsArchivedNote": "An archived subject is not shown, does not count toward mastery, and sends no reminders. Its chapters and exams are kept exactly as they were.",
+  "subjectArchive": "Archive subject",
+  "subjectUnarchive": "Unarchive",
+  "binTitle": "Recycle bin",
+  "binEmpty": "The bin is empty",
+  "binRestore": "Restore",
+  "binPurge": "Delete permanently",
+  "binEmptyAll": "Empty the bin",
+  "binDeletedAt": "Deleted {date}",
+  "@binDeletedAt": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "binNote": "Subjects here are kept whole, with their chapters and exams, and are never removed on their own. Only a permanent delete erases them.",
+  "binPurgeConfirm": "This erases \"{subject}\" along with {chapters} and {exams}. It cannot be undone.",
+  "@binPurgeConfirm": {
+    "placeholders": {
+      "subject": { "type": "String" },
+      "chapters": { "type": "String" },
+      "exams": { "type": "String" }
+    }
+  },
+  "binEmptyAllConfirm": "This erases everything in the bin along with its chapters and exams. It cannot be undone.",
+  "examCountLabel": "{count, plural, =1{1 exam} other{{count} exams}}",
+  "@examCountLabel": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "subjectsTitle": "Subjects",
   "subjectCountLabel": "{count, plural, =1{1 subject} other{{count} subjects}}",
   "@subjectCountLabel": {
@@ -249,11 +278,7 @@
   "subjectAdd": "+ Add subject",
   "subjectNameHint": "e.g. Maths",
   "subjectRename": "Rename",
-  "subjectHide": "Hide subject",
-  "subjectUnhide": "Show subject",
   "subjectDelete": "Delete subject",
-  "subjectsHidden": "Hidden subjects",
-  "subjectsHiddenNote": "A hidden subject is not shown and does not count toward mastery. Its chapters and exams are kept exactly as they were.",
   "settingsPreferences": "Preferences",
   "settingsLanguage": "Language",
   "settingsLanguageArabic": "العربية",

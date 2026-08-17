@@ -29,23 +29,33 @@ abstract interface class StudyRepository {
   /// language into a database the toggle cannot reach.
   Future<void> renameSubject({required int subjectId, required String name});
 
-  /// Hides a subject without touching anything under it, or brings it back.
+  /// Archives a subject, or brings it back. Touches nothing beneath it.
   ///
-  /// This is the ordinary way to remove a subject from view, and it is what
-  /// the interface offers first, because `Chapters.subjectId` cascades: a real
-  /// delete takes every chapter, lesson and exam beneath it.
+  /// "I am done with this, put it away" — a deliberate act on a subject the
+  /// student is keeping.
   Future<void> setSubjectArchived({
     required int subjectId,
     required DateTime? at,
   });
 
-  /// Deletes a subject **only if it has no chapters**, and answers whether it
-  /// did.
+  /// Moves a subject to the recycle bin, or restores it. Touches nothing
+  /// beneath it either.
   ///
-  /// The guard is in the repository rather than in the screen so that no
-  /// future caller can route around it. A subject with a single chapter under
-  /// it has a whole tree of exams under that, and there is no undo in this app.
-  Future<bool> deleteEmptySubject(int subjectId);
+  /// "I did not mean to have this" — the other intention, and the reason these
+  /// are two operations rather than one. `Chapters.subjectId` cascades, so a
+  /// real delete here would take every chapter, lesson and exam beneath it and
+  /// there is no undo anywhere in this app. Deferring the cascade to
+  /// [purgeSubject] is what makes offering "delete" honest.
+  Future<void> setSubjectDeleted({
+    required int subjectId,
+    required DateTime? at,
+  });
+
+  /// Destroys a subject and everything beneath it, for real.
+  ///
+  /// The single irreversible operation in the whole feature, reachable only
+  /// from inside the recycle bin. Everything else is a flag.
+  Future<void> purgeSubject(int subjectId);
 
   // --- Chapters -------------------------------------------------------------
   /// [at] comes from the injectable [Clock], like every other timestamp the app

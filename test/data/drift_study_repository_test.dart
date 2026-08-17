@@ -383,6 +383,17 @@ void main() {
   });
 
   group('watchSnapshot', () {
+    /// Outwaits the combined stream's coalescing window.
+    ///
+    /// The stream deliberately emits once per burst rather than once per
+    /// contributing table -- one write usually touches three of the six, and
+    /// each emission rebuilds the whole record. That window is a real [Timer],
+    /// so `pumpEventQueue` alone no longer reaches past it.
+    Future<void> settle() async {
+      await Future<void>.delayed(kSnapshotCoalesceWindow * 3);
+      await pumpEventQueue();
+    }
+
     test('emits an initial value and re-emits on every write', () async {
       final emissions = <int>[];
       final sub = repo.watchSnapshot().listen(
@@ -390,16 +401,16 @@ void main() {
       );
 
       // Let the initial combined emission land.
-      await pumpEventQueue();
+      await settle();
       expect(emissions, isNotEmpty, reason: 'must emit an initial snapshot');
       expect(emissions.last, 0);
 
       await repo.createChapter(subjectId: 1, name: 'باب', at: kSeedInstant);
-      await pumpEventQueue();
+      await settle();
       expect(emissions.last, 1);
 
       await repo.createChapter(subjectId: 1, name: 'باب ٢', at: kSeedInstant);
-      await pumpEventQueue();
+      await settle();
       expect(emissions.last, 2);
 
       await sub.cancel();
@@ -419,7 +430,7 @@ void main() {
 
       final seen = <int>[];
       final sub = repo.watchSnapshot().listen((s) => seen.add(s.exams.length));
-      await pumpEventQueue();
+      await settle();
 
       await repo.recordExam(
         lessonId: lessonId,
@@ -433,9 +444,17 @@ void main() {
         isReviewExam: false,
         at: DateTime(2026, 4, 1),
       );
-      await pumpEventQueue();
+      await settle();
 
       expect(seen.last, 1);
+      // Saving an exam writes three of the six tables -- `exam_entries`,
+      // `exam_question_groups` and `lessons` -- and this used to emit once per
+      // table, rebuilding the entire record three times for one action.
+      expect(
+        seen.length,
+        2,
+        reason: 'one initial emission, then one for the whole write',
+      );
       await sub.cancel();
     });
   });
@@ -668,27 +687,127 @@ void main() {
       expect(snap.chapters, hasLength(1));
     });
 
-    test('a subject with any chapter under it refuses to be deleted', () async {
+    test('deleting a subject keeps everything under it, and it comes back', () async {
+      // The claim the recycle bin is built on. An earlier design refused to
+      // delete a subject that had chapters at all, which protected the data and
+      // left a dead end: a subject the student did not take could never be
+      // removed. Delete is a flag now, and this is what makes that honest.
       final id = await repo.createSubject(name: 'رياضيات');
-      await repo.createChapter(
+      final chapterId = await repo.createChapter(
         subjectId: id,
         name: 'باب',
         at: kSeedInstant,
       );
+      final lessonId = await repo.createLesson(
+        chapterId: chapterId,
+        name: 'درس',
+        at: kSeedInstant,
+      );
+      await repo.recordExam(
+        lessonId: lessonId,
+        groups: const <DraftQuestionGroup>[
+          DraftQuestionGroup(
+            pointsPerQuestion: 1,
+            questionCount: 4,
+            correctCount: 3,
+          ),
+        ],
+        isReviewExam: false,
+        at: kSeedInstant,
+      );
 
-      // The guard lives in the repository, not the screen, so no future caller
-      // can route around it. Chapters cascade: without this, one confirmation
-      // takes every exam ever recorded under the subject.
-      expect(await repo.deleteEmptySubject(id), isFalse);
-      expect((await repo.readSnapshot()).subjectById(id), isNotNull);
-      expect((await repo.readSnapshot()).chapters, hasLength(1));
+      await repo.setSubjectDeleted(subjectId: id, at: DateTime(2026, 8, 17));
+      var snap = await repo.readSnapshot();
+
+      expect(snap.subjectById(id)!.isDeleted, isTrue);
+      expect(snap.activeSubjects.map((s) => s.id), isNot(contains(id)));
+      expect(snap.deletedSubjects.map((s) => s.id), contains(id));
+      // Nothing was destroyed -- that is the entire difference between this
+      // and emptying the bin.
+      expect(snap.chapters, hasLength(1));
+      expect(snap.lessons, hasLength(1));
+      expect(snap.exams, hasLength(1));
+
+      await repo.setSubjectDeleted(subjectId: id, at: null);
+      snap = await repo.readSnapshot();
+
+      expect(snap.activeSubjects.map((s) => s.id), contains(id));
+      expect(snap.exams, hasLength(1), reason: 'the exam survived the round trip');
     });
 
-    test('an empty subject deletes cleanly', () async {
-      final id = await repo.createSubject(name: 'أُضيفت بالغلط');
+    test('a deleted subject stops feeding reminders and the review queue', () async {
+      // The hole `activeSubjects` alone left. Three things walk the flat lesson
+      // list rather than descending from subjects, so a subject put away kept
+      // sending reminders carrying its lesson names to a lock screen.
+      final id = await repo.createSubject(name: 'رياضيات');
+      final chapterId = await repo.createChapter(
+        subjectId: id,
+        name: 'باب',
+        at: kSeedInstant,
+      );
+      await repo.createLesson(
+        chapterId: chapterId,
+        name: 'درس مخفي',
+        at: kSeedInstant,
+      );
 
-      expect(await repo.deleteEmptySubject(id), isTrue);
-      expect((await repo.readSnapshot()).subjectById(id), isNull);
+      expect((await repo.readSnapshot()).activeLessons, hasLength(1));
+
+      await repo.setSubjectDeleted(subjectId: id, at: DateTime(2026, 8, 17));
+      expect((await repo.readSnapshot()).activeLessons, isEmpty);
+
+      await repo.setSubjectDeleted(subjectId: id, at: null);
+      await repo.setSubjectArchived(subjectId: id, at: DateTime(2026, 8, 17));
+      expect(
+        (await repo.readSnapshot()).activeLessons,
+        isEmpty,
+        reason: 'archiving has to silence it too, for the same reason',
+      );
+    });
+
+    test('emptying the bin is the one thing that actually destroys', () async {
+      final id = await repo.createSubject(name: 'رياضيات');
+      final chapterId = await repo.createChapter(
+        subjectId: id,
+        name: 'باب',
+        at: kSeedInstant,
+      );
+      await repo.createLesson(
+        chapterId: chapterId,
+        name: 'درس',
+        at: kSeedInstant,
+      );
+      await repo.setSubjectDeleted(subjectId: id, at: DateTime(2026, 8, 17));
+
+      await repo.purgeSubject(id);
+      final snap = await repo.readSnapshot();
+
+      expect(snap.subjectById(id), isNull);
+      // The cascade finally firing, which is why this is behind a confirmation
+      // that counts what goes.
+      expect(snap.chapters, isEmpty);
+      expect(snap.lessons, isEmpty);
+      // And it took only its own: the seeded four are untouched.
+      expect(snap.subjects, hasLength(4));
+    });
+
+    test('archived and deleted are independent states', () async {
+      final id = await repo.createSubject(name: 'رياضيات');
+
+      await repo.setSubjectArchived(subjectId: id, at: DateTime(2026, 8, 1));
+      await repo.setSubjectDeleted(subjectId: id, at: DateTime(2026, 8, 17));
+      var subject = (await repo.readSnapshot()).subjectById(id)!;
+      expect(subject.isArchived, isTrue);
+      expect(subject.isDeleted, isTrue);
+      expect(subject.isActive, isFalse);
+
+      // Restoring from the bin returns it to the archive it was in, not to the
+      // active list. Two flags, two answers -- which is the point of keeping
+      // them separate.
+      await repo.setSubjectDeleted(subjectId: id, at: null);
+      subject = (await repo.readSnapshot()).subjectById(id)!;
+      expect(subject.isArchived, isTrue);
+      expect(subject.isActive, isFalse);
     });
   });
 }

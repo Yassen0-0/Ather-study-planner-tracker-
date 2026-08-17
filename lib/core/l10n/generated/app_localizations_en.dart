@@ -714,6 +714,63 @@ class LEn extends L {
   }
 
   @override
+  String get subjectsArchived => 'Archived subjects';
+
+  @override
+  String get subjectsArchivedNote =>
+      'An archived subject is not shown, does not count toward mastery, and sends no reminders. Its chapters and exams are kept exactly as they were.';
+
+  @override
+  String get subjectArchive => 'Archive subject';
+
+  @override
+  String get subjectUnarchive => 'Unarchive';
+
+  @override
+  String get binTitle => 'Recycle bin';
+
+  @override
+  String get binEmpty => 'The bin is empty';
+
+  @override
+  String get binRestore => 'Restore';
+
+  @override
+  String get binPurge => 'Delete permanently';
+
+  @override
+  String get binEmptyAll => 'Empty the bin';
+
+  @override
+  String binDeletedAt(String date) {
+    return 'Deleted $date';
+  }
+
+  @override
+  String get binNote =>
+      'Subjects here are kept whole, with their chapters and exams, and are never removed on their own. Only a permanent delete erases them.';
+
+  @override
+  String binPurgeConfirm(String subject, String chapters, String exams) {
+    return 'This erases \"$subject\" along with $chapters and $exams. It cannot be undone.';
+  }
+
+  @override
+  String get binEmptyAllConfirm =>
+      'This erases everything in the bin along with its chapters and exams. It cannot be undone.';
+
+  @override
+  String examCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count exams',
+      one: '1 exam',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get subjectsTitle => 'Subjects';
 
   @override
@@ -737,20 +794,7 @@ class LEn extends L {
   String get subjectRename => 'Rename';
 
   @override
-  String get subjectHide => 'Hide subject';
-
-  @override
-  String get subjectUnhide => 'Show subject';
-
-  @override
   String get subjectDelete => 'Delete subject';
-
-  @override
-  String get subjectsHidden => 'Hidden subjects';
-
-  @override
-  String get subjectsHiddenNote =>
-      'A hidden subject is not shown and does not count toward mastery. Its chapters and exams are kept exactly as they were.';
 
   @override
   String get settingsPreferences => 'Preferences';

@@ -32,8 +32,17 @@ class AppDatabase extends _$AppDatabase {
     // renaming it would orphan every database already on a student's phone.
     : super(executor ?? driftDatabase(name: 'sahm'));
 
-  /// 2 added `daily_tasks`. 3 added `subjects.name` and `subjects.archived_at`,
-  /// which is what made subjects something a student can add and hide.
+  /// 2 added `daily_tasks`. 3 added `subjects.name`, `subjects.archived_at` and
+  /// `subjects.deleted_at`, which is what made subjects something a student can
+  /// add, archive, and delete into a recycle bin.
+  ///
+  /// `deleted_at` was folded into 3 rather than given a 4 of its own, and that
+  /// is safe for one specific reason: **version 3 has never shipped.** It has
+  /// only ever existed on an unpushed branch, so no student's phone can be
+  /// holding it, and a 3 -> 4 step would be a migration written for a state
+  /// that does not exist in the world. The moment a build carrying 3 leaves
+  /// this machine, that stops being true and the next column needs its own
+  /// version.
   ///
   /// Every student on an earlier build already has an older file on disk, so
   /// this number and [migration]'s `onUpgrade` move together -- bumping one
@@ -60,6 +69,7 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         await m.addColumn(subjects, subjects.name);
         await m.addColumn(subjects, subjects.archivedAt);
+        await m.addColumn(subjects, subjects.deletedAt);
         // The last time the seed is ever allowed to run against an existing
         // database. It covers a file created before a seed change, and it can
         // only add rows the student never had the ability to delete -- because

@@ -55,6 +55,17 @@ class $SubjectsTable extends Subjects
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _sortOrderMeta = const VerificationMeta(
     'sortOrder',
   );
@@ -67,7 +78,14 @@ class $SubjectsTable extends Subjects
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, code, name, archivedAt, sortOrder];
+  List<GeneratedColumn> get $columns => [
+    id,
+    code,
+    name,
+    archivedAt,
+    deletedAt,
+    sortOrder,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -103,6 +121,12 @@ class $SubjectsTable extends Subjects
         archivedAt.isAcceptableOrUnknown(data['archived_at']!, _archivedAtMeta),
       );
     }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
     if (data.containsKey('sort_order')) {
       context.handle(
         _sortOrderMeta,
@@ -136,6 +160,10 @@ class $SubjectsTable extends Subjects
         DriftSqlType.dateTime,
         data['${effectivePrefix}archived_at'],
       ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
       sortOrder: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
@@ -164,16 +192,29 @@ class SubjectRow extends DataClass implements Insertable<SubjectRow> {
   /// four, whose names are translated rather than stored.
   final String? name;
 
-  /// Set when the student hides a subject. Deliberately not a delete: the
-  /// chapters under it cascade, so a delete here is the largest destructive
-  /// act in the app.
+  /// Set when the student **archives** a subject: puts it away deliberately,
+  /// because they are done with it. Nothing under it is touched.
   final DateTime? archivedAt;
+
+  /// Set when the student **deletes** a subject. Also touches nothing under it
+  /// -- the row simply stops being visible anywhere and moves to the recycle
+  /// bin, where it can be restored or destroyed for real.
+  ///
+  /// The two columns are separate because archiving and deleting are different
+  /// intentions, not two words for hiding: archive is "I am done with this",
+  /// trash is "I did not mean to have this". Collapsing them into one flag
+  /// would force one list to answer both questions.
+  ///
+  /// The actual cascade -- the one that takes every chapter, lesson and exam
+  /// underneath -- happens only when the bin is emptied.
+  final DateTime? deletedAt;
   final int sortOrder;
   const SubjectRow({
     required this.id,
     required this.code,
     this.name,
     this.archivedAt,
+    this.deletedAt,
     required this.sortOrder,
   });
   @override
@@ -187,6 +228,9 @@ class SubjectRow extends DataClass implements Insertable<SubjectRow> {
     if (!nullToAbsent || archivedAt != null) {
       map['archived_at'] = Variable<DateTime>(archivedAt);
     }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
     map['sort_order'] = Variable<int>(sortOrder);
     return map;
   }
@@ -199,6 +243,9 @@ class SubjectRow extends DataClass implements Insertable<SubjectRow> {
       archivedAt: archivedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(archivedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       sortOrder: Value(sortOrder),
     );
   }
@@ -213,6 +260,7 @@ class SubjectRow extends DataClass implements Insertable<SubjectRow> {
       code: serializer.fromJson<String>(json['code']),
       name: serializer.fromJson<String?>(json['name']),
       archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
     );
   }
@@ -224,6 +272,7 @@ class SubjectRow extends DataClass implements Insertable<SubjectRow> {
       'code': serializer.toJson<String>(code),
       'name': serializer.toJson<String?>(name),
       'archivedAt': serializer.toJson<DateTime?>(archivedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'sortOrder': serializer.toJson<int>(sortOrder),
     };
   }
@@ -233,12 +282,14 @@ class SubjectRow extends DataClass implements Insertable<SubjectRow> {
     String? code,
     Value<String?> name = const Value.absent(),
     Value<DateTime?> archivedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
     int? sortOrder,
   }) => SubjectRow(
     id: id ?? this.id,
     code: code ?? this.code,
     name: name.present ? name.value : this.name,
     archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     sortOrder: sortOrder ?? this.sortOrder,
   );
   SubjectRow copyWithCompanion(SubjectsCompanion data) {
@@ -249,6 +300,7 @@ class SubjectRow extends DataClass implements Insertable<SubjectRow> {
       archivedAt: data.archivedAt.present
           ? data.archivedAt.value
           : this.archivedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
     );
   }
@@ -260,13 +312,15 @@ class SubjectRow extends DataClass implements Insertable<SubjectRow> {
           ..write('code: $code, ')
           ..write('name: $name, ')
           ..write('archivedAt: $archivedAt, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, code, name, archivedAt, sortOrder);
+  int get hashCode =>
+      Object.hash(id, code, name, archivedAt, deletedAt, sortOrder);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -275,6 +329,7 @@ class SubjectRow extends DataClass implements Insertable<SubjectRow> {
           other.code == this.code &&
           other.name == this.name &&
           other.archivedAt == this.archivedAt &&
+          other.deletedAt == this.deletedAt &&
           other.sortOrder == this.sortOrder);
 }
 
@@ -283,12 +338,14 @@ class SubjectsCompanion extends UpdateCompanion<SubjectRow> {
   final Value<String> code;
   final Value<String?> name;
   final Value<DateTime?> archivedAt;
+  final Value<DateTime?> deletedAt;
   final Value<int> sortOrder;
   const SubjectsCompanion({
     this.id = const Value.absent(),
     this.code = const Value.absent(),
     this.name = const Value.absent(),
     this.archivedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.sortOrder = const Value.absent(),
   });
   SubjectsCompanion.insert({
@@ -296,6 +353,7 @@ class SubjectsCompanion extends UpdateCompanion<SubjectRow> {
     required String code,
     this.name = const Value.absent(),
     this.archivedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     required int sortOrder,
   }) : code = Value(code),
        sortOrder = Value(sortOrder);
@@ -304,6 +362,7 @@ class SubjectsCompanion extends UpdateCompanion<SubjectRow> {
     Expression<String>? code,
     Expression<String>? name,
     Expression<DateTime>? archivedAt,
+    Expression<DateTime>? deletedAt,
     Expression<int>? sortOrder,
   }) {
     return RawValuesInsertable({
@@ -311,6 +370,7 @@ class SubjectsCompanion extends UpdateCompanion<SubjectRow> {
       if (code != null) 'code': code,
       if (name != null) 'name': name,
       if (archivedAt != null) 'archived_at': archivedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (sortOrder != null) 'sort_order': sortOrder,
     });
   }
@@ -320,6 +380,7 @@ class SubjectsCompanion extends UpdateCompanion<SubjectRow> {
     Value<String>? code,
     Value<String?>? name,
     Value<DateTime?>? archivedAt,
+    Value<DateTime?>? deletedAt,
     Value<int>? sortOrder,
   }) {
     return SubjectsCompanion(
@@ -327,6 +388,7 @@ class SubjectsCompanion extends UpdateCompanion<SubjectRow> {
       code: code ?? this.code,
       name: name ?? this.name,
       archivedAt: archivedAt ?? this.archivedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
       sortOrder: sortOrder ?? this.sortOrder,
     );
   }
@@ -346,6 +408,9 @@ class SubjectsCompanion extends UpdateCompanion<SubjectRow> {
     if (archivedAt.present) {
       map['archived_at'] = Variable<DateTime>(archivedAt.value);
     }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
@@ -359,6 +424,7 @@ class SubjectsCompanion extends UpdateCompanion<SubjectRow> {
           ..write('code: $code, ')
           ..write('name: $name, ')
           ..write('archivedAt: $archivedAt, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('sortOrder: $sortOrder')
           ..write(')'))
         .toString();
@@ -3103,6 +3169,7 @@ typedef $$SubjectsTableCreateCompanionBuilder =
       required String code,
       Value<String?> name,
       Value<DateTime?> archivedAt,
+      Value<DateTime?> deletedAt,
       required int sortOrder,
     });
 typedef $$SubjectsTableUpdateCompanionBuilder =
@@ -3111,6 +3178,7 @@ typedef $$SubjectsTableUpdateCompanionBuilder =
       Value<String> code,
       Value<String?> name,
       Value<DateTime?> archivedAt,
+      Value<DateTime?> deletedAt,
       Value<int> sortOrder,
     });
 
@@ -3163,6 +3231,11 @@ class $$SubjectsTableFilterComposer
 
   ColumnFilters<DateTime> get archivedAt => $composableBuilder(
     column: $table.archivedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3226,6 +3299,11 @@ class $$SubjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
@@ -3254,6 +3332,9 @@ class $$SubjectsTableAnnotationComposer
     column: $table.archivedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
@@ -3316,12 +3397,14 @@ class $$SubjectsTableTableManager
                 Value<String> code = const Value.absent(),
                 Value<String?> name = const Value.absent(),
                 Value<DateTime?> archivedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
               }) => SubjectsCompanion(
                 id: id,
                 code: code,
                 name: name,
                 archivedAt: archivedAt,
+                deletedAt: deletedAt,
                 sortOrder: sortOrder,
               ),
           createCompanionCallback:
@@ -3330,12 +3413,14 @@ class $$SubjectsTableTableManager
                 required String code,
                 Value<String?> name = const Value.absent(),
                 Value<DateTime?> archivedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 required int sortOrder,
               }) => SubjectsCompanion.insert(
                 id: id,
                 code: code,
                 name: name,
                 archivedAt: archivedAt,
+                deletedAt: deletedAt,
                 sortOrder: sortOrder,
               ),
           withReferenceMapper: (p0) => p0

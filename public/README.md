@@ -24,24 +24,18 @@ private**, and Pages on a private repository needs a paid plan. The Firebase
 project is already provisioned, costs nothing on the free tier for two static
 files, and keeps the policy on infrastructure we already depend on.
 
-## Before deploying — fill in the two placeholders
+## Who this is published as
 
-The files contain `[[PUBLISHER_NAME]]`, `[[CONTACT_EMAIL]]` and — on the landing page
-only — `[[DOWNLOAD_URL]]`, deliberately left unfilled. **Do not deploy with them still in place** — a privacy policy that says
-`[[CONTACT_EMAIL]]` is worse than none, because it is a published promise of a
-contact route that does not exist.
+| Field | Value |
+|---|---|
+| Publisher | `Yassen Yousry` — must stay identical to the developer name on the Play listing; a policy naming a different entity than the store page is a rejection reason |
+| Contact | `yassen.y.mohamed.s@gmail.com` |
+| Download | `https://github.com/Yassen0-0/Ather/releases/latest` |
 
-```bash
-grep -rn "\[\[PUBLISHER_NAME\]\]\|\[\[CONTACT_EMAIL\]\]\|\[\[DOWNLOAD_URL\]\]" public/
-```
-
-On the contact address: prefer a dedicated one (`privacy@…`, or a fresh Gmail) over
-a personal address. This goes on a public page that a scraper will find, it is the
-address parents will write to, and it is very hard to change once it is in a
-published Play listing and a policy students have already been shown.
-
-`PUBLISHER_NAME` must match the developer name on the Play listing exactly. A
-policy naming a different entity than the store page is a rejection reason.
+The download button points at `releases/latest` rather than a pinned `.apk`
+asset, so it keeps working on every future release without anyone editing this
+page. It only works once a **GitHub Release actually exists** — a repository
+with no releases answers that URL with a 404.
 
 ## Deploying
 

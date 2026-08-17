@@ -18,10 +18,13 @@ import '../../core/widgets/day_header.dart';
 import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/mastery_bar.dart';
+import '../../core/widgets/pressable.dart';
 import '../../domain/services/summaries.dart';
+import '../common/prompts.dart';
 import '../common/settings_button.dart';
 import '../common/subject_mark.dart';
 import '../common/subject_presentation.dart';
+import '../common/write_guard.dart';
 import '../providers/navigation_providers.dart';
 import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
@@ -79,7 +82,7 @@ class DashboardScreen extends ConsumerWidget {
           _StatsCard(stats: stats),
         ],
         const SizedBox(height: AppSpacing.xxxl),
-        SectionTitle(l.sectionSubjects),
+        SectionTitle(l.sectionSubjects, trailing: const _AddSubjectButton()),
         const SizedBox(height: AppSpacing.md),
         for (final (i, subject) in dashboard.subjects.indexed) ...<Widget>[
           ListEntrance(
@@ -313,6 +316,63 @@ class _Stat extends StatelessWidget {
           height: AppSizes.barTrackSmall,
         ),
       ],
+    );
+  }
+}
+
+/// "+", beside the subjects heading.
+///
+/// Adding a subject lived only in Settings, which is the wrong place for it:
+/// the student is looking at their subjects when they notice one is missing,
+/// and Settings is three taps and a different mental mode away. `SectionTitle`
+/// already takes a `trailing` widget and places it after an `Expanded`, so in
+/// Arabic this lands on the left -- the far end of the heading, which is where
+/// an "add" control belongs in either direction.
+///
+/// Deliberately small and quiet. It sits above a list of subjects a student
+/// reads every day and adds to perhaps five times ever, so it must not compete
+/// with the rows under it.
+class _AddSubjectButton extends ConsumerWidget {
+  const _AddSubjectButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = L.of(context);
+
+    return Pressable(
+      onTap: () => _add(context, ref),
+      semanticLabel: l.subjectAdd,
+      // Drawn small, hit at the full target: the artwork is 20px inside a 48px
+      // finger, the same arrangement CircleHeaderButton uses.
+      minTarget: kMinTarget,
+      child: Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: context.colors.muted,
+          shape: BoxShape.circle,
+        ),
+        child: AtherIcon(
+          AtherGlyph.plus,
+          size: 16,
+          color: context.colors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _add(BuildContext context, WidgetRef ref) async {
+    final l = L.of(context);
+    final name = await showNamePrompt(
+      context,
+      title: l.subjectAdd,
+      hint: l.subjectNameHint,
+    );
+    if (name == null || !context.mounted) return;
+    await runWrite(
+      context,
+      () => ref.read(studyRepositoryProvider).createSubject(name: name),
     );
   }
 }

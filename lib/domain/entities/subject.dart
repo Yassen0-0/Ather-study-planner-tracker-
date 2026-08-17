@@ -54,6 +54,7 @@ final class Subject {
     required this.name,
     required this.sortOrder,
     required this.archivedAt,
+    this.deletedAt,
   });
 
   /// A seeded subject: named by the ARB files, drawn with its glyph.
@@ -62,7 +63,8 @@ final class Subject {
     required SubjectCode this.code,
     required this.sortOrder,
   }) : name = null,
-       archivedAt = null;
+       archivedAt = null,
+       deletedAt = null;
 
   final int id;
 
@@ -74,33 +76,37 @@ final class Subject {
 
   final int sortOrder;
 
-  /// Set when the student hid the subject. **Not a delete**: everything under
-  /// it is still there, and unarchiving brings it back untouched.
-  ///
-  /// This exists because `Chapters.subjectId` cascades. Deleting a subject
-  /// takes every chapter, lesson and exam beneath it, and for a student two
-  /// years into their record that is the largest single act of destruction the
-  /// app is capable of — reachable, before this, from one row and one
-  /// confirmation. Hiding is what a student almost always means, so hiding is
-  /// what the screen offers; deleting is kept for the case where there is
-  /// nothing to lose.
+  /// Set when the student **archived** the subject — put it away because they
+  /// are done with it. Nothing beneath it is touched, and unarchiving restores
+  /// every figure exactly as it was.
   final DateTime? archivedAt;
 
+  /// Set when the student **deleted** the subject. Also touches nothing
+  /// beneath it: the row moves to the recycle bin, where it can be restored or
+  /// destroyed for real.
+  ///
+  /// Two columns rather than one flag, because archive and trash are different
+  /// intentions and not two words for hiding — archive is "I am done with
+  /// this", trash is "I did not mean to have this". A single flag would force
+  /// one list to answer both questions, which is what the earlier "hidden"
+  /// state did badly enough to be worth replacing.
+  ///
+  /// `Chapters.subjectId` cascades, so the real destruction — every chapter,
+  /// lesson and exam beneath it — happens only when the bin is emptied. That
+  /// is the one act in this feature that cannot be undone, and it is the only
+  /// one behind a confirmation that names what goes.
+  final DateTime? deletedAt;
+
   bool get isArchived => archivedAt != null;
+  bool get isDeleted => deletedAt != null;
+
+  /// Neither archived nor deleted: shown everywhere and counted in every
+  /// figure.
+  bool get isActive => archivedAt == null && deletedAt == null;
 
   /// True for the four Ather ships with. They can be archived like any other,
   /// but they cannot be renamed — their names come from the ARB files.
   bool get isSeeded => code != null;
-
-  Subject copyWith({DateTime? archivedAt, bool clearArchived = false}) {
-    return Subject(
-      id: id,
-      code: code,
-      name: name,
-      sortOrder: sortOrder,
-      archivedAt: clearArchived ? null : (archivedAt ?? this.archivedAt),
-    );
-  }
 
   @override
   bool operator ==(Object other) =>
@@ -109,8 +115,10 @@ final class Subject {
       other.code == code &&
       other.name == name &&
       other.sortOrder == sortOrder &&
-      other.archivedAt == archivedAt;
+      other.archivedAt == archivedAt &&
+      other.deletedAt == deletedAt;
 
   @override
-  int get hashCode => Object.hash(id, code, name, sortOrder, archivedAt);
+  int get hashCode =>
+      Object.hash(id, code, name, sortOrder, archivedAt, deletedAt);
 }

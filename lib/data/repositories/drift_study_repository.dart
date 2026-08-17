@@ -142,21 +142,23 @@ class DriftStudyRepository implements StudyRepository {
   }
 
   @override
-  Future<bool> deleteEmptySubject(int subjectId) {
-    return _db.transaction(() async {
-      final chapters =
-          await (_db.select(
-            _db.chapters,
-          )..where((t) => t.subjectId.equals(subjectId))).get();
-      // The guard that makes this operation safe to offer at all. Chapters
-      // cascade, so without it one confirmation could take every exam a
-      // student has ever recorded under this subject.
-      if (chapters.isNotEmpty) return false;
+  Future<void> setSubjectDeleted({
+    required int subjectId,
+    required DateTime? at,
+  }) async {
+    // A flag, not a delete. The row and everything hanging off it stay exactly
+    // where they are; only its visibility changes. That is what lets the
+    // screen offer "delete" without a guard -- there is nothing yet to guard.
+    await (_db.update(_db.subjects)..where((t) => t.id.equals(subjectId)))
+        .write(SubjectsCompanion(deletedAt: Value(at)));
+  }
 
-      await (_db.delete(_db.subjects)..where((t) => t.id.equals(subjectId)))
-          .go();
-      return true;
-    });
+  @override
+  Future<void> purgeSubject(int subjectId) async {
+    // The cascade finally firing: chapters go, and lessons, exams, groups and
+    // homework go with them. The only irreversible operation in the feature,
+    // and the reason the recycle bin exists between it and the student.
+    await (_db.delete(_db.subjects)..where((t) => t.id.equals(subjectId))).go();
   }
 
   // --- Chapters -------------------------------------------------------------
@@ -458,6 +460,7 @@ class DriftStudyRepository implements StudyRepository {
               code: s.code?.name ?? kCustomSubjectCode,
               name: Value(s.name),
               archivedAt: Value(s.archivedAt),
+              deletedAt: Value(s.deletedAt),
               sortOrder: s.sortOrder,
             ),
         ]);
@@ -559,6 +562,7 @@ class DriftStudyRepository implements StudyRepository {
     name: r.name,
     sortOrder: r.sortOrder,
     archivedAt: r.archivedAt,
+    deletedAt: r.deletedAt,
   );
 
   Chapter _toChapter(ChapterRow r) => Chapter(
@@ -619,6 +623,15 @@ class DriftStudyRepository implements StudyRepository {
 /// Hand-rolled rather than pulling in rxdart for one operator. Emits nothing
 /// until every source has produced a value, then emits on each subsequent
 /// change -- which is what makes a snapshot internally consistent.
+/// How long the combined snapshot stream waits for a burst of table events to
+/// finish before emitting.
+///
+/// One frame. Named rather than inlined because it is a real [Timer], so tests
+/// have to outwait it -- `pumpEventQueue` drains microtasks and will not move
+/// a timer -- and a test hardcoding `16` would silently stop covering this the
+/// day the window changed.
+const Duration kSnapshotCoalesceWindow = Duration(milliseconds: 16);
+
 Stream<R> _combineLatest6<A, B, C, D, E, F, R>(
   Stream<A> sa,
   Stream<B> sb,
@@ -638,11 +651,33 @@ Stream<R> _combineLatest6<A, B, C, D, E, F, R>(
   E? e;
   F? f;
   final seen = List<bool>.filled(6, false);
+  Timer? coalesce;
 
+  void publish() {
+    coalesce = null;
+    if (controller.isClosed) return;
+    if (!seen.every((s) => s)) return;
+    controller.add(combine(a as A, b as B, c as C, d as D, e as E, f as F));
+  }
+
+  /// Emits **once** per burst rather than once per contributing table.
+  ///
+  /// Six drift streams feed this, and one write usually touches several of
+  /// them: saving an exam writes `exam_entries`, `exam_question_groups` and
+  /// `lessons`, so three streams fire and this combined once per stream --
+  /// three identical rebuilds of the entire snapshot for one action.
+  ///
+  /// That is not a cheap thing to do three times. Each emission rebuilds every
+  /// entity in the record, reruns `Summaries.dashboard` over the whole
+  /// curriculum, and rebuilds `AppShell` -- the widget holding the app's only
+  /// `BackdropFilter`, which is the most expensive thing it draws.
+  ///
+  /// One frame is the right window: long enough to swallow a whole
+  /// transaction's worth of table events, short enough that no student can
+  /// perceive it. Every emission still arrives; they are merely not repeated.
   void emit() {
-    if (seen.every((s) => s)) {
-      controller.add(combine(a as A, b as B, c as C, d as D, e as E, f as F));
-    }
+    coalesce?.cancel();
+    coalesce = Timer(kSnapshotCoalesceWindow, publish);
   }
 
   void start() {
@@ -667,6 +702,10 @@ Stream<R> _combineLatest6<A, B, C, D, E, F, R>(
   controller = StreamController<R>(
     onListen: start,
     onCancel: () async {
+      // Cancelled before the subscriptions: a coalescing timer that fires
+      // after the controller closes would add to a closed stream.
+      coalesce?.cancel();
+      coalesce = null;
       for (final s in subscriptions) {
         await s.cancel();
       }

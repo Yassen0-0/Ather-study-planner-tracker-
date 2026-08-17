@@ -40,7 +40,13 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = L.of(context);
-    final overdue = ref.watch(dashboardProvider).overdueCount;
+    // `select`, not the whole summary: this widget holds the app's one
+    // `BackdropFilter`, so it is the most expensive thing in the tree to
+    // rebuild -- and it was rebuilding on every write anywhere in the app to
+    // read a single int that changes perhaps twice a week.
+    final overdue = ref.watch(
+      dashboardProvider.select((d) => d.overdueCount),
+    );
 
     return Scaffold(
       backgroundColor: context.colors.pageBackground,

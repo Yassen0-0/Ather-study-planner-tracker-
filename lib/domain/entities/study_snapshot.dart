@@ -68,17 +68,51 @@ final class StudySnapshot {
 
   bool get isEmpty => chapters.isEmpty && lessons.isEmpty;
 
-  /// Every subject the student has not archived, in sort order.
+  /// Every subject that is neither archived nor deleted, in sort order.
   ///
   /// **This, not [subjects], is what the app should be reading almost
-  /// everywhere.** [subjects] is the whole table, and it exists for the two
-  /// jobs that genuinely need the archived ones: writing the backup, and the
-  /// screen that manages subjects. Every figure a student reads -- overall
-  /// mastery, the insights, the next lesson to sit -- has to skip them, or
-  /// archiving a subject would hide it from the list while still counting it
-  /// as a 0 in the mean, which is the opposite of what the control promises.
+  /// everywhere.** [subjects] is the whole table, and it exists for the three
+  /// jobs that genuinely need the rest: writing the backup, the screen that
+  /// manages subjects, and the recycle bin. Every figure a student reads --
+  /// overall mastery, the insights, the next lesson to sit -- has to skip
+  /// them, or putting a subject away would remove it from the list while still
+  /// counting it as a 0 in the mean, which is the opposite of what both
+  /// controls promise.
   List<Subject> get activeSubjects =>
-      <Subject>[for (final s in subjects) if (!s.isArchived) s];
+      <Subject>[for (final s in subjects) if (s.isActive) s];
+
+  /// Subjects sitting in the recycle bin, most recently deleted first.
+  List<Subject> get deletedSubjects =>
+      <Subject>[for (final s in subjects) if (s.isDeleted) s]
+        ..sort((a, b) => b.deletedAt!.compareTo(a.deletedAt!));
+
+  /// Every lesson under a subject that is neither archived nor deleted.
+  ///
+  /// **[activeSubjects] alone was not enough, and this is the hole it left.**
+  /// Three things walk the flat [lessons] list rather than descending from
+  /// subjects -- the notification scheduler, the review queue, and the
+  /// insights generator -- so a subject put away kept sending its reminders,
+  /// kept appearing in the review list, and kept producing insights about
+  /// itself. Archiving a subject silenced its numbers and nothing else.
+  ///
+  /// That was already wrong. With a recycle bin it would be indefensible: a
+  /// *deleted* subject would go on posting its lesson names to the lock screen
+  /// of a phone whose owner had deleted it.
+  ///
+  /// Computed rather than cached because the sets involved are small -- a
+  /// maximal student has a few hundred lessons -- and a cached copy is one more
+  /// thing that can disagree with the table it came from.
+  List<Lesson> get activeLessons {
+    final live = <int>{for (final s in subjects) if (s.isActive) s.id};
+    if (live.length == subjects.length) return lessons;
+
+    final liveChapters = <int>{
+      for (final c in chapters) if (live.contains(c.subjectId)) c.id,
+    };
+    return <Lesson>[
+      for (final l in lessons) if (liveChapters.contains(l.chapterId)) l,
+    ];
+  }
 
   /// Exams for a lesson, newest first. Never null -- an unexamined lesson
   /// yields an empty list, which the mastery formula reads as 0.

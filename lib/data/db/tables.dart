@@ -23,10 +23,22 @@ class Subjects extends Table {
   /// four, whose names are translated rather than stored.
   TextColumn get name => text().withLength(min: 1, max: 60).nullable()();
 
-  /// Set when the student hides a subject. Deliberately not a delete: the
-  /// chapters under it cascade, so a delete here is the largest destructive
-  /// act in the app.
+  /// Set when the student **archives** a subject: puts it away deliberately,
+  /// because they are done with it. Nothing under it is touched.
   DateTimeColumn get archivedAt => dateTime().nullable()();
+
+  /// Set when the student **deletes** a subject. Also touches nothing under it
+  /// -- the row simply stops being visible anywhere and moves to the recycle
+  /// bin, where it can be restored or destroyed for real.
+  ///
+  /// The two columns are separate because archiving and deleting are different
+  /// intentions, not two words for hiding: archive is "I am done with this",
+  /// trash is "I did not mean to have this". Collapsing them into one flag
+  /// would force one list to answer both questions.
+  ///
+  /// The actual cascade -- the one that takes every chapter, lesson and exam
+  /// underneath -- happens only when the bin is emptied.
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 
   IntColumn get sortOrder => integer()();
 
