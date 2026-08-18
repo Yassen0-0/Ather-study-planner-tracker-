@@ -425,6 +425,23 @@
   "backupErrorUnreadable": "النسخة السحابية غير مقروءة",
   "backupErrorUnknown": "لم ينجح الحفظ",
 
+  "exportTitle": "تصدير البيانات",
+  "exportJsonSectionTitle": "تصدير البيانات الكاملة",
+  "exportJsonSectionBody": "صدّر كل بيانات المذاكرة بصيغة JSON: المواد والأبواب والدروس والامتحانات ودرجات الإتقان. يمكنك إعادة استيراد الملف أو الاحتفاظ به كنسخة احتياطية شخصية.",
+  "exportSaveToDownloads": "احفظ في التنزيلات",
+  "exportShare": "شارك",
+  "exportPdfSectionTitle": "ملخص الإتقان (PDF)",
+  "exportPdfSectionBody": "أنشئ تقرير PDF عن إتقانك في كل المواد. مثالي للطباعة أو المشاركة مع الأهل والمعلمين.",
+  "exportSavePdfToDownloads": "احفظ PDF في التنزيلات",
+  "exportSharePdf": "شارك PDF",
+  "exportToastSavedToDownloads": "حُفِظ في التنزيلات",
+  "exportToastPdfSaved": "حُفِظ PDF في التنزيلات",
+  "exportErrorFileSystem": "تعذّر الكتابة في مجلد التنزيلات",
+  "exportErrorShare": "تعذّر فتح نافذة المشاركة",
+  "exportErrorGeneric": "فشل التصدير. حاول مرة أخرى.",
+  "exportErrorPdfGeneric": "فشل تصدير PDF. حاول مرة أخرى.",
+  "exportErrorUnknown": "حدث خطأ ما",
+
   "tasksTitle": "مهام اليوم",
   "@tasksTitle": {
     "description": "The tasks screen's title while today is the selected day. The day picker sitting under it says 'اليوم' for today's cell, so the title names what the list is rather than repeating the day."

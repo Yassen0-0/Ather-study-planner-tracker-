@@ -314,6 +314,23 @@
   "backupErrorUnreadable": "The cloud copy can't be read",
   "backupErrorUnknown": "Saving didn't work",
 
+  "exportTitle": "Export Data",
+  "exportJsonSectionTitle": "Complete Data Export",
+  "exportJsonSectionBody": "Export all your study data as JSON: subjects, chapters, lessons, exams, and mastery scores. You can reimport this file or keep it as a personal backup.",
+  "exportSaveToDownloads": "Save to Downloads",
+  "exportShare": "Share",
+  "exportPdfSectionTitle": "Mastery Summary (PDF)",
+  "exportPdfSectionBody": "Generate a PDF report of your mastery across all subjects. Perfect for printing or sharing with parents and tutors.",
+  "exportSavePdfToDownloads": "Save PDF to Downloads",
+  "exportSharePdf": "Share PDF",
+  "exportToastSavedToDownloads": "Saved to Downloads",
+  "exportToastPdfSaved": "PDF saved to Downloads",
+  "exportErrorFileSystem": "Could not write to Downloads folder",
+  "exportErrorShare": "Share sheet could not be opened",
+  "exportErrorGeneric": "Export failed. Please try again.",
+  "exportErrorPdfGeneric": "PDF export failed. Please try again.",
+  "exportErrorUnknown": "Something went wrong",
+
   "tasksTitle": "Today's tasks",
   "tasksDoneOf": "{done} of {total} done",
   "@tasksDoneOf": {
