@@ -115,6 +115,10 @@ class SettingsScreen extends ConsumerWidget {
           title: l.settingsPreferences,
           children: <Widget>[
             SettingsRow(
+              label: 'Export Data', // TODO: Add localization in phase 5
+              onTap: () => context.push(Routes.export),
+            ),
+            SettingsRow(
               label: l.subjectsTitle,
               value: l.subjectCountLabel(
                 ref.watch(snapshotValueProvider).activeSubjects.length,
