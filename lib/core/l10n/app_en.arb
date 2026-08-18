@@ -355,5 +355,17 @@
   "authEmailUnverified": "Not confirmed",
   "authResendVerification": "Resend confirmation link",
   "authVerificationTooSoon": "A link just went out. Give it a moment, then try again.",
-  "authVerificationNote": "Confirming your email is what lets you recover your account if you forget your password. The app works either way."
+  "authVerificationNote": "Confirming your email is what lets you recover your account if you forget your password. The app works either way.",
+
+  "@@x_comment_B4": "=== Batch B4: curriculum templates ===",
+  "subjectTemplateAdd": "Add the standard chapters",
+  "subjectTemplateCount": "{count, plural, =1{1 chapter} other{{count} chapters}}",
+  "@subjectTemplateCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "subjectTemplateAdded": "Added {count}",
+  "subjectTemplateNothingNew": "You already have every standard chapter",
+  "subjectTemplateNote": "The usual chapters for this subject. Edit or delete them like any chapter you typed yourself. Nothing you already have is changed or removed."
 }

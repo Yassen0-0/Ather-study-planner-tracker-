@@ -1788,6 +1788,36 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.'**
   String get authVerificationNote;
+
+  /// No description provided for @subjectTemplateAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف أبواب المنهج'**
+  String get subjectTemplateAdd;
+
+  /// No description provided for @subjectTemplateCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{باباً واحداً} =2{بابين} few{{count} أبواب} other{{count} باباً}}'**
+  String subjectTemplateCount(int count);
+
+  /// No description provided for @subjectTemplateAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت إضافة {count}'**
+  String subjectTemplateAdded(String count);
+
+  /// No description provided for @subjectTemplateNothingNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل أبواب المنهج موجودة عندك بالفعل'**
+  String get subjectTemplateNothingNew;
+
+  /// No description provided for @subjectTemplateNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك.'**
+  String get subjectTemplateNote;
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

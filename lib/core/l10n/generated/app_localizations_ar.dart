@@ -983,4 +983,32 @@ class LAr extends L {
   @override
   String get authVerificationNote =>
       'تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.';
+
+  @override
+  String get subjectTemplateAdd => 'أضف أبواب المنهج';
+
+  @override
+  String subjectTemplateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count باباً',
+      few: '$count أبواب',
+      two: 'بابين',
+      one: 'باباً واحداً',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subjectTemplateAdded(String count) {
+    return 'تمت إضافة $count';
+  }
+
+  @override
+  String get subjectTemplateNothingNew => 'كل أبواب المنهج موجودة عندك بالفعل';
+
+  @override
+  String get subjectTemplateNote =>
+      'أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك.';
 }

@@ -979,4 +979,31 @@ class LEn extends L {
   @override
   String get authVerificationNote =>
       'Confirming your email is what lets you recover your account if you forget your password. The app works either way.';
+
+  @override
+  String get subjectTemplateAdd => 'Add the standard chapters';
+
+  @override
+  String subjectTemplateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count chapters',
+      one: '1 chapter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subjectTemplateAdded(String count) {
+    return 'Added $count';
+  }
+
+  @override
+  String get subjectTemplateNothingNew =>
+      'You already have every standard chapter';
+
+  @override
+  String get subjectTemplateNote =>
+      'The usual chapters for this subject. Edit or delete them like any chapter you typed yourself. Nothing you already have is changed or removed.';
 }

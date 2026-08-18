@@ -446,7 +446,7 @@ Files owned by this batch:
 - `lib/data/repositories/drift_study_repository.dart`
 - `test/data/drift_study_repository_test.dart`
 
-- [ ] **Task: Optional pre-loaded chapter templates**
+- [x] **Task: Optional pre-loaded chapter templates**
       Problem: `SubjectsScreen` (`settings/subjects_screen.dart:45`) only adds one
       subject at a time, and `_add` at `:96` takes a name and nothing else. A new
       student types out the whole Thanaweya Amma structure by hand before the app can
@@ -461,7 +461,49 @@ Files owned by this batch:
       duplicate. Existing chapters are never modified or removed. **No schema change** —
       if you find yourself editing `tables.dart`, stop: that triggers CLAUDE.md Rule 1
       and needs a migration plus a migration test.
-      Result:
+      Result: Done. `lib/domain/services/curriculum_templates.dart` declares the
+      four subjects' chapter structure as reviewed data — Arabic, and
+      deliberately *not* in the ARB: a chapter name becomes a row the student
+      owns, renames and deletes, so it is seeded content rather than interface
+      copy, and putting it in the ARB would imply it changes with the language
+      toggle when the toggle has no way to reach back into the student's own
+      table and rewrite it. The file says in its own doc comment that the lists
+      are a starting point, not an authority — the curriculum is revised between
+      years, and the promise being made is only that typing twenty chapter names
+      by hand should not be the price of admission.
+      `StudyRepository.addChapters(subjectId, names, at)` is the bulk insert,
+      one Drift transaction, returning how many were actually created. It reads
+      the subject's existing chapter names **inside** the transaction — read
+      before it, two quick taps would both see the same "already there" set and
+      both insert, which is the duplicate this exists to prevent — and skips any
+      name already present. Nothing existing is renamed, reordered or removed. A
+      chapter the student had already typed keeps its id and its lessons; one
+      they renamed is left alone, and the template's own wording is then added
+      beside it, because a rename means the template's chapter is genuinely
+      missing and renaming it back would be overwriting their decision.
+      Offered opt-in from the subject's sheet on the subjects screen, only where
+      a template exists — the four seeded subjects have one; a subject the
+      student invented has none by definition. The toast reports the count, and
+      says "you already have every standard chapter" on a repeat rather than a
+      success message about work that did not happen.
+      **No schema change** — `tables.dart` and `app_database.dart` untouched,
+      `schemaVersion` unmoved, confirmed by `tool/check_invariants.sh`.
+      **Scope note:** the template targets a subject that already exists rather
+      than creating one. All four are seeded, and re-creating a deleted seeded
+      subject would go through `createSubject`, which writes
+      `kCustomSubjectCode` — producing a "Biology" without its glyph. Bringing a
+      deleted subject back is what the recycle bin already does.
+      Files: `lib/domain/services/curriculum_templates.dart` *(new)*,
+      `lib/domain/repositories/study_repository.dart`,
+      `lib/data/repositories/drift_study_repository.dart`,
+      `lib/presentation/settings/subjects_screen.dart`, `app_ar.arb`,
+      `app_en.arb`, regenerated `l10n/generated/*`,
+      `test/data/drift_study_repository_test.dart`. 11 new tests, including the
+      twice-applied, already-typed, renamed, duplicate-within-template, blank,
+      empty and wrong-subject cases. Mid-transaction rollback is Drift's
+      `transaction()` guarantee and cannot be forced from outside without a fake
+      database; the test asserts the outcome it exists for — a rejected apply
+      leaves the curriculum with no half of a template in it.
 
 ---
 
