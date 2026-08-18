@@ -85,10 +85,16 @@ make an A/B split impossible.
 **The convention both sessions follow:**
 
 - Append your keys at the **end** of both ARB files, inside a block marked with your
-  batch id:
+  batch id. **Correction, found by Session A:** a bare `"_comment_A1"` key does *not*
+  work -- `flutter gen-l10n` rejects any resource name starting with an underscore
+  ("Resources names must be valid Dart method names"). Put the marker in the
+  `description` of the block's first key instead, which is legal ARB and just as
+  visible in a merge:
 
-      "_comment_A1": "=== Batch A1: data export, PDF, share cards ===",
       "exportTitle": "...",
+      "@exportTitle": {
+        "description": "=== Batch A1: data export, chapter report PDF, share card. Appended block, append-only, do not reorder. ==="
+      },
 
 - **Never edit or reorder a key you did not add.** Append only.
 - `app_ar.arb` is the template (see `l10n.yaml`); every key must exist in both files.
@@ -121,7 +127,7 @@ Files owned by this batch:
 > already there. It covers most of A1.1 and drafts A1.2. Adopt what is sound; do not
 > assume it is correct.
 
-- [ ] **Task: Data export to JSON**
+- [x] **Task: Data export to JSON**
       Problem: There is no way for a student to get their own data out of the app.
       `StudyBackup.toJson()` (`study_backup.dart:78`) already serialises subjects,
       chapters, lessons, exams and tasks — nothing exposes it.
@@ -134,7 +140,28 @@ Files owned by this batch:
       round-trips through `StudyBackup.fromJson` to an equal record. A unit test asserts
       that round-trip. Export of an empty database produces a valid, empty-but-parseable
       file rather than failing.
-      Result:
+      Result: Done, commit `4d1e5d5`. `DataExportService` (new) encodes
+      `StudyBackup.toJson()` as indented JSON -- `formatVersion` included -- writes it
+      to the temp directory and shares it. `ExportScreen` (new) under Settings, route
+      `/settings/export` beside `/settings/backup`, `dataExportProvider` (new) reading
+      `snapshotProvider.future` / `tasksProvider.future`. `test/domain/data_export_test.dart`
+      (new, 6 tests) asserts the round-trip through real JSON text, the empty-database
+      case, the version marker, indentation, and filename collision/portability.
+      Continued `auto-claude/002-data-export`; **three things in that draft were
+      rejected**: (1) its "Save to Downloads" button -- on Android
+      `getDownloadsDirectory()` is `Android/data/com.ather.app/files/Download`, which is
+      app-private and deleted with the app, so the label was false and the copy did not
+      survive; the share sheet is the only place the student picks the destination, and
+      is what this plan asked for. (2) the screen and Settings row were hardcoded
+      English with a `TODO: Add localization in phase 5`, while the ARB keys the draft
+      added were wired to nothing. (3) no test existed. Deps pinned exactly
+      (`path_provider: 2.1.6`, `share_plus: 10.1.4`, `pdf: 3.13.0`) to match the file's
+      convention for non-Firebase packages. Files: `pubspec.yaml`, `pubspec.lock`,
+      `lib/domain/services/data_export_service.dart`,
+      `lib/presentation/providers/export_providers.dart`,
+      `lib/presentation/settings/export_screen.dart`, `lib/app/router.dart`,
+      `lib/presentation/settings/settings_screen.dart`, both ARBs + generated,
+      `test/domain/data_export_test.dart`, `windows/flutter/generated_plugin*`.
 
 - [ ] **Task: Chapter report PDF export**
       Problem: `ChapterReportScreen` renders lesson-by-lesson mastery and exam history
