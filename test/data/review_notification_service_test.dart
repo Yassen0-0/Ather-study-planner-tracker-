@@ -1,6 +1,7 @@
 import 'package:ather/data/notifications/review_notification_service.dart';
 import 'package:ather/domain/entities/chapter.dart';
 import 'package:ather/domain/entities/lesson.dart';
+import 'package:ather/domain/entities/mastery.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/services/review_cycle_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,7 +31,8 @@ Lesson lessonWith({
 /// A snapshot of lessons under one chapter.
 ///
 /// Built directly rather than through the database fixture: nothing here reads
-/// exams or mastery, so the database fixture would only add setup to read past.
+/// exams or mastery, and the cap test needs several hundred lessons, which is a
+/// lot of SQLite for a decision that never touches it.
 StudySnapshot snapshotOf(List<Lesson> lessons) {
   return StudySnapshot(
     subjects: const [],
@@ -79,7 +81,7 @@ void main() {
       expect(due.at, DateTime(2026, 7, 1, kHour));
       expect(early.at, DateTime(2026, 6, 28, kHour));
 
-      // Soonest first.
+      // Soonest first, so the cap keeps what matters next.
       expect(reminders.first, same(early));
     });
 
@@ -267,6 +269,88 @@ void main() {
         fingerprint(plan(snapshot, kAnchor)),
         fingerprint(plan(snapshot, kAnchor)),
       );
+    });
+  });
+
+  group('alarm cap', () {
+    /// [count] lessons spread across the last 25 days, so every one of them is
+    /// still inside its cycle and still holds both of its reminders.
+    ///
+    /// The spread is 25 rather than 30 deliberately: a lesson examined 27 or
+    /// more days ago has already passed its early warning and would contribute
+    /// one alarm instead of two, which would make the arithmetic below depend
+    /// on the skip rule rather than on the cap.
+    List<Lesson> manyLessons(int count) {
+      return <Lesson>[
+        for (var i = 0; i < count; i++)
+          lessonWith(
+            id: i + 1,
+            lastReviewedAt: kAnchor.subtract(Duration(days: i % 25)),
+          ),
+      ];
+    }
+
+    test('never registers more than the cap', () {
+      final snapshot = snapshotOf(manyLessons(500));
+
+      expect(
+        plan(snapshot, kAnchor).length,
+        ReviewNotificationService.kMaxScheduledAlarms,
+      );
+    });
+
+    test('the alarms it keeps are the soonest ones', () {
+      final snapshot = snapshotOf(manyLessons(500));
+
+      final kept = plan(snapshot, kAnchor);
+      final cutoff = kept.last.at;
+
+      // Everything kept is ordered soonest first...
+      for (var i = 1; i < kept.length; i++) {
+        expect(
+          kept[i].at.isBefore(kept[i - 1].at),
+          isFalse,
+          reason: 'reminders must be ordered soonest first',
+        );
+      }
+
+      // ...and nothing that was dropped falls due before something that was
+      // kept.
+      final keptIds = kept.map((r) => r.id).toSet();
+      final dropped = <DateTime>[
+        for (final lesson in snapshot.lessons) ...<DateTime>[
+          if (ReviewCycleService.earlyReminderAt(lesson)!.isAfter(kAnchor) &&
+              !keptIds.contains(lesson.id * 2 + 1))
+            ReviewCycleService.earlyReminderAt(lesson)!,
+          if (ReviewCycleService.dueAt(lesson)!.isAfter(kAnchor) &&
+              !keptIds.contains(lesson.id * 2))
+            ReviewCycleService.dueAt(lesson)!,
+        ],
+      ];
+
+      expect(dropped, isNotEmpty, reason: 'the cap should have dropped some');
+      for (final at in dropped) {
+        expect(
+          at.isBefore(cutoff),
+          isFalse,
+          reason: 'a dropped alarm fell due before one that was kept',
+        );
+      }
+    });
+
+    test('stays well under the platform ceiling', () {
+      // Android drops registrations past roughly 500 without reporting it.
+      expect(ReviewNotificationService.kMaxScheduledAlarms, lessThan(500));
+    });
+
+    test('a student under the cap keeps every reminder', () {
+      // 20 lessons, all far enough out to still hold their early warning.
+      expect(plan(snapshotOf(manyLessons(20)), kAnchor), hasLength(40));
+    });
+
+    test('the cycle length the cap is reasoned about has not moved', () {
+      expect(kReviewCycleDays, 30);
+      expect(ReviewCycleService.kEarlyReminderDays, 3);
     });
   });
 }

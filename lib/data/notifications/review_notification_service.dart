@@ -154,13 +154,33 @@ class ReviewNotificationService {
   /// matching one.
   String? _applied;
 
+  /// The most alarms this app will ever hold registered at once.
+  ///
+  /// Android's per-app ceiling is around 500. Past it, registrations do not
+  /// throw -- they are dropped, and the student loses reminders with nothing
+  /// anywhere reporting that they did. So the ceiling has to be respected here
+  /// rather than discovered there.
+  ///
+  /// 400 leaves headroom for the fact that a lesson now holds *two* alarms:
+  /// this is a count of alarms, not of lessons, so 400 covers 200 lessons in
+  /// the worst case where every one of them is far enough out to still be
+  /// holding its early warning.
+  ///
+  /// Dropping the far ones rather than the near ones costs nothing: the pass
+  /// re-runs on every resume and on every change to the record, so a lesson
+  /// beyond the window is scheduled as soon as it comes into range, which is
+  /// long before it falls due.
+  static const int kMaxScheduledAlarms = 400;
+
   /// Decides what the schedule should be, without touching the platform.
   ///
   /// Pure, and public for that reason: everything that can be wrong about a
   /// reminder -- the moment, the body, the id, whether an already-past one was
-  /// dropped -- is decided here and can be asserted directly.
+  /// dropped, which ones survive [kMaxScheduledAlarms] -- is decided here and
+  /// can be asserted directly.
   ///
-  /// The result is sorted by [ScheduledReminder.at] ascending.
+  /// The result is sorted by [ScheduledReminder.at] ascending and truncated to
+  /// [kMaxScheduledAlarms], so the alarms that survive are the soonest ones.
   static List<ScheduledReminder> planReminders({
     required StudySnapshot snapshot,
     required DateTime now,
@@ -215,14 +235,18 @@ class ReviewNotificationService {
       );
     }
 
-    // Soonest first. Tie-broken on id because two lessons examined on the same
-    // day fall due at the same instant, and an order that depends on nothing
-    // would make the fingerprint differ between two identical passes.
+    // Soonest first, so the cap below keeps the reminders that matter next.
+    // Tie-broken on id because two lessons examined on the same day fall due at
+    // the same instant, and an order that depends on nothing would make the
+    // fingerprint below differ between two identical passes.
     due.sort((a, b) {
       final byTime = a.at.compareTo(b.at);
       return byTime != 0 ? byTime : a.id.compareTo(b.id);
     });
 
+    if (due.length > kMaxScheduledAlarms) {
+      return due.sublist(0, kMaxScheduledAlarms);
+    }
     return due;
   }
 

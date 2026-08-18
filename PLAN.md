@@ -280,7 +280,7 @@ Files owned by this batch:
       *(new — owned by nobody in the map; B1's two listed test files are the domain
       test and the fake, and this covers the data-layer scheduler)*. 16 new tests.
 
-- [ ] **Task: Cap the number of scheduled alarms**
+- [x] **Task: Cap the number of scheduled alarms**
       Problem: `reschedule` registers one alarm per active lesson with no ceiling
       (`:151-166`). Android's per-app limit is ~500; past it, registrations fail
       silently and the student loses reminders with no error anywhere. The predictive
@@ -292,7 +292,20 @@ Files owned by this batch:
       Acceptance: A test with more lessons than the cap proves at most N alarms are
       registered and that they are the N soonest. `fake_notifications.dart` records the
       registrations to assert against.
-      Result:
+      Result: Done. `ReviewNotificationService.kMaxScheduledAlarms = 400`, applied
+      inside `planReminders` after the sort: the list is ordered by `at` ascending
+      (tie-broken on id, so two lessons examined the same day give a stable order
+      and therefore a stable fingerprint) and truncated to the cap, so the alarms
+      that survive are the soonest ones. 400 rather than something nearer 500
+      because a lesson now holds **two** alarms — this is a count of alarms, not of
+      lessons, so it covers 200 lessons in the worst case. Dropping the far ones
+      costs nothing: the pass re-runs on every resume and on every change to the
+      record, so a lesson beyond the window is scheduled as soon as it comes into
+      range, long before it falls due. Files:
+      `lib/data/notifications/review_notification_service.dart`,
+      `test/data/review_notification_service_test.dart`. 5 new tests — 500 lessons
+      (1000 candidate alarms) register exactly 400; nothing dropped falls due
+      before anything kept; a student under the cap keeps every reminder.
 
 ### Batch B2 — Analytics trends
 
