@@ -380,7 +380,7 @@ Files owned by this batch:
 - `test/support/fake_auth.dart`
 - `test/widget/auth_test.dart`
 
-- [ ] **Task: Verify the email address on new accounts**
+- [x] **Task: Verify the email address on new accounts**
       Problem: Nothing in `lib/` calls `sendEmailVerification` or reads `emailVerified`.
       A new email/password account is fully usable with an address nobody proved they
       own. (The password policy half of this backlog item is already done —
@@ -396,7 +396,45 @@ Files owned by this batch:
       can still use the entire app unverified. Resend works and is rate-limit-tolerant.
       Google sign-in accounts, which arrive verified, show no prompt. `auth_test.dart`
       covers verified, unverified and Google paths via `fake_auth.dart`.
-      Result:
+      Result: Done, and **not gated** — an unverified student gets the entire
+      app, which one of the new tests asserts directly. `AuthRepository` gained
+      `sendEmailVerification()` and `reloadAccount()`; `Account` gained
+      `isEmailVerified`. `FirebaseAuthRepository` sends the first link inside
+      `register`, deliberately swallowing a send failure: the account exists by
+      that point, and throwing would report a failed registration to a student
+      who now has a working account and whose retry would come back "email
+      already in use". `watchAccount` moved from `authStateChanges()` to
+      `userChanges()` — the former fires only on sign-in and sign-out, so a
+      `reload()` discovering the address had just been verified would change
+      nothing visible and the prompt would stay up after the student had acted
+      on it. `Account` compares by value, so the extra emissions do not
+      propagate.
+      Surfaces: registering raises a root-overlay toast saying a link is on its
+      way (captured before the await — the router pops the login screen the
+      instant the account exists). The persistent state and the resend live on
+      **`profile_screen.dart`**, which is the account screen and is unowned in
+      the map — `settings_screen.dart` is A1's, so the "Settings entry" the plan
+      asks for went to the screen next to it rather than into another batch's
+      file. The screen calls `reloadAccount()` on open, so returning from the
+      inbox does not find a prompt to do something already done. A rate-limited
+      resend gets its own sentence ("a link just went out, give it a moment")
+      rather than the generic failure — a student who taps twice must not be
+      told their account is broken. A footnote states plainly that the app works
+      either way, because a prompt with no stated consequence reads as a threat.
+      Google accounts arrive verified and are never asked.
+      Files: `lib/domain/repositories/auth_repository.dart`,
+      `lib/domain/entities/account.dart` *(unowned — the flag has to live on the
+      account)*, `lib/data/auth/firebase_auth_repository.dart` (still the only
+      file importing `firebase_auth`), `lib/presentation/providers/auth_providers.dart`
+      (`needsEmailVerificationProvider`), `lib/presentation/auth/login_screen.dart`,
+      `lib/presentation/settings/profile_screen.dart` *(unowned)*, `app_ar.arb`,
+      `app_en.arb`, regenerated `l10n/generated/*`, `test/support/fake_auth.dart`,
+      `test/widget/auth_test.dart`. 7 new tests covering the verified,
+      unverified, Google, resend, rate-limited and returned-from-inbox paths.
+      One existing test — "a new password must reach 8 characters" — needed a
+      `retireToast` at its end: it now finishes on a successful registration,
+      which raises a real 2.2s timer the binding checks for. Behaviour under
+      test is unchanged.
 
 ### Batch B4 — Curriculum templates
 

@@ -1758,6 +1758,36 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'ثابت، بلا تغيّر'**
   String get analyticsVelocityFlat;
+
+  /// No description provided for @authVerificationSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعتنالك رابط تأكيد على بريدك'**
+  String get authVerificationSent;
+
+  /// No description provided for @authEmailUnverified.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتم تأكيده'**
+  String get authEmailUnverified;
+
+  /// No description provided for @authResendVerification.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة إرسال رابط التأكيد'**
+  String get authResendVerification;
+
+  /// No description provided for @authVerificationTooSoon.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعتنا رابط للتو. استنى شوية وحاول تاني.'**
+  String get authVerificationTooSoon;
+
+  /// No description provided for @authVerificationNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.'**
+  String get authVerificationNote;
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

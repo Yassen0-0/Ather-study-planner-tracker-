@@ -473,5 +473,12 @@
       "value": { "type": "String" }
     }
   },
-  "analyticsVelocityFlat": "ثابت، بلا تغيّر"
+  "analyticsVelocityFlat": "ثابت، بلا تغيّر",
+
+  "@@x_comment_B3": "=== Batch B3: email verification ===",
+  "authVerificationSent": "بعتنالك رابط تأكيد على بريدك",
+  "authEmailUnverified": "لم يتم تأكيده",
+  "authResendVerification": "إعادة إرسال رابط التأكيد",
+  "authVerificationTooSoon": "بعتنا رابط للتو. استنى شوية وحاول تاني.",
+  "authVerificationNote": "تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره."
 }

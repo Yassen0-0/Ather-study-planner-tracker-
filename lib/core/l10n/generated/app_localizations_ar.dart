@@ -966,4 +966,21 @@ class LAr extends L {
 
   @override
   String get analyticsVelocityFlat => 'ثابت، بلا تغيّر';
+
+  @override
+  String get authVerificationSent => 'بعتنالك رابط تأكيد على بريدك';
+
+  @override
+  String get authEmailUnverified => 'لم يتم تأكيده';
+
+  @override
+  String get authResendVerification => 'إعادة إرسال رابط التأكيد';
+
+  @override
+  String get authVerificationTooSoon =>
+      'بعتنا رابط للتو. استنى شوية وحاول تاني.';
+
+  @override
+  String get authVerificationNote =>
+      'تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.';
 }

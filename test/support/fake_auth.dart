@@ -17,6 +17,16 @@ final class FakeAuthRepository implements AuthRepository {
   /// Signed in from the start, which is the state every study-screen test
   /// cares about.
   factory FakeAuthRepository.signedIn() => FakeAuthRepository(
+    const Account(
+      id: 'test-uid',
+      email: 'student@example.com',
+      isEmailVerified: true,
+    ),
+  );
+
+  /// Signed in with an address nobody has proved they can read -- the state a
+  /// student is in for the first few minutes after registering.
+  factory FakeAuthRepository.signedInUnverified() => FakeAuthRepository(
     const Account(id: 'test-uid', email: 'student@example.com'),
   );
 
@@ -30,6 +40,21 @@ final class FakeAuthRepository implements AuthRepository {
 
   int signOutCount = 0;
   int deleteCount = 0;
+
+  /// How many verification mails have been asked for, including the one
+  /// [register] sends itself.
+  int verificationsSent = 0;
+
+  int reloadCount = 0;
+
+  /// Set to have the *next* [reloadAccount] discover that the student has
+  /// verified in the meantime -- the inbox round trip, without an inbox.
+  bool verifyOnNextReload = false;
+
+  /// Thrown by the next [sendEmailVerification]. Firebase rate-limits resends,
+  /// and that path has to stay tolerable rather than reading as a broken
+  /// account.
+  AuthFailure? nextVerificationFailure;
 
   /// Thrown by the next `deleteAccount()` when non-null, to drive the
   /// re-authentication path exactly the way a stale Firebase session does.
@@ -69,17 +94,55 @@ final class FakeAuthRepository implements AuthRepository {
     required String password,
   }) async {
     _maybeThrow();
+    // A brand-new email/password account is unverified, and registering sends
+    // the first link -- exactly what FirebaseAuthRepository.register does.
+    verificationsSent++;
     _set(Account(id: 'test-uid', email: email));
   }
 
+  /// Google accounts arrive verified. Google checked the address; the app has
+  /// nothing left to ask.
   @override
   Future<void> signInWithGoogle() async {
     _maybeThrow();
-    _set(const Account(id: 'google-uid', email: 'student@gmail.com'));
+    _set(
+      const Account(
+        id: 'google-uid',
+        email: 'student@gmail.com',
+        isEmailVerified: true,
+      ),
+    );
   }
 
   @override
   Future<void> sendPasswordReset(String email) async => _maybeThrow();
+
+  @override
+  Future<void> sendEmailVerification() async {
+    final failure = nextVerificationFailure;
+    if (failure != null) {
+      nextVerificationFailure = null;
+      throw AuthException(failure);
+    }
+    verificationsSent++;
+  }
+
+  @override
+  Future<void> reloadAccount() async {
+    reloadCount++;
+    final account = _account;
+    if (verifyOnNextReload && account != null) {
+      verifyOnNextReload = false;
+      _set(
+        Account(
+          id: account.id,
+          email: account.email,
+          displayName: account.displayName,
+          isEmailVerified: true,
+        ),
+      );
+    }
+  }
 
   @override
   Future<void> signOut() async {

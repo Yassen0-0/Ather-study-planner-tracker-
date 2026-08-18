@@ -961,4 +961,22 @@ class LEn extends L {
 
   @override
   String get analyticsVelocityFlat => 'Holding steady';
+
+  @override
+  String get authVerificationSent =>
+      'We sent a confirmation link to your email';
+
+  @override
+  String get authEmailUnverified => 'Not confirmed';
+
+  @override
+  String get authResendVerification => 'Resend confirmation link';
+
+  @override
+  String get authVerificationTooSoon =>
+      'A link just went out. Give it a moment, then try again.';
+
+  @override
+  String get authVerificationNote =>
+      'Confirming your email is what lets you recover your account if you forget your password. The app works either way.';
 }

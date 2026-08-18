@@ -348,5 +348,12 @@
   "@@x_comment_B2": "=== Batch B2: analytics trends ===",
   "analyticsTrajectory": "Score trajectory",
   "analyticsVelocity": "{value} points per review cycle",
-  "analyticsVelocityFlat": "Holding steady"
+  "analyticsVelocityFlat": "Holding steady",
+
+  "@@x_comment_B3": "=== Batch B3: email verification ===",
+  "authVerificationSent": "We sent a confirmation link to your email",
+  "authEmailUnverified": "Not confirmed",
+  "authResendVerification": "Resend confirmation link",
+  "authVerificationTooSoon": "A link just went out. Give it a moment, then try again.",
+  "authVerificationNote": "Confirming your email is what lets you recover your account if you forget your password. The app works either way."
 }
