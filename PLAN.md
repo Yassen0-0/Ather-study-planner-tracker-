@@ -163,7 +163,7 @@ Files owned by this batch:
       `lib/presentation/settings/settings_screen.dart`, both ARBs + generated,
       `test/domain/data_export_test.dart`, `windows/flutter/generated_plugin*`.
 
-- [ ] **Task: Chapter report PDF export**
+- [x] **Task: Chapter report PDF export**
       Problem: `ChapterReportScreen` renders lesson-by-lesson mastery and exam history
       on screen only; the student cannot keep or send it.
       Approach: Add `PdfExportService` building the report with the `pdf` package, and
@@ -175,9 +175,40 @@ Files owned by this batch:
       Arabic text is correctly shaped, joined and right-aligned — verified by opening
       the file, not by the absence of an exception. Percentages and dates match what the
       screen shows.
-      Result:
+      Result: Done, commit `858ed37`. **The approach in this task does not work
+      and fails silently — that is the main finding.** The `pdf` package rewrites
+      right-to-left runs into Unicode presentation forms (U+FE70..U+FEFF) and looks
+      those codepoints up in the embedded font's `cmap`. Readex Pro joins Arabic
+      through `GSUB` and carries **none** of the initial, medial or final forms, so
+      10 of the 28 characters in `الفصل الأول: التفاضل والتكامل` render as missing
+      glyphs, with no exception thrown. Embedding `ReadexPro.ttf` as a `pw.Font` and
+      setting the page to RTL therefore produces a PDF a third of which is blank.
+      `test/domain/pdf_export_test.dart` asserts this rather than describing it, and
+      is written to **start failing** the day a font carrying those forms is added —
+      which is the moment to go back to real, selectable PDF text.
+      So the report is drawn by Flutter, which shapes it correctly in the app's own
+      typeface, and placed into the PDF as images. Cost: the text is not selectable.
+      Redrawn off-screen rather than photographed in place, because the on-screen
+      report is a scrolling list — only rows in the viewport are ever painted, so a
+      `RepaintBoundary` around it would export whichever four lessons happened to be
+      visible, and fewer still once A3 lands. New `rasterizeBlocks`
+      (`lib/presentation/share/widget_raster.dart`) builds the report into a
+      `RenderView` of its own with a tight width and unbounded height. One image per
+      card rather than one tall image, so `pw.MultiPage` breaks between blocks and
+      never through a lesson row. The draft on `auto-claude/002-data-export` built a
+      **different feature** — a whole-app mastery summary, English, LTR, subject
+      names forced to the English enum name, reached from the Export screen — so it
+      was not carried over; the Export screen is now JSON-only.
+      **Not verified: that the Arabic renders correctly in a PDF on a device.**
+      `flutter test` draws every glyph as a rectangle through a stub font, so no test
+      here can show shaping. The tests prove the pipeline paints and the document
+      assembles. Worth one look on a phone before release.
+      Files: `lib/domain/services/pdf_export_service.dart` (new),
+      `lib/presentation/share/widget_raster.dart` (new),
+      `lib/presentation/chapter_report/chapter_report_screen.dart`,
+      `test/domain/pdf_export_test.dart` (new, 7 tests).
 
-- [ ] **Task: Shareable mastery progress card**
+- [x] **Task: Shareable mastery progress card**
       Problem: Nothing renders a shareable summary of a student's progress.
       Approach: Build the card as a Flutter widget, rasterise it with `RepaintBoundary`
       + `toImage`, write the PNG to a temp file and share it. Entry point on the
@@ -187,7 +218,24 @@ Files owned by this batch:
       Acceptance: The share sheet opens with a PNG attached. The card renders correctly
       in both light and dark theme and in Arabic RTL. No student name, email or uid
       appears on the card.
-      Result:
+      Result: Done, commit `6ec1932`. `MasteryCard` + `shareMasteryCard`
+      (`lib/presentation/share/mastery_card.dart`, new) render overall mastery, a
+      per-subject breakdown and the lessons-above-threshold count, rasterise through
+      the same `rasterizeBlocks` pipeline as the PDF, and share the PNG. Entry point
+      is a share button in the **dashboard** header, shown only when
+      `!dashboard.isEmpty` — a card reading "0%" over four empty subjects is not
+      something a student shares. The card takes its palette and every string as
+      arguments rather than reading an ambient theme or `L.of(context)`, which is
+      what lets the test prove light and dark really produce different images, and
+      what makes the no-identity property structural: the test asserts the **exact
+      set** of strings the card draws, so an edit that reaches for a profile provider
+      fails instead of quietly leaking a name. Counting uses
+      `kChapterMasteryThreshold` and requires `hasExam` — a lesson with no exam has a
+      mastery of 0, and counting on the percentage alone would report untouched
+      lessons as failed rather than unmeasured. Files:
+      `lib/presentation/share/mastery_card.dart` (new),
+      `lib/presentation/dashboard/dashboard_screen.dart`,
+      `test/widget/mastery_card_test.dart` (new, 7 tests), both ARBs + generated.
 
 ### Batch A2 — Cloud backup reliability
 
