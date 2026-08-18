@@ -18,6 +18,7 @@ import '../../core/widgets/day_header.dart';
 import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/mastery_bar.dart';
+import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/pressable.dart';
 import '../../domain/services/summaries.dart';
 import '../common/prompts.dart';
@@ -25,6 +26,7 @@ import '../common/settings_button.dart';
 import '../common/subject_mark.dart';
 import '../common/subject_presentation.dart';
 import '../common/write_guard.dart';
+import '../share/mastery_card.dart';
 import '../providers/navigation_providers.dart';
 import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
@@ -61,7 +63,13 @@ class DashboardScreen extends ConsumerWidget {
         title: profileName.isEmpty
             ? l.dashboardTitle
             : l.profileGreeting(profileName),
-        actions: const <Widget>[SettingsButton()],
+        actions: <Widget>[
+          // Only once there is a number worth showing. A card reading "0%"
+          // over four empty subjects is not something a student shares, and a
+          // button that produces one teaches them the feature is pointless.
+          if (!dashboard.isEmpty) _ShareProgressButton(dashboard: dashboard),
+          const SettingsButton(),
+        ],
       ),
       children: <Widget>[
         // A brand-new student used to land on "—", three zeroes and four
@@ -99,6 +107,72 @@ class DashboardScreen extends ConsumerWidget {
           _NextCard(target: next),
         ],
       ],
+    );
+  }
+}
+
+/// Puts the student's progress on the share sheet as a picture.
+///
+/// On the dashboard rather than on the analytics screen, deliberately: the
+/// dashboard is where the overall number already lives, and the card shows that
+/// number rather than the analytics screen's breakdowns.
+class _ShareProgressButton extends StatefulWidget {
+  const _ShareProgressButton({required this.dashboard});
+
+  final DashboardSummary dashboard;
+
+  @override
+  State<_ShareProgressButton> createState() => _ShareProgressButtonState();
+}
+
+class _ShareProgressButtonState extends State<_ShareProgressButton> {
+  bool _sharing = false;
+
+  Future<void> _share() async {
+    if (_sharing) return;
+
+    final l = L.of(context);
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final direction = Directionality.of(context);
+
+    setState(() => _sharing = true);
+    try {
+      await shareMasteryCard(
+        context: context,
+        l: l,
+        dashboard: widget.dashboard,
+      );
+    } on Object catch (error, stack) {
+      debugPrint('Ather: progress card failed -- $error');
+      debugPrintStack(stackTrace: stack);
+      if (mounted) {
+        showAtherToastOn(
+          overlay,
+          direction,
+          l.shareCardError,
+          tone: ToastTone.failed,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.xs),
+      child: CircleHeaderButton(
+        // `_share` returns early while one is already running, which is what
+        // stops a second tap from starting a second render.
+        onTap: _share,
+        semanticLabel: L.of(context).shareCardAction,
+        child: Icon(
+          Icons.ios_share,
+          size: 18,
+          color: context.colors.textPrimary,
+        ),
+      ),
     );
   }
 }
