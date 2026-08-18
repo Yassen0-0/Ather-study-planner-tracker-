@@ -340,5 +340,8 @@
   "commonNext": "Next",
   "commonBack": "Back",
   "commonEdit": "Edit",
-  "commonClose": "Close"
+  "commonClose": "Close",
+
+  "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",
+  "reviewNotificationEarlyBody": "{lesson} in {chapter} is due for review soon"
 }

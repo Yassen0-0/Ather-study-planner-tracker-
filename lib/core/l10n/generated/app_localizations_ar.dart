@@ -950,4 +950,9 @@ class LAr extends L {
 
   @override
   String get commonClose => 'إغلاق';
+
+  @override
+  String reviewNotificationEarlyBody(String lesson, String chapter) {
+    return 'اقترب موعد مراجعة درس $lesson في $chapter';
+  }
 }

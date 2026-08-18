@@ -121,17 +121,45 @@ abstract final class ReviewCycleService {
     //
     // Anchoring to the day makes them the same statement: the reminder lands on
     // the day the screen turns, at an hour someone is awake for.
-    // Built from calendar components rather than by adding a Duration: adding
-    // 30x24h across a daylight-saving change lands an hour off, and Egypt has
-    // one. Dart normalises an out-of-range day, so `day + 30` is exactly "the
-    // same date thirty days later".
-    return DateTime(
-      last.year,
-      last.month,
-      last.day + kReviewCycleDays,
-      kReminderHour,
-    );
+    return _reminderOn(last, kReviewCycleDays);
   }
+
+  /// How many days before [dueAt] the early warning lands.
+  ///
+  /// Three, not one: a lesson is re-proven by sitting an exam on it, and an
+  /// exam takes an evening to prepare for. A warning that arrives the night
+  /// before is a warning the student cannot act on, which is the same as no
+  /// warning at all. Three days is one weekend's reach.
+  static const int kEarlyReminderDays = 3;
+
+  /// The moment a lesson's *early* warning is posted -- [kEarlyReminderDays]
+  /// before it falls due -- or null if it has never been examined.
+  ///
+  /// Derived from the same calendar anchoring as [dueAt], through the same
+  /// helper, so the two cannot drift apart. Computing this as
+  /// `dueAt(lesson)!.subtract(const Duration(days: 3))` would reintroduce
+  /// exactly the elapsed-time arithmetic the comment above rejects: across a
+  /// daylight-saving change it lands an hour off [kReminderHour], and the pair
+  /// of reminders for one lesson would then disagree about what time of day
+  /// they belong at.
+  ///
+  /// Note this can be in the past even when [dueAt] is not -- a lesson examined
+  /// 28 days ago is due in two days and its early warning was owed yesterday.
+  /// The caller drops it; see `ReviewNotificationService.planReminders`.
+  static DateTime? earlyReminderAt(Lesson lesson) {
+    final last = lesson.lastReviewedAt;
+    if (last == null) return null;
+    return _reminderOn(last, kReviewCycleDays - kEarlyReminderDays);
+  }
+
+  /// [daysAfter] calendar days after [last], at [kReminderHour].
+  ///
+  /// Built from calendar components rather than by adding a Duration: adding
+  /// 30x24h across a daylight-saving change lands an hour off, and Egypt has
+  /// one. Dart normalises an out-of-range day, so `day + 30` is exactly "the
+  /// same date thirty days later".
+  static DateTime _reminderOn(DateTime last, int daysAfter) =>
+      DateTime(last.year, last.month, last.day + daysAfter, kReminderHour);
 
   /// A chapter is red if **even one** lesson inside it needs review.
   ///

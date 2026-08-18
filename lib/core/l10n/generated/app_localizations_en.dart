@@ -945,4 +945,9 @@ class LEn extends L {
 
   @override
   String get commonClose => 'Close';
+
+  @override
+  String reviewNotificationEarlyBody(String lesson, String chapter) {
+    return '$lesson in $chapter is due for review soon';
+  }
 }

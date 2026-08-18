@@ -1734,6 +1734,12 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'إغلاق'**
   String get commonClose;
+
+  /// No description provided for @reviewNotificationEarlyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترب موعد مراجعة درس {lesson} في {chapter}'**
+  String reviewNotificationEarlyBody(String lesson, String chapter);
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

@@ -7,6 +7,44 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../domain/entities/study_snapshot.dart';
 import '../../domain/services/review_cycle_service.dart';
 
+/// One reminder as it will be registered with the platform.
+///
+/// A plain value so the scheduling *decisions* -- which lessons, at what
+/// moments, in what order, and how many survive the cap -- can be asserted in a
+/// unit test without a platform channel anywhere near it.
+final class ScheduledReminder {
+  const ScheduledReminder({
+    required this.id,
+    required this.lessonId,
+    required this.at,
+    required this.body,
+    required this.isEarly,
+  });
+
+  /// The platform notification id. **Not** the lesson id: a lesson now holds
+  /// two reminders, so the id is `lessonId * 2` for the due-day one and
+  /// `lessonId * 2 + 1` for the early one.
+  ///
+  /// Doubling rather than adding a fixed offset (`lessonId + 1000000`) because
+  /// an offset is only collision-free while every lesson id stays below it, and
+  /// nothing enforces that -- an id past the offset would silently cancel some
+  /// other lesson's reminder, which is a bug that only appears on the phone of
+  /// a student who has recorded a great deal. Doubling has no such ceiling
+  /// short of 32-bit overflow.
+  final int id;
+
+  /// The lesson this is about. Carried separately from [id] because it is what
+  /// goes in the payload -- tapping either reminder must open the lesson.
+  final int lessonId;
+
+  final DateTime at;
+  final String body;
+
+  /// True for the [ReviewCycleService.kEarlyReminderDays] warning, false for
+  /// the due-day reminder.
+  final bool isEarly;
+}
+
 /// Schedules the 30-day review reminders.
 ///
 /// Reminders are **scheduled at each lesson's due moment** rather than polled
@@ -116,6 +154,96 @@ class ReviewNotificationService {
   /// matching one.
   String? _applied;
 
+  /// Decides what the schedule should be, without touching the platform.
+  ///
+  /// Pure, and public for that reason: everything that can be wrong about a
+  /// reminder -- the moment, the body, the id, whether an already-past one was
+  /// dropped -- is decided here and can be asserted directly.
+  ///
+  /// The result is sorted by [ScheduledReminder.at] ascending.
+  static List<ScheduledReminder> planReminders({
+    required StudySnapshot snapshot,
+    required DateTime now,
+    required bool enabled,
+    required String Function(String lesson, String chapter) buildBody,
+    required String Function(String lesson, String chapter) buildEarlyBody,
+  }) {
+    if (!enabled) return const <ScheduledReminder>[];
+
+    final due = <ScheduledReminder>[];
+    // `activeLessons`, not `lessons`: a subject the student archived or
+    // deleted must stop reminding them about itself. Its lesson names are
+    // what a reminder's body is made of, and they land on a lock screen.
+    for (final lesson in snapshot.activeLessons) {
+      final dueAt = ReviewCycleService.dueAt(lesson);
+      if (dueAt == null) continue;
+
+      final chapter = snapshot.chapterById(lesson.chapterId);
+      final chapterName = chapter?.name ?? '';
+
+      // The early warning, [kEarlyReminderDays] before the due day. Skipped
+      // when it is already behind us -- a lesson examined 28 days ago is due in
+      // two and its warning was owed last week; posting it now would announce a
+      // deadline that has effectively arrived, which is the due-day reminder's
+      // job and says something different.
+      final earlyAt = ReviewCycleService.earlyReminderAt(lesson);
+      if (earlyAt != null && earlyAt.isAfter(now)) {
+        due.add(
+          ScheduledReminder(
+            id: lesson.id * 2 + 1,
+            lessonId: lesson.id,
+            at: earlyAt,
+            body: buildEarlyBody(lesson.name, chapterName),
+            isEarly: true,
+          ),
+        );
+      }
+
+      // Already-overdue lessons are shown in red in-app and badged on the
+      // Review tab; firing a notification for something that came due weeks
+      // ago would be noise, not a reminder.
+      if (!dueAt.isAfter(now)) continue;
+
+      due.add(
+        ScheduledReminder(
+          id: lesson.id * 2,
+          lessonId: lesson.id,
+          at: dueAt,
+          body: buildBody(lesson.name, chapterName),
+          isEarly: false,
+        ),
+      );
+    }
+
+    // Soonest first. Tie-broken on id because two lessons examined on the same
+    // day fall due at the same instant, and an order that depends on nothing
+    // would make the fingerprint differ between two identical passes.
+    due.sort((a, b) {
+      final byTime = a.at.compareTo(b.at);
+      return byTime != 0 ? byTime : a.id.compareTo(b.id);
+    });
+
+    return due;
+  }
+
+  /// What a pass would put on the device, as one comparable string.
+  ///
+  /// **Both** of a lesson's moments are in [reminders] and therefore in here.
+  /// Without that, adding or moving an early warning would leave the
+  /// fingerprint identical to the previous pass, [reschedule] would take its
+  /// early return, and the new reminder would silently never be registered --
+  /// the dedupe suppressing the very change it was asked to apply.
+  static String fingerprintOf({
+    required List<ScheduledReminder> reminders,
+    required bool enabled,
+    required String title,
+  }) => <String>[
+    '$enabled',
+    title,
+    for (final r in reminders)
+      '${r.id}@${r.at.millisecondsSinceEpoch}:${r.body}',
+  ].join('|');
+
   /// Rebuilds the schedule from the current data.
   ///
   /// Cancels everything and re-schedules rather than diffing: the set is at most
@@ -131,46 +259,34 @@ class ReviewNotificationService {
   /// checklist box or switching away and back all triggered a full rebuild.
   ///
   /// So the pass is fingerprinted first. Everything the schedule depends on
-  /// goes into the fingerprint -- the lesson ids, their due times, the bodies,
-  /// and the enabled flag -- and an identical one returns before touching the
-  /// platform at all.
+  /// goes into the fingerprint -- every reminder id, the moment each one fires,
+  /// the bodies, and the enabled flag -- and an identical one returns before
+  /// touching the platform at all.
   Future<void> reschedule({
     required StudySnapshot snapshot,
     required DateTime now,
     required bool enabled,
     required String Function(String lesson, String chapter) buildBody,
+    required String Function(String lesson, String chapter) buildEarlyBody,
     required String title,
   }) async {
     if (!_initialised) return;
 
-    final due = <({int id, DateTime at, String body})>[];
-    if (enabled && permissionGranted) {
-      // `activeLessons`, not `lessons`: a subject the student archived or
-      // deleted must stop reminding them about itself. Its lesson names are
-      // what a reminder's body is made of, and they land on a lock screen.
-      for (final lesson in snapshot.activeLessons) {
-        final dueAt = ReviewCycleService.dueAt(lesson);
-        if (dueAt == null) continue;
+    final due = planReminders(
+      snapshot: snapshot,
+      now: now,
+      // A revoked OS permission is the same as the switch being off: there is
+      // nothing to schedule into.
+      enabled: enabled && permissionGranted,
+      buildBody: buildBody,
+      buildEarlyBody: buildEarlyBody,
+    );
 
-        // Already-overdue lessons are shown in red in-app and badged on the
-        // Review tab; firing a notification for something that came due weeks
-        // ago would be noise, not a reminder.
-        if (!dueAt.isAfter(now)) continue;
-
-        final chapter = snapshot.chapterById(lesson.chapterId);
-        due.add((
-          id: lesson.id,
-          at: dueAt,
-          body: buildBody(lesson.name, chapter?.name ?? ''),
-        ));
-      }
-    }
-
-    final fingerprint = <String>[
-      '$enabled',
-      title,
-      for (final d in due) '${d.id}@${d.at.millisecondsSinceEpoch}:${d.body}',
-    ].join('|');
+    final fingerprint = fingerprintOf(
+      reminders: due,
+      enabled: enabled,
+      title: title,
+    );
     if (fingerprint == _applied) return;
 
     // Cleared, not set, before the platform work: if any call below throws, the
@@ -184,14 +300,12 @@ class ReviewNotificationService {
       return;
     }
 
-    for (final lesson in due) {
-      final dueAt = lesson.at;
-
+    for (final reminder in due) {
       await _plugin.zonedSchedule(
-        id: lesson.id,
+        id: reminder.id,
         title: title,
-        body: lesson.body,
-        scheduledDate: tz.TZDateTime.from(dueAt, tz.local),
+        body: reminder.body,
+        scheduledDate: tz.TZDateTime.from(reminder.at, tz.local),
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             _channelId,
@@ -205,7 +319,9 @@ class ReviewNotificationService {
         // Play treats as a restricted permission. A study reminder does not
         // justify that, and being delivered within the hour is fine.
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        payload: '${lesson.id}',
+        // The lesson, not the notification id -- tapping either of a lesson's
+        // two reminders opens that lesson.
+        payload: '${reminder.lessonId}',
       );
     }
 

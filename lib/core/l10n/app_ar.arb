@@ -454,5 +454,14 @@
   "commonNext": "التالي",
   "commonBack": "رجوع",
   "commonEdit": "تعديل",
-  "commonClose": "إغلاق"
+  "commonClose": "إغلاق",
+
+  "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",
+  "reviewNotificationEarlyBody": "اقترب موعد مراجعة درس {lesson} في {chapter}",
+  "@reviewNotificationEarlyBody": {
+    "placeholders": {
+      "lesson": { "type": "String" },
+      "chapter": { "type": "String" }
+    }
+  }
 }

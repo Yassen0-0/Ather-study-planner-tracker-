@@ -87,8 +87,16 @@ make an A/B split impossible.
 - Append your keys at the **end** of both ARB files, inside a block marked with your
   batch id:
 
-      "_comment_A1": "=== Batch A1: data export, PDF, share cards ===",
+      "@@x_comment_A1": "=== Batch A1: data export, PDF, share cards ===",
       "exportTitle": "...",
+
+  **Correction, found by Batch B1 in practice.** The marker key cannot be
+  `"_comment_A1"`. `flutter gen-l10n` rejects any resource name that is not a
+  valid Dart method name, and a leading underscore fails outright — *Invalid ARB
+  resource name "_comment_B1"* — which stops generation entirely rather than
+  warning. A key beginning `@@` is read as a global attribute and ignored by the
+  generator, so `"@@x_comment_A1"` marks the block without generating anything.
+  Everything else about the convention is unchanged.
 
 - **Never edit or reorder a key you did not add.** Append only.
 - `app_ar.arb` is the template (see `l10n.yaml`); every key must exist in both files.
@@ -235,7 +243,7 @@ Files owned by this batch:
 > The calendar-day arithmetic there is deliberate and was written to fix a real 23-hour
 > bug. Do not "simplify" it back to `Duration.inDays` or `last.add(Duration(days: 30))`.
 
-- [ ] **Task: Predictive reminder before a lesson falls due**
+- [x] **Task: Predictive reminder before a lesson falls due**
       Problem: `reschedule` books exactly one notification per lesson, at `dueAt`
       (`review_notification_service.dart:152-166`). The student is told a lesson decayed
       on the day it decayed, with no warning.
@@ -251,7 +259,26 @@ Files owned by this batch:
       early one is skipped when already past, and that the fingerprint changes when
       either moves. The reminder body names the lesson and chapter, as the existing one
       does.
-      Result:
+      Result: Done. `ReviewCycleService.earlyReminderAt` plus
+      `kEarlyReminderDays = 3`, built through a new `_reminderOn(last, daysAfter)`
+      helper that `dueAt` now also uses — so both moments are anchored by the same
+      calendar arithmetic and cannot drift apart. Deliberately *not*
+      `dueAt()!.subtract(Duration(days: 3))`, which is the elapsed-time maths the
+      doc comment there exists to reject. The scheduling decision moved out of
+      `reschedule` into a pure, public `ReviewNotificationService.planReminders(...)`
+      returning `ScheduledReminder` values, and the fingerprint into `fingerprintOf`
+      beside it, so both are asserted directly instead of through a platform
+      channel. Ids are `lessonId * 2` (due) and `lessonId * 2 + 1` (early) —
+      collision-free with no ceiling, unlike a fixed offset; both carry the lesson
+      id as payload, so tapping either opens the lesson. New ARB key
+      `reviewNotificationEarlyBody` appended to both files (see the correction to
+      the marker-key convention under "Localization files are shared"). Files:
+      `review_cycle_service.dart`, `review_notification_service.dart`,
+      `notification_providers.dart`, `app_ar.arb`, `app_en.arb`, regenerated
+      `l10n/generated/*`, `test/support/fake_notifications.dart` (now records the
+      planned reminders), and `test/data/review_notification_service_test.dart`
+      *(new — owned by nobody in the map; B1's two listed test files are the domain
+      test and the fake, and this covers the data-layer scheduler)*. 16 new tests.
 
 - [ ] **Task: Cap the number of scheduled alarms**
       Problem: `reschedule` registers one alarm per active lesson with no ceiling
