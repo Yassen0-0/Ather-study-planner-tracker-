@@ -463,5 +463,15 @@
       "lesson": { "type": "String" },
       "chapter": { "type": "String" }
     }
-  }
+  },
+
+  "@@x_comment_B2": "=== Batch B2: analytics trends ===",
+  "analyticsTrajectory": "مسار درجاتك",
+  "analyticsVelocity": "{value} نقطة لكل دورة مراجعة",
+  "@analyticsVelocity": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "analyticsVelocityFlat": "ثابت، بلا تغيّر"
 }

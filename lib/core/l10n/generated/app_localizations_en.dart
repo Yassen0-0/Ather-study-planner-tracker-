@@ -950,4 +950,15 @@ class LEn extends L {
   String reviewNotificationEarlyBody(String lesson, String chapter) {
     return '$lesson in $chapter is due for review soon';
   }
+
+  @override
+  String get analyticsTrajectory => 'Score trajectory';
+
+  @override
+  String analyticsVelocity(String value) {
+    return '$value points per review cycle';
+  }
+
+  @override
+  String get analyticsVelocityFlat => 'Holding steady';
 }

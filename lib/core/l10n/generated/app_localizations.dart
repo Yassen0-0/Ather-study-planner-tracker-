@@ -1740,6 +1740,24 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'اقترب موعد مراجعة درس {lesson} في {chapter}'**
   String reviewNotificationEarlyBody(String lesson, String chapter);
+
+  /// No description provided for @analyticsTrajectory.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسار درجاتك'**
+  String get analyticsTrajectory;
+
+  /// No description provided for @analyticsVelocity.
+  ///
+  /// In ar, this message translates to:
+  /// **'{value} نقطة لكل دورة مراجعة'**
+  String analyticsVelocity(String value);
+
+  /// No description provided for @analyticsVelocityFlat.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثابت، بلا تغيّر'**
+  String get analyticsVelocityFlat;
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

@@ -66,8 +66,20 @@ abstract final class ReviewCycleService {
   static int? daysSinceReview(Lesson lesson, DateTime now) {
     final last = lesson.lastReviewedAt;
     if (last == null) return null;
-    return _dayNumber(now) - _dayNumber(last);
+    return calendarDaysBetween(last, now);
   }
+
+  /// Whole calendar days from [from] to [to]. Negative if [to] is earlier.
+  ///
+  /// Public because this is not only the review cycle's unit -- anything that
+  /// divides by an elapsed span needs it too, and `to.difference(from).inDays`
+  /// is wrong for the same reason it is wrong here. Across the night Egypt puts
+  /// its clocks forward, two dates a calendar month apart are 29 days and 23
+  /// hours of elapsed time, which `inDays` truncates to 29. A rate computed
+  /// against that denominator is silently 3% out, in a direction that changes
+  /// twice a year.
+  static int calendarDaysBetween(DateTime from, DateTime to) =>
+      _dayNumber(to) - _dayNumber(from);
 
   /// Whether a lesson's mastery has decayed and must be re-proven.
   ///

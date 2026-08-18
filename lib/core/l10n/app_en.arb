@@ -343,5 +343,10 @@
   "commonClose": "Close",
 
   "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",
-  "reviewNotificationEarlyBody": "{lesson} in {chapter} is due for review soon"
+  "reviewNotificationEarlyBody": "{lesson} in {chapter} is due for review soon",
+
+  "@@x_comment_B2": "=== Batch B2: analytics trends ===",
+  "analyticsTrajectory": "Score trajectory",
+  "analyticsVelocity": "{value} points per review cycle",
+  "analyticsVelocityFlat": "Holding steady"
 }

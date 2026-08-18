@@ -955,4 +955,15 @@ class LAr extends L {
   String reviewNotificationEarlyBody(String lesson, String chapter) {
     return 'اقترب موعد مراجعة درس $lesson في $chapter';
   }
+
+  @override
+  String get analyticsTrajectory => 'مسار درجاتك';
+
+  @override
+  String analyticsVelocity(String value) {
+    return '$value نقطة لكل دورة مراجعة';
+  }
+
+  @override
+  String get analyticsVelocityFlat => 'ثابت، بلا تغيّر';
 }

@@ -316,7 +316,7 @@ Files owned by this batch:
 - `lib/domain/services/summaries.dart`
 - `test/domain/insights_generator_test.dart`
 
-- [ ] **Task: Exam score trajectory and mastery velocity**
+- [x] **Task: Exam score trajectory and mastery velocity**
       Problem: `analytics_screen.dart` has no time axis. Subject bars, chapter bars,
       weakest-five and the discipline rate are all snapshots — a student cannot see
       whether they are improving.
@@ -331,7 +331,43 @@ Files owned by this batch:
       matches their recorded scores. A student with fewer than two exams sees the
       existing "not enough data" state rather than an empty or misleading chart. A unit
       test covers the velocity computation including the flat and single-exam cases.
-      Result:
+      Result: Done. Domain: `MasteryTrends` in `insights_generator.dart`, with
+      `SubjectTrajectory` / `TrajectoryPoint`. A subject's series is one point per
+      day it was examined, each point being subject mastery recomputed from only
+      the exams that existed by the end of that day — sampled through
+      `InsightsGenerator.subjectMasteryAsOf`, which was already there and is now
+      shared rather than duplicated, so the chart and the "you improved" insight
+      cannot disagree about the same student. Long histories are thinned to
+      `maxPoints = 12`, always keeping both ends, so the endpoints drawn are the
+      endpoints the velocity is computed from. Velocity is endpoint-to-endpoint
+      change in percentage points per 30-day review cycle — checkable against the
+      two ends of the line, which a least-squares slope would not be — signed, so
+      a decline reads as one.
+      **One real bug found and fixed while doing this:**
+      `last.difference(first).inDays` measured a 30-day span as 29 across the
+      night Egypt puts its clocks forward, reporting a rate 3% too high for half
+      the year. That is the same defect the comment on `dueAt` exists to prevent,
+      arriving through division instead of addition. `ReviewCycleService` now
+      exposes `calendarDaysBetween`, which `daysSinceReview` also routes through,
+      so there is one definition of "a day" in the app.
+      UI: `_TrajectoryCard` in `analytics_screen.dart` — one row per subject with
+      its name, its signed velocity (or the existing "not enough data" line), and
+      a `CustomPaint` polyline. No chart package. Fixed 0..100 axis rather than
+      one fitted to the data, so a wobble between 74% and 76% cannot be drawn as
+      a cliff. Forced `Ltr`, as time runs left-to-right in both languages. The
+      card respects `_subjectFilter` like the chapter bars and the discipline
+      card do; the subject-bars card keeps its documented exemption. The card is
+      omitted entirely when no visible subject has two readings.
+      Files: `lib/domain/services/insights_generator.dart`,
+      `lib/domain/services/review_cycle_service.dart` *(the shared day helper —
+      B1-owned, same session)*, `lib/presentation/analytics/analytics_screen.dart`,
+      `app_ar.arb`, `app_en.arb`, regenerated `l10n/generated/*`,
+      `test/domain/insights_generator_test.dart`. 14 new tests, covering the flat,
+      single-exam, same-day, declining and thinning cases, and asserting the last
+      point equals the subject mastery the bar above it shows.
+      `summaries.dart` was **not** touched: the trajectory is a pure function of
+      the snapshot and adding it to `SubjectSummary` would make every screen
+      compute a chart none of them render.
 
 ### Batch B3 — Email verification
 
