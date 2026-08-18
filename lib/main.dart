@@ -1,5 +1,6 @@
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +30,7 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     await _activateAppCheck();
+    await _initializeCrashlytics();
   } catch (error, stack) {
     debugPrint('Firebase init failed: $error\n$stack');
   }
@@ -89,5 +91,35 @@ Future<void> _activateAppCheck() async {
     // difference between "App Check is refusing us" and "the network is down",
     // and those have completely different remedies.
     debugPrint('App Check activation failed: $error\n$stack');
+  }
+}
+
+/// Initializes Firebase Crashlytics to automatically capture and report crashes
+/// in production builds.
+///
+/// **Why this is needed.** The app holds a student's entire exam history with
+/// no server copy, so crashes that cause data loss are unacceptable. Crashlytics
+/// provides visibility into production crashes before students report them,
+/// allowing issues to be fixed proactively.
+///
+/// **Why only in release builds.** Debug and profile builds generate noise from
+/// development crashes that are not representative of production issues. Running
+/// Crashlytics only in release builds keeps the console focused on real problems
+/// that affect students.
+///
+/// Failure here is deliberately not fatal, for the same reason
+/// `Firebase.initializeApp` is wrapped: crash reporting is not allowed to stand
+/// between a student and study data sitting on their own phone.
+Future<void> _initializeCrashlytics() async {
+  // Skip initialization in debug builds to avoid noise from development crashes
+  if (kDebugMode) return;
+
+  try {
+    // Enable automatic crash reporting for unhandled exceptions
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+  } catch (error, stack) {
+    // Crashlytics initialization failure should never prevent the app from
+    // starting. Log the error so it's visible during development, but continue.
+    debugPrint('Crashlytics initialization failed: $error\n$stack');
   }
 }

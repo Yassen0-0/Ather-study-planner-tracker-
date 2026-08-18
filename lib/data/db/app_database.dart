@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import '../../domain/entities/subject.dart';
 import 'tables.dart';
@@ -65,16 +66,24 @@ class AppDatabase extends _$AppDatabase {
     // nothing rewritten. The student's curriculum is the one thing in this
     // file that cannot be regenerated.
     onUpgrade: (Migrator m, int from, int to) async {
-      if (from < 2) await m.createTable(dailyTasks);
-      if (from < 3) {
-        await m.addColumn(subjects, subjects.name);
-        await m.addColumn(subjects, subjects.archivedAt);
-        await m.addColumn(subjects, subjects.deletedAt);
-        // The last time the seed is ever allowed to run against an existing
-        // database. It covers a file created before a seed change, and it can
-        // only add rows the student never had the ability to delete -- because
-        // until this very migration, they did not.
-        await _seedSubjects();
+      try {
+        if (from < 2) await m.createTable(dailyTasks);
+        if (from < 3) {
+          await m.addColumn(subjects, subjects.name);
+          await m.addColumn(subjects, subjects.archivedAt);
+          await m.addColumn(subjects, subjects.deletedAt);
+          // The last time the seed is ever allowed to run against an existing
+          // database. It covers a file created before a seed change, and it can
+          // only add rows the student never had the ability to delete -- because
+          // until this very migration, they did not.
+          await _seedSubjects();
+        }
+      } catch (error, stack) {
+        // Report non-fatal error to Crashlytics before rethrowing.
+        // Migration failures are critical: they prevent the app from opening
+        // and can leave a student's database in an inconsistent state.
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
+        rethrow;
       }
     },
     beforeOpen: (OpeningDetails details) async {

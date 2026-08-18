@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import '../../domain/entities/chapter.dart';
 import '../../domain/entities/exam_entry.dart';
@@ -286,57 +287,64 @@ class DriftStudyRepository implements StudyRepository {
     required List<DraftQuestionGroup> groups,
     required bool isReviewExam,
     required DateTime at,
-  }) {
-    return _db.transaction(() async {
-      // Totals are derived here, never accepted from the caller, so a stored
-      // percentage can never contradict the groups it came from.
-      var possible = 0;
-      var earned = 0;
-      for (final g in groups) {
-        possible += g.possiblePoints;
-        earned += g.earnedPoints;
-      }
-      final percentage = possible <= 0 ? 0.0 : (earned / possible) * 100;
+  }) async {
+    try {
+      return await _db.transaction(() async {
+        // Totals are derived here, never accepted from the caller, so a stored
+        // percentage can never contradict the groups it came from.
+        var possible = 0;
+        var earned = 0;
+        for (final g in groups) {
+          possible += g.possiblePoints;
+          earned += g.earnedPoints;
+        }
+        final percentage = possible <= 0 ? 0.0 : (earned / possible) * 100;
 
-      final examId = await _db
-          .into(_db.examEntries)
-          .insert(
-            ExamEntriesCompanion.insert(
-              lessonId: lessonId,
-              totalPossiblePoints: possible,
-              correctPoints: earned,
-              percentage: percentage,
-              createdAt: at,
-              isReviewExam: Value(isReviewExam),
-            ),
-          );
+        final examId = await _db
+            .into(_db.examEntries)
+            .insert(
+              ExamEntriesCompanion.insert(
+                lessonId: lessonId,
+                totalPossiblePoints: possible,
+                correctPoints: earned,
+                percentage: percentage,
+                createdAt: at,
+                isReviewExam: Value(isReviewExam),
+              ),
+            );
 
-      await _db.batch((Batch batch) {
-        batch.insertAll(_db.examQuestionGroups, <ExamQuestionGroupsCompanion>[
-          for (final g in groups)
-            ExamQuestionGroupsCompanion.insert(
-              examId: examId,
-              pointsPerQuestion: g.pointsPerQuestion,
-              questionCount: g.questionCount,
-              correctCount: g.correctCount,
-            ),
-        ]);
+        await _db.batch((Batch batch) {
+          batch.insertAll(_db.examQuestionGroups, <ExamQuestionGroupsCompanion>[
+            for (final g in groups)
+              ExamQuestionGroupsCompanion.insert(
+                examId: examId,
+                pointsPerQuestion: g.pointsPerQuestion,
+                questionCount: g.questionCount,
+                correctCount: g.correctCount,
+              ),
+          ]);
+        });
+
+        // Recording an exam is the *only* way to prove a lesson, so it always
+        // restarts the review clock -- first exam or review exam alike.
+        await (_db.update(
+          _db.lessons,
+        )..where((t) => t.id.equals(lessonId))).write(
+          LessonsCompanion(
+            lastReviewedAt: Value(at),
+            lastNotifiedAt: const Value<DateTime?>(null),
+            didExam: const Value(true),
+          ),
+        );
+
+        return examId;
       });
-
-      // Recording an exam is the *only* way to prove a lesson, so it always
-      // restarts the review clock -- first exam or review exam alike.
-      await (_db.update(
-        _db.lessons,
-      )..where((t) => t.id.equals(lessonId))).write(
-        LessonsCompanion(
-          lastReviewedAt: Value(at),
-          lastNotifiedAt: const Value<DateTime?>(null),
-          didExam: const Value(true),
-        ),
-      );
-
-      return examId;
-    });
+    } catch (error, stack) {
+      // Report non-fatal error to Crashlytics before rethrowing.
+      // Exam save failures are critical: they represent lost student work.
+      FirebaseCrashlytics.instance.recordError(error, stack);
+      rethrow;
+    }
   }
 
   @override

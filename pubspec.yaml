@@ -2,7 +2,7 @@ name: ather
 description: "Ather - mastery measurement for Thanaweya Amma"
 publish_to: 'none'
 
-version: 1.7.0+12
+version: 1.7.0+13
 
 environment:
   sdk: ^3.12.2
@@ -50,6 +50,9 @@ dependencies:
   # nothing but that key. See main.dart for why it is shipped *before* it is
   # enforced.
   firebase_app_check: ^0.4.2
+
+  # Crash reporting and analytics
+  firebase_crashlytics: ^5.2.7
 
 dev_dependencies:
   flutter_test:
