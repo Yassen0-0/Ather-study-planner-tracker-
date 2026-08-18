@@ -38,6 +38,17 @@ dependencies:
 
   # Locale + notification preferences
   shared_preferences: 2.5.5
+
+  # Export: a JSON file of the student's own record, a chapter report PDF, and a
+  # shareable progress card. All three write to the app's temporary directory
+  # and hand the file to the system share sheet -- deliberately not to a
+  # "Downloads" folder. On Android `getDownloadsDirectory()` resolves to
+  # `Android/data/com.ather.app/files/Download`, which is app-private and is
+  # deleted with the app: a button labelled "save to Downloads" would put the
+  # student's export somewhere they cannot find it and cannot keep.
+  path_provider: 2.1.6
+  share_plus: 10.1.4
+  pdf: 3.13.0
   firebase_core: ^4.12.1
   firebase_auth: ^6.5.6
   google_sign_in: ^7.2.0

@@ -133,6 +133,10 @@ class SettingsScreen extends ConsumerWidget {
                 onTap: () => context.push(Routes.recycleBin),
               ),
             SettingsRow(
+              label: l.exportTitle,
+              onTap: () => context.push(Routes.export),
+            ),
+            SettingsRow(
               label: l.settingsLanguage,
               value: locale.languageCode == 'en'
                   ? l.settingsLanguageEnglish

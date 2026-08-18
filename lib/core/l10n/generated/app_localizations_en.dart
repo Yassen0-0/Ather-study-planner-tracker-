@@ -945,4 +945,58 @@ class LEn extends L {
 
   @override
   String get commonClose => 'Close';
+
+  @override
+  String get exportTitle => 'Export your data';
+
+  @override
+  String get exportBody =>
+      'Get a copy of everything you have recorded — subjects, chapters, lessons, exams and mastery scores — in one JSON file you can open and read yourself.';
+
+  @override
+  String get exportAction => 'Export and share the file';
+
+  @override
+  String get exportWhereNote =>
+      'The file opens in the share sheet, so you choose where it goes — Drive, WhatsApp, Files. Ather keeps no copy.';
+
+  @override
+  String get exportErrorFile =>
+      'The file could not be prepared. Check the free space on your device.';
+
+  @override
+  String get exportErrorShare => 'The share sheet would not open';
+
+  @override
+  String get chapterReportExport => 'Export report as PDF';
+
+  @override
+  String get chapterReportExportDone => 'Report ready';
+
+  @override
+  String get chapterReportExportError => 'The PDF could not be prepared';
+
+  @override
+  String get shareCardAction => 'Share your progress';
+
+  @override
+  String get shareCardTitle => 'My mastery on Ather';
+
+  @override
+  String get shareCardOverall => 'Overall mastery';
+
+  @override
+  String shareCardLessonsAbove(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lessons above the mastery threshold',
+      one: '1 lesson above the mastery threshold',
+      zero: 'No lessons mastered yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareCardError => 'The progress image could not be prepared';
 }

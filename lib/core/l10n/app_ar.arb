@@ -454,5 +454,28 @@
   "commonNext": "التالي",
   "commonBack": "رجوع",
   "commonEdit": "تعديل",
-  "commonClose": "إغلاق"
+  "commonClose": "إغلاق",
+
+  "exportTitle": "تصدير بياناتك",
+  "@exportTitle": {
+    "description": "=== Batch A1: data export, chapter report PDF, share card. Appended block, append-only, do not reorder. ==="
+  },
+  "exportBody": "احصل على نسخة من كل ما سجّلته: المواد والأبواب والدروس والامتحانات ودرجات الإتقان، في ملف JSON واحد تقدر تفتحه وتقرأه بنفسك.",
+  "exportAction": "صدّر وشارك الملف",
+  "exportWhereNote": "الملف يتفتح في نافذة المشاركة، تختار منها تحفظه فين — درايف أو واتساب أو الملفات. أثر لا يحتفظ بنسخة.",
+  "exportErrorFile": "تعذّر تجهيز الملف. راجع المساحة الفاضية على الجهاز.",
+  "exportErrorShare": "تعذّر فتح نافذة المشاركة",
+
+  "chapterReportExport": "صدّر التقرير PDF",
+  "chapterReportExportDone": "اتجهّز التقرير",
+  "chapterReportExportError": "تعذّر تجهيز ملف PDF",
+
+  "shareCardAction": "شارك تقدّمك",
+  "shareCardTitle": "إتقاني في أثر",
+  "shareCardOverall": "الإتقان العام",
+  "shareCardLessonsAbove": "{count,plural, =0{لا توجد دروس متقنة بعد} =1{درس واحد فوق حد الإتقان} =2{درسان فوق حد الإتقان} few{{count} دروس فوق حد الإتقان} other{{count} درساً فوق حد الإتقان}}",
+  "shareCardError": "تعذّر تجهيز صورة التقدّم",
+  "@shareCardLessonsAbove": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }
