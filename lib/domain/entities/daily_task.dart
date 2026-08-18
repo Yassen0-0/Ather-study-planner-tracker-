@@ -12,6 +12,7 @@ final class DailyTask {
     required this.done,
     required this.sortOrder,
     required this.createdAt,
+    this.updatedAt,
   });
 
   final int id;
@@ -27,6 +28,51 @@ final class DailyTask {
   final int sortOrder;
 
   final DateTime createdAt;
+
+  /// Server timestamp of last modification for multi-device sync. Null for
+  /// entities created before sync was enabled.
+  final DateTime? updatedAt;
+
+  /// Serializes to Firestore-compatible JSON for multi-device sync.
+  Map<String, Object?> toSyncJson() => <String, Object?>{
+        'id': id,
+        'day': day.millisecondsSinceEpoch,
+        'title': title,
+        'done': done,
+        'sortOrder': sortOrder,
+        'createdAt': createdAt.millisecondsSinceEpoch,
+        'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      };
+
+  /// Deserializes from Firestore JSON.
+  static DailyTask fromSyncJson(Map<String, Object?> json) {
+    return DailyTask(
+      id: json['id']! as int,
+      day: DateTime.fromMillisecondsSinceEpoch(json['day']! as int),
+      title: json['title']! as String,
+      done: (json['done'] ?? false) as bool,
+      sortOrder: (json['sortOrder'] ?? 0) as int,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt']! as int),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt']! as int)
+          : null,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is DailyTask &&
+      other.id == id &&
+      other.day == day &&
+      other.title == title &&
+      other.done == done &&
+      other.sortOrder == sortOrder &&
+      other.createdAt == createdAt &&
+      other.updatedAt == updatedAt;
+
+  @override
+  int get hashCode =>
+      Object.hash(id, day, title, done, sortOrder, createdAt, updatedAt);
 }
 
 /// A moment reduced to the day it fell on.

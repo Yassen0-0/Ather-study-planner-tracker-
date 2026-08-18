@@ -55,6 +55,7 @@ final class Subject {
     required this.sortOrder,
     required this.archivedAt,
     this.deletedAt,
+    this.updatedAt,
   });
 
   /// A seeded subject: named by the ARB files, drawn with its glyph.
@@ -64,7 +65,8 @@ final class Subject {
     required this.sortOrder,
   }) : name = null,
        archivedAt = null,
-       deletedAt = null;
+       deletedAt = null,
+       updatedAt = null;
 
   final int id;
 
@@ -97,6 +99,11 @@ final class Subject {
   /// one behind a confirmation that names what goes.
   final DateTime? deletedAt;
 
+  /// Server timestamp of last modification for multi-device sync. Null for
+  /// entities created before sync was enabled. Set automatically on every
+  /// write operation once sync is active.
+  final DateTime? updatedAt;
+
   bool get isArchived => archivedAt != null;
   bool get isDeleted => deletedAt != null;
 
@@ -108,6 +115,42 @@ final class Subject {
   /// but they cannot be renamed — their names come from the ARB files.
   bool get isSeeded => code != null;
 
+  /// Serializes to Firestore-compatible JSON for multi-device sync.
+  ///
+  /// Separate from the backup format: sync sends individual rows, backup sends
+  /// the whole database at once. DateTime fields are stored as epoch
+  /// milliseconds to match the backup format and avoid locale parsing issues.
+  Map<String, Object?> toSyncJson() => <String, Object?>{
+        'id': id,
+        'code': code?.name ?? kCustomSubjectCode,
+        'name': name,
+        'sortOrder': sortOrder,
+        'archivedAt': archivedAt?.millisecondsSinceEpoch,
+        'deletedAt': deletedAt?.millisecondsSinceEpoch,
+        'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      };
+
+  /// Deserializes from Firestore JSON. Throws if required fields are missing
+  /// or have the wrong type — a malformed sync document should fail loudly
+  /// rather than corrupting local state.
+  static Subject fromSyncJson(Map<String, Object?> json) {
+    return Subject(
+      id: json['id']! as int,
+      code: SubjectCode.tryFromName((json['code'] ?? '') as String),
+      name: json['name'] as String?,
+      sortOrder: (json['sortOrder'] ?? 0) as int,
+      archivedAt: json['archivedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['archivedAt']! as int)
+          : null,
+      deletedAt: json['deletedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['deletedAt']! as int)
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt']! as int)
+          : null,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is Subject &&
@@ -116,9 +159,10 @@ final class Subject {
       other.name == name &&
       other.sortOrder == sortOrder &&
       other.archivedAt == archivedAt &&
-      other.deletedAt == deletedAt;
+      other.deletedAt == deletedAt &&
+      other.updatedAt == updatedAt;
 
   @override
   int get hashCode =>
-      Object.hash(id, code, name, sortOrder, archivedAt, deletedAt);
+      Object.hash(id, code, name, sortOrder, archivedAt, deletedAt, updatedAt);
 }

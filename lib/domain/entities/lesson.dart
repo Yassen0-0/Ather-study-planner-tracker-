@@ -74,6 +74,7 @@ final class Lesson {
     this.checklist = const LessonChecklist(),
     this.lastReviewedAt,
     this.lastNotifiedAt,
+    this.updatedAt,
   });
 
   final int id;
@@ -93,6 +94,10 @@ final class Lesson {
   /// This is not review state — review state is derived from [lastReviewedAt].
   final DateTime? lastNotifiedAt;
 
+  /// Server timestamp of last modification for multi-device sync. Null for
+  /// entities created before sync was enabled.
+  final DateTime? updatedAt;
+
   Lesson copyWith({
     String? name,
     LessonChecklist? checklist,
@@ -110,6 +115,48 @@ final class Lesson {
     );
   }
 
+  /// Serializes to Firestore-compatible JSON for multi-device sync.
+  Map<String, Object?> toSyncJson() => <String, Object?>{
+        'id': id,
+        'chapterId': chapterId,
+        'name': name,
+        'createdAt': createdAt.millisecondsSinceEpoch,
+        'lastReviewedAt': lastReviewedAt?.millisecondsSinceEpoch,
+        'lastNotifiedAt': lastNotifiedAt?.millisecondsSinceEpoch,
+        'watchedLesson': checklist.watchedLesson,
+        'readNotes': checklist.readNotes,
+        'didHomework': checklist.didHomework,
+        'didExam': checklist.didExam,
+        'reviewedNotes': checklist.reviewedNotes,
+        'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      };
+
+  /// Deserializes from Firestore JSON.
+  static Lesson fromSyncJson(Map<String, Object?> json) {
+    return Lesson(
+      id: json['id']! as int,
+      chapterId: json['chapterId']! as int,
+      name: json['name']! as String,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt']! as int),
+      lastReviewedAt: json['lastReviewedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['lastReviewedAt']! as int)
+          : null,
+      lastNotifiedAt: json['lastNotifiedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['lastNotifiedAt']! as int)
+          : null,
+      checklist: LessonChecklist(
+        watchedLesson: (json['watchedLesson'] ?? false) as bool,
+        readNotes: (json['readNotes'] ?? false) as bool,
+        didHomework: (json['didHomework'] ?? false) as bool,
+        didExam: (json['didExam'] ?? false) as bool,
+        reviewedNotes: (json['reviewedNotes'] ?? false) as bool,
+      ),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt']! as int)
+          : null,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is Lesson &&
@@ -119,7 +166,8 @@ final class Lesson {
       other.createdAt == createdAt &&
       other.checklist == checklist &&
       other.lastReviewedAt == lastReviewedAt &&
-      other.lastNotifiedAt == lastNotifiedAt;
+      other.lastNotifiedAt == lastNotifiedAt &&
+      other.updatedAt == updatedAt;
 
   @override
   int get hashCode => Object.hash(
@@ -130,5 +178,6 @@ final class Lesson {
     checklist,
     lastReviewedAt,
     lastNotifiedAt,
+    updatedAt,
   );
 }

@@ -47,6 +47,7 @@ final class ExamEntry {
     required this.percentage,
     required this.createdAt,
     this.groups = const <ExamQuestionGroup>[],
+    this.updatedAt,
   });
 
   final int id;
@@ -72,6 +73,10 @@ final class ExamEntry {
   /// calculation only ever needs [percentage].
   final List<ExamQuestionGroup> groups;
 
+  /// Server timestamp of last modification for multi-device sync. Null for
+  /// entities created before sync was enabled.
+  final DateTime? updatedAt;
+
   /// Computes the percentage for a set of groups.
   ///
   /// Returns 0 for an empty or zero-point exam rather than producing NaN, which
@@ -87,6 +92,58 @@ final class ExamEntry {
     return (earned / possible) * 100;
   }
 
+  /// Serializes to Firestore-compatible JSON for multi-device sync.
+  Map<String, Object?> toSyncJson() => <String, Object?>{
+        'id': id,
+        'lessonId': lessonId,
+        'isReviewExam': isReviewExam,
+        'totalPossiblePoints': totalPossiblePoints,
+        'correctPoints': correctPoints,
+        'percentage': percentage,
+        'createdAt': createdAt.millisecondsSinceEpoch,
+        'updatedAt': updatedAt?.millisecondsSinceEpoch,
+        'groups': <Object?>[
+          for (final g in groups)
+            <String, Object?>{
+              'id': g.id,
+              'examId': g.examId,
+              'pointsPerQuestion': g.pointsPerQuestion,
+              'questionCount': g.questionCount,
+              'correctCount': g.correctCount,
+            },
+        ],
+      };
+
+  /// Deserializes from Firestore JSON.
+  static ExamEntry fromSyncJson(Map<String, Object?> json) {
+    final groupsJson = json['groups'] as List<Object?>? ?? <Object?>[];
+    return ExamEntry(
+      id: json['id']! as int,
+      lessonId: json['lessonId']! as int,
+      isReviewExam: (json['isReviewExam'] ?? false) as bool,
+      totalPossiblePoints: json['totalPossiblePoints']! as int,
+      correctPoints: json['correctPoints']! as int,
+      percentage: (json['percentage']! as num).toDouble(),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt']! as int),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['updatedAt']! as int)
+          : null,
+      groups: <ExamQuestionGroup>[
+        for (final rawGroup in groupsJson)
+          () {
+            final g = rawGroup! as Map<String, Object?>;
+            return ExamQuestionGroup(
+              id: g['id']! as int,
+              examId: g['examId']! as int,
+              pointsPerQuestion: g['pointsPerQuestion']! as int,
+              questionCount: g['questionCount']! as int,
+              correctCount: g['correctCount']! as int,
+            );
+          }(),
+      ],
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is ExamEntry &&
@@ -96,7 +153,8 @@ final class ExamEntry {
       other.totalPossiblePoints == totalPossiblePoints &&
       other.correctPoints == correctPoints &&
       other.percentage == percentage &&
-      other.createdAt == createdAt;
+      other.createdAt == createdAt &&
+      other.updatedAt == updatedAt;
 
   @override
   int get hashCode => Object.hash(
@@ -107,6 +165,7 @@ final class ExamEntry {
     correctPoints,
     percentage,
     createdAt,
+    updatedAt,
   );
 }
 
