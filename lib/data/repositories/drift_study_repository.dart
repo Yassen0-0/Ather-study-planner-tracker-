@@ -6,6 +6,7 @@ import '../../domain/entities/chapter.dart';
 import '../../domain/entities/exam_entry.dart';
 import '../../domain/entities/homework_entry.dart';
 import '../../domain/entities/lesson.dart';
+import '../../domain/entities/scheduled_exam.dart';
 import '../../domain/entities/study_backup.dart';
 import '../../domain/entities/study_snapshot.dart';
 import '../../domain/entities/subject.dart';
@@ -23,17 +24,19 @@ class DriftStudyRepository implements StudyRepository {
   @override
   Stream<StudySnapshot> watchSnapshot() {
     // Every table is combined rather than watched individually, because a
-    // snapshot is only coherent if all six agree. combineLatest waits for the
+    // snapshot is only coherent if all eight agree. combineLatest waits for the
     // first event from each, then re-emits whenever any one changes -- so a new
-    // exam updates the lesson screen, the chapter bar and the dashboard from a
-    // single write.
-    return _combineLatest6(
+    // exam or scheduled exam updates the lesson screen, the chapter bar and the
+    // dashboard from a single write.
+    return _combineLatest8(
       _db.select(_db.subjects).watch(),
       _db.select(_db.chapters).watch(),
       _db.select(_db.lessons).watch(),
       _db.select(_db.examEntries).watch(),
       _db.select(_db.examQuestionGroups).watch(),
       _db.select(_db.homeworkEntries).watch(),
+      _db.select(_db.scheduledExams).watch(),
+      _db.select(_db.scheduledExamChapters).watch(),
       _buildSnapshot,
     );
   }
@@ -47,6 +50,8 @@ class DriftStudyRepository implements StudyRepository {
       _db.select(_db.examEntries).get(),
       _db.select(_db.examQuestionGroups).get(),
       _db.select(_db.homeworkEntries).get(),
+      _db.select(_db.scheduledExams).get(),
+      _db.select(_db.scheduledExamChapters).get(),
     ]);
 
     return _buildSnapshot(
@@ -56,6 +61,8 @@ class DriftStudyRepository implements StudyRepository {
       results[3].cast<ExamEntryRow>(),
       results[4].cast<ExamQuestionGroupRow>(),
       results[5].cast<HomeworkEntryRow>(),
+      results[6].cast<ScheduledExamRow>(),
+      results[7].cast<ScheduledExamChapterRow>(),
     );
   }
 
@@ -66,10 +73,19 @@ class DriftStudyRepository implements StudyRepository {
     List<ExamEntryRow> examRows,
     List<ExamQuestionGroupRow> groupRows,
     List<HomeworkEntryRow> homeworkRows,
+    List<ScheduledExamRow> scheduledExamRows,
+    List<ScheduledExamChapterRow> scheduledExamChapterRows,
   ) {
     final groupsByExam = <int, List<ExamQuestionGroup>>{};
     for (final row in groupRows) {
       (groupsByExam[row.examId] ??= <ExamQuestionGroup>[]).add(_toGroup(row));
+    }
+
+    // Group chapter associations by scheduled exam ID
+    final chaptersByScheduledExam = <int, List<int>>{};
+    for (final row in scheduledExamChapterRows) {
+      (chaptersByScheduledExam[row.scheduledExamId] ??= <int>[])
+          .add(row.chapterId);
     }
 
     final subjects = subjectRows.map(_toSubject).toList()
@@ -86,6 +102,13 @@ class DriftStudyRepository implements StudyRepository {
           _toExam(row, groupsByExam[row.id] ?? const <ExamQuestionGroup>[]),
       ],
       homework: homeworkRows.map(_toHomework).toList(),
+      scheduledExams: <ScheduledExam>[
+        for (final row in scheduledExamRows)
+          _toScheduledExam(
+            row,
+            chaptersByScheduledExam[row.id] ?? const <int>[],
+          ),
+      ],
     );
   }
 
@@ -616,6 +639,17 @@ class DriftStudyRepository implements StudyRepository {
     questionCount: r.questionCount,
     correctCount: r.correctCount,
   );
+
+  ScheduledExam _toScheduledExam(ScheduledExamRow r, List<int> chapterIds) =>
+      ScheduledExam(
+        id: r.id,
+        subjectId: r.subjectId,
+        date: r.date,
+        title: r.title,
+        chapterIds: chapterIds,
+        notes: r.notes,
+        createdAt: r.createdAt,
+      );
 }
 
 /// Minimal combineLatest for exactly six streams.
@@ -697,6 +731,110 @@ Stream<R> _combineLatest6<A, B, C, D, E, F, R>(
     listen<D>(sd, 3, (v) => d = v);
     listen<E>(se, 4, (v) => e = v);
     listen<F>(sf, 5, (v) => f = v);
+  }
+
+  controller = StreamController<R>(
+    onListen: start,
+    onCancel: () async {
+      // Cancelled before the subscriptions: a coalescing timer that fires
+      // after the controller closes would add to a closed stream.
+      coalesce?.cancel();
+      coalesce = null;
+      for (final s in subscriptions) {
+        await s.cancel();
+      }
+      subscriptions.clear();
+    },
+  );
+
+  return controller.stream;
+}
+
+/// Minimal combineLatest for exactly eight streams.
+///
+/// Hand-rolled rather than pulling in rxdart for one operator. Emits nothing
+/// until every source has produced a value, then emits on each subsequent
+/// change -- which is what makes a snapshot internally consistent.
+Stream<R> _combineLatest8<A, B, C, D, E, F, G, H, R>(
+  Stream<A> sa,
+  Stream<B> sb,
+  Stream<C> sc,
+  Stream<D> sd,
+  Stream<E> se,
+  Stream<F> sf,
+  Stream<G> sg,
+  Stream<H> sh,
+  R Function(A, B, C, D, E, F, G, H) combine,
+) {
+  late StreamController<R> controller;
+  final subscriptions = <StreamSubscription<Object?>>[];
+
+  A? a;
+  B? b;
+  C? c;
+  D? d;
+  E? e;
+  F? f;
+  G? g;
+  H? h;
+  final seen = List<bool>.filled(8, false);
+  Timer? coalesce;
+
+  void publish() {
+    coalesce = null;
+    if (controller.isClosed) return;
+    if (!seen.every((s) => s)) return;
+    controller.add(combine(
+      a as A,
+      b as B,
+      c as C,
+      d as D,
+      e as E,
+      f as F,
+      g as G,
+      h as H,
+    ));
+  }
+
+  /// Emits **once** per burst rather than once per contributing table.
+  ///
+  /// Eight drift streams feed this, and one write usually touches several of
+  /// them: saving a scheduled exam writes `scheduled_exams` and
+  /// `scheduled_exam_chapters`, so two streams fire and this combined once per
+  /// stream -- two identical rebuilds of the entire snapshot for one action.
+  ///
+  /// That is not a cheap thing to do twice. Each emission rebuilds every
+  /// entity in the record, reruns `Summaries.dashboard` over the whole
+  /// curriculum, and rebuilds `AppShell` -- the widget holding the app's only
+  /// `BackdropFilter`, which is the most expensive thing it draws.
+  ///
+  /// One frame is the right window: long enough to swallow a whole
+  /// transaction's worth of table events, short enough that no student can
+  /// perceive it. Every emission still arrives; they are merely not repeated.
+  void emit() {
+    coalesce?.cancel();
+    coalesce = Timer(kSnapshotCoalesceWindow, publish);
+  }
+
+  void start() {
+    void listen<T>(Stream<T> source, int index, void Function(T) assign) {
+      subscriptions.add(
+        source.listen((value) {
+          assign(value);
+          seen[index] = true;
+          emit();
+        }, onError: controller.addError),
+      );
+    }
+
+    listen<A>(sa, 0, (v) => a = v);
+    listen<B>(sb, 1, (v) => b = v);
+    listen<C>(sc, 2, (v) => c = v);
+    listen<D>(sd, 3, (v) => d = v);
+    listen<E>(se, 4, (v) => e = v);
+    listen<F>(sf, 5, (v) => f = v);
+    listen<G>(sg, 6, (v) => g = v);
+    listen<H>(sh, 7, (v) => h = v);
   }
 
   controller = StreamController<R>(

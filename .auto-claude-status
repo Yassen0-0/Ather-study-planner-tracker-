@@ -3,7 +3,7 @@
   "spec": "007-exam-calendar-scheduling",
   "state": "building",
   "subtasks": {
-    "completed": 6,
+    "completed": 7,
     "total": 21,
     "in_progress": 1,
     "failed": 0
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 7,
+    "number": 8,
     "started_at": "2026-08-19T07:19:09.524999"
   },
-  "last_update": "2026-08-19T07:34:45.826927"
+  "last_update": "2026-08-19T07:38:11.653619"
 }

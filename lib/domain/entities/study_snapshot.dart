@@ -2,6 +2,7 @@ import 'chapter.dart';
 import 'exam_entry.dart';
 import 'homework_entry.dart';
 import 'lesson.dart';
+import 'scheduled_exam.dart';
 import 'subject.dart';
 
 /// A consistent, fully-indexed view of everything the student has recorded.
@@ -24,7 +25,9 @@ final class StudySnapshot {
     required this.lessons,
     required this.exams,
     required this.homework,
-  }) : chaptersBySubject = _groupBy(chapters, (Chapter c) => c.subjectId),
+    required List<ScheduledExam> scheduledExams,
+  }) : scheduledExams = scheduledExams..sort(_compareScheduledExams),
+       chaptersBySubject = _groupBy(chapters, (Chapter c) => c.subjectId),
        lessonsByChapter = _groupBy(lessons, (Lesson l) => l.chapterId),
        _examsByLesson = _groupBy(exams, (ExamEntry e) => e.lessonId),
        homeworkByLesson = _groupBy(homework, (HomeworkEntry h) => h.lessonId) {
@@ -42,6 +45,7 @@ final class StudySnapshot {
       lessons = const <Lesson>[],
       exams = const <ExamEntry>[],
       homework = const <HomeworkEntry>[],
+      scheduledExams = const <ScheduledExam>[],
       chaptersBySubject = const <int, List<Chapter>>{},
       lessonsByChapter = const <int, List<Lesson>>{},
       _examsByLesson = const <int, List<ExamEntry>>{},
@@ -52,6 +56,7 @@ final class StudySnapshot {
   final List<Lesson> lessons;
   final List<ExamEntry> exams;
   final List<HomeworkEntry> homework;
+  final List<ScheduledExam> scheduledExams;
 
   final Map<int, List<Chapter>> chaptersBySubject;
   final Map<int, List<Lesson>> lessonsByChapter;
@@ -65,6 +70,10 @@ final class StudySnapshot {
     final byDate = b.createdAt.compareTo(a.createdAt);
     return byDate != 0 ? byDate : b.id.compareTo(a.id);
   }
+
+  /// Scheduled exams sorted by date, earliest first.
+  static int _compareScheduledExams(ScheduledExam a, ScheduledExam b) =>
+      a.date.compareTo(b.date);
 
   bool get isEmpty => chapters.isEmpty && lessons.isEmpty;
 
