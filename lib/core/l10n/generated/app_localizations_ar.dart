@@ -890,6 +890,9 @@ class LAr extends L {
   String get backupErrorUnknown => 'لم ينجح الحفظ';
 
   @override
+  String get calendarTitle => 'التقويم';
+
+  @override
   String get tasksTitle => 'مهام اليوم';
 
   @override

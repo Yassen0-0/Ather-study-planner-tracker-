@@ -885,6 +885,9 @@ class LEn extends L {
   String get backupErrorUnknown => 'Saving didn\'t work';
 
   @override
+  String get calendarTitle => 'Calendar';
+
+  @override
   String get tasksTitle => 'Today\'s tasks';
 
   @override

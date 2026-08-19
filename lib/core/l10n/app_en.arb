@@ -314,6 +314,8 @@
   "backupErrorUnreadable": "The cloud copy can't be read",
   "backupErrorUnknown": "Saving didn't work",
 
+  "calendarTitle": "Calendar",
+
   "tasksTitle": "Today's tasks",
   "tasksDoneOf": "{done} of {total} done",
   "@tasksDoneOf": {

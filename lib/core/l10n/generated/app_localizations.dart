@@ -1615,6 +1615,12 @@ abstract class L {
   /// **'لم ينجح الحفظ'**
   String get backupErrorUnknown;
 
+  /// No description provided for @calendarTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقويم'**
+  String get calendarTitle;
+
   /// The tasks screen's title while today is the selected day. The day picker sitting under it says 'اليوم' for today's cell, so the title names what the list is rather than repeating the day.
   ///
   /// In ar, this message translates to:
