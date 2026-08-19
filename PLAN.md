@@ -248,7 +248,7 @@ Files owned by this batch:
 - `test/data/backup_restore_test.dart`
 - `test/domain/study_backup_test.dart`
 
-- [ ] **Task: Sync the empty state, and checksum the payload**
+- [x] **Task: Sync the empty state, and checksum the payload**
       Problem: `backup_providers.dart:123` returns early when
       `snapshot.isEmpty && tasks.isEmpty`, so a student who deletes everything never
       uploads that fact. The cloud keeps the pre-delete copy, and
@@ -267,7 +267,34 @@ Files owned by this batch:
       database untouched. **A third test proves a `formatVersion: 2` document with no
       checksum still restores** — students have v2 backups in the cloud right now and
       breaking them is data loss.
-      Result:
+      Result: Done, commit `a5880db`. Empty-state guard removed from
+      `backup_providers.dart` with the reasoning written in place; SHA-256 added as a
+      plain `checksum` field beside the payload, verified in `download()` **before**
+      the record is handed back, so nothing failing its digest can reach the drift
+      transaction that replaces the local database. The digest is over the
+      *uncompressed* JSON: gzip output is not guaranteed byte-identical, and a digest
+      that drifts rejects good backups. `formatVersion` goes to 3, but **the map
+      shape is unchanged** -- a v2 document still parses, and the checksum is
+      verified only when present. Ten tests in `test/data/backup_checksum_test.dart`
+      (new), three of them specifically on the v2 path (restores / metadata reads /
+      next upload rewrites it as a checksummed v3). The existing
+      `'a genuinely empty device uploads nothing'` test is **reversed** -- it
+      asserted the bug -- and a second test covers the full delete-then-flush
+      sequence.
+      **Bonus bug, found by the first test that ever injected a Firestore:**
+      `Isolate.run(() => _encode(...))` was written inside an instance method, so its
+      closure captured `this` and with it the non-sendable `FirebaseFirestore`
+      handle. Upload failed with "object is unsendable" before compressing anything.
+      It never fired in production only because production passes no handles and both
+      fields are null. Both calls now go through static helpers, which have no `this`
+      to capture.
+      Added `fake_cloud_firestore` and `firebase_auth_mocks` as dev dependencies:
+      without a Firestore double there was no way to write a document with no
+      checksum on it, which is the case that matters most here. Files:
+      `lib/presentation/providers/backup_providers.dart`,
+      `lib/data/backup/firestore_backup_repository.dart`,
+      `lib/domain/entities/study_backup.dart`, `test/widget/backup_flush_test.dart`,
+      `test/data/backup_checksum_test.dart` (new), `pubspec.yaml`, `pubspec.lock`.
 
 ### Batch A3 — Scroll performance
 
@@ -276,7 +303,7 @@ Files owned by this batch:
 - `lib/core/widgets/ather_scaffold.dart`
 - `test/widget/layout_matrix_test.dart`
 
-- [ ] **Task: Make AtherScreen mount its rows lazily**
+- [x] **Task: Make AtherScreen mount its rows lazily**
       Problem: `AtherScreen` passes its `List<Widget> children` to
       `ListView(children: children)` (`ather_scaffold.dart:137-145`), which builds an
       element and render object for every row regardless of visibility. Every screen in
@@ -290,7 +317,29 @@ Files owned by this batch:
       animations still play once per row per visit (the behaviour `ListEntranceScope`
       exists to guarantee). Scrolling a long Review Center list is visibly smooth.
       **If a test has to change to make this pass, the change is wrong — stop and say so.**
-      Result:
+      Result: **The item is a misdiagnosis. `AtherScreen` already mounts its rows
+      lazily.** Commit `bf96df1`, which records the measurement rather than making
+      the change. I made the `ListView.builder` change first, and the test written to
+      prove it passed against the old code as well -- which is the only reason this
+      was caught. Measured directly, 400 rows in a 360x640 viewport:
+      `ListView(children:)` gives 400 widgets constructed and **8 elements mounted**;
+      `ListView.builder` gives 12 constructed and **8 mounted**.
+      `SliverChildListDelegate` inflates only the indices layout asks for, so the
+      elements and render objects -- where the cost actually is -- have always been
+      lazy. The 400 is the caller's `children:` list literal, built before
+      `AtherScreen` is constructed; a `.builder` reading from that same already-built
+      list saves nothing. The change was therefore **reverted**: a no-op carrying a
+      comment that claims a benefit is worse than no change at all.
+      The eager half is real and is not in this file -- it is `AtherScreen` taking a
+      `List<Widget>` at all, and fixing that means changing the API and every screen
+      in the app with it. Much larger than what was scheduled here, and worth
+      measuring on a device before anyone commits to it. Four tests added to
+      `layout_matrix_test.dart`, including one isolating the eager caller cost; the
+      first is written to fail if `ListView(children:)` ever stops being lazy, which
+      is the only condition under which this item becomes real. **No existing test
+      changed** -- the condition the task set. Files:
+      `lib/core/widgets/ather_scaffold.dart` (comment only),
+      `test/widget/layout_matrix_test.dart`.
 
 ---
 
