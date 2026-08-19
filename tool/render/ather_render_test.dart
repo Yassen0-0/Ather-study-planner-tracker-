@@ -17,6 +17,7 @@ import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
+import 'package:ather/domain/entities/scheduled_exam.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/core/widgets/ather_scaffold.dart';
 import 'package:ather/core/widgets/buttons.dart';
@@ -97,6 +98,7 @@ StudySnapshot seeded() {
       HomeworkEntry(id: 1, lessonId: 1, score: 9, maxScore: 10, createdAt: ago(12)),
       HomeworkEntry(id: 2, lessonId: 3, score: 4, maxScore: 10, createdAt: ago(25)),
     ],
+    scheduledExams: const <ScheduledExam>[],
   );
 }
 

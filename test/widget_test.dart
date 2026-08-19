@@ -13,6 +13,7 @@ import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/daily_task.dart';
+import 'package:ather/domain/entities/scheduled_exam.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/presentation/common/settings_button.dart';
@@ -39,6 +40,7 @@ StudySnapshot snapshotWith({
   List<Lesson> lessons = const <Lesson>[],
   List<ExamEntry> exams = const <ExamEntry>[],
   List<HomeworkEntry> homework = const <HomeworkEntry>[],
+  List<ScheduledExam> scheduledExams = const <ScheduledExam>[],
 }) {
   return StudySnapshot(
     subjects: const <Subject>[
@@ -51,6 +53,7 @@ StudySnapshot snapshotWith({
     lessons: lessons,
     exams: exams,
     homework: homework,
+    scheduledExams: scheduledExams,
   );
 }
 

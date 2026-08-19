@@ -55,6 +55,7 @@ void main() {
     lessons: const [],
     exams: const [],
     homework: const [],
+    scheduledExams: const [],
   );
 
   /// A container wired the way the app wires it, with both streams under the

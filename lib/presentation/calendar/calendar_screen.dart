@@ -9,6 +9,7 @@ import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/day_header.dart';
 import '../common/settings_button.dart';
 import '../providers/app_providers.dart';
+import 'scheduled_exam_form.dart';
 
 /// The exam calendar screen.
 ///
@@ -59,13 +60,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       examsByDate[day] = (examsByDate[day] ?? 0) + 1;
     }
 
-    return AtherScreen(
-      header: DayHeader(
-        title: l.calendarTitle,
-        actions: const <Widget>[SettingsButton()],
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showScheduledExamForm(context),
+        backgroundColor: context.colors.accent,
+        child: Icon(Icons.add, color: context.colors.onAccent),
       ),
-      children: <Widget>[
-        TableCalendar(
+      body: AtherScreen(
+        header: DayHeader(
+          title: l.calendarTitle,
+          actions: const <Widget>[SettingsButton()],
+        ),
+        children: <Widget>[
+          TableCalendar(
           firstDay: DateTime.utc(now.year - 2, 1, 1),
           lastDay: DateTime.utc(now.year + 2, 12, 31),
           focusedDay: _focusedDay,
@@ -147,7 +154,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             _focusedDay = focusedDay;
           },
         ),
-      ],
+        ],
+      ),
     );
   }
 }

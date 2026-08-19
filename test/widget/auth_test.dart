@@ -37,6 +37,7 @@ StudySnapshot emptySnapshot() => StudySnapshot(
   lessons: const <dynamic>[].cast(),
   exams: const <dynamic>[].cast(),
   homework: const <dynamic>[].cast(),
+  scheduledExams: const <dynamic>[].cast(),
 );
 
 Future<Widget> boot(

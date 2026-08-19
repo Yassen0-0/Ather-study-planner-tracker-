@@ -8,8 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/clock/clock.dart';
 import '../../data/db/app_database.dart';
+import '../../data/repositories/drift_scheduled_exam_repository.dart';
 import '../../data/repositories/drift_study_repository.dart';
 import '../../domain/entities/study_snapshot.dart';
+import '../../domain/repositories/scheduled_exam_repository.dart';
 import '../../domain/repositories/study_repository.dart';
 import '../../domain/services/insights_generator.dart';
 import '../../domain/services/review_cycle_service.dart';
@@ -32,6 +34,10 @@ final databaseExecutorProvider = Provider<QueryExecutor?>((ref) => null);
 
 final studyRepositoryProvider = Provider<StudyRepository>(
   (ref) => DriftStudyRepository(ref.watch(databaseProvider)),
+);
+
+final scheduledExamRepositoryProvider = Provider<ScheduledExamRepository>(
+  (ref) => DriftScheduledExamRepository(ref.watch(databaseProvider)),
 );
 
 /// The app's time source.
