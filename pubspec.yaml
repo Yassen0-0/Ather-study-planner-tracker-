@@ -49,6 +49,12 @@ dependencies:
   path_provider: 2.1.6
   share_plus: 10.1.4
   pdf: 3.13.0
+
+  # SHA-256 for the cloud backup's integrity field. Already in the tree as a
+  # transitive dependency of firebase_core; declared here because this app
+  # imports it directly, and an undeclared import breaks the day the package
+  # that pulled it in stops needing it.
+  crypto: 3.0.7
   firebase_core: ^4.12.1
   firebase_auth: ^6.5.6
   google_sign_in: ^7.2.0
@@ -72,6 +78,13 @@ dev_dependencies:
   build_runner: ^2.15.1
   drift_dev: ^2.34.0
   local_auth_platform_interface: ^1.1.0
+
+  # In-memory stand-ins for the two Firebase services `FirestoreBackupRepository`
+  # talks to, so the cloud backup's integrity check can be tested against real
+  # documents -- including a version 2 document with no checksum, which students
+  # have in the cloud right now and which must keep restoring.
+  fake_cloud_firestore: 4.2.0
+  firebase_auth_mocks: 0.15.2
 
 flutter:
   uses-material-design: true
