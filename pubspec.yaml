@@ -23,6 +23,9 @@ dependencies:
   # Navigation
   go_router: 17.3.0
 
+  # Calendar UI
+  table_calendar: ^3.1.2
+
   # No chart package. The analytics screen draws its own bars and columns with
   # CustomPaint -- see its doc comment for why. `fl_chart` was declared here and
   # imported by nothing, which is worse than an unused line: it tells the next
