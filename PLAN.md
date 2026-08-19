@@ -91,10 +91,25 @@ make an A/B split impossible.
   `description` of the block's first key instead, which is legal ARB and just as
   visible in a merge:
 
+Two forms are legal and both are in the tree, because both sessions hit this
+independently. A `@@`-prefixed global attribute, which `gen-l10n` ignores wholesale:
+
+      "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",
+
+or the `description` of the block's first key:
+
       "exportTitle": "...",
       "@exportTitle": {
         "description": "=== Batch A1: data export, chapter report PDF, share card. Appended block, append-only, do not reorder. ==="
       },
+
+  **Correction, found by Batch B1 in practice.** The marker key cannot be
+  `"_comment_A1"`. `flutter gen-l10n` rejects any resource name that is not a
+  valid Dart method name, and a leading underscore fails outright — *Invalid ARB
+  resource name "_comment_B1"* — which stops generation entirely rather than
+  warning. A key beginning `@@` is read as a global attribute and ignored by the
+  generator, so `"@@x_comment_A1"` marks the block without generating anything.
+  Everything else about the convention is unchanged.
 
 - **Never edit or reorder a key you did not add.** Append only.
 - `app_ar.arb` is the template (see `l10n.yaml`); every key must exist in both files.
@@ -359,7 +374,7 @@ Files owned by this batch:
 > The calendar-day arithmetic there is deliberate and was written to fix a real 23-hour
 > bug. Do not "simplify" it back to `Duration.inDays` or `last.add(Duration(days: 30))`.
 
-- [ ] **Task: Predictive reminder before a lesson falls due**
+- [x] **Task: Predictive reminder before a lesson falls due**
       Problem: `reschedule` books exactly one notification per lesson, at `dueAt`
       (`review_notification_service.dart:152-166`). The student is told a lesson decayed
       on the day it decayed, with no warning.
@@ -375,9 +390,28 @@ Files owned by this batch:
       early one is skipped when already past, and that the fingerprint changes when
       either moves. The reminder body names the lesson and chapter, as the existing one
       does.
-      Result:
+      Result: Done. `ReviewCycleService.earlyReminderAt` plus
+      `kEarlyReminderDays = 3`, built through a new `_reminderOn(last, daysAfter)`
+      helper that `dueAt` now also uses — so both moments are anchored by the same
+      calendar arithmetic and cannot drift apart. Deliberately *not*
+      `dueAt()!.subtract(Duration(days: 3))`, which is the elapsed-time maths the
+      doc comment there exists to reject. The scheduling decision moved out of
+      `reschedule` into a pure, public `ReviewNotificationService.planReminders(...)`
+      returning `ScheduledReminder` values, and the fingerprint into `fingerprintOf`
+      beside it, so both are asserted directly instead of through a platform
+      channel. Ids are `lessonId * 2` (due) and `lessonId * 2 + 1` (early) —
+      collision-free with no ceiling, unlike a fixed offset; both carry the lesson
+      id as payload, so tapping either opens the lesson. New ARB key
+      `reviewNotificationEarlyBody` appended to both files (see the correction to
+      the marker-key convention under "Localization files are shared"). Files:
+      `review_cycle_service.dart`, `review_notification_service.dart`,
+      `notification_providers.dart`, `app_ar.arb`, `app_en.arb`, regenerated
+      `l10n/generated/*`, `test/support/fake_notifications.dart` (now records the
+      planned reminders), and `test/data/review_notification_service_test.dart`
+      *(new — owned by nobody in the map; B1's two listed test files are the domain
+      test and the fake, and this covers the data-layer scheduler)*. 16 new tests.
 
-- [ ] **Task: Cap the number of scheduled alarms**
+- [x] **Task: Cap the number of scheduled alarms**
       Problem: `reschedule` registers one alarm per active lesson with no ceiling
       (`:151-166`). Android's per-app limit is ~500; past it, registrations fail
       silently and the student loses reminders with no error anywhere. The predictive
@@ -389,7 +423,20 @@ Files owned by this batch:
       Acceptance: A test with more lessons than the cap proves at most N alarms are
       registered and that they are the N soonest. `fake_notifications.dart` records the
       registrations to assert against.
-      Result:
+      Result: Done. `ReviewNotificationService.kMaxScheduledAlarms = 400`, applied
+      inside `planReminders` after the sort: the list is ordered by `at` ascending
+      (tie-broken on id, so two lessons examined the same day give a stable order
+      and therefore a stable fingerprint) and truncated to the cap, so the alarms
+      that survive are the soonest ones. 400 rather than something nearer 500
+      because a lesson now holds **two** alarms — this is a count of alarms, not of
+      lessons, so it covers 200 lessons in the worst case. Dropping the far ones
+      costs nothing: the pass re-runs on every resume and on every change to the
+      record, so a lesson beyond the window is scheduled as soon as it comes into
+      range, long before it falls due. Files:
+      `lib/data/notifications/review_notification_service.dart`,
+      `test/data/review_notification_service_test.dart`. 5 new tests — 500 lessons
+      (1000 candidate alarms) register exactly 400; nothing dropped falls due
+      before anything kept; a student under the cap keeps every reminder.
 
 ### Batch B2 — Analytics trends
 
@@ -400,7 +447,7 @@ Files owned by this batch:
 - `lib/domain/services/summaries.dart`
 - `test/domain/insights_generator_test.dart`
 
-- [ ] **Task: Exam score trajectory and mastery velocity**
+- [x] **Task: Exam score trajectory and mastery velocity**
       Problem: `analytics_screen.dart` has no time axis. Subject bars, chapter bars,
       weakest-five and the discipline rate are all snapshots — a student cannot see
       whether they are improving.
@@ -415,7 +462,43 @@ Files owned by this batch:
       matches their recorded scores. A student with fewer than two exams sees the
       existing "not enough data" state rather than an empty or misleading chart. A unit
       test covers the velocity computation including the flat and single-exam cases.
-      Result:
+      Result: Done. Domain: `MasteryTrends` in `insights_generator.dart`, with
+      `SubjectTrajectory` / `TrajectoryPoint`. A subject's series is one point per
+      day it was examined, each point being subject mastery recomputed from only
+      the exams that existed by the end of that day — sampled through
+      `InsightsGenerator.subjectMasteryAsOf`, which was already there and is now
+      shared rather than duplicated, so the chart and the "you improved" insight
+      cannot disagree about the same student. Long histories are thinned to
+      `maxPoints = 12`, always keeping both ends, so the endpoints drawn are the
+      endpoints the velocity is computed from. Velocity is endpoint-to-endpoint
+      change in percentage points per 30-day review cycle — checkable against the
+      two ends of the line, which a least-squares slope would not be — signed, so
+      a decline reads as one.
+      **One real bug found and fixed while doing this:**
+      `last.difference(first).inDays` measured a 30-day span as 29 across the
+      night Egypt puts its clocks forward, reporting a rate 3% too high for half
+      the year. That is the same defect the comment on `dueAt` exists to prevent,
+      arriving through division instead of addition. `ReviewCycleService` now
+      exposes `calendarDaysBetween`, which `daysSinceReview` also routes through,
+      so there is one definition of "a day" in the app.
+      UI: `_TrajectoryCard` in `analytics_screen.dart` — one row per subject with
+      its name, its signed velocity (or the existing "not enough data" line), and
+      a `CustomPaint` polyline. No chart package. Fixed 0..100 axis rather than
+      one fitted to the data, so a wobble between 74% and 76% cannot be drawn as
+      a cliff. Forced `Ltr`, as time runs left-to-right in both languages. The
+      card respects `_subjectFilter` like the chapter bars and the discipline
+      card do; the subject-bars card keeps its documented exemption. The card is
+      omitted entirely when no visible subject has two readings.
+      Files: `lib/domain/services/insights_generator.dart`,
+      `lib/domain/services/review_cycle_service.dart` *(the shared day helper —
+      B1-owned, same session)*, `lib/presentation/analytics/analytics_screen.dart`,
+      `app_ar.arb`, `app_en.arb`, regenerated `l10n/generated/*`,
+      `test/domain/insights_generator_test.dart`. 14 new tests, covering the flat,
+      single-exam, same-day, declining and thinning cases, and asserting the last
+      point equals the subject mastery the bar above it shows.
+      `summaries.dart` was **not** touched: the trajectory is a pure function of
+      the snapshot and adding it to `SubjectSummary` would make every screen
+      compute a chart none of them render.
 
 ### Batch B3 — Email verification
 
@@ -428,7 +511,7 @@ Files owned by this batch:
 - `test/support/fake_auth.dart`
 - `test/widget/auth_test.dart`
 
-- [ ] **Task: Verify the email address on new accounts**
+- [x] **Task: Verify the email address on new accounts**
       Problem: Nothing in `lib/` calls `sendEmailVerification` or reads `emailVerified`.
       A new email/password account is fully usable with an address nobody proved they
       own. (The password policy half of this backlog item is already done —
@@ -444,7 +527,45 @@ Files owned by this batch:
       can still use the entire app unverified. Resend works and is rate-limit-tolerant.
       Google sign-in accounts, which arrive verified, show no prompt. `auth_test.dart`
       covers verified, unverified and Google paths via `fake_auth.dart`.
-      Result:
+      Result: Done, and **not gated** — an unverified student gets the entire
+      app, which one of the new tests asserts directly. `AuthRepository` gained
+      `sendEmailVerification()` and `reloadAccount()`; `Account` gained
+      `isEmailVerified`. `FirebaseAuthRepository` sends the first link inside
+      `register`, deliberately swallowing a send failure: the account exists by
+      that point, and throwing would report a failed registration to a student
+      who now has a working account and whose retry would come back "email
+      already in use". `watchAccount` moved from `authStateChanges()` to
+      `userChanges()` — the former fires only on sign-in and sign-out, so a
+      `reload()` discovering the address had just been verified would change
+      nothing visible and the prompt would stay up after the student had acted
+      on it. `Account` compares by value, so the extra emissions do not
+      propagate.
+      Surfaces: registering raises a root-overlay toast saying a link is on its
+      way (captured before the await — the router pops the login screen the
+      instant the account exists). The persistent state and the resend live on
+      **`profile_screen.dart`**, which is the account screen and is unowned in
+      the map — `settings_screen.dart` is A1's, so the "Settings entry" the plan
+      asks for went to the screen next to it rather than into another batch's
+      file. The screen calls `reloadAccount()` on open, so returning from the
+      inbox does not find a prompt to do something already done. A rate-limited
+      resend gets its own sentence ("a link just went out, give it a moment")
+      rather than the generic failure — a student who taps twice must not be
+      told their account is broken. A footnote states plainly that the app works
+      either way, because a prompt with no stated consequence reads as a threat.
+      Google accounts arrive verified and are never asked.
+      Files: `lib/domain/repositories/auth_repository.dart`,
+      `lib/domain/entities/account.dart` *(unowned — the flag has to live on the
+      account)*, `lib/data/auth/firebase_auth_repository.dart` (still the only
+      file importing `firebase_auth`), `lib/presentation/providers/auth_providers.dart`
+      (`needsEmailVerificationProvider`), `lib/presentation/auth/login_screen.dart`,
+      `lib/presentation/settings/profile_screen.dart` *(unowned)*, `app_ar.arb`,
+      `app_en.arb`, regenerated `l10n/generated/*`, `test/support/fake_auth.dart`,
+      `test/widget/auth_test.dart`. 7 new tests covering the verified,
+      unverified, Google, resend, rate-limited and returned-from-inbox paths.
+      One existing test — "a new password must reach 8 characters" — needed a
+      `retireToast` at its end: it now finishes on a successful registration,
+      which raises a real 2.2s timer the binding checks for. Behaviour under
+      test is unchanged.
 
 ### Batch B4 — Curriculum templates
 
@@ -456,7 +577,7 @@ Files owned by this batch:
 - `lib/data/repositories/drift_study_repository.dart`
 - `test/data/drift_study_repository_test.dart`
 
-- [ ] **Task: Optional pre-loaded chapter templates**
+- [x] **Task: Optional pre-loaded chapter templates**
       Problem: `SubjectsScreen` (`settings/subjects_screen.dart:45`) only adds one
       subject at a time, and `_add` at `:96` takes a name and nothing else. A new
       student types out the whole Thanaweya Amma structure by hand before the app can
@@ -471,7 +592,49 @@ Files owned by this batch:
       duplicate. Existing chapters are never modified or removed. **No schema change** —
       if you find yourself editing `tables.dart`, stop: that triggers CLAUDE.md Rule 1
       and needs a migration plus a migration test.
-      Result:
+      Result: Done. `lib/domain/services/curriculum_templates.dart` declares the
+      four subjects' chapter structure as reviewed data — Arabic, and
+      deliberately *not* in the ARB: a chapter name becomes a row the student
+      owns, renames and deletes, so it is seeded content rather than interface
+      copy, and putting it in the ARB would imply it changes with the language
+      toggle when the toggle has no way to reach back into the student's own
+      table and rewrite it. The file says in its own doc comment that the lists
+      are a starting point, not an authority — the curriculum is revised between
+      years, and the promise being made is only that typing twenty chapter names
+      by hand should not be the price of admission.
+      `StudyRepository.addChapters(subjectId, names, at)` is the bulk insert,
+      one Drift transaction, returning how many were actually created. It reads
+      the subject's existing chapter names **inside** the transaction — read
+      before it, two quick taps would both see the same "already there" set and
+      both insert, which is the duplicate this exists to prevent — and skips any
+      name already present. Nothing existing is renamed, reordered or removed. A
+      chapter the student had already typed keeps its id and its lessons; one
+      they renamed is left alone, and the template's own wording is then added
+      beside it, because a rename means the template's chapter is genuinely
+      missing and renaming it back would be overwriting their decision.
+      Offered opt-in from the subject's sheet on the subjects screen, only where
+      a template exists — the four seeded subjects have one; a subject the
+      student invented has none by definition. The toast reports the count, and
+      says "you already have every standard chapter" on a repeat rather than a
+      success message about work that did not happen.
+      **No schema change** — `tables.dart` and `app_database.dart` untouched,
+      `schemaVersion` unmoved, confirmed by `tool/check_invariants.sh`.
+      **Scope note:** the template targets a subject that already exists rather
+      than creating one. All four are seeded, and re-creating a deleted seeded
+      subject would go through `createSubject`, which writes
+      `kCustomSubjectCode` — producing a "Biology" without its glyph. Bringing a
+      deleted subject back is what the recycle bin already does.
+      Files: `lib/domain/services/curriculum_templates.dart` *(new)*,
+      `lib/domain/repositories/study_repository.dart`,
+      `lib/data/repositories/drift_study_repository.dart`,
+      `lib/presentation/settings/subjects_screen.dart`, `app_ar.arb`,
+      `app_en.arb`, regenerated `l10n/generated/*`,
+      `test/data/drift_study_repository_test.dart`. 11 new tests, including the
+      twice-applied, already-typed, renamed, duplicate-within-template, blank,
+      empty and wrong-subject cases. Mid-transaction rollback is Drift's
+      `transaction()` guarantee and cannot be forced from outside without a fake
+      database; the test asserts the outcome it exists for — a rejected apply
+      leaves the curriculum with no half of a template in it.
 
 ---
 

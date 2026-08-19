@@ -32,6 +32,20 @@ final isSignedInProvider = Provider<bool>(
   (ref) => ref.watch(accountValueProvider) != null,
 );
 
+/// Whether the app should ask the student to verify their address.
+///
+/// True only when there is an account and it is unverified -- so it is false
+/// while signed out, and false for a Google account, which arrives verified.
+///
+/// **This gates a prompt, never access.** See [Account.isEmailVerified]: the
+/// database is local and the auth gate already stands in front of it, so
+/// blocking an unverified student would cost them their exam history to
+/// enforce something the app does not depend on.
+final needsEmailVerificationProvider = Provider<bool>((ref) {
+  final account = ref.watch(accountValueProvider);
+  return account != null && !account.isEmailVerified;
+});
+
 // --- Biometric app lock ------------------------------------------------------
 
 const String _kLockEnabledKey = 'app_lock_enabled';

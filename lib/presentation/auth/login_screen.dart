@@ -287,10 +287,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _submit(AuthRepository auth) {
-    _run(
-      () => _registering
-          ? auth.register(email: _email.text, password: _password.text)
-          : auth.signIn(email: _email.text, password: _password.text),
-    );
+    // Captured before the await, like the reset toast above: the router's
+    // redirect pops this screen the instant the account exists, so a message
+    // anchored to this screen's context would be built into a tree that has
+    // already gone.
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    final direction = Directionality.of(context);
+    final sent = L.of(context).authVerificationSent;
+
+    _run(() async {
+      if (!_registering) {
+        await auth.signIn(email: _email.text, password: _password.text);
+        return;
+      }
+
+      await auth.register(email: _email.text, password: _password.text);
+      // A passing toast, not a confirmation step the student has to get past.
+      // The account works unverified, so blocking here would be blocking them
+      // for the app's benefit rather than their own; the profile screen keeps
+      // the state and the resend for whenever they get to it.
+      if (overlay != null) {
+        showAtherToastOn(overlay, direction, sent);
+      }
+    });
   }
 }

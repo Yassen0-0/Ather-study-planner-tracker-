@@ -73,6 +73,31 @@ Future<Widget> boot(
   );
 }
 
+/// Waits out a toast's 2.2s dwell and its fade.
+///
+/// The dwell is a real `Timer`, not an animation, so `pumpAndSettle` does not
+/// reach it and the binding fails the test for leaving it pending.
+Future<void> retireToast(WidgetTester tester) async {
+  await tester.pump(const Duration(seconds: 3));
+  await tester.pumpAndSettle();
+}
+
+/// Walks from the dashboard into the profile screen.
+Future<void> openProfile(WidgetTester tester) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byType(DashboardScreen),
+      matching: find.byType(SettingsButton),
+    ),
+  );
+  await tester.pumpAndSettle();
+  // The account header is labelled with the student's name, or their email
+  // until they have set one. These tests set no name, and the address differs
+  // between the email/password and Google fixtures.
+  await tester.tap(find.textContaining('@').first);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('a signed-out student lands on the login screen', (tester) async {
     final auth = FakeAuthRepository();
@@ -132,7 +157,10 @@ void main() {
     await tester.tap(find.text('دخول'));
     await tester.pumpAndSettle();
 
-    expect(find.text('البريد الإلكتروني أو كلمة السر غير صحيحة'), findsOneWidget);
+    expect(
+      find.text('البريد الإلكتروني أو كلمة السر غير صحيحة'),
+      findsOneWidget,
+    );
     expect(find.text('اليوم'), findsNothing);
   });
 
@@ -226,6 +254,10 @@ void main() {
     await tester.tap(submit);
     await tester.pumpAndSettle();
     expect(auth.currentAccount, isNotNull);
+
+    // Registering now raises the "we sent you a link" toast, whose 2.2s dwell
+    // is a real timer the binding checks for before tearDown.
+    await retireToast(tester);
   });
 
   testWidgets('the profile names the student and never leaves the device', (
@@ -259,10 +291,7 @@ void main() {
     expect(find.text('ملفك'), findsOneWidget);
     // The claim that decided where this is stored, stated on the screen that
     // stores it. If this line ever stops being true, this test fails first.
-    expect(
-      find.textContaining('محفوظة على هذا الجهاز وحده'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('محفوظة على هذا الجهاز وحده'), findsOneWidget);
   });
 
   testWidgets('a student with no name still gets a heading', (tester) async {
@@ -329,5 +358,157 @@ void main() {
     // The very first frame is the lock, never a glimpse of the dashboard.
     expect(find.text('أثر'), findsOneWidget);
     expect(find.text('اليوم'), findsNothing);
+  });
+
+  // --- Email verification ----------------------------------------------------
+  //
+  // The rule these protect: **verification is asked for, never enforced.** The
+  // gate already stands in front of the app, the database is local, and a
+  // student locked out because they cannot reach an inbox loses their exam
+  // history to enforce something nothing depends on.
+
+  testWidgets('registering sends a verification link and says so', (
+    tester,
+  ) async {
+    final auth = FakeAuthRepository();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('لا حساب لديك؟ أنشئ واحداً'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).at(0), 'student@example.com');
+    await tester.enterText(find.byType(TextField).at(1), 'password123');
+    await tester.tap(find.text('إنشاء حساب'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(auth.verificationsSent, 1);
+    expect(find.text('بعتنالك رابط تأكيد على بريدك'), findsOneWidget);
+
+    await retireToast(tester);
+  });
+
+  testWidgets('an unverified student still gets the whole app', (tester) async {
+    final auth = FakeAuthRepository.signedInUnverified();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth));
+    await tester.pumpAndSettle();
+
+    // The one assertion that matters here. Nothing is withheld.
+    expect(find.text('اليوم'), findsOneWidget);
+    expect(find.text('تسجيل الدخول'), findsNothing);
+  });
+
+  testWidgets('the profile offers a resend while the address is unconfirmed', (
+    tester,
+  ) async {
+    final auth = FakeAuthRepository.signedInUnverified();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth));
+    await tester.pumpAndSettle();
+    await openProfile(tester);
+
+    expect(find.text('لم يتم تأكيده'), findsOneWidget);
+    expect(
+      find.textContaining('التطبيق شغال عادي من غيره'),
+      findsOneWidget,
+      reason: 'a prompt with no stated consequence reads as a threat',
+    );
+
+    await tester.tap(find.text('إعادة إرسال رابط التأكيد'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(auth.verificationsSent, 1);
+    expect(find.text('بعتنالك رابط تأكيد على بريدك'), findsOneWidget);
+
+    await retireToast(tester);
+  });
+
+  testWidgets('a rate-limited resend says "wait", not "something broke"', (
+    tester,
+  ) async {
+    final auth = FakeAuthRepository.signedInUnverified()
+      ..nextVerificationFailure = AuthFailure.tooManyRequests;
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth));
+    await tester.pumpAndSettle();
+    await openProfile(tester);
+
+    await tester.tap(find.text('إعادة إرسال رابط التأكيد'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(
+      find.textContaining('استنى شوية'),
+      findsOneWidget,
+      reason: 'tapping twice is not a broken account',
+    );
+    expect(find.text('تعذّر إتمام العملية. حاول مرة أخرى.'), findsNothing);
+
+    await retireToast(tester);
+  });
+
+  testWidgets('a verified account is never asked', (tester) async {
+    final auth = FakeAuthRepository.signedIn();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth));
+    await tester.pumpAndSettle();
+    await openProfile(tester);
+
+    expect(find.text('لم يتم تأكيده'), findsNothing);
+    expect(find.text('إعادة إرسال رابط التأكيد'), findsNothing);
+  });
+
+  testWidgets('a Google account arrives verified and is never asked', (
+    tester,
+  ) async {
+    final auth = FakeAuthRepository();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('المتابعة بحساب Google'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('اليوم'), findsOneWidget);
+    await openProfile(tester);
+
+    expect(
+      find.text('إعادة إرسال رابط التأكيد'),
+      findsNothing,
+      reason:
+          'Google has already checked the address; asking again asks for '
+          'a proof already given',
+    );
+  });
+
+  testWidgets('opening the profile notices a link tapped in the inbox', (
+    tester,
+  ) async {
+    final auth = FakeAuthRepository.signedInUnverified()
+      ..verifyOnNextReload = true;
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(await boot(auth));
+    await tester.pumpAndSettle();
+    await openProfile(tester);
+
+    expect(auth.reloadCount, greaterThan(0));
+    expect(
+      find.text('إعادة إرسال رابط التأكيد'),
+      findsNothing,
+      reason:
+          'the student verified while away; the screen must not still be '
+          'telling them to',
+    );
   });
 }

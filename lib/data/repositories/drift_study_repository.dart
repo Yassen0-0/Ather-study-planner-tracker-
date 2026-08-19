@@ -182,6 +182,45 @@ class DriftStudyRepository implements StudyRepository {
   }
 
   @override
+  Future<int> addChapters({
+    required int subjectId,
+    required List<String> names,
+    required DateTime at,
+  }) {
+    return _db.transaction(() async {
+      // Read inside the transaction, not before it: two taps in quick
+      // succession would otherwise both see the same "already there" set and
+      // both insert, which is the duplicate this exists to prevent.
+      final existing = await (_db.select(
+        _db.chapters,
+      )..where((t) => t.subjectId.equals(subjectId))).get();
+      final taken = <String>{for (final row in existing) row.name.trim()};
+
+      var created = 0;
+      for (final name in names) {
+        final trimmed = name.trim();
+        // Empty names are skipped rather than rejected: a template is data, and
+        // a stray blank line in it should not cost the student the other
+        // nineteen chapters.
+        if (trimmed.isEmpty) continue;
+        if (!taken.add(trimmed)) continue;
+
+        await _db
+            .into(_db.chapters)
+            .insert(
+              ChaptersCompanion.insert(
+                subjectId: subjectId,
+                name: trimmed,
+                createdAt: at,
+              ),
+            );
+        created++;
+      }
+      return created;
+    });
+  }
+
+  @override
   Future<void> renameChapter({
     required int chapterId,
     required String name,

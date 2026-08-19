@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,11 +43,22 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final l = L.of(context);
     final dashboard = ref.watch(dashboardProvider);
     final insights = ref.watch(insightsProvider);
+    final trajectories = MasteryTrends.forAllSubjects(
+      ref.watch(snapshotValueProvider),
+    );
 
     final subjects = dashboard.subjects;
     final filtered = _subjectFilter == null
         ? subjects
         : subjects.where((s) => s.subject.id == _subjectFilter).toList();
+
+    // Filtered like everything else below: picking one subject must not leave a
+    // chart still answering a question about the other three.
+    final visibleIds = <int>{for (final s in filtered) s.subject.id};
+    final visibleTrajectories = <SubjectTrajectory>[
+      for (final t in trajectories)
+        if (visibleIds.contains(t.subjectId)) t,
+    ];
 
     final chapters = <ChapterSummary>[
       for (final subject in filtered) ...subject.chapters,
@@ -100,6 +112,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         // subject with itself is not a chart.
         _SubjectBarsCard(subjects: subjects),
         const SizedBox(height: AppSpacing.xl),
+        // Only when at least one subject on screen has a line to draw. A card
+        // of empty axes is worse than no card: it reads as a measurement that
+        // came back flat rather than one not taken yet.
+        if (visibleTrajectories.any((t) => t.hasTrend)) ...<Widget>[
+          _TrajectoryCard(
+            trajectories: visibleTrajectories,
+            subjects: filtered,
+          ),
+          const SizedBox(height: AppSpacing.xl),
+        ],
         if (chapters.isNotEmpty) ...<Widget>[
           _ChapterBarsCard(chapters: chapters),
           const SizedBox(height: AppSpacing.xl),
@@ -557,4 +579,182 @@ class _DisciplineCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Score over time, one line per subject.
+///
+/// Hand-drawn geometry, like every other chart on this screen: a plain polyline
+/// over a plain track. `pubspec.yaml` records that `fl_chart` was removed on
+/// purpose, and a chart package would come back for one screen worth of line.
+///
+/// Each line is the same subject mastery figure as the bars above, sampled on
+/// the days the student sat exams -- so the right-hand end of a line and that
+/// subject bar are the same number, and a student who checks finds they agree.
+class _TrajectoryCard extends StatelessWidget {
+  const _TrajectoryCard({required this.trajectories, required this.subjects});
+
+  final List<SubjectTrajectory> trajectories;
+  final List<SubjectSummary> subjects;
+
+  String? _nameOf(L l, int subjectId) {
+    for (final summary in subjects) {
+      if (summary.subject.id == subjectId) return summary.subject.label(l);
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.of(context);
+
+    return AtherCard(
+      padding: AppSpacing.cardPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(l.analyticsTrajectory, style: AppTypography.cardTitle),
+          const SizedBox(height: AppSpacing.xxs),
+          for (final trajectory in trajectories)
+            if (_nameOf(l, trajectory.subjectId) case final name?) ...<Widget>[
+              const CardDivider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: _TrajectoryRow(name: name, trajectory: trajectory),
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TrajectoryRow extends StatelessWidget {
+  const _TrajectoryRow({required this.name, required this.trajectory});
+
+  final String name;
+  final SubjectTrajectory trajectory;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.of(context);
+    final colors = context.colors;
+
+    // Rounded before the sign is chosen, so a +0.4 cannot print as "+0" beside
+    // a line the student can see has not moved.
+    final rounded = trajectory.velocityPerCycle.round();
+    final isFlat = rounded == 0;
+    final velocityColor = isFlat
+        ? colors.textSecondary
+        : (rounded > 0 ? colors.right : colors.wrong);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(child: Text(name, style: AppTypography.listTitle)),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              trajectory.hasTrend
+                  ? (isFlat
+                        ? l.analyticsVelocityFlat
+                        : l.analyticsVelocity(
+                            iso('${rounded > 0 ? '+' : ''}$rounded'),
+                          ))
+                  : l.analyticsNotEnoughData,
+              style: AppTypography.chartValue.copyWith(
+                color: trajectory.hasTrend ? velocityColor : colors.textNoData,
+              ),
+            ),
+          ],
+        ),
+        if (trajectory.hasTrend) ...<Widget>[
+          const SizedBox(height: AppSpacing.md),
+          // Forced LTR: time runs left to right in both languages, and a
+          // mirrored trajectory would show a rising student falling.
+          Ltr(
+            child: SizedBox(
+              height: 56,
+              width: double.infinity,
+              child: CustomPaint(
+                painter: _TrajectoryPainter(
+                  points: <double>[
+                    for (final p in trajectory.points) p.mastery,
+                  ],
+                  line: colors.accent,
+                  track: colors.fill,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Draws the line over a fixed 0..100 range.
+///
+/// **Fixed, not fitted to the data.** An axis scaled to the values makes a
+/// wobble between 74% and 76% look like a cliff, which is the commonest way a
+/// chart lies. On a 0..100 axis those two readings look like what they are:
+/// almost no change at all.
+class _TrajectoryPainter extends CustomPainter {
+  const _TrajectoryPainter({
+    required this.points,
+    required this.line,
+    required this.track,
+  });
+
+  final List<double> points;
+  final Color line;
+  final Color track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.length < 2) return;
+
+    const strokeWidth = 2.0;
+    // Inset by half the stroke, so a reading of 0 or 100 is not sliced in half
+    // by the edge of the box.
+    final top = strokeWidth / 2;
+    final usableHeight = size.height - strokeWidth;
+
+    double y(double mastery) =>
+        top + (1 - mastery.clamp(0, 100) / 100) * usableHeight;
+
+    // The baseline the eye reads the line against.
+    canvas.drawRect(
+      Rect.fromLTWH(0, size.height - 1, size.width, 1),
+      Paint()..color = track,
+    );
+
+    final step = size.width / (points.length - 1);
+    final path = Path()..moveTo(0, y(points.first));
+    for (var i = 1; i < points.length; i++) {
+      path.lineTo(i * step, y(points[i]));
+    }
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = line
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    // The newest reading, marked: it is the one the subject bar above agrees
+    // with, and the one the student is actually being told about.
+    canvas.drawCircle(
+      Offset(size.width - strokeWidth, y(points.last)),
+      3,
+      Paint()..color = line,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TrajectoryPainter old) =>
+      old.line != line || old.track != track || !listEquals(old.points, points);
 }

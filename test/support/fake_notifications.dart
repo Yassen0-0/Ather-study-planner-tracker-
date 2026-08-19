@@ -16,6 +16,16 @@ final class FakeNotificationService extends ReviewNotificationService {
   /// pass cancelled everything and scheduled nothing.
   final List<bool> rescheduleEnabled = <bool>[];
 
+  /// What the last pass decided to register, in the order it would have
+  /// registered it.
+  ///
+  /// The override below never reaches a platform channel, so it runs the real
+  /// [ReviewNotificationService.planReminders] and keeps the result instead.
+  /// That is the half worth asserting on: the moments, the bodies, the ids and
+  /// the cap are all decided there, and `zonedSchedule` only carries them
+  /// across.
+  List<ScheduledReminder> plannedReminders = const <ScheduledReminder>[];
+
   int cancelAllCount = 0;
 
   bool get lastPassScheduled =>
@@ -44,9 +54,17 @@ final class FakeNotificationService extends ReviewNotificationService {
     required DateTime now,
     required bool enabled,
     required String Function(String lesson, String chapter) buildBody,
+    required String Function(String lesson, String chapter) buildEarlyBody,
     required String title,
   }) async {
     rescheduleEnabled.add(enabled);
+    plannedReminders = ReviewNotificationService.planReminders(
+      snapshot: snapshot,
+      now: now,
+      enabled: enabled,
+      buildBody: buildBody,
+      buildEarlyBody: buildEarlyBody,
+    );
     if (!enabled) cancelAllCount++;
   }
 

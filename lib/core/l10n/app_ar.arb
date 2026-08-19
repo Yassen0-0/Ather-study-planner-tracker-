@@ -477,5 +477,48 @@
   "shareCardError": "تعذّر تجهيز صورة التقدّم",
   "@shareCardLessonsAbove": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+
+  "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",
+  "reviewNotificationEarlyBody": "اقترب موعد مراجعة درس {lesson} في {chapter}",
+  "@reviewNotificationEarlyBody": {
+    "placeholders": {
+      "lesson": { "type": "String" },
+      "chapter": { "type": "String" }
+    }
+  },
+
+  "@@x_comment_B2": "=== Batch B2: analytics trends ===",
+  "analyticsTrajectory": "مسار درجاتك",
+  "analyticsVelocity": "{value} نقطة لكل دورة مراجعة",
+  "@analyticsVelocity": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "analyticsVelocityFlat": "ثابت، بلا تغيّر",
+
+  "@@x_comment_B3": "=== Batch B3: email verification ===",
+  "authVerificationSent": "بعتنالك رابط تأكيد على بريدك",
+  "authEmailUnverified": "لم يتم تأكيده",
+  "authResendVerification": "إعادة إرسال رابط التأكيد",
+  "authVerificationTooSoon": "بعتنا رابط للتو. استنى شوية وحاول تاني.",
+  "authVerificationNote": "تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.",
+
+  "@@x_comment_B4": "=== Batch B4: curriculum templates ===",
+  "subjectTemplateAdd": "أضف أبواب المنهج",
+  "subjectTemplateCount": "{count, plural, =1{باباً واحداً} =2{بابين} few{{count} أبواب} other{{count} باباً}}",
+  "@subjectTemplateCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "subjectTemplateAdded": "تمت إضافة {count}",
+  "@subjectTemplateAdded": {
+    "placeholders": {
+      "count": { "type": "String" }
+    }
+  },
+  "subjectTemplateNothingNew": "كل أبواب المنهج موجودة عندك بالفعل",
+  "subjectTemplateNote": "أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك."
 }

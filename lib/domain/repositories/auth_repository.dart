@@ -65,6 +65,26 @@ abstract interface class AuthRepository {
 
   Future<void> sendPasswordReset(String email);
 
+  /// Sends (or re-sends) the address-verification link to the current account.
+  ///
+  /// Separate from [register], which already sends one, because the first mail
+  /// gets lost, filtered, or opened on a phone the student no longer has. A
+  /// verification a student cannot re-trigger is a dead end.
+  ///
+  /// Throws [AuthFailure.tooManyRequests] when Firebase rate-limits the resend.
+  /// That is a "wait a moment", not a failure of the account, and the caller
+  /// must say so rather than reporting a generic error.
+  Future<void> sendEmailVerification();
+
+  /// Re-reads the account from the server.
+  ///
+  /// Verification happens *outside* the app -- the student opens their inbox
+  /// and taps a link -- so nothing in the running app would otherwise notice.
+  /// Called when a screen that shows the verified state opens, so returning
+  /// from the inbox shows the truth rather than a stale prompt to do something
+  /// already done.
+  Future<void> reloadAccount();
+
   Future<void> signOut();
 
   /// Deletes the account **and the credentials Firebase holds for it**.

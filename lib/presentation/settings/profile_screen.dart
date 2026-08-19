@@ -8,7 +8,9 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/ather_sheet.dart';
+import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/settings_list.dart';
+import '../../domain/repositories/auth_repository.dart';
 import '../common/prompts.dart';
 import '../providers/app_providers.dart';
 import '../providers/auth_providers.dart';
@@ -23,7 +25,7 @@ import '../providers/auth_providers.dart';
 /// permission prompt, a file to store and a file to delete on account deletion
 /// — a large amount of surface for a picture nobody but its owner ever sees.
 /// The first letter of the name does the same job everywhere it appears.
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   /// The three years of Thanaweya Amma, plus "not said".
@@ -37,16 +39,71 @@ class ProfileScreen extends ConsumerWidget {
   };
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Verification happens outside the app: the student opens their inbox and
+    // taps a link. Nothing in the running app would notice, so this screen --
+    // the one place that shows the state -- asks the server when it opens.
+    // Otherwise a student who has just verified comes back to a screen still
+    // telling them to.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authRepositoryProvider).reloadAccount();
+    });
+  }
+
+  /// Sends the link again, and says which of the three things happened.
+  ///
+  /// Firebase rate-limits resends, and that answer is "wait a moment", not
+  /// "your account is broken" -- so it gets its own sentence rather than the
+  /// generic failure toast. A student who taps twice must not be told
+  /// something went wrong when nothing did.
+  Future<void> _resend() async {
+    if (_sending) return;
+    final l = L.of(context);
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    final direction = Directionality.of(context);
+    final sent = l.authVerificationSent;
+    final tooSoon = l.authVerificationTooSoon;
+    final generic = l.authErrorGeneric;
+
+    setState(() => _sending = true);
+    try {
+      await ref.read(authRepositoryProvider).sendEmailVerification();
+      if (overlay != null) showAtherToastOn(overlay, direction, sent);
+    } on AuthException catch (e) {
+      if (overlay == null) return;
+      showAtherToastOn(
+        overlay,
+        direction,
+        e.failure == AuthFailure.tooManyRequests ? tooSoon : generic,
+        tone: ToastTone.failed,
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l = L.of(context);
     final name = ref.watch(profileNameProvider);
     final year = ref.watch(profileYearProvider);
     final account = ref.watch(accountValueProvider);
+    final needsVerification = ref.watch(needsEmailVerificationProvider);
 
     return AtherScreen(
       header: AtherHeader(title: l.profileTitle, onBack: () => context.pop()),
       children: <Widget>[
-        Center(child: _Avatar(name: name, email: account?.email)),
+        Center(
+          child: _Avatar(name: name, email: account?.email),
+        ),
         const SizedBox(height: AppSpacing.xxl),
         SettingsGroup(
           children: <Widget>[
@@ -57,7 +114,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SettingsRow(
               label: l.profileYear,
-              value: yearLabel(l, year),
+              value: ProfileScreen.yearLabel(l, year),
               onTap: () => _pickYear(context, ref, year),
             ),
             if (account != null)
@@ -66,9 +123,27 @@ class ProfileScreen extends ConsumerWidget {
                 value: account.email,
                 trailing: SettingsRowTrailing.none,
               ),
+            // Only while it is unverified, and never for a Google account,
+            // which arrives verified. A row that said "confirmed" forever
+            // would be one more thing to read on a screen about the student,
+            // not about the app's paperwork.
+            if (needsVerification)
+              SettingsRow(
+                label: l.authResendVerification,
+                value: l.authEmailUnverified,
+                busy: _sending,
+                onTap: _resend,
+              ),
           ],
         ),
         const SizedBox(height: AppSpacing.md),
+        // Says plainly that nothing is being withheld. A prompt with no stated
+        // consequence reads as a threat, and this one has none to make: the
+        // app works exactly the same unverified.
+        if (needsVerification) ...<Widget>[
+          SettingsFootnote(l.authVerificationNote),
+          const SizedBox(height: AppSpacing.md),
+        ],
         SettingsFootnote(l.profileLocalNote),
       ],
     );
@@ -102,9 +177,9 @@ class ProfileScreen extends ConsumerWidget {
         title: l.profileYear,
         child: SettingsGroup(
           children: <Widget>[
-            for (final year in _years)
+            for (final year in ProfileScreen._years)
               SettingsRow(
-                label: yearLabel(l, year),
+                label: ProfileScreen.yearLabel(l, year),
                 value: year == current ? '✓' : null,
                 trailing: SettingsRowTrailing.none,
                 onTap: () => Navigator.of(sheetContext).pop(year),

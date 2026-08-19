@@ -1006,4 +1006,65 @@ class LAr extends L {
 
   @override
   String get shareCardError => 'تعذّر تجهيز صورة التقدّم';
+
+  @override
+  String reviewNotificationEarlyBody(String lesson, String chapter) {
+    return 'اقترب موعد مراجعة درس $lesson في $chapter';
+  }
+
+  @override
+  String get analyticsTrajectory => 'مسار درجاتك';
+
+  @override
+  String analyticsVelocity(String value) {
+    return '$value نقطة لكل دورة مراجعة';
+  }
+
+  @override
+  String get analyticsVelocityFlat => 'ثابت، بلا تغيّر';
+
+  @override
+  String get authVerificationSent => 'بعتنالك رابط تأكيد على بريدك';
+
+  @override
+  String get authEmailUnverified => 'لم يتم تأكيده';
+
+  @override
+  String get authResendVerification => 'إعادة إرسال رابط التأكيد';
+
+  @override
+  String get authVerificationTooSoon =>
+      'بعتنا رابط للتو. استنى شوية وحاول تاني.';
+
+  @override
+  String get authVerificationNote =>
+      'تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.';
+
+  @override
+  String get subjectTemplateAdd => 'أضف أبواب المنهج';
+
+  @override
+  String subjectTemplateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count باباً',
+      few: '$count أبواب',
+      two: 'بابين',
+      one: 'باباً واحداً',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subjectTemplateAdded(String count) {
+    return 'تمت إضافة $count';
+  }
+
+  @override
+  String get subjectTemplateNothingNew => 'كل أبواب المنهج موجودة عندك بالفعل';
+
+  @override
+  String get subjectTemplateNote =>
+      'أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك.';
 }

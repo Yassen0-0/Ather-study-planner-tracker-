@@ -69,6 +69,25 @@ abstract interface class StudyRepository {
     required String name,
     required DateTime at,
   });
+  /// Inserts [names] as chapters of [subjectId], in one transaction.
+  ///
+  /// **Skips any name the subject already has**, so applying a curriculum
+  /// template twice adds nothing the second time rather than producing a second
+  /// copy of every chapter. Nothing existing is renamed, reordered or removed —
+  /// the student's own edits to a chapter they already had survive a second
+  /// apply untouched.
+  ///
+  /// Implementations must do the whole thing in **one transaction**: a template
+  /// that failed half way would leave the student with a partial curriculum and
+  /// no way to tell which half arrived.
+  ///
+  /// Returns the number of chapters actually created, which is 0 on a repeat.
+  Future<int> addChapters({
+    required int subjectId,
+    required List<String> names,
+    required DateTime at,
+  });
+
   Future<void> renameChapter({required int chapterId, required String name});
   Future<void> deleteChapter(int chapterId);
 

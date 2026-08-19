@@ -143,6 +143,11 @@ class _ReviewSchedulerState extends ConsumerState<ReviewScheduler>
         title: l.reviewNotificationTitle,
         buildBody: (lesson, chapter) =>
             l.reviewNotificationBody(lesson, chapter),
+        // A different sentence, not the same one earlier: the due-day body says
+        // the lesson decayed, and saying that three days early would be a lie
+        // the student can check against the countdown on the lesson screen.
+        buildEarlyBody: (lesson, chapter) =>
+            l.reviewNotificationEarlyBody(lesson, chapter),
       );
     } catch (_) {
       // Notifications are an enhancement, never a gate. If the platform

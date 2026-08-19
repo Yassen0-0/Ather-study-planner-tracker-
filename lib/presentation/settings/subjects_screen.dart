@@ -10,7 +10,9 @@ import '../../core/widgets/ather_sheet.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/pressable.dart';
 import '../../core/widgets/settings_list.dart';
+import '../../core/widgets/ather_toast.dart';
 import '../../domain/entities/subject.dart';
+import '../../domain/services/curriculum_templates.dart';
 import '../common/prompts.dart';
 import '../common/subject_mark.dart';
 import '../common/subject_presentation.dart';
@@ -169,10 +171,21 @@ class _SubjectRow extends ConsumerWidget {
                   _rename(context, ref);
                 },
               ),
+            // Opt-in, and only where there is a template to apply. The four
+            // seeded subjects have one; a subject the student invented does
+            // not, by definition.
+            if (CurriculumTemplates.forSubject(subject) case final template?)
+              SettingsRow(
+                label: l.subjectTemplateAdd,
+                value: l.subjectTemplateCount(template.length),
+                trailing: SettingsRowTrailing.none,
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _applyTemplate(context, ref, template);
+                },
+              ),
             SettingsRow(
-              label: subject.isArchived
-                  ? l.subjectUnarchive
-                  : l.subjectArchive,
+              label: subject.isArchived ? l.subjectUnarchive : l.subjectArchive,
               trailing: SettingsRowTrailing.none,
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -208,6 +221,43 @@ class _SubjectRow extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Writes the template's chapters, and says how many actually landed.
+  ///
+  /// The count matters rather than a bare "done": applying twice is a thing a
+  /// student will do, and the honest answer the second time is "nothing new",
+  /// not a success message about work that did not happen. The repository is
+  /// what guarantees that — it skips names the subject already has, inside the
+  /// transaction — so a second apply cannot duplicate a chapter or disturb one
+  /// the student has since renamed.
+  Future<void> _applyTemplate(
+    BuildContext context,
+    WidgetRef ref,
+    List<String> template,
+  ) async {
+    final l = L.of(context);
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    final direction = Directionality.of(context);
+    final nothingNew = l.subjectTemplateNothingNew;
+    String added(int count) =>
+        l.subjectTemplateAdded(l.subjectTemplateCount(count));
+
+    await runWrite(context, () async {
+      final created = await ref
+          .read(studyRepositoryProvider)
+          .addChapters(
+            subjectId: subject.id,
+            names: template,
+            at: ref.read(clockProvider).now(),
+          );
+      if (overlay == null) return;
+      showAtherToastOn(
+        overlay,
+        direction,
+        created == 0 ? nothingNew : added(created),
+      );
+    });
   }
 
   Future<void> _rename(BuildContext context, WidgetRef ref) async {
