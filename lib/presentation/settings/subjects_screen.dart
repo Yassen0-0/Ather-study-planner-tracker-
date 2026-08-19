@@ -157,7 +157,11 @@ class _SubjectRow extends ConsumerWidget {
       context: context,
       builder: (sheetContext) => AtherSheetBody(
         title: subject.label(l),
-        child: SettingsGroup(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            SettingsGroup(
           children: <Widget>[
             // The seeded four take their names from the ARB files so the
             // language toggle can reach them; renaming one here would freeze
@@ -217,6 +221,18 @@ class _SubjectRow extends ConsumerWidget {
                 );
               },
             ),
+              ],
+            ),
+            // Under the rows, not beside them: it is about what applying a
+            // template does *not* do, and a student deciding whether to tap
+            // "add the standard chapters" needs to know their own chapters
+            // survive it **before** they tap, not after. Shown only where
+            // there is a template to apply, so it never explains an action
+            // that is not on screen.
+            if (CurriculumTemplates.forSubject(subject) != null) ...<Widget>[
+              const SizedBox(height: AppSpacing.md),
+              SettingsFootnote(l.subjectTemplateNote),
+            ],
           ],
         ),
       ),

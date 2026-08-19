@@ -1777,12 +1777,6 @@ abstract class L {
   /// **'صدّر التقرير PDF'**
   String get chapterReportExport;
 
-  /// No description provided for @chapterReportExportDone.
-  ///
-  /// In ar, this message translates to:
-  /// **'اتجهّز التقرير'**
-  String get chapterReportExportDone;
-
   /// No description provided for @chapterReportExportError.
   ///
   /// In ar, this message translates to:

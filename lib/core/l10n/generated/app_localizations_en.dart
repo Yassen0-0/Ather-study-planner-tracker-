@@ -971,9 +971,6 @@ class LEn extends L {
   String get chapterReportExport => 'Export report as PDF';
 
   @override
-  String get chapterReportExportDone => 'Report ready';
-
-  @override
   String get chapterReportExportError => 'The PDF could not be prepared';
 
   @override

@@ -353,7 +353,6 @@
   "exportErrorShare": "The share sheet would not open",
 
   "chapterReportExport": "Export report as PDF",
-  "chapterReportExportDone": "Report ready",
   "chapterReportExportError": "The PDF could not be prepared",
 
   "shareCardAction": "Share your progress",

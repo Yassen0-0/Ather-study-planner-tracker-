@@ -976,9 +976,6 @@ class LAr extends L {
   String get chapterReportExport => 'صدّر التقرير PDF';
 
   @override
-  String get chapterReportExportDone => 'اتجهّز التقرير';
-
-  @override
   String get chapterReportExportError => 'تعذّر تجهيز ملف PDF';
 
   @override
