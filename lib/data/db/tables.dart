@@ -164,3 +164,28 @@ class ExamQuestionGroups extends Table {
   IntColumn get questionCount => integer()();
   IntColumn get correctCount => integer()();
 }
+
+/// A scheduled exam event for forward planning and preparation tracking.
+///
+/// Deliberately separate from ExamEntries (which record completed exams):
+/// this is a calendar entry for an upcoming exam, used to drive review
+/// reminders and highlight decayed lessons before the exam date.
+@DataClassName('ScheduledExamRow')
+class ScheduledExams extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  IntColumn get subjectId =>
+      integer().references(Subjects, #id, onDelete: KeyAction.cascade)();
+
+  /// The exam date. Full DateTime rather than day-only to allow time-of-day
+  /// scheduling if needed, though the UI may default to midnight.
+  DateTimeColumn get date => dateTime()();
+
+  /// Student-provided exam name, e.g. "Midterm" or "Final Biology".
+  TextColumn get title => text().withLength(min: 1, max: 200)();
+
+  /// Optional notes about the exam: location, topics, preparation reminders.
+  TextColumn get notes => text().withLength(min: 1, max: 500).nullable()();
+
+  DateTimeColumn get createdAt => dateTime()();
+}

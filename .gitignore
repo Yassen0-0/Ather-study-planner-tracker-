@@ -85,3 +85,6 @@ android/key.properties
 # one-line copy step that puts it there.
 public/*.apk
 .commandcode/
+
+# Auto Claude data directory
+.auto-claude/
