@@ -126,6 +126,17 @@
   "examRemoveGroup": "Remove group",
   "examGroupLabel": "{count} questions × {points} marks",
   "examPointsLine": "{points} marks",
+  "examPoints": "points",
+  "examQuestionGroups": "Question groups",
+  "examGroupFormat": "{count} questions × {points} pts = {total} pts ({correct} correct)",
+  "@examGroupFormat": {
+    "placeholders": {
+      "count": { "type": "String" },
+      "points": { "type": "String" },
+      "total": { "type": "String" },
+      "correct": { "type": "String" }
+    }
+  },
   "examMasteryBefore": "Mastery before",
   "examMasteryAfter": "Mastery after",
   "examSave": "Save result",

@@ -376,6 +376,22 @@ class LAr extends L {
   }
 
   @override
+  String get examPoints => 'درجة';
+
+  @override
+  String get examQuestionGroups => 'مجموعات الأسئلة';
+
+  @override
+  String examGroupFormat(
+    String count,
+    String points,
+    String total,
+    String correct,
+  ) {
+    return '$count أسئلة × $points درجة = $total درجة ($correct صحيحة)';
+  }
+
+  @override
   String get examMasteryBefore => 'الإتقان قبل';
 
   @override

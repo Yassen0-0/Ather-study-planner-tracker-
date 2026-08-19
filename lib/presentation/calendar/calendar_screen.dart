@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../../core/l10n/formatting.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
-import '../../core/theme/mastery_palette.dart';
-import '../../core/widgets/ather_card.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/day_header.dart';
 import '../../domain/entities/exam_entry.dart';
@@ -16,6 +13,7 @@ import '../common/settings_button.dart';
 import '../providers/app_providers.dart';
 import 'scheduled_exam_form.dart';
 import 'widgets/exam_detail_card.dart';
+import 'widgets/exam_history_card.dart';
 
 /// The exam calendar screen.
 ///
@@ -216,113 +214,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             if (lesson == null) return const SizedBox.shrink();
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: _PastExamCard(
+              child: ExamHistoryCard(
                 exam: exam,
-                lessonName: lesson.name,
                 snapshot: snapshot,
               ),
             );
           }),
         ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Displays a past exam entry with mastery-colored indicator.
-class _PastExamCard extends StatelessWidget {
-  const _PastExamCard({
-    required this.exam,
-    required this.lessonName,
-    required this.snapshot,
-  });
-
-  final ExamEntry exam;
-  final String lessonName;
-  final dynamic snapshot;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = L.of(context);
-
-    // Get lesson details for breadcrumb
-    final lesson = snapshot.lessons
-        .where((lesson) => lesson.id == exam.lessonId)
-        .firstOrNull;
-    final chapter = lesson == null
-        ? null
-        : snapshot.chapters
-            .where((c) => c.id == lesson.chapterId)
-            .firstOrNull;
-    final subject = chapter == null
-        ? null
-        : snapshot.subjects
-            .where((s) => s.id == chapter.subjectId)
-            .firstOrNull;
-
-    final breadcrumb = <String>[
-      if (subject != null) subject.label(l),
-      if (chapter != null) chapter.name,
-    ].join(' · ');
-
-    final color = MasteryPalette.ofScore(context.colors, exam.percentage);
-
-    return AtherCard(
-      padding: AppSpacing.cardPadding,
-      child: Row(
-        children: <Widget>[
-          // Mastery color indicator
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  lessonName,
-                  style: AppTypography.style(
-                    size: 15,
-                    weight: AppTypography.semiBold,
-                    color: context.colors.textPrimary,
-                  ),
-                ),
-                if (breadcrumb.isNotEmpty) ...[
-                  SizedBox(height: AppSpacing.xxs),
-                  Text(
-                    breadcrumb,
-                    style: AppTypography.style(
-                      size: 13,
-                      weight: AppTypography.medium,
-                      color: context.colors.textTertiary,
-                    ),
-                  ),
-                ],
-                SizedBox(height: AppSpacing.xxs),
-                Text(
-                  dateLabel(exam.createdAt),
-                  style: context.text.secondary.copyWith(fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          // Percentage with mastery color
-          Text(
-            percent(exam.percentage),
-            style: AppTypography.style(
-              size: 18,
-              weight: AppTypography.semiBold,
-              color: color,
-            ),
-          ),
         ],
       ),
     );

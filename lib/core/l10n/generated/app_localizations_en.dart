@@ -371,6 +371,22 @@ class LEn extends L {
   }
 
   @override
+  String get examPoints => 'points';
+
+  @override
+  String get examQuestionGroups => 'Question groups';
+
+  @override
+  String examGroupFormat(
+    String count,
+    String points,
+    String total,
+    String correct,
+  ) {
+    return '$count questions × $points pts = $total pts ($correct correct)';
+  }
+
+  @override
   String get examMasteryBefore => 'Mastery before';
 
   @override

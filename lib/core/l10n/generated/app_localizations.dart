@@ -727,6 +727,29 @@ abstract class L {
   /// **'{points} درجة'**
   String examPointsLine(String points);
 
+  /// No description provided for @examPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'درجة'**
+  String get examPoints;
+
+  /// No description provided for @examQuestionGroups.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموعات الأسئلة'**
+  String get examQuestionGroups;
+
+  /// No description provided for @examGroupFormat.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} أسئلة × {points} درجة = {total} درجة ({correct} صحيحة)'**
+  String examGroupFormat(
+    String count,
+    String points,
+    String total,
+    String correct,
+  );
+
   /// No description provided for @examMasteryBefore.
   ///
   /// In ar, this message translates to:
