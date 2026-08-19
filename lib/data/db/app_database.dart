@@ -24,6 +24,8 @@ const List<SubjectCode> kSeededSubjects = <SubjectCode>[
     ExamEntries,
     ExamQuestionGroups,
     DailyTasks,
+    ScheduledExams,
+    ScheduledExamChapters,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -34,7 +36,8 @@ class AppDatabase extends _$AppDatabase {
 
   /// 2 added `daily_tasks`. 3 added `subjects.name`, `subjects.archived_at` and
   /// `subjects.deleted_at`, which is what made subjects something a student can
-  /// add, archive, and delete into a recycle bin.
+  /// add, archive, and delete into a recycle bin. 4 added `scheduled_exams` and
+  /// `scheduled_exam_chapters` for the exam calendar and scheduling feature.
   ///
   /// `deleted_at` was folded into 3 rather than given a 4 of its own, and that
   /// is safe for one specific reason: **version 3 has never shipped.** It has
@@ -49,7 +52,7 @@ class AppDatabase extends _$AppDatabase {
   /// without the other opens the app against a database missing a column it is
   /// about to read.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -75,6 +78,10 @@ class AppDatabase extends _$AppDatabase {
         // only add rows the student never had the ability to delete -- because
         // until this very migration, they did not.
         await _seedSubjects();
+      }
+      if (from < 4) {
+        await m.createTable(scheduledExams);
+        await m.createTable(scheduledExamChapters);
       }
     },
     beforeOpen: (OpeningDetails details) async {
