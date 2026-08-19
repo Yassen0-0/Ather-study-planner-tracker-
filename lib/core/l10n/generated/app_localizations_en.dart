@@ -1060,4 +1060,8 @@ class LEn extends L {
   @override
   String get subjectTemplateNote =>
       'The usual chapters for this subject. Edit or delete them like any chapter you typed yourself. Nothing you already have is changed or removed.';
+
+  @override
+  String get authVerificationNotSent =>
+      'Your account is ready. The confirmation link did not go out — you can send it from your profile.';
 }

@@ -88,16 +88,23 @@ final class FakeAuthRepository implements AuthRepository {
     _set(Account(id: 'test-uid', email: email));
   }
 
+  /// Set to make the verification mail fail to send while the account is
+  /// still created -- what Firebase does when it rate-limits the send, and the
+  /// case where the screen used to claim a link was on its way regardless.
+  bool verificationSendFails = false;
+
   @override
-  Future<void> register({
+  Future<bool> register({
     required String email,
     required String password,
   }) async {
     _maybeThrow();
+    _set(Account(id: 'test-uid', email: email));
+    if (verificationSendFails) return false;
     // A brand-new email/password account is unverified, and registering sends
     // the first link -- exactly what FirebaseAuthRepository.register does.
     verificationsSent++;
-    _set(Account(id: 'test-uid', email: email));
+    return true;
   }
 
   /// Google accounts arrive verified. Google checked the address; the app has

@@ -387,5 +387,8 @@
   },
   "subjectTemplateAdded": "Added {count}",
   "subjectTemplateNothingNew": "You already have every standard chapter",
-  "subjectTemplateNote": "The usual chapters for this subject. Edit or delete them like any chapter you typed yourself. Nothing you already have is changed or removed."
+  "subjectTemplateNote": "The usual chapters for this subject. Edit or delete them like any chapter you typed yourself. Nothing you already have is changed or removed.",
+
+  "@@x_comment_integration": "=== Integration review fixes ===",
+  "authVerificationNotSent": "Your account is ready. The confirmation link did not go out — you can send it from your profile."
 }

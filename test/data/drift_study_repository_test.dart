@@ -841,6 +841,103 @@ void main() {
       expect(chapters.map((c) => c.name), template);
     });
 
+    test('order survives past the point Dart sort stops being stable', () async {
+      // `List.sort` is only stable below 32 elements; above that Dart switches
+      // to dual-pivot quicksort and reorders equal keys arbitrarily. Every
+      // chapter of a template is written under one `createdAt`, so the whole
+      // template is one tie block -- and the test above cannot see the problem
+      // because ten rows in an empty database stays under the threshold.
+      //
+      // Four templates plus a few chapters of the student's own crosses it.
+      // Before the id tie-break, this produced Physics with باب 1 and باب 2
+      // swapped, and English with Unit 1 rendered last.
+      for (final (subjectId, code) in <(int, SubjectCode)>[
+        (1, SubjectCode.biology),
+        (2, SubjectCode.physics),
+        (3, SubjectCode.chemistry),
+        (4, SubjectCode.english),
+      ]) {
+        await repo.addChapters(
+          subjectId: subjectId,
+          names: CurriculumTemplates.chaptersFor(code)!,
+          at: kSeedInstant,
+        );
+      }
+      for (final name in <String>['بابي الأول', 'بابي الثاني', 'بابي الثالث']) {
+        await repo.createChapter(subjectId: 1, name: name, at: kSeedInstant);
+      }
+
+      final snapshot = await repo.readSnapshot();
+      expect(
+        snapshot.chapters.length,
+        greaterThan(32),
+        reason: 'the sample has to cross the stability threshold to mean anything',
+      );
+
+      for (final (subjectId, code) in <(int, SubjectCode)>[
+        (2, SubjectCode.physics),
+        (3, SubjectCode.chemistry),
+        (4, SubjectCode.english),
+      ]) {
+        expect(
+          snapshot.chaptersIn(subjectId).map((c) => c.name),
+          CurriculumTemplates.chaptersFor(code)!,
+          reason: 'the taught order of $code was scrambled',
+        );
+      }
+    });
+
+    test('a name differing only in Arabic spelling is not a second chapter',
+        () async {
+      // The promise is "applying a template never duplicates a chapter you
+      // already have", and a student types their chapter names on a phone
+      // keyboard. Writing ه for ة, or skipping the hamza on أ/إ, is ordinary
+      // Arabic -- not a mistake -- and a byte-exact comparison called each of
+      // these a different chapter, leaving the student with two rows for one
+      // باب and their lessons hanging off only one of them.
+      await repo.createChapter(subjectId: 1, name: 'الوراثه', at: kSeedInstant);
+      await repo.createChapter(
+        subjectId: 1,
+        name: 'الاخراج في الكائنات الحيه',
+        at: kSeedInstant,
+      );
+
+      final created = await repo.addChapters(
+        subjectId: 1,
+        names: <String>[
+          'الوراثة',
+          'الإخراج في الكائنات الحية',
+          'باب جديد فعلاً',
+        ],
+        at: kSeedInstant,
+      );
+
+      expect(created, 1, reason: 'only the genuinely new chapter is added');
+
+      final names = (await repo.readSnapshot())
+          .chaptersIn(1)
+          .map((c) => c.name)
+          .toList();
+      expect(names, hasLength(3));
+      // The student's own spelling is what stays on screen -- matching is not
+      // the same as rewriting what they typed.
+      expect(names, contains('الوراثه'));
+      expect(names, isNot(contains('الوراثة')));
+    });
+
+    test('case and stray spaces do not create a second chapter', () async {
+      await repo.createChapter(subjectId: 4, name: 'unit 1', at: kSeedInstant);
+
+      final created = await repo.addChapters(
+        subjectId: 4,
+        names: <String>['Unit  1', 'Unit 2'],
+        at: kSeedInstant,
+      );
+
+      expect(created, 1);
+      expect((await repo.readSnapshot()).chaptersIn(4), hasLength(2));
+    });
+
     test('applying it twice does not duplicate anything', () async {
       final template = CurriculumTemplates.chaptersFor(SubjectCode.physics)!;
 

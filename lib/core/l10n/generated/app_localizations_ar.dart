@@ -1067,4 +1067,8 @@ class LAr extends L {
   @override
   String get subjectTemplateNote =>
       'أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك.';
+
+  @override
+  String get authVerificationNotSent =>
+      'اتعمل حسابك. رابط التأكيد ما اتبعتش — تقدر تبعته من صفحة ملفك.';
 }

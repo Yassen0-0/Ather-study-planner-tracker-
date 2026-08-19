@@ -59,7 +59,17 @@ abstract interface class AuthRepository {
 
   Future<void> signIn({required String email, required String password});
 
-  Future<void> register({required String email, required String password});
+  /// Returns whether the verification mail was actually sent.
+  ///
+  /// **Not `void`, and the return value is not decoration.** The send is
+  /// best-effort -- the account exists whether or not the mail goes out, so a
+  /// failure to send must not fail the registration. But the screen used to
+  /// say "we sent you a confirmation link" on every successful `register`,
+  /// which is a statement about something it had no way to know. Several
+  /// students registering from one school's IP is enough for Firebase to
+  /// rate-limit the send; the account is created, the mail is not, and the
+  /// student is told to go and look for it.
+  Future<bool> register({required String email, required String password});
 
   Future<void> signInWithGoogle();
 

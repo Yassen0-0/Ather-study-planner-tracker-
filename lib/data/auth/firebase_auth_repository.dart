@@ -59,7 +59,7 @@ final class FirebaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> register({
+  Future<bool> register({
     required String email,
     required String password,
   }) async {
@@ -68,14 +68,21 @@ final class FirebaseAuthRepository implements AuthRepository {
         email: email.trim(),
         password: password,
       );
-      // Best-effort, and deliberately swallowed. The account exists at this
-      // point; throwing here would report a *failed registration* for a
-      // student who now has a working account, and the retry would come back
-      // "email already in use". The address can be verified later from the
-      // profile screen, which is where the resend lives.
+      // Best-effort, and deliberately not allowed to fail the registration.
+      // The account exists at this point; throwing here would report a *failed
+      // registration* for a student who now has a working account, and their
+      // retry would come back "email already in use". The address can be
+      // verified later from the profile screen, which is where the resend
+      // lives.
+      //
+      // The outcome is **reported** rather than swallowed, so the screen can
+      // stop claiming a mail is in an inbox it never reached.
       try {
         await credential.user?.sendEmailVerification();
-      } catch (_) {}
+        return true;
+      } catch (_) {
+        return false;
+      }
     } on fb.FirebaseAuthException catch (e) {
       throw AuthException(_map(e));
     } catch (_) {

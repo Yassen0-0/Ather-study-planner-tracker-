@@ -1902,6 +1902,12 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك.'**
   String get subjectTemplateNote;
+
+  /// No description provided for @authVerificationNotSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتعمل حسابك. رابط التأكيد ما اتبعتش — تقدر تبعته من صفحة ملفك.'**
+  String get authVerificationNotSent;
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

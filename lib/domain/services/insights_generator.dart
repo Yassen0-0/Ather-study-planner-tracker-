@@ -1,4 +1,6 @@
+import '../entities/chapter.dart';
 import '../entities/exam_entry.dart';
+import '../entities/lesson.dart';
 import '../entities/mastery.dart';
 import '../entities/study_snapshot.dart';
 import 'mastery_calculator.dart';
@@ -215,22 +217,46 @@ abstract final class InsightsGenerator {
     }
   }
 
-  /// Subject mastery recomputed from only the exams that existed at [asOf].
+  /// Subject mastery as the student would have seen it on [asOf].
   ///
   /// Shared with [MasteryTrends]: a trajectory is this same figure sampled at a
   /// series of past moments, and computing it two ways would let the chart and
   /// the "you improved" insight disagree about the same student.
+  ///
+  /// **The curriculum is rewound too, not just the exams.** Filtering exams by
+  /// date while dividing by *today's* lesson count reports every lesson the
+  /// student had not created yet as a lesson they scored zero on. The bias is
+  /// small across a 30-day insight window and dominates across a whole
+  /// history, which is exactly what the trajectory chart asks for:
+  ///
+  /// A student with one lesson scores 80% in January, and the app shows the
+  /// subject at 80% that day. By June they have ten lessons and 80% on every
+  /// one, so the subject still reads 80%. Sampled with today's roster, the
+  /// January point comes out `(80 + 0x9) / 10` = **8%** -- and the chart draws
+  /// a line climbing from 8 to 80 for a student who has been flat for five
+  /// months, with a velocity to match. It invents progress, for every student
+  /// who adds lessons over time, which is all of them.
+  ///
+  /// So chapters and lessons are filtered by `createdAt` on the same boundary
+  /// as the exams. The reading is then checkable against what the student
+  /// actually saw, which is the only thing that makes it worth showing.
   static double subjectMasteryAsOf(
     StudySnapshot snapshot,
     int subjectId,
     DateTime asOf,
   ) {
-    final chapters = snapshot.chaptersIn(subjectId);
+    final chapters = <Chapter>[
+      for (final chapter in snapshot.chaptersIn(subjectId))
+        if (!chapter.createdAt.isAfter(asOf)) chapter,
+    ];
     if (chapters.isEmpty) return 0;
 
     var total = 0.0;
     for (final chapter in chapters) {
-      final lessons = snapshot.lessonsIn(chapter.id);
+      final lessons = <Lesson>[
+        for (final lesson in snapshot.lessonsIn(chapter.id))
+          if (!lesson.createdAt.isAfter(asOf)) lesson,
+      ];
       if (lessons.isEmpty) {
         continue; // contributes 0
       }
