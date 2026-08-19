@@ -189,3 +189,19 @@ class ScheduledExams extends Table {
 
   DateTimeColumn get createdAt => dateTime()();
 }
+
+/// Junction table linking scheduled exams to the specific chapters being tested.
+///
+/// Allows a scheduled exam to cover multiple chapters, and a chapter to appear
+/// on multiple scheduled exams. Used to highlight decayed lessons within the
+/// exam's scope during preparation.
+@DataClassName('ScheduledExamChapterRow')
+class ScheduledExamChapters extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  IntColumn get scheduledExamId =>
+      integer().references(ScheduledExams, #id, onDelete: KeyAction.cascade)();
+
+  IntColumn get chapterId =>
+      integer().references(Chapters, #id, onDelete: KeyAction.cascade)();
+}
