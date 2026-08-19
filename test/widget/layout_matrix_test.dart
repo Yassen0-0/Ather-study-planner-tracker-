@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ather/core/l10n/generated/app_localizations.dart';
+import 'package:ather/core/widgets/ather_scaffold.dart';
 
 import '../widget_test.dart';
 
@@ -137,4 +138,121 @@ void main() {
       });
     }
   }
+
+  /// What `AtherScreen`'s list actually costs.
+  ///
+  /// The backlog carried an item saying `ListView(children: children)` "builds
+  /// an element and render object for every row regardless of visibility", and
+  /// that the fix was `ListView.builder`. Both halves are wrong, and these
+  /// tests are the measurement rather than the argument -- so the next person
+  /// to read that item finds a number instead of repeating the work.
+  ///
+  /// `SliverChildListDelegate` inflates only the indices layout asks for. The
+  /// elements and render objects are already lazy. What *is* eager is the
+  /// caller's `children:` list literal, which is built before `AtherScreen` is
+  /// constructed and which `.builder` cannot reach.
+  group('AtherScreen list cost', () {
+    Widget screenOf(int rows) => MaterialApp(
+      localizationsDelegates: L.localizationsDelegates,
+      supportedLocales: L.supportedLocales,
+      locale: const Locale('ar'),
+      home: AtherScreen(
+        header: const AtherHeader(title: 'اختبار'),
+        children: <Widget>[
+          for (var i = 0; i < rows; i++)
+            SizedBox(height: 80, child: Text('صف $i', key: ValueKey<int>(i))),
+        ],
+      ),
+    );
+
+    void phone(WidgetTester tester) {
+      tester.view.physicalSize = const Size(360, 640) * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+    }
+
+    testWidgets('400 rows mount a viewport-worth, not 400', (tester) async {
+      phone(tester);
+      await tester.pumpWidget(screenOf(400));
+      await tester.pumpAndSettle();
+
+      // Measured at 8 on a 360x640 viewport with 80px rows. The assertion is
+      // loose because the exact cache extent is Flutter's business; what it
+      // pins down is the order of magnitude, which is the claim in dispute.
+      expect(
+        tester.widgetList<SizedBox>(find.byType(SizedBox)).length,
+        lessThan(50),
+        reason: 'ListView(children:) is not mounting lazily after all -- if '
+            'this ever fails, the scroll-performance item is real and '
+            'AtherScreen needs a builder API',
+      );
+      expect(find.byKey(const ValueKey<int>(0)), findsOneWidget);
+    });
+
+    testWidgets('a row far down the list mounts when scrolled to', (
+      tester,
+    ) async {
+      phone(tester);
+      await tester.pumpWidget(screenOf(400));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<int>(120)), findsNothing);
+
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey<int>(120)),
+        400,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey<int>(120)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a list shorter than the viewport shows every row', (
+      tester,
+    ) async {
+      // Most screens in this app are three cards, not four hundred.
+      phone(tester);
+      await tester.pumpWidget(screenOf(3));
+      await tester.pumpAndSettle();
+
+      for (var i = 0; i < 3; i++) {
+        expect(find.byKey(ValueKey<int>(i)), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the eager cost is the caller list, not the ListView', (
+      tester,
+    ) async {
+      // The half of the item that is real, isolated. `AtherScreen` takes a
+      // `List<Widget>`, so every row's widget object is constructed before the
+      // list is handed over -- 400 of them here, whichever ListView follows.
+      // Fixing that means changing this API and every screen that calls it.
+      phone(tester);
+      var constructed = 0;
+      Widget row(int i) {
+        constructed++;
+        return SizedBox(height: 80, child: Text('صف $i'));
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: L.localizationsDelegates,
+          supportedLocales: L.supportedLocales,
+          locale: const Locale('ar'),
+          home: AtherScreen(
+            header: const AtherHeader(title: 'اختبار'),
+            children: <Widget>[for (var i = 0; i < 400; i++) row(i)],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(constructed, 400);
+      expect(
+        tester.widgetList<SizedBox>(find.byType(SizedBox)).length,
+        lessThan(50),
+      );
+    });
+  });
 }
