@@ -1,3 +1,6 @@
+import '../entities/chapter.dart';
+import '../entities/exam_entry.dart';
+import '../entities/lesson.dart';
 import '../entities/mastery.dart';
 import '../entities/study_snapshot.dart';
 import 'mastery_calculator.dart';
@@ -111,7 +114,7 @@ abstract final class InsightsGenerator {
     var bestDelta = 0.0;
 
     for (final subject in snapshot.activeSubjects) {
-      final before = _subjectMasteryAsOf(snapshot, subject.id, cutoff);
+      final before = subjectMasteryAsOf(snapshot, subject.id, cutoff);
       // A subject with no exam history before the window has nothing to improve
       // *from* -- reporting "up 90%" on a first-ever exam is meaningless.
       if (before <= 0) continue;
@@ -214,18 +217,46 @@ abstract final class InsightsGenerator {
     }
   }
 
-  /// Subject mastery recomputed from only the exams that existed at [asOf].
-  static double _subjectMasteryAsOf(
+  /// Subject mastery as the student would have seen it on [asOf].
+  ///
+  /// Shared with [MasteryTrends]: a trajectory is this same figure sampled at a
+  /// series of past moments, and computing it two ways would let the chart and
+  /// the "you improved" insight disagree about the same student.
+  ///
+  /// **The curriculum is rewound too, not just the exams.** Filtering exams by
+  /// date while dividing by *today's* lesson count reports every lesson the
+  /// student had not created yet as a lesson they scored zero on. The bias is
+  /// small across a 30-day insight window and dominates across a whole
+  /// history, which is exactly what the trajectory chart asks for:
+  ///
+  /// A student with one lesson scores 80% in January, and the app shows the
+  /// subject at 80% that day. By June they have ten lessons and 80% on every
+  /// one, so the subject still reads 80%. Sampled with today's roster, the
+  /// January point comes out `(80 + 0x9) / 10` = **8%** -- and the chart draws
+  /// a line climbing from 8 to 80 for a student who has been flat for five
+  /// months, with a velocity to match. It invents progress, for every student
+  /// who adds lessons over time, which is all of them.
+  ///
+  /// So chapters and lessons are filtered by `createdAt` on the same boundary
+  /// as the exams. The reading is then checkable against what the student
+  /// actually saw, which is the only thing that makes it worth showing.
+  static double subjectMasteryAsOf(
     StudySnapshot snapshot,
     int subjectId,
     DateTime asOf,
   ) {
-    final chapters = snapshot.chaptersIn(subjectId);
+    final chapters = <Chapter>[
+      for (final chapter in snapshot.chaptersIn(subjectId))
+        if (!chapter.createdAt.isAfter(asOf)) chapter,
+    ];
     if (chapters.isEmpty) return 0;
 
     var total = 0.0;
     for (final chapter in chapters) {
-      final lessons = snapshot.lessonsIn(chapter.id);
+      final lessons = <Lesson>[
+        for (final lesson in snapshot.lessonsIn(chapter.id))
+          if (!lesson.createdAt.isAfter(asOf)) lesson,
+      ];
       if (lessons.isEmpty) {
         continue; // contributes 0
       }
@@ -241,4 +272,165 @@ abstract final class InsightsGenerator {
     }
     return total / chapters.length;
   }
+}
+
+/// One point on a subject's score-over-time line.
+final class TrajectoryPoint {
+  const TrajectoryPoint({required this.at, required this.mastery});
+
+  /// The day this reading belongs to. Every exam recorded on that day is
+  /// counted in [mastery]; nothing recorded after it is.
+  final DateTime at;
+
+  final double mastery;
+}
+
+/// A subject's mastery over time, and how fast it is moving.
+final class SubjectTrajectory {
+  const SubjectTrajectory({
+    required this.subjectId,
+    required this.points,
+    required this.velocityPerCycle,
+  });
+
+  final int subjectId;
+
+  /// Oldest first. One point per day the student sat an exam in this subject,
+  /// thinned to [MasteryTrends.maxPoints] if there are more.
+  final List<TrajectoryPoint> points;
+
+  /// Percentage points gained (or lost) per review cycle -- per 30 days, the
+  /// same unit the whole app is built around, so the figure is comparable to
+  /// everything else the student reads here.
+  ///
+  /// Zero for a flat line, and zero when there is nothing to measure across.
+  /// Negative when they are going backwards, which is the case worth showing
+  /// and the reason this is not clamped at zero.
+  final double velocityPerCycle;
+
+  /// A line needs two readings.
+  ///
+  /// One exam is a dot, and a dot has no direction -- drawing a trend through
+  /// it would invent one. The screen shows its existing "not enough data" state
+  /// instead.
+  bool get hasTrend => points.length >= 2;
+
+  double get first => points.isEmpty ? 0 : points.first.mastery;
+  double get last => points.isEmpty ? 0 : points.last.mastery;
+}
+
+/// Score-over-time and mastery-velocity, computed from recorded exams.
+///
+/// Separate from [InsightsGenerator] because it answers a different question --
+/// that one picks the single most worth saying, this one hands back the whole
+/// series -- but it samples through [InsightsGenerator.subjectMasteryAsOf] so
+/// the chart and the insights cannot disagree.
+abstract final class MasteryTrends {
+  /// The most points a trajectory will carry.
+  ///
+  /// A student with two years of weekly exams has around a hundred exam days,
+  /// and a hundred segments in a card 56 pixels tall is a smear rather than a
+  /// line. Thinned evenly, always keeping the first and last reading, so the
+  /// endpoints the velocity is computed from are the endpoints drawn.
+  static const int maxPoints = 12;
+
+  /// Every active subject's trajectory, in the snapshot's subject order.
+  ///
+  /// Subjects with no exams at all are included and come back with no points,
+  /// so the caller can say "not enough data yet" for that subject rather than
+  /// silently dropping it and leaving the student wondering where it went.
+  static List<SubjectTrajectory> forAllSubjects(StudySnapshot snapshot) {
+    return <SubjectTrajectory>[
+      for (final subject in snapshot.activeSubjects)
+        forSubject(snapshot, subject.id),
+    ];
+  }
+
+  static SubjectTrajectory forSubject(StudySnapshot snapshot, int subjectId) {
+    final days = _examDays(snapshot, subjectId);
+
+    if (days.isEmpty) {
+      return SubjectTrajectory(
+        subjectId: subjectId,
+        points: const <TrajectoryPoint>[],
+        velocityPerCycle: 0,
+      );
+    }
+
+    final sampled = _thin(days, maxPoints);
+    final points = <TrajectoryPoint>[
+      for (final day in sampled)
+        TrajectoryPoint(
+          at: day,
+          // End of that day, so an exam sat that morning counts towards the
+          // reading the student sees against that date.
+          mastery: InsightsGenerator.subjectMasteryAsOf(
+            snapshot,
+            subjectId,
+            _endOf(day),
+          ),
+        ),
+    ];
+
+    return SubjectTrajectory(
+      subjectId: subjectId,
+      points: points,
+      velocityPerCycle: velocityOf(points),
+    );
+  }
+
+  /// Change per review cycle across the whole series.
+  ///
+  /// Endpoint-to-endpoint rather than a fitted slope: the student can check
+  /// this against the two ends of the line they are looking at, and a
+  /// least-squares figure that disagrees with the picture would be a number
+  /// they cannot verify. Ather's one rule is that its figures are checkable.
+  ///
+  /// Returns 0 for fewer than two points, and 0 when both readings land on the
+  /// same day -- an interval of no time has no rate, and dividing by it would
+  /// report an infinite one.
+  static double velocityOf(List<TrajectoryPoint> points) {
+    if (points.length < 2) return 0;
+
+    final first = points.first;
+    final last = points.last;
+    // Calendar days, through the review cycle's own helper. **Not**
+    // `difference().inDays`: that is elapsed time, and across the night Egypt
+    // puts its clocks forward a 30-day span measures 29, which would report a
+    // rate 3% too high for half the year. It is the same defect the comment on
+    // `ReviewCycleService.dueAt` exists to prevent, arriving through division
+    // instead of through addition.
+    final days = ReviewCycleService.calendarDaysBetween(first.at, last.at);
+    if (days <= 0) return 0;
+
+    return (last.mastery - first.mastery) / days * kReviewCycleDays;
+  }
+
+  /// The distinct days on which this subject was examined, oldest first.
+  static List<DateTime> _examDays(StudySnapshot snapshot, int subjectId) {
+    final days = <DateTime>{};
+    for (final lesson in snapshot.lessonsInSubject(subjectId)) {
+      for (final ExamEntry exam in snapshot.examsFor(lesson.id)) {
+        final at = exam.createdAt;
+        days.add(DateTime(at.year, at.month, at.day));
+      }
+    }
+    return days.toList()..sort();
+  }
+
+  /// [days] reduced to at most [limit] entries, keeping both endpoints.
+  static List<DateTime> _thin(List<DateTime> days, int limit) {
+    if (days.length <= limit) return days;
+
+    final out = <DateTime>[];
+    // Spread the interior samples evenly across the range; the -1s put the
+    // last sample exactly on the last day rather than one step short of it.
+    for (var i = 0; i < limit; i++) {
+      out.add(days[(i * (days.length - 1) / (limit - 1)).round()]);
+    }
+    return out;
+  }
+
+  static DateTime _endOf(DateTime day) =>
+      DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
 }

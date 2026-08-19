@@ -133,6 +133,29 @@ class AtherScreen extends StatelessWidget {
     // the system inset is, which the list wanted anyway.
     final underBar = MediaQuery.paddingOf(context).bottom;
 
+    // **Still `ListView(children:)`, and deliberately so.** Measured on
+    // 2026-08-19, because the backlog carried an item saying this constructor
+    // "builds an element and render object for every row regardless of
+    // visibility" and that the fix was `ListView.builder`. It does not, and it
+    // is not.
+    //
+    // With 400 rows in a 360x640 viewport:
+    //
+    //   ListView(children:)   400 widgets constructed,  8 elements mounted
+    //   ListView.builder       12 widgets constructed,  8 elements mounted
+    //
+    // `SliverChildListDelegate` inflates only the indices layout asks for, so
+    // the elements and render objects -- where the cost actually is -- are
+    // already lazy. The 400 in the first row is the caller's `children:` list
+    // literal, built before this widget is even constructed. Switching this
+    // line to `.builder` would read from that same already-built list and save
+    // exactly nothing; the measurement is in
+    // `test/widget/layout_matrix_test.dart`.
+    //
+    // The eager half is real, and it is not here: it is `AtherScreen` taking a
+    // `List<Widget>` at all. Making that lazy means changing this API to a
+    // builder and every screen in the app with it -- a much larger change than
+    // the one that was scheduled, and one worth measuring on a device first.
     final body = ListView(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.pageMargin,

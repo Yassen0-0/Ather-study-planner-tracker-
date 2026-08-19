@@ -1734,6 +1734,180 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'إغلاق'**
   String get commonClose;
+
+  /// === Batch A1: data export, chapter report PDF, share card. Appended block, append-only, do not reorder. ===
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير بياناتك'**
+  String get exportTitle;
+
+  /// No description provided for @exportBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'احصل على نسخة من كل ما سجّلته: المواد والأبواب والدروس والامتحانات ودرجات الإتقان، في ملف JSON واحد تقدر تفتحه وتقرأه بنفسك.'**
+  String get exportBody;
+
+  /// No description provided for @exportAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'صدّر وشارك الملف'**
+  String get exportAction;
+
+  /// No description provided for @exportWhereNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف يتفتح في نافذة المشاركة، تختار منها تحفظه فين — درايف أو واتساب أو الملفات. أثر لا يحتفظ بنسخة.'**
+  String get exportWhereNote;
+
+  /// No description provided for @exportErrorFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تجهيز الملف. راجع المساحة الفاضية على الجهاز.'**
+  String get exportErrorFile;
+
+  /// No description provided for @exportErrorShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر فتح نافذة المشاركة'**
+  String get exportErrorShare;
+
+  /// No description provided for @chapterReportExport.
+  ///
+  /// In ar, this message translates to:
+  /// **'صدّر التقرير PDF'**
+  String get chapterReportExport;
+
+  /// No description provided for @chapterReportExportDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتجهّز التقرير'**
+  String get chapterReportExportDone;
+
+  /// No description provided for @chapterReportExportError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تجهيز ملف PDF'**
+  String get chapterReportExportError;
+
+  /// No description provided for @shareCardAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'شارك تقدّمك'**
+  String get shareCardAction;
+
+  /// No description provided for @shareCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إتقاني في أثر'**
+  String get shareCardTitle;
+
+  /// No description provided for @shareCardOverall.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإتقان العام'**
+  String get shareCardOverall;
+
+  /// No description provided for @shareCardLessonsAbove.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count,plural, =0{لا توجد دروس متقنة بعد} =1{درس واحد فوق حد الإتقان} =2{درسان فوق حد الإتقان} few{{count} دروس فوق حد الإتقان} other{{count} درساً فوق حد الإتقان}}'**
+  String shareCardLessonsAbove(int count);
+
+  /// No description provided for @shareCardError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تجهيز صورة التقدّم'**
+  String get shareCardError;
+
+  /// No description provided for @reviewNotificationEarlyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترب موعد مراجعة درس {lesson} في {chapter}'**
+  String reviewNotificationEarlyBody(String lesson, String chapter);
+
+  /// No description provided for @analyticsTrajectory.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسار درجاتك'**
+  String get analyticsTrajectory;
+
+  /// No description provided for @analyticsVelocity.
+  ///
+  /// In ar, this message translates to:
+  /// **'{value} نقطة لكل دورة مراجعة'**
+  String analyticsVelocity(String value);
+
+  /// No description provided for @analyticsVelocityFlat.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثابت، بلا تغيّر'**
+  String get analyticsVelocityFlat;
+
+  /// No description provided for @authVerificationSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعتنالك رابط تأكيد على بريدك'**
+  String get authVerificationSent;
+
+  /// No description provided for @authEmailUnverified.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتم تأكيده'**
+  String get authEmailUnverified;
+
+  /// No description provided for @authResendVerification.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة إرسال رابط التأكيد'**
+  String get authResendVerification;
+
+  /// No description provided for @authVerificationTooSoon.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعتنا رابط للتو. استنى شوية وحاول تاني.'**
+  String get authVerificationTooSoon;
+
+  /// No description provided for @authVerificationNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.'**
+  String get authVerificationNote;
+
+  /// No description provided for @subjectTemplateAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف أبواب المنهج'**
+  String get subjectTemplateAdd;
+
+  /// No description provided for @subjectTemplateCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{باباً واحداً} =2{بابين} few{{count} أبواب} other{{count} باباً}}'**
+  String subjectTemplateCount(int count);
+
+  /// No description provided for @subjectTemplateAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت إضافة {count}'**
+  String subjectTemplateAdded(String count);
+
+  /// No description provided for @subjectTemplateNothingNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل أبواب المنهج موجودة عندك بالفعل'**
+  String get subjectTemplateNothingNew;
+
+  /// No description provided for @subjectTemplateNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك.'**
+  String get subjectTemplateNote;
+
+  /// No description provided for @authVerificationNotSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتعمل حسابك. رابط التأكيد ما اتبعتش — تقدر تبعته من صفحة ملفك.'**
+  String get authVerificationNotSent;
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

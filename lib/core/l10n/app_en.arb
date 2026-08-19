@@ -340,5 +340,55 @@
   "commonNext": "Next",
   "commonBack": "Back",
   "commonEdit": "Edit",
-  "commonClose": "Close"
+  "commonClose": "Close",
+
+  "exportTitle": "Export your data",
+  "@exportTitle": {
+    "description": "=== Batch A1: data export, chapter report PDF, share card. Appended block, append-only, do not reorder. ==="
+  },
+  "exportBody": "Get a copy of everything you have recorded — subjects, chapters, lessons, exams and mastery scores — in one JSON file you can open and read yourself.",
+  "exportAction": "Export and share the file",
+  "exportWhereNote": "The file opens in the share sheet, so you choose where it goes — Drive, WhatsApp, Files. Ather keeps no copy.",
+  "exportErrorFile": "The file could not be prepared. Check the free space on your device.",
+  "exportErrorShare": "The share sheet would not open",
+
+  "chapterReportExport": "Export report as PDF",
+  "chapterReportExportDone": "Report ready",
+  "chapterReportExportError": "The PDF could not be prepared",
+
+  "shareCardAction": "Share your progress",
+  "shareCardTitle": "My mastery on Ather",
+  "shareCardOverall": "Overall mastery",
+  "shareCardLessonsAbove": "{count,plural, =0{No lessons mastered yet} =1{1 lesson above the mastery threshold} other{{count} lessons above the mastery threshold}}",
+  "shareCardError": "The progress image could not be prepared",
+
+  "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",
+  "reviewNotificationEarlyBody": "{lesson} in {chapter} is due for review soon",
+
+  "@@x_comment_B2": "=== Batch B2: analytics trends ===",
+  "analyticsTrajectory": "Score trajectory",
+  "analyticsVelocity": "{value} points per review cycle",
+  "analyticsVelocityFlat": "Holding steady",
+
+  "@@x_comment_B3": "=== Batch B3: email verification ===",
+  "authVerificationSent": "We sent a confirmation link to your email",
+  "authEmailUnverified": "Not confirmed",
+  "authResendVerification": "Resend confirmation link",
+  "authVerificationTooSoon": "A link just went out. Give it a moment, then try again.",
+  "authVerificationNote": "Confirming your email is what lets you recover your account if you forget your password. The app works either way.",
+
+  "@@x_comment_B4": "=== Batch B4: curriculum templates ===",
+  "subjectTemplateAdd": "Add the standard chapters",
+  "subjectTemplateCount": "{count, plural, =1{1 chapter} other{{count} chapters}}",
+  "@subjectTemplateCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "subjectTemplateAdded": "Added {count}",
+  "subjectTemplateNothingNew": "You already have every standard chapter",
+  "subjectTemplateNote": "The usual chapters for this subject. Edit or delete them like any chapter you typed yourself. Nothing you already have is changed or removed.",
+
+  "@@x_comment_integration": "=== Integration review fixes ===",
+  "authVerificationNotSent": "Your account is ready. The confirmation link did not go out — you can send it from your profile."
 }

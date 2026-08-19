@@ -165,7 +165,19 @@ void main() {
     expect(backup.stored!.tasks, hasLength(1));
   });
 
-  test('a genuinely empty device uploads nothing', () async {
+  test('a genuinely empty device uploads its emptiness', () async {
+    // **This assertion is the reverse of what it used to be**, and the reversal
+    // is the fix. `flush` used to return early on
+    // `snapshot.isEmpty && tasks.isEmpty`, so a student who deleted everything
+    // never told the cloud. The cloud kept the copy from before the delete, and
+    // `BackupSyncGate._restoreIfEmpty` handed it straight back on the next
+    // device they signed into -- so the delete appeared to work and then
+    // silently undid itself.
+    //
+    // The guard existed to avoid uploading during the loading state. Reading
+    // through `.future` already handles that: by the time `flush` gets here,
+    // both streams have emitted, and "empty" is an answer rather than a
+    // not-yet.
     final backup = FakeBackupRepository();
     final container = await boot(
       backup: backup,
@@ -175,7 +187,48 @@ void main() {
 
     await container.read(backupSyncProvider.notifier).flush();
 
-    expect(backup.uploadCount, 0);
+    expect(backup.uploadCount, 1);
+    expect(backup.stored!.isEmpty, isTrue);
+  });
+
+  test('deleting everything replaces the cloud copy rather than leaving it',
+      () async {
+    // The whole failure, end to end: a full record goes up, the student clears
+    // the device, and the second flush has to overwrite what the first one
+    // wrote. If the cloud still holds chapters after this, the next device to
+    // sign in gets the deleted data back.
+    final backup = FakeBackupRepository();
+    final snapshots = StreamController<StudySnapshot>();
+    final tasks = StreamController<List<DailyTask>>();
+    addTearDown(snapshots.close);
+    addTearDown(tasks.close);
+
+    final container = await boot(
+      backup: backup,
+      snapshots: snapshots.stream,
+      tasks: tasks.stream,
+    );
+
+    snapshots.add(snapshotWithChapter());
+    tasks.add(<DailyTask>[task()]);
+    await container.read(backupSyncProvider.notifier).flush();
+    expect(backup.stored!.chapters, hasLength(1));
+
+    snapshots.add(const StudySnapshot.empty());
+    tasks.add(const <DailyTask>[]);
+    // Let the two streams actually deliver. `.future` on a provider that has
+    // already emitted completes with what it holds *now*, so flushing in the
+    // same turn as the `add` would upload the record the student just cleared
+    // and prove nothing.
+    await Future<void>.delayed(Duration.zero);
+    await container.read(backupSyncProvider.notifier).flush();
+
+    expect(backup.uploadCount, 2);
+    expect(
+      backup.stored!.isEmpty,
+      isTrue,
+      reason: 'the cloud still holds the record the student deleted',
+    );
   });
 
   test('nothing leaves the phone while the device claims another uid', () async {

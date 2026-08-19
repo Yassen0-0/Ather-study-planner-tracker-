@@ -41,7 +41,14 @@ final class StudyBackup {
   /// this file: it would ignore the key it does not know, then try to insert
   /// chapters under subject ids that only exist on the phone that wrote them.
   /// A refusal a student can read beats a restore that half-lands.
-  static const int formatVersion = 2;
+  ///
+  /// 3 added the `checksum` field beside the payload in Firestore. **The shape
+  /// of this map did not change**, which is the whole point: a version 2
+  /// document still parses here, and `FirestoreBackupRepository.download`
+  /// verifies the checksum only when one is present. Students have version 2
+  /// blobs in the cloud right now, and refusing them would be data loss dressed
+  /// up as a safety check.
+  static const int formatVersion = 3;
 
   /// Empty in a version 1 backup, which is not a loss: every subject that could
   /// exist when those were written is seeded on the receiving device already.

@@ -120,7 +120,21 @@ class BackupSyncNotifier extends Notifier<SyncState> {
     // nothing renders off this path.
     final snapshot = await ref.read(snapshotProvider.future);
     final tasks = await ref.read(tasksProvider.future);
-    if (snapshot.isEmpty && tasks.isEmpty) return;
+
+    // **There is deliberately no empty-state guard here.**
+    //
+    // There used to be -- `if (snapshot.isEmpty && tasks.isEmpty) return;` --
+    // and it was written to defend against the loading-state bug described
+    // above. The switch to `.future` fixed that bug properly: by this line both
+    // streams have emitted, so "empty" means the student's record really is
+    // empty rather than not yet known.
+    //
+    // Left in place, it meant a student who deleted everything never uploaded
+    // that fact. The cloud kept the copy from before the delete, and
+    // `BackupSyncGate._restoreIfEmpty` handed it back on the next device the
+    // student signed into -- so deleting their data locally looked like it had
+    // worked and then quietly undid itself. Emptiness is a state worth
+    // recording, and it is the one state the old guard refused to record.
 
     // The account can change while those two awaits are in flight, and an upload
     // is addressed by uid. Re-check rather than trust the value read above.

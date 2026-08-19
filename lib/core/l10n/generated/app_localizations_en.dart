@@ -945,4 +945,123 @@ class LEn extends L {
 
   @override
   String get commonClose => 'Close';
+
+  @override
+  String get exportTitle => 'Export your data';
+
+  @override
+  String get exportBody =>
+      'Get a copy of everything you have recorded — subjects, chapters, lessons, exams and mastery scores — in one JSON file you can open and read yourself.';
+
+  @override
+  String get exportAction => 'Export and share the file';
+
+  @override
+  String get exportWhereNote =>
+      'The file opens in the share sheet, so you choose where it goes — Drive, WhatsApp, Files. Ather keeps no copy.';
+
+  @override
+  String get exportErrorFile =>
+      'The file could not be prepared. Check the free space on your device.';
+
+  @override
+  String get exportErrorShare => 'The share sheet would not open';
+
+  @override
+  String get chapterReportExport => 'Export report as PDF';
+
+  @override
+  String get chapterReportExportDone => 'Report ready';
+
+  @override
+  String get chapterReportExportError => 'The PDF could not be prepared';
+
+  @override
+  String get shareCardAction => 'Share your progress';
+
+  @override
+  String get shareCardTitle => 'My mastery on Ather';
+
+  @override
+  String get shareCardOverall => 'Overall mastery';
+
+  @override
+  String shareCardLessonsAbove(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lessons above the mastery threshold',
+      one: '1 lesson above the mastery threshold',
+      zero: 'No lessons mastered yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareCardError => 'The progress image could not be prepared';
+
+  @override
+  String reviewNotificationEarlyBody(String lesson, String chapter) {
+    return '$lesson in $chapter is due for review soon';
+  }
+
+  @override
+  String get analyticsTrajectory => 'Score trajectory';
+
+  @override
+  String analyticsVelocity(String value) {
+    return '$value points per review cycle';
+  }
+
+  @override
+  String get analyticsVelocityFlat => 'Holding steady';
+
+  @override
+  String get authVerificationSent =>
+      'We sent a confirmation link to your email';
+
+  @override
+  String get authEmailUnverified => 'Not confirmed';
+
+  @override
+  String get authResendVerification => 'Resend confirmation link';
+
+  @override
+  String get authVerificationTooSoon =>
+      'A link just went out. Give it a moment, then try again.';
+
+  @override
+  String get authVerificationNote =>
+      'Confirming your email is what lets you recover your account if you forget your password. The app works either way.';
+
+  @override
+  String get subjectTemplateAdd => 'Add the standard chapters';
+
+  @override
+  String subjectTemplateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count chapters',
+      one: '1 chapter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subjectTemplateAdded(String count) {
+    return 'Added $count';
+  }
+
+  @override
+  String get subjectTemplateNothingNew =>
+      'You already have every standard chapter';
+
+  @override
+  String get subjectTemplateNote =>
+      'The usual chapters for this subject. Edit or delete them like any chapter you typed yourself. Nothing you already have is changed or removed.';
+
+  @override
+  String get authVerificationNotSent =>
+      'Your account is ready. The confirmation link did not go out — you can send it from your profile.';
 }

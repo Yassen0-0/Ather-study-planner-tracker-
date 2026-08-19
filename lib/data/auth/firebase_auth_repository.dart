@@ -18,8 +18,16 @@ final class FirebaseAuthRepository implements AuthRepository {
 
   bool _googleInitialised = false;
 
+  /// `userChanges`, not `authStateChanges`.
+  ///
+  /// The latter fires only on sign-in and sign-out, so a `reload()` that
+  /// discovers the student has just verified their address would change
+  /// nothing anyone could see -- the banner asking them to verify would stay
+  /// up after they had. `userChanges` also emits on reload and on profile
+  /// updates. It emits more often, but [Account] compares by value, so an
+  /// unchanged account does not propagate past the provider.
   @override
-  Stream<Account?> watchAccount() => _auth.authStateChanges().map(_toAccount);
+  Stream<Account?> watchAccount() => _auth.userChanges().map(_toAccount);
 
   @override
   Account? get currentAccount => _toAccount(_auth.currentUser);
@@ -32,6 +40,7 @@ final class FirebaseAuthRepository implements AuthRepository {
       // cannot exist without one. The fallback is defensive, not expected.
       email: user.email ?? '',
       displayName: user.displayName,
+      isEmailVerified: user.emailVerified,
     );
   }
 
@@ -50,15 +59,30 @@ final class FirebaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> register({
+  Future<bool> register({
     required String email,
     required String password,
   }) async {
     try {
-      await _auth.createUserWithEmailAndPassword(
+      final credential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
+      // Best-effort, and deliberately not allowed to fail the registration.
+      // The account exists at this point; throwing here would report a *failed
+      // registration* for a student who now has a working account, and their
+      // retry would come back "email already in use". The address can be
+      // verified later from the profile screen, which is where the resend
+      // lives.
+      //
+      // The outcome is **reported** rather than swallowed, so the screen can
+      // stop claiming a mail is in an inbox it never reached.
+      try {
+        await credential.user?.sendEmailVerification();
+        return true;
+      } catch (_) {
+        return false;
+      }
     } on fb.FirebaseAuthException catch (e) {
       throw AuthException(_map(e));
     } catch (_) {
@@ -109,6 +133,36 @@ final class FirebaseAuthRepository implements AuthRepository {
       throw AuthException(_map(e));
     } catch (_) {
       throw const AuthException(AuthFailure.unknown);
+    }
+  }
+
+  @override
+  Future<void> sendEmailVerification() async {
+    final user = _auth.currentUser;
+    if (user == null) throw const AuthException(AuthFailure.unknown);
+    // Nothing to send. Reported as success: the student's goal is "this
+    // address is verified", and it already is.
+    if (user.emailVerified) return;
+
+    try {
+      await user.sendEmailVerification();
+    } on fb.FirebaseAuthException catch (e) {
+      throw AuthException(_map(e));
+    } catch (_) {
+      throw const AuthException(AuthFailure.unknown);
+    }
+  }
+
+  @override
+  Future<void> reloadAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    try {
+      await user.reload();
+    } catch (_) {
+      // Offline is the normal case for this app, and a refresh that could not
+      // reach the server is not an error worth showing: the cached answer is
+      // still the best one available.
     }
   }
 

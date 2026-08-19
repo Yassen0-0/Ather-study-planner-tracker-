@@ -454,5 +454,74 @@
   "commonNext": "التالي",
   "commonBack": "رجوع",
   "commonEdit": "تعديل",
-  "commonClose": "إغلاق"
+  "commonClose": "إغلاق",
+
+  "exportTitle": "تصدير بياناتك",
+  "@exportTitle": {
+    "description": "=== Batch A1: data export, chapter report PDF, share card. Appended block, append-only, do not reorder. ==="
+  },
+  "exportBody": "احصل على نسخة من كل ما سجّلته: المواد والأبواب والدروس والامتحانات ودرجات الإتقان، في ملف JSON واحد تقدر تفتحه وتقرأه بنفسك.",
+  "exportAction": "صدّر وشارك الملف",
+  "exportWhereNote": "الملف يتفتح في نافذة المشاركة، تختار منها تحفظه فين — درايف أو واتساب أو الملفات. أثر لا يحتفظ بنسخة.",
+  "exportErrorFile": "تعذّر تجهيز الملف. راجع المساحة الفاضية على الجهاز.",
+  "exportErrorShare": "تعذّر فتح نافذة المشاركة",
+
+  "chapterReportExport": "صدّر التقرير PDF",
+  "chapterReportExportDone": "اتجهّز التقرير",
+  "chapterReportExportError": "تعذّر تجهيز ملف PDF",
+
+  "shareCardAction": "شارك تقدّمك",
+  "shareCardTitle": "إتقاني في أثر",
+  "shareCardOverall": "الإتقان العام",
+  "shareCardLessonsAbove": "{count,plural, =0{لا توجد دروس متقنة بعد} =1{درس واحد فوق حد الإتقان} =2{درسان فوق حد الإتقان} few{{count} دروس فوق حد الإتقان} other{{count} درساً فوق حد الإتقان}}",
+  "shareCardError": "تعذّر تجهيز صورة التقدّم",
+  "@shareCardLessonsAbove": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",
+  "reviewNotificationEarlyBody": "اقترب موعد مراجعة درس {lesson} في {chapter}",
+  "@reviewNotificationEarlyBody": {
+    "placeholders": {
+      "lesson": { "type": "String" },
+      "chapter": { "type": "String" }
+    }
+  },
+
+  "@@x_comment_B2": "=== Batch B2: analytics trends ===",
+  "analyticsTrajectory": "مسار درجاتك",
+  "analyticsVelocity": "{value} نقطة لكل دورة مراجعة",
+  "@analyticsVelocity": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "analyticsVelocityFlat": "ثابت، بلا تغيّر",
+
+  "@@x_comment_B3": "=== Batch B3: email verification ===",
+  "authVerificationSent": "بعتنالك رابط تأكيد على بريدك",
+  "authEmailUnverified": "لم يتم تأكيده",
+  "authResendVerification": "إعادة إرسال رابط التأكيد",
+  "authVerificationTooSoon": "بعتنا رابط للتو. استنى شوية وحاول تاني.",
+  "authVerificationNote": "تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.",
+
+  "@@x_comment_B4": "=== Batch B4: curriculum templates ===",
+  "subjectTemplateAdd": "أضف أبواب المنهج",
+  "subjectTemplateCount": "{count, plural, =1{باباً واحداً} =2{بابين} few{{count} أبواب} other{{count} باباً}}",
+  "@subjectTemplateCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "subjectTemplateAdded": "تمت إضافة {count}",
+  "@subjectTemplateAdded": {
+    "placeholders": {
+      "count": { "type": "String" }
+    }
+  },
+  "subjectTemplateNothingNew": "كل أبواب المنهج موجودة عندك بالفعل",
+  "subjectTemplateNote": "أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك.",
+
+  "@@x_comment_integration": "=== Integration review fixes ===",
+  "authVerificationNotSent": "اتعمل حسابك. رابط التأكيد ما اتبعتش — تقدر تبعته من صفحة ملفك."
 }

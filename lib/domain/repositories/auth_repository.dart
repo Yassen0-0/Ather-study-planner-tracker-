@@ -59,11 +59,41 @@ abstract interface class AuthRepository {
 
   Future<void> signIn({required String email, required String password});
 
-  Future<void> register({required String email, required String password});
+  /// Returns whether the verification mail was actually sent.
+  ///
+  /// **Not `void`, and the return value is not decoration.** The send is
+  /// best-effort -- the account exists whether or not the mail goes out, so a
+  /// failure to send must not fail the registration. But the screen used to
+  /// say "we sent you a confirmation link" on every successful `register`,
+  /// which is a statement about something it had no way to know. Several
+  /// students registering from one school's IP is enough for Firebase to
+  /// rate-limit the send; the account is created, the mail is not, and the
+  /// student is told to go and look for it.
+  Future<bool> register({required String email, required String password});
 
   Future<void> signInWithGoogle();
 
   Future<void> sendPasswordReset(String email);
+
+  /// Sends (or re-sends) the address-verification link to the current account.
+  ///
+  /// Separate from [register], which already sends one, because the first mail
+  /// gets lost, filtered, or opened on a phone the student no longer has. A
+  /// verification a student cannot re-trigger is a dead end.
+  ///
+  /// Throws [AuthFailure.tooManyRequests] when Firebase rate-limits the resend.
+  /// That is a "wait a moment", not a failure of the account, and the caller
+  /// must say so rather than reporting a generic error.
+  Future<void> sendEmailVerification();
+
+  /// Re-reads the account from the server.
+  ///
+  /// Verification happens *outside* the app -- the student opens their inbox
+  /// and taps a link -- so nothing in the running app would otherwise notice.
+  /// Called when a screen that shows the verified state opens, so returning
+  /// from the inbox shows the truth rather than a stale prompt to do something
+  /// already done.
+  Future<void> reloadAccount();
 
   Future<void> signOut();
 

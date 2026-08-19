@@ -78,10 +78,25 @@ class DriftStudyRepository implements StudyRepository {
 
     return StudySnapshot(
       subjects: subjects,
+      // **The id is a tie-break, not decoration.** `List.sort` is only stable
+      // below 32 elements -- above that Dart switches to dual-pivot quicksort
+      // and reorders equal keys arbitrarily. Rows sharing a `createdAt` are not
+      // a rarity here: `addChapters` writes a whole curriculum template under
+      // one timestamp, so a student with four templates plus three chapters of
+      // their own crosses 32 and finds the first two chapters of Physics
+      // swapped. Verified by reproducing Dart's sort at n=31 (stable) and n=34
+      // (not). Ids ascend with insertion order, so they order a tie the same
+      // way the clock would have.
       chapters: chapterRows.map(_toChapter).toList()
-        ..sort((a, b) => a.createdAt.compareTo(b.createdAt)),
+        ..sort((a, b) {
+          final byDate = a.createdAt.compareTo(b.createdAt);
+          return byDate != 0 ? byDate : a.id.compareTo(b.id);
+        }),
       lessons: lessonRows.map(_toLesson).toList()
-        ..sort((a, b) => a.createdAt.compareTo(b.createdAt)),
+        ..sort((a, b) {
+          final byDate = a.createdAt.compareTo(b.createdAt);
+          return byDate != 0 ? byDate : a.id.compareTo(b.id);
+        }),
       exams: <ExamEntry>[
         for (final row in examRows)
           _toExam(row, groupsByExam[row.id] ?? const <ExamQuestionGroup>[]),
@@ -179,6 +194,98 @@ class DriftStudyRepository implements StudyRepository {
             createdAt: at,
           ),
         );
+  }
+
+  /// How two chapter names are judged to be the same one.
+  ///
+  /// A byte-exact comparison is the wrong test for this feature, and Arabic is
+  /// why. The promise is "applying a template never duplicates a chapter you
+  /// already have", and a student types their chapter names by hand on a phone
+  /// keyboard. The distinctions Arabic writing tolerates and this comparison
+  /// must therefore ignore:
+  ///
+  /// - **Ta marbuta.** A student types `الوراثه`; the template says `الوراثة`.
+  ///   Writing the final `ه` for `ة` is ordinary, not a mistake.
+  /// - **Hamza on alef.** `الاخراج` against `الإخراج`. The hamza forms are two
+  ///   extra taps on most Arabic IMEs and are routinely skipped.
+  /// - **Alef maqsura.** `المبنى` against `المبني`.
+  /// - **Tatweel and diacritics**, which are decoration and carry no meaning
+  ///   here.
+  /// - **Internal runs of whitespace**, and letter case for the English
+  ///   subject -- `unit 1` against `Unit 1`.
+  ///
+  /// Every one of those produced a second row for the same chapter, with the
+  /// student's lessons hanging off only one of them.
+  ///
+  /// **This key is used for comparison only.** What gets stored is the text as
+  /// written -- the student's own spelling if they got there first, the
+  /// template's if they did not. Normalising what is *saved* would rewrite a
+  /// name the student chose.
+  static String _matchKey(String name) {
+    final buffer = StringBuffer();
+    var pendingSpace = false;
+
+    for (final rune in name.trim().toLowerCase().runes) {
+      // Tatweel and the combining marks: dropped outright.
+      if (rune == 0x0640 || (rune >= 0x064B && rune <= 0x0652)) continue;
+
+      final folded = switch (rune) {
+        0x0623 || 0x0625 || 0x0622 || 0x0671 => 0x0627, // أ إ آ ٱ -> ا
+        0x0629 => 0x0647, // ة -> ه
+        0x0649 => 0x064A, // ى -> ي
+        _ => rune,
+      };
+
+      if (folded == 0x20 || folded == 0x09 || folded == 0x0A) {
+        pendingSpace = true;
+        continue;
+      }
+      if (pendingSpace && buffer.isNotEmpty) buffer.writeCharCode(0x20);
+      pendingSpace = false;
+      buffer.writeCharCode(folded);
+    }
+    return buffer.toString();
+  }
+
+  @override
+  Future<int> addChapters({
+    required int subjectId,
+    required List<String> names,
+    required DateTime at,
+  }) {
+    return _db.transaction(() async {
+      // Read inside the transaction, not before it: two taps in quick
+      // succession would otherwise both see the same "already there" set and
+      // both insert, which is the duplicate this exists to prevent.
+      final existing = await (_db.select(
+        _db.chapters,
+      )..where((t) => t.subjectId.equals(subjectId))).get();
+      final taken = <String>{
+        for (final row in existing) _matchKey(row.name),
+      };
+
+      var created = 0;
+      for (final name in names) {
+        final trimmed = name.trim();
+        // Empty names are skipped rather than rejected: a template is data, and
+        // a stray blank line in it should not cost the student the other
+        // nineteen chapters.
+        if (trimmed.isEmpty) continue;
+        if (!taken.add(_matchKey(trimmed))) continue;
+
+        await _db
+            .into(_db.chapters)
+            .insert(
+              ChaptersCompanion.insert(
+                subjectId: subjectId,
+                name: trimmed,
+                createdAt: at,
+              ),
+            );
+        created++;
+      }
+      return created;
+    });
   }
 
   @override

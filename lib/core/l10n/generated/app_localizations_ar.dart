@@ -950,4 +950,125 @@ class LAr extends L {
 
   @override
   String get commonClose => 'إغلاق';
+
+  @override
+  String get exportTitle => 'تصدير بياناتك';
+
+  @override
+  String get exportBody =>
+      'احصل على نسخة من كل ما سجّلته: المواد والأبواب والدروس والامتحانات ودرجات الإتقان، في ملف JSON واحد تقدر تفتحه وتقرأه بنفسك.';
+
+  @override
+  String get exportAction => 'صدّر وشارك الملف';
+
+  @override
+  String get exportWhereNote =>
+      'الملف يتفتح في نافذة المشاركة، تختار منها تحفظه فين — درايف أو واتساب أو الملفات. أثر لا يحتفظ بنسخة.';
+
+  @override
+  String get exportErrorFile =>
+      'تعذّر تجهيز الملف. راجع المساحة الفاضية على الجهاز.';
+
+  @override
+  String get exportErrorShare => 'تعذّر فتح نافذة المشاركة';
+
+  @override
+  String get chapterReportExport => 'صدّر التقرير PDF';
+
+  @override
+  String get chapterReportExportDone => 'اتجهّز التقرير';
+
+  @override
+  String get chapterReportExportError => 'تعذّر تجهيز ملف PDF';
+
+  @override
+  String get shareCardAction => 'شارك تقدّمك';
+
+  @override
+  String get shareCardTitle => 'إتقاني في أثر';
+
+  @override
+  String get shareCardOverall => 'الإتقان العام';
+
+  @override
+  String shareCardLessonsAbove(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count درساً فوق حد الإتقان',
+      few: '$count دروس فوق حد الإتقان',
+      two: 'درسان فوق حد الإتقان',
+      one: 'درس واحد فوق حد الإتقان',
+      zero: 'لا توجد دروس متقنة بعد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareCardError => 'تعذّر تجهيز صورة التقدّم';
+
+  @override
+  String reviewNotificationEarlyBody(String lesson, String chapter) {
+    return 'اقترب موعد مراجعة درس $lesson في $chapter';
+  }
+
+  @override
+  String get analyticsTrajectory => 'مسار درجاتك';
+
+  @override
+  String analyticsVelocity(String value) {
+    return '$value نقطة لكل دورة مراجعة';
+  }
+
+  @override
+  String get analyticsVelocityFlat => 'ثابت، بلا تغيّر';
+
+  @override
+  String get authVerificationSent => 'بعتنالك رابط تأكيد على بريدك';
+
+  @override
+  String get authEmailUnverified => 'لم يتم تأكيده';
+
+  @override
+  String get authResendVerification => 'إعادة إرسال رابط التأكيد';
+
+  @override
+  String get authVerificationTooSoon =>
+      'بعتنا رابط للتو. استنى شوية وحاول تاني.';
+
+  @override
+  String get authVerificationNote =>
+      'تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.';
+
+  @override
+  String get subjectTemplateAdd => 'أضف أبواب المنهج';
+
+  @override
+  String subjectTemplateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count باباً',
+      few: '$count أبواب',
+      two: 'بابين',
+      one: 'باباً واحداً',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String subjectTemplateAdded(String count) {
+    return 'تمت إضافة $count';
+  }
+
+  @override
+  String get subjectTemplateNothingNew => 'كل أبواب المنهج موجودة عندك بالفعل';
+
+  @override
+  String get subjectTemplateNote =>
+      'أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك.';
+
+  @override
+  String get authVerificationNotSent =>
+      'اتعمل حسابك. رابط التأكيد ما اتبعتش — تقدر تبعته من صفحة ملفك.';
 }

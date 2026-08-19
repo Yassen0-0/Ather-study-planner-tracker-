@@ -10,6 +10,7 @@ import 'package:ather/data/repositories/drift_study_repository.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/subject.dart';
+import 'package:ather/domain/services/curriculum_templates.dart';
 
 void main() {
   late AppDatabase db;
@@ -622,16 +623,19 @@ void main() {
   });
 
   group('subjects the student adds', () {
-    test('a new subject lands after the seeded four and keeps its name', () async {
-      final id = await repo.createSubject(name: '  رياضيات  ');
-      final subject = (await repo.readSnapshot()).subjectById(id)!;
+    test(
+      'a new subject lands after the seeded four and keeps its name',
+      () async {
+        final id = await repo.createSubject(name: '  رياضيات  ');
+        final subject = (await repo.readSnapshot()).subjectById(id)!;
 
-      expect(id, 5, reason: 'max(id) + 1 over the seeded 1-4');
-      expect(subject.name, 'رياضيات', reason: 'trimmed on the way in');
-      expect(subject.code, isNull, reason: 'not one of the four');
-      expect(subject.isSeeded, isFalse);
-      expect(subject.sortOrder, 4);
-    });
+        expect(id, 5, reason: 'max(id) + 1 over the seeded 1-4');
+        expect(subject.name, 'رياضيات', reason: 'trimmed on the way in');
+        expect(subject.code, isNull, reason: 'not one of the four');
+        expect(subject.isSeeded, isFalse);
+        expect(subject.sortOrder, 4);
+      },
+    );
 
     test('two subjects added back to back do not collide', () async {
       final first = await repo.createSubject(name: 'رياضيات');
@@ -649,10 +653,7 @@ void main() {
 
       final id = await repo.createSubject(name: 'رياضيات');
       await repo.renameSubject(subjectId: id, name: 'رياضيات بحتة');
-      expect(
-        (await repo.readSnapshot()).subjectById(id)!.name,
-        'رياضيات بحتة',
-      );
+      expect((await repo.readSnapshot()).subjectById(id)!.name, 'رياضيات بحتة');
     });
 
     test('hiding a subject keeps everything under it', () async {
@@ -687,83 +688,93 @@ void main() {
       expect(snap.chapters, hasLength(1));
     });
 
-    test('deleting a subject keeps everything under it, and it comes back', () async {
-      // The claim the recycle bin is built on. An earlier design refused to
-      // delete a subject that had chapters at all, which protected the data and
-      // left a dead end: a subject the student did not take could never be
-      // removed. Delete is a flag now, and this is what makes that honest.
-      final id = await repo.createSubject(name: 'رياضيات');
-      final chapterId = await repo.createChapter(
-        subjectId: id,
-        name: 'باب',
-        at: kSeedInstant,
-      );
-      final lessonId = await repo.createLesson(
-        chapterId: chapterId,
-        name: 'درس',
-        at: kSeedInstant,
-      );
-      await repo.recordExam(
-        lessonId: lessonId,
-        groups: const <DraftQuestionGroup>[
-          DraftQuestionGroup(
-            pointsPerQuestion: 1,
-            questionCount: 4,
-            correctCount: 3,
-          ),
-        ],
-        isReviewExam: false,
-        at: kSeedInstant,
-      );
+    test(
+      'deleting a subject keeps everything under it, and it comes back',
+      () async {
+        // The claim the recycle bin is built on. An earlier design refused to
+        // delete a subject that had chapters at all, which protected the data and
+        // left a dead end: a subject the student did not take could never be
+        // removed. Delete is a flag now, and this is what makes that honest.
+        final id = await repo.createSubject(name: 'رياضيات');
+        final chapterId = await repo.createChapter(
+          subjectId: id,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final lessonId = await repo.createLesson(
+          chapterId: chapterId,
+          name: 'درس',
+          at: kSeedInstant,
+        );
+        await repo.recordExam(
+          lessonId: lessonId,
+          groups: const <DraftQuestionGroup>[
+            DraftQuestionGroup(
+              pointsPerQuestion: 1,
+              questionCount: 4,
+              correctCount: 3,
+            ),
+          ],
+          isReviewExam: false,
+          at: kSeedInstant,
+        );
 
-      await repo.setSubjectDeleted(subjectId: id, at: DateTime(2026, 8, 17));
-      var snap = await repo.readSnapshot();
+        await repo.setSubjectDeleted(subjectId: id, at: DateTime(2026, 8, 17));
+        var snap = await repo.readSnapshot();
 
-      expect(snap.subjectById(id)!.isDeleted, isTrue);
-      expect(snap.activeSubjects.map((s) => s.id), isNot(contains(id)));
-      expect(snap.deletedSubjects.map((s) => s.id), contains(id));
-      // Nothing was destroyed -- that is the entire difference between this
-      // and emptying the bin.
-      expect(snap.chapters, hasLength(1));
-      expect(snap.lessons, hasLength(1));
-      expect(snap.exams, hasLength(1));
+        expect(snap.subjectById(id)!.isDeleted, isTrue);
+        expect(snap.activeSubjects.map((s) => s.id), isNot(contains(id)));
+        expect(snap.deletedSubjects.map((s) => s.id), contains(id));
+        // Nothing was destroyed -- that is the entire difference between this
+        // and emptying the bin.
+        expect(snap.chapters, hasLength(1));
+        expect(snap.lessons, hasLength(1));
+        expect(snap.exams, hasLength(1));
 
-      await repo.setSubjectDeleted(subjectId: id, at: null);
-      snap = await repo.readSnapshot();
+        await repo.setSubjectDeleted(subjectId: id, at: null);
+        snap = await repo.readSnapshot();
 
-      expect(snap.activeSubjects.map((s) => s.id), contains(id));
-      expect(snap.exams, hasLength(1), reason: 'the exam survived the round trip');
-    });
+        expect(snap.activeSubjects.map((s) => s.id), contains(id));
+        expect(
+          snap.exams,
+          hasLength(1),
+          reason: 'the exam survived the round trip',
+        );
+      },
+    );
 
-    test('a deleted subject stops feeding reminders and the review queue', () async {
-      // The hole `activeSubjects` alone left. Three things walk the flat lesson
-      // list rather than descending from subjects, so a subject put away kept
-      // sending reminders carrying its lesson names to a lock screen.
-      final id = await repo.createSubject(name: 'رياضيات');
-      final chapterId = await repo.createChapter(
-        subjectId: id,
-        name: 'باب',
-        at: kSeedInstant,
-      );
-      await repo.createLesson(
-        chapterId: chapterId,
-        name: 'درس مخفي',
-        at: kSeedInstant,
-      );
+    test(
+      'a deleted subject stops feeding reminders and the review queue',
+      () async {
+        // The hole `activeSubjects` alone left. Three things walk the flat lesson
+        // list rather than descending from subjects, so a subject put away kept
+        // sending reminders carrying its lesson names to a lock screen.
+        final id = await repo.createSubject(name: 'رياضيات');
+        final chapterId = await repo.createChapter(
+          subjectId: id,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        await repo.createLesson(
+          chapterId: chapterId,
+          name: 'درس مخفي',
+          at: kSeedInstant,
+        );
 
-      expect((await repo.readSnapshot()).activeLessons, hasLength(1));
+        expect((await repo.readSnapshot()).activeLessons, hasLength(1));
 
-      await repo.setSubjectDeleted(subjectId: id, at: DateTime(2026, 8, 17));
-      expect((await repo.readSnapshot()).activeLessons, isEmpty);
+        await repo.setSubjectDeleted(subjectId: id, at: DateTime(2026, 8, 17));
+        expect((await repo.readSnapshot()).activeLessons, isEmpty);
 
-      await repo.setSubjectDeleted(subjectId: id, at: null);
-      await repo.setSubjectArchived(subjectId: id, at: DateTime(2026, 8, 17));
-      expect(
-        (await repo.readSnapshot()).activeLessons,
-        isEmpty,
-        reason: 'archiving has to silence it too, for the same reason',
-      );
-    });
+        await repo.setSubjectDeleted(subjectId: id, at: null);
+        await repo.setSubjectArchived(subjectId: id, at: DateTime(2026, 8, 17));
+        expect(
+          (await repo.readSnapshot()).activeLessons,
+          isEmpty,
+          reason: 'archiving has to silence it too, for the same reason',
+        );
+      },
+    );
 
     test('emptying the bin is the one thing that actually destroys', () async {
       final id = await repo.createSubject(name: 'رياضيات');
@@ -808,6 +819,296 @@ void main() {
       subject = (await repo.readSnapshot()).subjectById(id)!;
       expect(subject.isArchived, isTrue);
       expect(subject.isActive, isFalse);
+    });
+  });
+
+  group('curriculum templates', () {
+    // Biology is subject 1 in the seed.
+    const int biology = 1;
+
+    test('applying a template creates every chapter, in order', () async {
+      final template = CurriculumTemplates.chaptersFor(SubjectCode.biology)!;
+
+      final created = await repo.addChapters(
+        subjectId: biology,
+        names: template,
+        at: kSeedInstant,
+      );
+
+      expect(created, template.length);
+
+      final chapters = (await repo.readSnapshot()).chaptersIn(biology);
+      expect(chapters.map((c) => c.name), template);
+    });
+
+    test('order survives past the point Dart sort stops being stable', () async {
+      // `List.sort` is only stable below 32 elements; above that Dart switches
+      // to dual-pivot quicksort and reorders equal keys arbitrarily. Every
+      // chapter of a template is written under one `createdAt`, so the whole
+      // template is one tie block -- and the test above cannot see the problem
+      // because ten rows in an empty database stays under the threshold.
+      //
+      // Four templates plus a few chapters of the student's own crosses it.
+      // Before the id tie-break, this produced Physics with باب 1 and باب 2
+      // swapped, and English with Unit 1 rendered last.
+      for (final (subjectId, code) in <(int, SubjectCode)>[
+        (1, SubjectCode.biology),
+        (2, SubjectCode.physics),
+        (3, SubjectCode.chemistry),
+        (4, SubjectCode.english),
+      ]) {
+        await repo.addChapters(
+          subjectId: subjectId,
+          names: CurriculumTemplates.chaptersFor(code)!,
+          at: kSeedInstant,
+        );
+      }
+      for (final name in <String>['بابي الأول', 'بابي الثاني', 'بابي الثالث']) {
+        await repo.createChapter(subjectId: 1, name: name, at: kSeedInstant);
+      }
+
+      final snapshot = await repo.readSnapshot();
+      expect(
+        snapshot.chapters.length,
+        greaterThan(32),
+        reason: 'the sample has to cross the stability threshold to mean anything',
+      );
+
+      for (final (subjectId, code) in <(int, SubjectCode)>[
+        (2, SubjectCode.physics),
+        (3, SubjectCode.chemistry),
+        (4, SubjectCode.english),
+      ]) {
+        expect(
+          snapshot.chaptersIn(subjectId).map((c) => c.name),
+          CurriculumTemplates.chaptersFor(code)!,
+          reason: 'the taught order of $code was scrambled',
+        );
+      }
+    });
+
+    test('a name differing only in Arabic spelling is not a second chapter',
+        () async {
+      // The promise is "applying a template never duplicates a chapter you
+      // already have", and a student types their chapter names on a phone
+      // keyboard. Writing ه for ة, or skipping the hamza on أ/إ, is ordinary
+      // Arabic -- not a mistake -- and a byte-exact comparison called each of
+      // these a different chapter, leaving the student with two rows for one
+      // باب and their lessons hanging off only one of them.
+      await repo.createChapter(subjectId: 1, name: 'الوراثه', at: kSeedInstant);
+      await repo.createChapter(
+        subjectId: 1,
+        name: 'الاخراج في الكائنات الحيه',
+        at: kSeedInstant,
+      );
+
+      final created = await repo.addChapters(
+        subjectId: 1,
+        names: <String>[
+          'الوراثة',
+          'الإخراج في الكائنات الحية',
+          'باب جديد فعلاً',
+        ],
+        at: kSeedInstant,
+      );
+
+      expect(created, 1, reason: 'only the genuinely new chapter is added');
+
+      final names = (await repo.readSnapshot())
+          .chaptersIn(1)
+          .map((c) => c.name)
+          .toList();
+      expect(names, hasLength(3));
+      // The student's own spelling is what stays on screen -- matching is not
+      // the same as rewriting what they typed.
+      expect(names, contains('الوراثه'));
+      expect(names, isNot(contains('الوراثة')));
+    });
+
+    test('case and stray spaces do not create a second chapter', () async {
+      await repo.createChapter(subjectId: 4, name: 'unit 1', at: kSeedInstant);
+
+      final created = await repo.addChapters(
+        subjectId: 4,
+        names: <String>['Unit  1', 'Unit 2'],
+        at: kSeedInstant,
+      );
+
+      expect(created, 1);
+      expect((await repo.readSnapshot()).chaptersIn(4), hasLength(2));
+    });
+
+    test('applying it twice does not duplicate anything', () async {
+      final template = CurriculumTemplates.chaptersFor(SubjectCode.physics)!;
+
+      await repo.addChapters(subjectId: 2, names: template, at: kSeedInstant);
+      final second = await repo.addChapters(
+        subjectId: 2,
+        names: template,
+        at: kSeedInstant,
+      );
+
+      expect(second, 0, reason: 'the second apply has nothing to add');
+      expect(
+        (await repo.readSnapshot()).chaptersIn(2),
+        hasLength(template.length),
+      );
+    });
+
+    test('a chapter the student already typed is never touched', () async {
+      // The student typed one of the template's chapters themselves, then
+      // renamed a lesson under it -- the row has their work hanging off it.
+      final mine = await repo.createChapter(
+        subjectId: biology,
+        name: 'المناعة',
+        at: kSeedInstant,
+      );
+      await repo.createLesson(chapterId: mine, name: 'درسي', at: kSeedInstant);
+
+      final template = CurriculumTemplates.chaptersFor(SubjectCode.biology)!;
+      final created = await repo.addChapters(
+        subjectId: biology,
+        names: template,
+        at: kSeedInstant,
+      );
+
+      expect(created, template.length - 1);
+
+      final snap = await repo.readSnapshot();
+      final chapters = snap.chaptersIn(biology);
+      expect(
+        chapters.where((c) => c.name == 'المناعة'),
+        hasLength(1),
+        reason:
+            'the template must not add a second copy of a chapter the '
+            'student already has',
+      );
+      // Same row, with the lesson still on it.
+      expect(chapters.singleWhere((c) => c.name == 'المناعة').id, mine);
+      expect(snap.lessonsIn(mine), hasLength(1));
+    });
+
+    test('a renamed chapter is left alone and its name is added', () async {
+      // The student renamed a template chapter to their own wording. That is
+      // now a different name, so the template's version is genuinely missing
+      // and gets added -- but the renamed row is not disturbed.
+      final renamed = await repo.createChapter(
+        subjectId: 3,
+        name: 'الكيمياء الكهربية',
+        at: kSeedInstant,
+      );
+      await repo.renameChapter(chapterId: renamed, name: 'باب الكهرباء');
+
+      final template = CurriculumTemplates.chaptersFor(SubjectCode.chemistry)!;
+      await repo.addChapters(subjectId: 3, names: template, at: kSeedInstant);
+
+      final chapters = (await repo.readSnapshot()).chaptersIn(3);
+      expect(
+        chapters.singleWhere((c) => c.id == renamed).name,
+        'باب الكهرباء',
+        reason: 'the student renamed it; the template does not rename it back',
+      );
+      expect(chapters, hasLength(template.length + 1));
+    });
+
+    test('it only touches the subject it was asked about', () async {
+      await repo.addChapters(
+        subjectId: biology,
+        names: CurriculumTemplates.chaptersFor(SubjectCode.biology)!,
+        at: kSeedInstant,
+      );
+
+      final snap = await repo.readSnapshot();
+      expect(snap.chaptersIn(2), isEmpty);
+      expect(snap.chaptersIn(3), isEmpty);
+      expect(snap.chaptersIn(4), isEmpty);
+    });
+
+    test('a repeated name inside one template is inserted once', () async {
+      final created = await repo.addChapters(
+        subjectId: biology,
+        names: const <String>['باب', 'باب', 'باب آخر'],
+        at: kSeedInstant,
+      );
+
+      expect(created, 2);
+      expect((await repo.readSnapshot()).chaptersIn(biology), hasLength(2));
+    });
+
+    test('blank entries are skipped rather than written', () async {
+      final created = await repo.addChapters(
+        subjectId: biology,
+        names: const <String>['باب', '   ', ''],
+        at: kSeedInstant,
+      );
+
+      expect(created, 1);
+      expect(
+        (await repo.readSnapshot()).chaptersIn(biology).single.name,
+        'باب',
+      );
+    });
+
+    test('an empty template writes nothing and reports nothing', () async {
+      expect(
+        await repo.addChapters(
+          subjectId: biology,
+          names: const <String>[],
+          at: kSeedInstant,
+        ),
+        0,
+      );
+      expect((await repo.readSnapshot()).chaptersIn(biology), isEmpty);
+    });
+
+    test('every seeded subject has a template, and no template is empty', () {
+      for (final code in SubjectCode.values) {
+        final template = CurriculumTemplates.chaptersFor(code);
+        expect(template, isNotNull, reason: '${code.name} has no template');
+        expect(template, isNotEmpty);
+        expect(
+          template!.toSet(),
+          hasLength(template.length),
+          reason: '${code.name} lists the same chapter twice',
+        );
+        for (final name in template) {
+          expect(name.trim(), isNotEmpty);
+        }
+      }
+    });
+
+    test(
+      'a template aimed at a subject that is not there writes nothing',
+      () async {
+        // The rollback itself is drift's `transaction()` guarantee and cannot be
+        // forced from outside without a fake database. What is observable is the
+        // outcome the guarantee exists for: a rejected apply leaves the
+        // curriculum exactly as it was, with no half of a template in it.
+        await expectLater(
+          repo.addChapters(
+            subjectId: 999,
+            names: const <String>['أول', 'ثانٍ', 'ثالث'],
+            at: kSeedInstant,
+          ),
+          throwsA(anything),
+        );
+
+        final snap = await repo.readSnapshot();
+        expect(snap.chapters, isEmpty);
+      },
+    );
+
+    test('a subject the student created has no template', () async {
+      final id = await repo.createSubject(name: 'الجيولوجيا');
+      final subject = (await repo.readSnapshot()).subjectById(id)!;
+
+      expect(
+        CurriculumTemplates.forSubject(subject),
+        isNull,
+        reason:
+            'the app has never heard of this subject, so it has no '
+            'standard structure to offer',
+      );
     });
   });
 }
