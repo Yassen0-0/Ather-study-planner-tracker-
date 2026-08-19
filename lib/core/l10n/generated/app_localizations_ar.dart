@@ -893,6 +893,59 @@ class LAr extends L {
   String get calendarTitle => 'التقويم';
 
   @override
+  String get scheduleExam => 'جدولة امتحان';
+
+  @override
+  String get editScheduledExam => 'تعديل الامتحان المجدول';
+
+  @override
+  String get examDate => 'التاريخ';
+
+  @override
+  String get examTitle => 'العنوان';
+
+  @override
+  String get examSubject => 'المادة';
+
+  @override
+  String get examChaptersOptional => 'الأبواب (اختياري)';
+
+  @override
+  String get examNotesOptional => 'ملاحظات (اختياري)';
+
+  @override
+  String get selectExamDate => 'اختر تاريخ الامتحان';
+
+  @override
+  String get examTitleHint => 'مثال: امتحان أحياء النصف';
+
+  @override
+  String get examNotesHint => 'مثال: يشمل الأبواب ١-٣';
+
+  @override
+  String get examSubjectRequired => 'المادة مطلوبة';
+
+  @override
+  String get examTitleRequired => 'العنوان مطلوب';
+
+  @override
+  String get examDateRequired => 'التاريخ مطلوب';
+
+  @override
+  String get dateToday => 'اليوم';
+
+  @override
+  String get dateTomorrow => 'غداً';
+
+  @override
+  String get examReminderNotificationTitle => 'تذكير بالامتحان';
+
+  @override
+  String examReminderNotificationBody(String title) {
+    return 'امتحان $title بعد ٣ أيام';
+  }
+
+  @override
   String get tasksTitle => 'مهام اليوم';
 
   @override

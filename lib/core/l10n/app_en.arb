@@ -315,6 +315,28 @@
   "backupErrorUnknown": "Saving didn't work",
 
   "calendarTitle": "Calendar",
+  "scheduleExam": "Schedule Exam",
+  "editScheduledExam": "Edit Scheduled Exam",
+  "examDate": "Date",
+  "examTitle": "Title",
+  "examSubject": "Subject",
+  "examChaptersOptional": "Chapters (optional)",
+  "examNotesOptional": "Notes (optional)",
+  "selectExamDate": "Select exam date",
+  "examTitleHint": "e.g. Biology Midterm",
+  "examNotesHint": "e.g. Covers chapters 1-3",
+  "examSubjectRequired": "Subject is required",
+  "examTitleRequired": "Title is required",
+  "examDateRequired": "Date is required",
+  "dateToday": "Today",
+  "dateTomorrow": "Tomorrow",
+  "examReminderNotificationTitle": "Exam reminder",
+  "examReminderNotificationBody": "Your {title} exam is in 3 days",
+  "@examReminderNotificationBody": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
 
   "tasksTitle": "Today's tasks",
   "tasksDoneOf": "{done} of {total} done",

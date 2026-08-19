@@ -1621,6 +1621,108 @@ abstract class L {
   /// **'التقويم'**
   String get calendarTitle;
 
+  /// No description provided for @scheduleExam.
+  ///
+  /// In ar, this message translates to:
+  /// **'جدولة امتحان'**
+  String get scheduleExam;
+
+  /// No description provided for @editScheduledExam.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الامتحان المجدول'**
+  String get editScheduledExam;
+
+  /// No description provided for @examDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get examDate;
+
+  /// No description provided for @examTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العنوان'**
+  String get examTitle;
+
+  /// No description provided for @examSubject.
+  ///
+  /// In ar, this message translates to:
+  /// **'المادة'**
+  String get examSubject;
+
+  /// No description provided for @examChaptersOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأبواب (اختياري)'**
+  String get examChaptersOptional;
+
+  /// No description provided for @examNotesOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات (اختياري)'**
+  String get examNotesOptional;
+
+  /// No description provided for @selectExamDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر تاريخ الامتحان'**
+  String get selectExamDate;
+
+  /// No description provided for @examTitleHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: امتحان أحياء النصف'**
+  String get examTitleHint;
+
+  /// No description provided for @examNotesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: يشمل الأبواب ١-٣'**
+  String get examNotesHint;
+
+  /// No description provided for @examSubjectRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'المادة مطلوبة'**
+  String get examSubjectRequired;
+
+  /// No description provided for @examTitleRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'العنوان مطلوب'**
+  String get examTitleRequired;
+
+  /// No description provided for @examDateRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ مطلوب'**
+  String get examDateRequired;
+
+  /// No description provided for @dateToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get dateToday;
+
+  /// No description provided for @dateTomorrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'غداً'**
+  String get dateTomorrow;
+
+  /// No description provided for @examReminderNotificationTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير بالامتحان'**
+  String get examReminderNotificationTitle;
+
+  /// No description provided for @examReminderNotificationBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'امتحان {title} بعد ٣ أيام'**
+  String examReminderNotificationBody(String title);
+
   /// The tasks screen's title while today is the selected day. The day picker sitting under it says 'اليوم' for today's cell, so the title names what the list is rather than repeating the day.
   ///
   /// In ar, this message translates to:

@@ -888,6 +888,59 @@ class LEn extends L {
   String get calendarTitle => 'Calendar';
 
   @override
+  String get scheduleExam => 'Schedule Exam';
+
+  @override
+  String get editScheduledExam => 'Edit Scheduled Exam';
+
+  @override
+  String get examDate => 'Date';
+
+  @override
+  String get examTitle => 'Title';
+
+  @override
+  String get examSubject => 'Subject';
+
+  @override
+  String get examChaptersOptional => 'Chapters (optional)';
+
+  @override
+  String get examNotesOptional => 'Notes (optional)';
+
+  @override
+  String get selectExamDate => 'Select exam date';
+
+  @override
+  String get examTitleHint => 'e.g. Biology Midterm';
+
+  @override
+  String get examNotesHint => 'e.g. Covers chapters 1-3';
+
+  @override
+  String get examSubjectRequired => 'Subject is required';
+
+  @override
+  String get examTitleRequired => 'Title is required';
+
+  @override
+  String get examDateRequired => 'Date is required';
+
+  @override
+  String get dateToday => 'Today';
+
+  @override
+  String get dateTomorrow => 'Tomorrow';
+
+  @override
+  String get examReminderNotificationTitle => 'Exam reminder';
+
+  @override
+  String examReminderNotificationBody(String title) {
+    return 'Your $title exam is in 3 days';
+  }
+
+  @override
   String get tasksTitle => 'Today\'s tasks';
 
   @override

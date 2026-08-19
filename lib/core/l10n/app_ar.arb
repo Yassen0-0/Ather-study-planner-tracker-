@@ -426,6 +426,28 @@
   "backupErrorUnknown": "لم ينجح الحفظ",
 
   "calendarTitle": "التقويم",
+  "scheduleExam": "جدولة امتحان",
+  "editScheduledExam": "تعديل الامتحان المجدول",
+  "examDate": "التاريخ",
+  "examTitle": "العنوان",
+  "examSubject": "المادة",
+  "examChaptersOptional": "الأبواب (اختياري)",
+  "examNotesOptional": "ملاحظات (اختياري)",
+  "selectExamDate": "اختر تاريخ الامتحان",
+  "examTitleHint": "مثال: امتحان أحياء النصف",
+  "examNotesHint": "مثال: يشمل الأبواب ١-٣",
+  "examSubjectRequired": "المادة مطلوبة",
+  "examTitleRequired": "العنوان مطلوب",
+  "examDateRequired": "التاريخ مطلوب",
+  "dateToday": "اليوم",
+  "dateTomorrow": "غداً",
+  "examReminderNotificationTitle": "تذكير بالامتحان",
+  "examReminderNotificationBody": "امتحان {title} بعد ٣ أيام",
+  "@examReminderNotificationBody": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
 
   "tasksTitle": "مهام اليوم",
   "@tasksTitle": {
