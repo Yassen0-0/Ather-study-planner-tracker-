@@ -4,12 +4,14 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/day_header.dart';
 import '../common/settings_button.dart';
 import '../providers/app_providers.dart';
 import 'scheduled_exam_form.dart';
+import 'widgets/exam_detail_card.dart';
 
 /// The exam calendar screen.
 ///
@@ -60,6 +62,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       examsByDate[day] = (examsByDate[day] ?? 0) + 1;
     }
 
+    // Find scheduled exams for the selected day
+    final selectedDayExams = _selectedDay == null
+        ? <dynamic>[]
+        : snapshot.scheduledExams.where((exam) {
+            final examDay = DateTime(
+              exam.date.year,
+              exam.date.month,
+              exam.date.day,
+            );
+            final selected = DateTime(
+              _selectedDay!.year,
+              _selectedDay!.month,
+              _selectedDay!.day,
+            );
+            return examDay == selected;
+          }).toList();
+
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () => showScheduledExamForm(context),
@@ -103,7 +122,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           calendarStyle: CalendarStyle(
             outsideDaysVisible: false,
             todayDecoration: BoxDecoration(
-              color: context.colors.accent.withOpacity(0.2),
+              color: context.colors.accent.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             selectedDecoration: BoxDecoration(
@@ -154,6 +173,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             _focusedDay = focusedDay;
           },
         ),
+
+        // Show scheduled exams for the selected day
+        if (selectedDayExams.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xxxl),
+          ...selectedDayExams.map((exam) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: ExamDetailCard(exam: exam),
+          )),
+        ],
         ],
       ),
     );
