@@ -1,3 +1,4 @@
+import '../entities/daily_task.dart';
 import '../entities/exam_entry.dart';
 import '../entities/lesson.dart';
 import '../entities/mastery.dart';
@@ -46,9 +47,12 @@ abstract final class ReviewCycleService {
   /// so the subtraction cannot be bent by a daylight-saving shift -- Egypt
   /// observes one, and two local midnights either side of it are 23 or 25 hours
   /// apart, which `Duration.inDays` would silently round the wrong way.
-  static int _dayNumber(DateTime d) =>
-      DateTime.utc(d.year, d.month, d.day).millisecondsSinceEpoch ~/
-      Duration.millisecondsPerDay;
+  ///
+  /// Delegates to [dayNumber] rather than carrying its own copy: the review
+  /// clock and the task-day keys must not be able to drift apart, and the
+  /// entity file is the single home of that arithmetic (services may depend on
+  /// entities; never the reverse).
+  static int _dayNumber(DateTime d) => dayNumber(d);
 
   /// Whole days since a lesson was last proven, or null if never examined.
   ///
@@ -216,43 +220,51 @@ abstract final class ReviewCycleService {
   /// Order: overdue first (most overdue at the top), then low mastery (weakest
   /// first), then declining trend. A lesson appears once, under its most urgent
   /// reason.
+  ///
+  /// Walks **active subjects only**. The snapshot carries everything -- that is
+  /// its contract -- so iterating its flat chapter list let a lesson under a
+  /// binned or archived subject surface here as an urgent red row while its
+  /// notifications were already silenced for exactly that reason. The queue and
+  /// the tab badge it feeds have to agree on what exists.
   static List<ReviewItem> buildReviewQueue(
     StudySnapshot snapshot,
     DateTime now,
   ) {
     final items = <ReviewItem>[];
 
-    for (final chapter in snapshot.chapters) {
-      for (final lesson in snapshot.lessonsIn(chapter.id)) {
-        final exams = snapshot.examsFor(lesson.id);
-        final mastery = MasteryCalculator.lessonMastery(exams);
+    for (final subject in snapshot.activeSubjects) {
+      for (final chapter in snapshot.chaptersIn(subject.id)) {
+        for (final lesson in snapshot.lessonsIn(chapter.id)) {
+          final exams = snapshot.examsFor(lesson.id);
+          final mastery = MasteryCalculator.lessonMastery(exams);
 
-        final ReviewReason? reason;
-        if (needsReview(lesson, now)) {
-          reason = ReviewReason.overdue;
-        } else if (exams.isNotEmpty && mastery < kLowMasteryFlagThreshold) {
-          // `exams.isNotEmpty` matters: an unexamined lesson has mastery 0,
-          // and without this guard every brand-new lesson would be dumped into
-          // the Review Center as "low mastery" before it was ever studied.
-          reason = ReviewReason.lowMastery;
-        } else if (MasteryCalculator.isDeclining(exams)) {
-          reason = ReviewReason.declining;
-        } else {
-          reason = null;
+          final ReviewReason? reason;
+          if (needsReview(lesson, now)) {
+            reason = ReviewReason.overdue;
+          } else if (exams.isNotEmpty && mastery < kLowMasteryFlagThreshold) {
+            // `exams.isNotEmpty` matters: an unexamined lesson has mastery 0,
+            // and without this guard every brand-new lesson would be dumped into
+            // the Review Center as "low mastery" before it was ever studied.
+            reason = ReviewReason.lowMastery;
+          } else if (MasteryCalculator.isDeclining(exams)) {
+            reason = ReviewReason.declining;
+          } else {
+            reason = null;
+          }
+
+          if (reason == null) continue;
+
+          items.add(
+            ReviewItem(
+              lesson: lesson,
+              chapterId: chapter.id,
+              subjectId: chapter.subjectId,
+              mastery: mastery,
+              reason: reason,
+              daysOverdue: daysOverdue(lesson, now),
+            ),
+          );
         }
-
-        if (reason == null) continue;
-
-        items.add(
-          ReviewItem(
-            lesson: lesson,
-            chapterId: chapter.id,
-            subjectId: chapter.subjectId,
-            mastery: mastery,
-            reason: reason,
-            daysOverdue: daysOverdue(lesson, now),
-          ),
-        );
       }
     }
 

@@ -240,6 +240,28 @@ final class StudyBackup {
       );
     }
 
+    final homework = <HomeworkEntry>[];
+    for (final raw in _list(json['homework'])) {
+      // Same threat model as the exams above, same repair: nothing the wizard
+      // can write produces a max below 1 or a score outside [0, max], so a
+      // value that arrives here did not come from Ather. Left alone it poisons
+      // everything derived from it -- `HomeworkEntry.percentage` divides
+      // without a ceiling, so score 9999 over max 10 rendered as 99990% on the
+      // lesson screen, and a negative score read as "below threshold" forever.
+      // **Clamped, never dropped**, for the reason the exams give: a restore
+      // that quietly loses rows is the one failure this feature must not have.
+      final maxScore = _clampInt(raw['maxScore']! as int, 1, 1 << 31);
+      homework.add(
+        HomeworkEntry(
+          id: raw['id']! as int,
+          lessonId: raw['lessonId']! as int,
+          score: _clampInt(raw['score']! as int, 0, maxScore),
+          maxScore: maxScore,
+          createdAt: _date(raw['createdAt']),
+        ),
+      );
+    }
+
     return StudyBackup(
       subjects: subjects,
       chapters: <Chapter>[
@@ -271,16 +293,7 @@ final class StudyBackup {
           ),
       ],
       exams: exams,
-      homework: <HomeworkEntry>[
-        for (final h in _list(json['homework']))
-          HomeworkEntry(
-            id: h['id']! as int,
-            lessonId: h['lessonId']! as int,
-            score: h['score']! as int,
-            maxScore: h['maxScore']! as int,
-            createdAt: _date(h['createdAt']),
-          ),
-      ],
+      homework: homework,
       tasks: <DailyTask>[
         for (final t in _list(json['tasks']))
           DailyTask(

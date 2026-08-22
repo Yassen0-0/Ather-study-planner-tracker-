@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -115,8 +117,31 @@ Future<void> _initializeCrashlytics() async {
   if (kDebugMode) return;
 
   try {
-    // Enable automatic crash reporting for unhandled exceptions
+    // Two channels, because two kinds of unhandled error exist.
+    //
+    // `FlutterError.onError` catches what the framework drives: build, layout,
+    // paint, and the callbacks it schedules. An exception escaping an
+    // *unguarded* async callback -- a timer, a stream listener, a future
+    // nobody awaited -- never passes through it at all, and used to vanish
+    // without a trace. That is what the second channel is for:
+    // `PlatformDispatcher.onError` is the engine's last look at every error
+    //   in the zone. Returning true marks the error handled, so reporting it is
+    //   the whole outcome; the app keeps running rather than dying twice for
+    //   one mistake.
+    //
+    // `fatal: true` on the second channel is deliberate: an error reaching it
+    // was unhandled everywhere and its isolate was dying anyway, so the report
+    // keeps the severity the event actually had.
+    //
+    // Known constraint: this runs after `Firebase.initializeApp`, so a device
+    // where that call throws gets no crash channels at all. Accepted on
+    // purpose -- bootstrapping must never be what stops a student reaching
+    // their own offline data.
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
   } catch (error, stack) {
     // Crashlytics initialization failure should never prevent the app from
     // starting. Log the error so it's visible during development, but continue.

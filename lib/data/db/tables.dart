@@ -136,8 +136,11 @@ class ExamEntries extends Table {
 class DailyTasks extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  /// Midnight local. Day precision, so a task written at 23:59 and one at 00:01
-  /// belong to different days rather than sorting next to each other.
+  /// Midnight UTC of one calendar day -- the canonical key produced by
+  /// `dayOf`. Day precision, so a task written at 23:59 and one at 00:01
+  /// belong to different days rather than sorting next to each other; anchored
+  /// to UTC so the key survives the yearly move between +3 and +2 instead of
+  /// meaning "this day" only under the offset it was written with.
   DateTimeColumn get day => dateTime()();
 
   TextColumn get title => text().withLength(min: 1, max: 200)();

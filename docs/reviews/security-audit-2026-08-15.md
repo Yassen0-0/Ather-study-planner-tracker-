@@ -315,6 +315,8 @@ Never committed, at any point in history. Only `key.properties.example` with pla
 
 **VERIFIED-8 · No trackers.** No ads, analytics, or crash-reporting SDK. Materially simplifies Families Policy compliance.
 
+> **[SUPERSEDED 2026-08-22]** Crashlytics shipped on 2026-08-18 (PR #12, `lib/main.dart` `_initializeCrashlytics`) — one day after this audit's last evidence was gathered. The "no crash-reporting SDK" clause above no longer holds; the Families-Policy simplification it claimed is reduced accordingly. The Data safety draft below has been rewritten to match the code as it now stands. See `AUDIT_PLAN.md` P0-01.
+
 ---
 
 # Not covered, and why
@@ -378,6 +380,8 @@ One process note worth acting on independently: the phone is running **1.2.0+6**
 
 Drafted 2026-08-15 from what the code actually does, so the form matches the app
 rather than the intention. Every "yes" below is traceable to a file.
+**Revised 2026-08-22** for Crashlytics (shipped 2026-08-18, PR #12): crash logs
+and diagnostics are now declared. The revision is inline; nothing else moved.
 
 **Does your app collect or share any of the required user data types?** Yes.
 **Is all user data encrypted in transit?** Yes — Firebase SDKs only, no cleartext
@@ -391,10 +395,12 @@ in-app (Settings → Delete account) and by email (`public/account-deletion.html
 | **Name** | Yes (Google Sign-In only) | No | Required on that path | Account management |
 | **User IDs** (Firebase uid) | Yes | No | **Required** | Account management |
 | **Other app activity** — chapters, lessons, exam and homework scores, review dates | Yes | No | **Required** | App functionality |
+| **Crash logs** — stack traces recorded by Firebase Crashlytics on a release-build crash or failed database write | Yes | No | **Required** | Stability/analytics (crash fixing); developer communications not applicable |
+| **Diagnostics** — device model, Android version, and app technical state attached to those reports | Yes | No | **Required** | Stability/analytics (crash fixing) |
 
 **Nothing else is collected.** No location, contacts, phone number, photos, audio,
-files, calendar, health, financial, browsing history, installed apps, device or
-advertising IDs, or crash/diagnostic data.
+files, calendar, health, financial, browsing history, installed apps, or device or
+advertising IDs.
 
 ### The three answers most likely to be got wrong
 
@@ -405,21 +411,29 @@ advertising IDs, or crash/diagnostic data.
 
 2. **Nothing may be marked "Optional".** `BackupSyncNotifier` uploads on a
    20-second debounce and on every backgrounding, with no toggle, and the auth
-   gate makes signing in mandatory. There is no path through the app that avoids
-   any of this, so "users can choose whether this data is collected" is false for
-   every row.
+   gate makes signing in mandatory. Crashlytics is wired unconditionally in
+   `_initializeCrashlytics` for every non-debug build. There is no path through
+   the app that avoids any of this, so "users can choose whether this data is
+   collected" is false for every row.
 
 3. **"Shared" is No throughout.** Google/Firebase is a **processor** acting on our
    instructions, which Play does not count as sharing. There is no third party
-   receiving data — no ads SDK, no analytics, no crash reporter.
+   receiving data — no ads SDK, no analytics SDK; Crashlytics is a processor too,
+   and it is *declared above*, which is what makes "shared: No" defensible rather
+   than hidden.
 
 ### Data types that look like they apply and do not
 
 - **Photos / files** — none touched.
 - **Device or other IDs** — the Firebase uid is an account identifier, declared
-  under *User IDs*; no advertising ID, no device ID is read.
-- **Crash logs / diagnostics** — no Crashlytics, no analytics. `debugPrint` writes
-  to the device log only and never leaves the phone.
+  under *User IDs*; no advertising ID, no device ID is read. (The Crashlytics
+  installation identifier stays inside the declared Crash logs/Diagnostics rows.)
+- ~~**Crash logs / diagnostics** — no Crashlytics~~ → **they now apply.**
+  Revised 2026-08-22: both are declared as collected rows above, matching
+  `lib/main.dart` (`FlutterError.onError`) and the `recordError` call sites
+  (`drift_study_repository.dart`, `write_guard.dart`,
+  `firestore_backup_repository.dart`). `debugPrint` still writes to the device
+  log only and never leaves the phone.
 - **Biometrics** — the app lock uses Android's own prompt. Ather receives a
   yes/no, never biometric data, so no sensitive category applies.
 

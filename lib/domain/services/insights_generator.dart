@@ -140,23 +140,29 @@ abstract final class InsightsGenerator {
   static void _addWeakestChapter(StudySnapshot snapshot, List<Insight> out) {
     ({int chapterId, int subjectId, String name, double mastery})? worst;
 
-    for (final chapter in snapshot.chapters) {
-      final lessons = snapshot.lessonsIn(chapter.id);
-      // Skip untouched chapters -- "your empty chapter is weak" is not an
-      // insight, it is a tautology.
-      if (lessons.isEmpty) continue;
-      if (!lessons.any((l) => snapshot.examsFor(l.id).isNotEmpty)) continue;
+    // Active subjects only. The snapshot carries binned and archived subjects
+    // by design, and crowning a chapter under one as "needs attention" would
+    // have the app nagging about work the student deliberately put away --
+    // while every other surface had already agreed to fall silent on it.
+    for (final subject in snapshot.activeSubjects) {
+      for (final chapter in snapshot.chaptersIn(subject.id)) {
+        final lessons = snapshot.lessonsIn(chapter.id);
+        // Skip untouched chapters -- "your empty chapter is weak" is not an
+        // insight, it is a tautology.
+        if (lessons.isEmpty) continue;
+        if (!lessons.any((l) => snapshot.examsFor(l.id).isNotEmpty)) continue;
 
-      final mastery = MasteryCalculator.chapterMasteryOf(snapshot, chapter.id);
-      if (mastery >= _attentionThreshold) continue;
+        final mastery = MasteryCalculator.chapterMasteryOf(snapshot, chapter.id);
+        if (mastery >= _attentionThreshold) continue;
 
-      if (worst == null || mastery < worst.mastery) {
-        worst = (
-          chapterId: chapter.id,
-          subjectId: chapter.subjectId,
-          name: chapter.name,
-          mastery: mastery,
-        );
+        if (worst == null || mastery < worst.mastery) {
+          worst = (
+            chapterId: chapter.id,
+            subjectId: chapter.subjectId,
+            name: chapter.name,
+            mastery: mastery,
+          );
+        }
       }
     }
 

@@ -567,6 +567,83 @@ void main() {
       final groups = await db.select(db.examQuestionGroups).get();
       expect(groups, isEmpty);
     });
+
+    test('deleting the only exam clears the checklist tick too', () async {
+      // `recordExam` sets `didExam` as a side effect; deleting the evidence
+      // must unset it again, or the screen says mastery 0 and "sat an exam"
+      // at once.
+      final ids = await lesson();
+      final examId = await record(ids.lessonId, DateTime(2026, 3, 1), 7);
+
+      await repo.deleteExam(examId);
+      final snap = await repo.readSnapshot();
+
+      expect(snap.examsFor(ids.lessonId), isEmpty);
+      expect(snap.lessonById(ids.lessonId)!.checklist.didExam, isFalse);
+      expect(snap.lessonById(ids.lessonId)!.lastReviewedAt, isNull);
+    });
+
+    test('an exam that remains keeps the checklist tick set', () async {
+      final ids = await lesson();
+      await record(ids.lessonId, DateTime(2026, 3, 1), 5);
+      final newer = await record(ids.lessonId, DateTime(2026, 4, 1), 9);
+
+      await repo.deleteExam(newer);
+      final snap = await repo.readSnapshot();
+
+      expect(snap.examsFor(ids.lessonId), hasLength(1));
+      expect(snap.lessonById(ids.lessonId)!.checklist.didExam, isTrue);
+    });
+
+    test(
+      'a lesson born after the gate is not proven by deleting into it',
+      () async {
+        // Mastering stamps every lesson that existed. A lesson added later
+        // inherited nothing from that stamp -- so when its own exam is deleted,
+        // falling back to `masteredAt` would leave it proven days before it
+        // was created.
+        final chapterId = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        await repo.markChapterMastered(
+          chapterId: chapterId,
+          at: DateTime(2026, 2, 1),
+        );
+        final lateLesson = await repo.createLesson(
+          chapterId: chapterId,
+          name: 'درس لاحق',
+          at: DateTime(2026, 3, 1),
+        );
+        final examId = await record(lateLesson, DateTime(2026, 3, 10), 8);
+
+        await repo.deleteExam(examId);
+        final snap = await repo.readSnapshot();
+
+        final l = snap.lessonById(lateLesson)!;
+        expect(l.lastReviewedAt, isNull);
+        expect(l.checklist.didExam, isFalse);
+      },
+    );
+
+    test('with an exam remaining, mastery and the exam compete for the clock', () async {
+      // The lesson predates the gate, so the mastery stamp *is* admissible --
+      // and the newer of it and the surviving exam wins.
+      final ids = await lesson();
+      await record(ids.lessonId, DateTime(2026, 3, 1), 6);
+      final newer = await record(ids.lessonId, DateTime(2026, 4, 1), 7);
+      await repo.markChapterMastered(
+        chapterId: ids.chapterId,
+        at: DateTime(2026, 5, 1),
+      );
+
+      await repo.deleteExam(newer);
+      final snap = await repo.readSnapshot();
+
+      expect(snap.lessonById(ids.lessonId)!.lastReviewedAt, DateTime(2026, 5, 1));
+      expect(snap.lessonById(ids.lessonId)!.checklist.didExam, isTrue);
+    });
   });
 
   group('clear', () {

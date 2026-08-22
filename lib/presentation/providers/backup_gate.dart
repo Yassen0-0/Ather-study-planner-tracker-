@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/router.dart' show rootNavigatorKey;
+import '../../core/l10n/generated/app_localizations.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/repositories/backup_repository.dart';
+import '../common/prompts.dart';
 import 'app_providers.dart';
 import 'auth_providers.dart';
 import 'backup_providers.dart';
@@ -44,20 +49,105 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
   /// -- finds it exactly as they left it. Data only becomes the wrong data when
   /// somebody else's account arrives.
   ///
+  /// **The wipe is confirmed, never silent.** It is the one destructive act in
+  /// the app with no undo, and it sits behind a mis-tap: "create account" and
+  /// "sign in" share one form on one screen, so a tired thumb can arrive at a
+  /// brand-new uid by accident -- and everything on the phone would be gone
+  /// before a single warning was read. So when the device holds real data for
+  /// another account, a sheet asks first. An empty device still wipes without
+  /// asking: there is nothing to mourn, and the ordinary auto-restore below
+  /// depends on starting from empty. Refusing leaves every byte where it was,
+  /// keeps the stored uid pointing at the *old* account so the next launch asks
+  /// again rather than inheriting a consent nobody gave, and skips this
+  /// session's auto-restore -- a device we may not touch is not a device we may
+  /// fill either.
+  ///
   /// Clearing here also feeds the restore below the answer it wants: the device
   /// is now genuinely empty, so the ordinary auto-restore pulls the new
   /// student's own cloud copy with no second code path.
-  Future<void> _clearIfDifferentAccount(String uid) async {
+  Future<bool> _clearIfDifferentAccount(String uid) async {
     final preferences = ref.read(sharedPreferencesProvider);
     final previous = preferences.getString(kLastAccountUidKey);
 
-    if (previous != null && previous != uid) {
-      await ref.read(studyRepositoryProvider).clear();
-      await ref.read(taskRepositoryProvider).clearTasks();
+    // First sign-in ever, or the same student coming back: nothing on this
+    // device belongs to anybody else, so there is nothing to ask about.
+    if (previous == null || previous == uid) {
+      await preferences.setString(kLastAccountUidKey, uid);
+      return true;
     }
+
+    // Emptiness is read from the database through `snapshotProvider.future`,
+    // the same honest answer _restoreIfEmpty insists on below -- never from
+    // the loading fallback. Daily tasks are deliberately not consulted; the
+    // reason is written on _restoreIfEmpty.
+    final empty = (await ref.read(snapshotProvider.future)).isEmpty;
+    if (!empty) {
+      final confirmed = await _confirmWipe();
+      if (!confirmed) {
+        return false;
+      }
+    }
+
+    await ref.read(studyRepositoryProvider).clear();
+    await ref.read(taskRepositoryProvider).clearTasks();
+    // The restore below asks whether the device is empty, and the stream it
+    // asks may not have re-emitted since these deletes landed -- a stale
+    // non-empty answer would skip the auto-restore for the very student who
+    // just consented to it. Dropping the cached read forces a fresh one, so
+    // the question is answered from the database as the wipe left it, not as
+    // the last frame rendered it.
+    ref.invalidate(snapshotProvider);
     // Written after the wipe, never before: a crash mid-wipe must leave the
     // device still claiming the *old* uid, so the next launch tries again.
     await preferences.setString(kLastAccountUidKey, uid);
+    return true;
+  }
+
+  /// The sheet that stands between a different account and the data already on
+  /// the phone.
+  ///
+  /// Shown against the **root navigator's** context rather than any screen's:
+  /// the gate lives above the router precisely because the decision belongs to
+  /// the app as a whole, and whatever route happens to be on top when the
+  /// account stream emits must not decide whether the question can be asked --
+  /// or where the sheet lands.
+  ///
+  /// Posted to the next frame rather than shown inline, for the same reason
+  /// notification taps are: the emission can arrive while the engine is still
+  /// laying out its first frames, before there is a navigator to present on.
+  ///
+  /// If no surface exists even then, the answer is **no wipe**. Asking again
+  /// costs one launch; wiping unasked costs a student's whole record. That is
+  /// also why the sheet's cancel is the default on any failure -- the copy on
+  /// the red button describes exactly what is about to go, so "yes" has to be
+  /// a reading, never an accident.
+  Future<bool> _confirmWipe() {
+    final completer = Completer<bool>();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final context = rootNavigatorKey.currentContext;
+        if (context == null || !context.mounted) {
+          completer.complete(false);
+          return;
+        }
+        final l = L.of(context);
+        completer.complete(
+          await confirmDestructive(
+            context,
+            title: l.accountSwitchWipeTitle,
+            message: l.accountSwitchWipeMessage,
+            confirmLabel: l.accountSwitchWipeConfirm,
+          ),
+        );
+      } on Object catch (error, stack) {
+        debugPrint(
+          'Ather: account-switch confirmation could not be shown -- '
+          '$error\n$stack',
+        );
+        if (!completer.isCompleted) completer.complete(false);
+      }
+    });
+    return completer.future;
   }
 
   @override
@@ -109,8 +199,9 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
     _restoreChecked = true;
 
     // Before anything reads or uploads: if this is a different student, the
-    // data on the device is not theirs.
-    await _clearIfDifferentAccount(uid);
+    // data on the device is not theirs -- and if they declined to hand it
+    // over, neither the wipe nor this session's restore may touch anything.
+    if (!await _clearIfDifferentAccount(uid)) return;
 
     // `snapshotProvider.future`, not `snapshotValueProvider`: awaiting the
     // stream's first real emission gives a true answer, and it goes through the

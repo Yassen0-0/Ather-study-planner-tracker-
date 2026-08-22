@@ -256,4 +256,117 @@ void main() {
     // an empty record, and the four seeded ones came back with the backup.
     expect(snapshot.subjects, hasLength(4));
   });
+
+  group('restoring a version 1 file keeps what no backup owns', () {
+    // A version 1 file carries no subjects, so its chapters can only describe
+    // the four seeded ones. A subject the student added themselves -- and its
+    // whole subtree -- exists nowhere in that file; deleting it as part of
+    // "restoring" destroyed data the restore was never given a replacement for.
+    Future<int> addCustomWorld() async {
+      final subjectId = await study.createSubject(name: 'فلسفة');
+      final chapterId = await study.createChapter(
+        subjectId: subjectId,
+        name: 'المنطق',
+        at: kSeedInstant,
+      );
+      final lessonId = await study.createLesson(
+        chapterId: chapterId,
+        name: 'المقدمات',
+        at: kSeedInstant,
+      );
+      await study.recordExam(
+        lessonId: lessonId,
+        groups: const <DraftQuestionGroup>[
+          DraftQuestionGroup(
+            pointsPerQuestion: 1,
+            questionCount: 10,
+            correctCount: 8,
+          ),
+        ],
+        isReviewExam: false,
+        at: t0,
+      );
+      await study.recordHomework(
+        lessonId: lessonId,
+        score: 9,
+        maxScore: 10,
+        at: t0,
+      );
+      return chapterId;
+    }
+
+    StudyBackup v1({required int chapterId}) => StudyBackup(
+      subjects: const <Subject>[],
+      chapters: <Chapter>[
+        Chapter(
+          id: chapterId,
+          subjectId: 1,
+          name: 'الباب الأول',
+          createdAt: t0,
+        ),
+      ],
+      lessons: <Lesson>[
+        Lesson(
+          id: 20,
+          chapterId: chapterId,
+          name: 'درس',
+          createdAt: t0,
+          checklist: const LessonChecklist(),
+        ),
+      ],
+      exams: const <ExamEntry>[],
+      homework: const <HomeworkEntry>[],
+      tasks: const <DailyTask>[],
+    );
+
+    test('the custom subject\'s chapters survive the restore', () async {
+      final customChapter = await addCustomWorld();
+
+      await study.restore(v1(chapterId: customChapter + 100));
+
+      final snapshot = await study.readSnapshot();
+      expect(snapshot.subjects.map((s) => s.name), contains('فلسفة'));
+      expect(snapshot.chapters.map((c) => c.name), contains('المنطق'));
+
+      final kept = snapshot.chapters.singleWhere((c) => c.name == 'المنطق');
+      final lessons = snapshot.lessonsIn(kept.id);
+      expect(lessons, hasLength(1));
+      // And the evidence under it, not just the shell: an exam and a homework
+      // score are the parts of a record that took evenings to make.
+      expect(snapshot.examsFor(lessons.single.id), hasLength(1));
+      expect(snapshot.examsFor(lessons.single.id).single.percentage, 80);
+      expect(snapshot.homeworkFor(lessons.single.id), hasLength(1));
+    });
+
+    test('an id collision with the backup does not fail the restore', () async {
+      // The first chapter on this device takes id 1 -- the same id the incoming
+      // backup uses below. Keeping the preserved rows' old ids would collide on
+      // the primary key and roll the whole transaction back.
+      final customChapter = await addCustomWorld();
+      expect(customChapter, 1);
+
+      await study.restore(v1(chapterId: customChapter));
+
+      final snapshot = await study.readSnapshot();
+      // Both worlds landed: the backup's chapter and the student's own.
+      expect(snapshot.chapters.map((c) => c.name), containsAll(<String>[
+        'الباب الأول',
+        'المنطق',
+      ]));
+      // The backup lesson still hangs off the backup chapter it came with.
+      expect(
+        snapshot.lessonById(20)!.chapterId,
+        snapshot.chapters.singleWhere((c) => c.name == 'الباب الأول').id,
+      );
+      // And the preserved lesson followed its chapter to its new id rather
+      // than being orphaned by the remap.
+      final kept = snapshot.chapters.singleWhere((c) => c.name == 'المنطق');
+      expect(kept.id, isNot(customChapter));
+      expect(snapshot.lessonsIn(kept.id), hasLength(1));
+      expect(
+        snapshot.examsFor(snapshot.lessonsIn(kept.id).single.id),
+        hasLength(1),
+      );
+    });
+  });
 }

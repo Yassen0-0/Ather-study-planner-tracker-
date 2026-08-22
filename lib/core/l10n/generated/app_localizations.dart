@@ -1153,6 +1153,24 @@ abstract class L {
   /// **'لم يُحذف الحساب. حاول مرة أخرى.'**
   String get authDeleteAccountFailed;
 
+  /// No description provided for @accountSwitchWipeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب مختلف'**
+  String get accountSwitchWipeTitle;
+
+  /// No description provided for @accountSwitchWipeMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيانات المحفوظة على هذا الجهاز تخص حسابًا آخر. للمتابعة بهذا الحساب ستُمسح كل بيانات الجهاز: المواد والأبواب والامتحانات والمهام. لا يمكن التراجع.'**
+  String get accountSwitchWipeMessage;
+
+  /// No description provided for @accountSwitchWipeConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح بيانات الجهاز'**
+  String get accountSwitchWipeConfirm;
+
   /// No description provided for @settingsPrivacy.
   ///
   /// In ar, this message translates to:

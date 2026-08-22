@@ -316,6 +316,9 @@
   "authDeleteAccountReauthBody": "اكتب كلمة سر حسابك لإتمام الحذف.",
   "authDeleteAccountReauthAction": "احذف الحساب",
   "authDeleteAccountFailed": "لم يُحذف الحساب. حاول مرة أخرى.",
+  "accountSwitchWipeTitle": "حساب مختلف",
+  "accountSwitchWipeMessage": "البيانات المحفوظة على هذا الجهاز تخص حسابًا آخر. للمتابعة بهذا الحساب ستُمسح كل بيانات الجهاز: المواد والأبواب والامتحانات والمهام. لا يمكن التراجع.",
+  "accountSwitchWipeConfirm": "امسح بيانات الجهاز",
 
   "settingsPrivacy": "الخصوصية",
   "privacyTitle": "خصوصيتك",

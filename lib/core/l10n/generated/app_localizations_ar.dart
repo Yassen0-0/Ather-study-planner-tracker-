@@ -614,6 +614,16 @@ class LAr extends L {
   String get authDeleteAccountFailed => 'لم يُحذف الحساب. حاول مرة أخرى.';
 
   @override
+  String get accountSwitchWipeTitle => 'حساب مختلف';
+
+  @override
+  String get accountSwitchWipeMessage =>
+      'البيانات المحفوظة على هذا الجهاز تخص حسابًا آخر. للمتابعة بهذا الحساب ستُمسح كل بيانات الجهاز: المواد والأبواب والامتحانات والمهام. لا يمكن التراجع.';
+
+  @override
+  String get accountSwitchWipeConfirm => 'امسح بيانات الجهاز';
+
+  @override
   String get settingsPrivacy => 'الخصوصية';
 
   @override

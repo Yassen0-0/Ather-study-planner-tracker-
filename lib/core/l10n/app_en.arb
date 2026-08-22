@@ -205,6 +205,9 @@
   "authDeleteAccountReauthBody": "Type your password to finish deleting the account.",
   "authDeleteAccountReauthAction": "Delete account",
   "authDeleteAccountFailed": "The account was not deleted. Try again.",
+  "accountSwitchWipeTitle": "A different account",
+  "accountSwitchWipeMessage": "The data on this device belongs to another account. Continuing with this account erases everything on the device: subjects, chapters, exams and tasks. This cannot be undone.",
+  "accountSwitchWipeConfirm": "Erase device data",
 
   "settingsPrivacy": "Privacy",
   "privacyTitle": "Your privacy",

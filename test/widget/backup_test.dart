@@ -226,7 +226,9 @@ void main() {
 
   // The device belonged to somebody else. Nothing used to notice, so the second
   // student opened the app to the first one's curriculum -- and the sync then
-  // mirrored it into the second student's cloud document.
+  // mirrored it into the second student's cloud document. Since the wipe grew
+  // a confirmation, this same journey runs through the sheet: the question is
+  // asked, and "yes" is what releases the wipe and the restore behind it.
   testWidgets('a different account wipes the previous student off the device', (
     tester,
   ) async {
@@ -247,6 +249,12 @@ void main() {
         },
       ),
     );
+    await tester.pumpAndSettle();
+
+    // A populated device belonging to another account is never wiped in
+    // silence: the sheet says whose data is about to go.
+    expect(find.text('حساب مختلف'), findsOneWidget);
+    await tester.tap(find.text('امسح بيانات الجهاز'));
     await tester.pumpAndSettle();
 
     final snapshot = await DriftStudyRepository(db).readSnapshot();
@@ -295,6 +303,11 @@ void main() {
     // nothing guarantees that. Missing it leaves one student looking at
     // another's curriculum, and uploads it into their cloud document.
     await auth.signInWithGoogle();
+    await tester.pumpAndSettle();
+
+    // The device is populated and the uid changed, so the wipe asks first.
+    expect(find.text('حساب مختلف'), findsOneWidget);
+    await tester.tap(find.text('امسح بيانات الجهاز'));
     await tester.pumpAndSettle();
 
     final snapshot = await DriftStudyRepository(db).readSnapshot();

@@ -32,16 +32,25 @@ class DriftTaskRepository implements TaskRepository {
     required DateTime at,
   }) {
     final normalised = dayOf(day);
+    final target = dayNumber(normalised);
+    // A raw `day.equals` would miss rows written before the day key was
+    // anchored to UTC -- a legacy local midnight sits an hour off the
+    // canonical instant, and the new task would land on top of it. Prefilter
+    // a wide window in SQL (cheap; the table is small), then match on the
+    // calendar-day number itself.
+    final windowStart = normalised.subtract(const Duration(hours: 26));
+    final windowEnd = normalised.add(const Duration(hours: 26));
 
     // The read and the insert are one transaction: two adds racing on the same
     // day would otherwise both read the same max and land on top of each other.
     return _db.transaction(() async {
-      final existing = await (_db.select(
+      final window = await (_db.select(
         _db.dailyTasks,
-      )..where((t) => t.day.equals(normalised))).get();
+      )..where((t) => t.day.isBetweenValues(windowStart, windowEnd))).get();
 
       var next = 0;
-      for (final row in existing) {
+      for (final row in window) {
+        if (dayNumber(row.day) != target) continue;
         if (row.sortOrder >= next) next = row.sortOrder + 1;
       }
 
@@ -82,18 +91,32 @@ class DriftTaskRepository implements TaskRepository {
     required DateTime day,
     required List<int> orderedIds,
   }) {
-    final normalised = dayOf(day);
+    final target = dayNumber(dayOf(day));
 
     return _db.transaction(() async {
+      // The student's own ids are the authority, but a legacy row written
+      // before the day key was UTC-anchored carries a local midnight and sits
+      // an hour outside the exact instant. Matching by calendar-day number
+      // keeps those rows inside the renumbering instead of tangling around
+      // them -- while an id from another day is still refused outright.
+      final candidates = await (_db.select(
+        _db.dailyTasks,
+      )..where((t) => t.id.isIn(orderedIds))).get();
+      final sameDay = <int>{
+        for (final row in candidates)
+          if (dayNumber(dayOf(row.day)) == target) row.id,
+      };
+
       await _db.batch((Batch batch) {
-        for (var i = 0; i < orderedIds.length; i++) {
+        var position = 0;
+        for (final id in orderedIds) {
+          if (!sameDay.contains(id)) continue;
           batch.update(
             _db.dailyTasks,
-            DailyTasksCompanion(sortOrder: Value(i)),
-            // Scoped by day as well as id: a stale list of ids from another day
-            // must not be able to renumber rows the student is not looking at.
-            where: (t) => t.id.equals(orderedIds[i]) & t.day.equals(normalised),
+            DailyTasksCompanion(sortOrder: Value(position)),
+            where: (t) => t.id.equals(id),
           );
+          position++;
         }
       });
     });
@@ -108,7 +131,11 @@ class DriftTaskRepository implements TaskRepository {
           for (final t in tasks)
             DailyTasksCompanion.insert(
               id: Value(t.id),
-              day: t.day,
+              // The blob was written on another phone, possibly under another
+              // UTC offset; its `day` is an instant that only means "that day"
+              // where it was written. Re-truncating lands the row on the day
+              // the backup meant rather than 23:00 of the evening before.
+              day: dayOf(t.day),
               title: t.title,
               done: Value(t.done),
               sortOrder: t.sortOrder,
@@ -124,7 +151,12 @@ class DriftTaskRepository implements TaskRepository {
 
   DailyTask _toTask(DailyTaskRow r) => DailyTask(
     id: r.id,
-    day: r.day,
+    // Normalised on read as well as on write: rows written before the day key
+    // was anchored to UTC carry a local midnight, and a row like that read
+    // under a different UTC offset comes back at 23:00 or 01:00. Re-truncating
+    // here hands every caller -- screens and providers alike -- the canonical
+    // form, whatever the column held.
+    day: dayOf(r.day),
     title: r.title,
     done: r.done,
     sortOrder: r.sortOrder,

@@ -492,6 +492,11 @@ class DriftStudyRepository implements StudyRepository {
       // "أتقنت الباب" also restarts the clock (see markChapterMastered), and it
       // is not an exam -- so it has to be considered here too, or deleting one
       // exam would quietly undo a chapter the student legitimately closed out.
+      //
+      // But only for lessons that already existed when the gate was stamped. A
+      // lesson added *after* it inherited nothing from it; letting its deleted
+      // exam fall back to `masteredAt` would leave a lesson proven days before
+      // it existed, counting down to an overdue red it never earned.
       final lesson = await (_db.select(
         _db.lessons,
       )..where((t) => t.id.equals(lessonId))).getSingleOrNull();
@@ -501,8 +506,14 @@ class DriftStudyRepository implements StudyRepository {
               _db.chapters,
             )..where((t) => t.id.equals(lesson.chapterId))).getSingleOrNull();
 
+      final DateTime? masteredAt = chapter?.masteredAt;
+      final DateTime? fromMastery =
+          masteredAt != null &&
+              lesson != null &&
+              !lesson.createdAt.isAfter(masteredAt)
+          ? masteredAt
+          : null;
       final DateTime? fromExam = remaining?.createdAt;
-      final DateTime? fromMastery = chapter?.masteredAt;
       final DateTime? proven = switch ((fromExam, fromMastery)) {
         (null, null) => null,
         (final DateTime e, null) => e,
@@ -515,6 +526,11 @@ class DriftStudyRepository implements StudyRepository {
       )..where((t) => t.id.equals(lessonId))).write(
         LessonsCompanion(
           lastReviewedAt: Value<DateTime?>(proven),
+          // The checklist item means "there is an exam on record", so it follows
+          // the record, not the clock: with no exam remaining there is nothing
+          // the tick could point at. Leaving it set is how deleting the only
+          // exam left the screen saying mastery 0 and "sat an exam" at once.
+          didExam: Value(remaining != null),
           // The remaining cycle is a different one from the cancelled reminder's.
           lastNotifiedAt: const Value<DateTime?>(null),
         ),
@@ -551,6 +567,14 @@ class DriftStudyRepository implements StudyRepository {
     // thing back if any statement throws, which is the only reason it is safe to
     // delete the student's data before knowing the inserts will succeed.
     return _db.transaction(() async {
+      // A backup without subjects (version 1 or 2) describes only the four
+      // seeded subjects' world. Chapters under a subject the student added
+      // themselves belong to no cloud copy at all, so they are lifted out and
+      // given back after the replace instead of dying with the rest.
+      final preserved = backup.subjects.isEmpty
+          ? await _readCustomSubjectData()
+          : null;
+
       // Chapters cascade to lessons, exams, groups and homework, so this one
       // delete empties everything a backup owns. Daily tasks have no foreign
       // key and are handled by DriftTaskRepository.restore.
@@ -647,7 +671,172 @@ class DriftStudyRepository implements StudyRepository {
               ),
           ]);
       });
+
+      if (preserved != null && preserved.isNotEmpty) {
+        await _reinsertCustomSubjectData(preserved, backup);
+      }
     });
+  }
+
+  /// Reads the subtree under subjects the student added themselves, ahead of
+  /// restoring a backup that does not carry subjects.
+  ///
+  /// "Not one of the four seeds" is the test rather than `code == 'custom'`:
+  /// a code this build cannot parse belongs to a subject a newer app created,
+  /// which is exactly as local as a student-added one and exactly as absent
+  /// from an old cloud copy.
+  Future<_PreservedCustomData> _readCustomSubjectData() async {
+    final subjectRows = await _db.select(_db.subjects).get();
+    final customIds = <int>{
+      for (final s in subjectRows)
+        if (SubjectCode.tryFromName(s.code) == null) s.id,
+    };
+    if (customIds.isEmpty) return _PreservedCustomData.empty;
+
+    final chapterRows = await (_db.select(
+      _db.chapters,
+    )..where((t) => t.subjectId.isIn(customIds))).get();
+    if (chapterRows.isEmpty) return _PreservedCustomData.empty;
+
+    final lessonRows = await (_db.select(
+      _db.lessons,
+    )..where((t) => t.chapterId.isIn(<int>[
+      for (final c in chapterRows) c.id,
+    ]))).get();
+
+    final lessonIds = <int>{for (final l in lessonRows) l.id};
+    final examRows = lessonIds.isEmpty
+        ? <ExamEntryRow>[]
+        : await (_db.select(
+            _db.examEntries,
+          )..where((t) => t.lessonId.isIn(lessonIds))).get();
+
+    final examIds = <int>{for (final e in examRows) e.id};
+    final groupRows = examIds.isEmpty
+        ? <ExamQuestionGroupRow>[]
+        : await (_db.select(
+            _db.examQuestionGroups,
+          )..where((t) => t.examId.isIn(examIds))).get();
+
+    final homeworkRows = lessonIds.isEmpty
+        ? <HomeworkEntryRow>[]
+        : await (_db.select(
+            _db.homeworkEntries,
+          )..where((t) => t.lessonId.isIn(lessonIds))).get();
+
+    return _PreservedCustomData(
+      chapters: chapterRows,
+      lessons: lessonRows,
+      exams: examRows,
+      groups: groupRows,
+      homework: homeworkRows,
+    );
+  }
+
+  /// Writes the preserved custom-subject subtree back after the replace.
+  ///
+  /// The old ids cannot simply be kept: they were allocated by *this* device's
+  /// autoincrement before the wipe, while the backup's ids came from whichever
+  /// device wrote it -- and the two are free to collide on the same primary
+  /// key. So every row is re-allocated past everything the backup just laid
+  /// down, and each foreign key is rewritten to follow its parent.
+  Future<void> _reinsertCustomSubjectData(
+    _PreservedCustomData preserved,
+    StudyBackup backup,
+  ) async {
+    var chapterId = _highestId(backup.chapters.map((c) => c.id));
+    var lessonId = _highestId(backup.lessons.map((l) => l.id));
+    var examId = _highestId(backup.exams.map((e) => e.id));
+    var groupId = _highestId(<int>[
+      for (final e in backup.exams)
+        for (final g in e.groups) g.id,
+    ]);
+    var homeworkId = _highestId(backup.homework.map((h) => h.id));
+
+    final newChapterIds = <int, int>{};
+    for (final c in preserved.chapters) {
+      newChapterIds[c.id] = ++chapterId;
+    }
+    final newLessonIds = <int, int>{};
+    for (final l in preserved.lessons) {
+      newLessonIds[l.id] = ++lessonId;
+    }
+    final newExamIds = <int, int>{};
+    for (final e in preserved.exams) {
+      newExamIds[e.id] = ++examId;
+    }
+
+    await _db.batch((Batch batch) {
+      batch.insertAll(_db.chapters, <ChaptersCompanion>[
+        for (final c in preserved.chapters)
+          ChaptersCompanion.insert(
+            id: Value(newChapterIds[c.id]!),
+            subjectId: c.subjectId,
+            name: c.name,
+            createdAt: c.createdAt,
+            masteredAt: Value(c.masteredAt),
+          ),
+      ]);
+
+      batch.insertAll(_db.lessons, <LessonsCompanion>[
+        for (final l in preserved.lessons)
+          LessonsCompanion.insert(
+            id: Value(newLessonIds[l.id]!),
+            chapterId: newChapterIds[l.chapterId]!,
+            name: l.name,
+            createdAt: l.createdAt,
+            lastReviewedAt: Value(l.lastReviewedAt),
+            lastNotifiedAt: Value(l.lastNotifiedAt),
+            watchedLesson: Value(l.watchedLesson),
+            readNotes: Value(l.readNotes),
+            didHomework: Value(l.didHomework),
+            didExam: Value(l.didExam),
+            reviewedNotes: Value(l.reviewedNotes),
+          ),
+      ]);
+
+      batch
+        ..insertAll(_db.examEntries, <ExamEntriesCompanion>[
+          for (final e in preserved.exams)
+            ExamEntriesCompanion.insert(
+              id: Value(newExamIds[e.id]!),
+              lessonId: newLessonIds[e.lessonId]!,
+              isReviewExam: Value(e.isReviewExam),
+              totalPossiblePoints: e.totalPossiblePoints,
+              correctPoints: e.correctPoints,
+              percentage: e.percentage,
+              createdAt: e.createdAt,
+            ),
+        ])
+        ..insertAll(_db.examQuestionGroups, <ExamQuestionGroupsCompanion>[
+          for (final g in preserved.groups)
+            ExamQuestionGroupsCompanion.insert(
+              id: Value(++groupId),
+              examId: newExamIds[g.examId]!,
+              pointsPerQuestion: g.pointsPerQuestion,
+              questionCount: g.questionCount,
+              correctCount: g.correctCount,
+            ),
+        ])
+        ..insertAll(_db.homeworkEntries, <HomeworkEntriesCompanion>[
+          for (final h in preserved.homework)
+            HomeworkEntriesCompanion.insert(
+              id: Value(++homeworkId),
+              lessonId: newLessonIds[h.lessonId]!,
+              score: h.score,
+              maxScore: h.maxScore,
+              createdAt: h.createdAt,
+            ),
+        ]);
+    });
+  }
+
+  static int _highestId(Iterable<int> ids) {
+    var highest = 0;
+    for (final id in ids) {
+      if (id > highest) highest = id;
+    }
+    return highest;
   }
 
   @override
@@ -731,6 +920,45 @@ class DriftStudyRepository implements StudyRepository {
     questionCount: r.questionCount,
     correctCount: r.correctCount,
   );
+}
+
+/// The subtree under student-added subjects, held in memory across the
+/// destructive half of restoring a backup that carries no subjects. Raw rows
+/// rather than entities: what comes back out is inserted, never shown.
+final class _PreservedCustomData {
+  const _PreservedCustomData({
+    required this.chapters,
+    required this.lessons,
+    required this.exams,
+    required this.groups,
+    required this.homework,
+  });
+
+  static const _PreservedCustomData empty = _PreservedCustomData(
+    chapters: <ChapterRow>[],
+    lessons: <LessonRow>[],
+    exams: <ExamEntryRow>[],
+    groups: <ExamQuestionGroupRow>[],
+    homework: <HomeworkEntryRow>[],
+  );
+
+  bool get isEmpty => chapters.isEmpty;
+
+  /// True when there is anything at all to give back. Chapters alone are
+  /// enough to count -- a custom subject with chapters but no lessons yet is
+  /// still work the student would not want silently deleted.
+  bool get isNotEmpty =>
+      chapters.isNotEmpty ||
+      lessons.isNotEmpty ||
+      exams.isNotEmpty ||
+      groups.isNotEmpty ||
+      homework.isNotEmpty;
+
+  final List<ChapterRow> chapters;
+  final List<LessonRow> lessons;
+  final List<ExamEntryRow> exams;
+  final List<ExamQuestionGroupRow> groups;
+  final List<HomeworkEntryRow> homework;
 }
 
 /// Minimal combineLatest for exactly six streams.

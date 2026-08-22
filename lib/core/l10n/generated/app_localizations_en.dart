@@ -614,6 +614,16 @@ class LEn extends L {
       'The account was not deleted. Try again.';
 
   @override
+  String get accountSwitchWipeTitle => 'A different account';
+
+  @override
+  String get accountSwitchWipeMessage =>
+      'The data on this device belongs to another account. Continuing with this account erases everything on the device: subjects, chapters, exams and tasks. This cannot be undone.';
+
+  @override
+  String get accountSwitchWipeConfirm => 'Erase device data';
+
+  @override
   String get settingsPrivacy => 'Privacy';
 
   @override

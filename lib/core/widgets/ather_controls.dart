@@ -298,9 +298,13 @@ class AtherTextField extends StatelessWidget {
 
 /// A digits-only field.
 ///
-/// Forced LTR with centred text and filtered to `[0-9]`, so a student typing a
-/// score cannot produce Arabic-Indic digits, a minus sign or a decimal point
-/// that the parser would then have to guess at.
+/// Forced LTR with centred text, and digits are *translated*, not filtered:
+/// Arabic-Indic ٠-٩ (and the extended Persian set) are rewritten to 0-9 before
+/// anything else runs. A keyboard that produces them is common on devices set
+/// up in Arabic, and a filter that silently swallowed every keystroke left the
+/// exam wizard -- the heart of the product -- looking broken on those phones
+/// with no message explaining why. A minus sign or decimal point is still
+/// refused: the parser has one job and it is whole numbers.
 class NumberField extends StatelessWidget {
   const NumberField({
     super.key,
@@ -387,6 +391,10 @@ class _BareNumberInput extends StatelessWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       inputFormatters: <TextInputFormatter>[
+        // Translate first, then constrain: the length limit has to count the
+        // digits the student actually sees, and the allow-list after
+        // normalisation still stops a minus sign or a decimal point.
+        _arabicIndicDigitsFormatter,
         FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
         LengthLimitingTextInputFormatter(maxLength),
       ],
@@ -401,6 +409,47 @@ class _BareNumberInput extends StatelessWidget {
         contentPadding: EdgeInsets.zero,
         counterText: '',
       ),
+    );
+  }
+}
+
+/// Rewrites Arabic-Indic digits (٠-٩, U+0660–U+0669) and their extended
+/// Persian set (۰-۹, U+06F0–U+06F9) to 0-9 inside a number field.
+///
+/// Every substitution is one code unit for one code unit, so the text length
+/// never moves and the incoming selection stays valid untouched.
+const _arabicIndicDigitsFormatter = _ArabicIndicDigits();
+
+class _ArabicIndicDigits extends TextInputFormatter {
+  const _ArabicIndicDigits();
+
+  static const int _zero = 0x30; // '0'
+  static const int _arabicIndicZero = 0x0660; // '٠'
+  static const int _extendedZero = 0x06F0; // '۰'
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    var translated = false;
+    final buffer = StringBuffer();
+    for (final unit in newValue.text.codeUnits) {
+      if (unit >= _arabicIndicZero && unit < _arabicIndicZero + 10) {
+        buffer.writeCharCode(unit - _arabicIndicZero + _zero);
+        translated = true;
+      } else if (unit >= _extendedZero && unit < _extendedZero + 10) {
+        buffer.writeCharCode(unit - _extendedZero + _zero);
+        translated = true;
+      } else {
+        buffer.writeCharCode(unit);
+      }
+    }
+    if (!translated) return newValue;
+    return TextEditingValue(
+      text: buffer.toString(),
+      selection: newValue.selection,
+      composing: newValue.composing,
     );
   }
 }

@@ -64,7 +64,7 @@
 
 <h1>سياسة الخصوصية — أثر</h1>
 <p class="meta">
-  تاريخ السريان: 15 أغسطس 2026 · آخر تحديث: 17 أغسطس 2026<br>
+  تاريخ السريان: 15 أغسطس 2026 · آخر تحديث: 22 أغسطس 2026<br>
   التطبيق: أثر (<code>com.ather.app</code>) · الناشر: <strong>Yassen Yousry</strong>
 </p>
 
@@ -97,6 +97,11 @@
     <td>هذا جوهر التطبيق، وتُرفع منه نسخة احتياطية لتستعيده إن فقدت هاتفك أو غيّرته</td>
     <td>نعم</td>
   </tr>
+  <tr>
+    <td>تقارير الأعطال (في إصدارات المتجر): أثر المكدس للخطأ، طراز الجهاز وإصدار أندرويد، والحالة التقنية للتطبيق لحظة العطل</td>
+    <td>لنعرف الأعطال الحقيقية ونصلحها في التحديث التالي. لا يتضمن التقرير سجل دراستك ولا أسماء الدروس ولا الدرجات</td>
+    <td>نعم</td>
+  </tr>
 </table>
 
 <div class="note">
@@ -109,11 +114,18 @@
 <ul>
   <li><strong>لا إعلانات</strong>، ولا تصل أي شركة إعلانات إلى بياناتك.</li>
   <li><strong>لا تتبّع ولا تحليلات</strong> — لا Google Analytics ولا أي أداة تتبّع.</li>
-  <li><strong>لا تسجيل أعطال</strong> يرسل بيانات إلى الخارج.</li>
   <li><strong>لا نطلب</strong> رقم هاتفك ولا موقعك ولا جهات اتصالك ولا صورك ولا الميكروفون ولا الكاميرا.</li>
   <li><strong>بصمتك لا تغادر هاتفك.</strong> قفل البصمة يستخدم نظام أندرويد نفسه؛ أثر لا يرى بصمتك ولا يحفظها.</li>
   <li><strong>لا نبيع بياناتك</strong> ولا نشاركها مع أحد لأي غرض تجاري. إطلاقاً.</li>
 </ul>
+
+<div class="note">
+  <strong>تسجيل الأعطال — نُصرّح به.</strong> إصدارات المتجر تُرسل، عبر Firebase
+  Crashlytics، تقريراً عند تعطّل التطبيق أو عند فشل عملية كتابة في قاعدة البيانات:
+  أثر المكدس للخطأ، وطراز الجهاز وإصدار أندرويد، والحالة التقنية لحظة العطل.
+  التقرير لا يحتوي سجل دراستك ولا أسماء دروسك ولا درجاتك، ولا يُستخدم إلا لإصلاح
+  الأعطال. أما إصدارات التطوير فلا تُرسل شيئاً.
+</div>
 
 <div class="note">
   <strong>اسمك وسنتك الدراسية على هذا الهاتف وحده.</strong> إن كتبت اسمك أو حددت سنتك
@@ -129,9 +141,10 @@
     الأساسي، والتطبيق يعمل بالكامل دون اتصال بالإنترنت.
   </li>
   <li>
-    <strong>Google Firebase</strong> (خدمتا Firebase Authentication و Cloud Firestore)،
-    وهما خدمتان من Google نستخدمهما كمعالج للبيانات. يُحفظ حسابك ونسختك السحابية هناك،
-    في موضع مقصور على حسابك وحده، وقواعد الأمان تمنع أي حساب آخر من الوصول إليه.
+    <strong>Google Firebase</strong> (خدمات Firebase Authentication و Cloud Firestore
+    و Crashlytics)، وهي خدمات من Google نستخدمها كمعالج للبيانات. يُحفظ حسابك ونسختك
+    السحابية هناك، في موضع مقصور على حسابك وحده، وقواعد الأمان تمنع أي حساب آخر من
+    الوصول إليه. وتصل تقارير الأعطال الموضحة في القسم الأول إلى Crashlytics.
   </li>
   <li>
     <strong>ولا توجد نسخة ثالثة.</strong> النسخة الاحتياطية التلقائية في أندرويد
@@ -165,7 +178,8 @@
 <h2>5. الطلبة دون 18 سنة</h2>
 <p>
   أثر موجّه لطلبة الثانوية العامة، ومنهم من هم دون الثامنة عشرة. لذلك صُمّم التطبيق
-  ليجمع أقل قدر ممكن من البيانات: بريد إلكتروني وسجل دراسة، لا غير — بلا إعلانات،
+  ليجمع أقل قدر ممكن من البيانات: بريد إلكتروني، وسجل دراسة، وتقارير أعطال تقنية
+  بلا محتوى دراسي — بلا إعلانات،
   وبلا تتبّع، وبلا مشاركة مع أي طرف ثالث.
 </p>
 <p>
@@ -192,7 +206,7 @@
 
 <h1>Privacy Policy — Ather</h1>
 <p class="meta">
-  Effective: 15 August 2026 · Last updated: 17 August 2026<br>
+  Effective: 15 August 2026 · Last updated: 22 August 2026<br>
   App: Ather (<code>com.ather.app</code>) · Publisher: <strong>Yassen Yousry</strong>
 </p>
 
@@ -225,6 +239,11 @@
     <td>This is the product. It is also backed up so a lost or replaced phone can recover it</td>
     <td>Yes</td>
   </tr>
+  <tr>
+    <td>Crash reports (store releases only): the error's stack trace, device model and Android version, and the app's technical state at the moment of failure</td>
+    <td>So real crashes are known and fixed in the next update. The report does not contain your study record, lesson names, or scores</td>
+    <td>Yes</td>
+  </tr>
 </table>
 
 <div class="note">
@@ -245,11 +264,19 @@
 <ul>
   <li><strong>No ads</strong>, and no advertising company receives your data.</li>
   <li><strong>No tracking or analytics</strong> — no Google Analytics, no tracking SDK of any kind.</li>
-  <li><strong>No crash reporting</strong> that sends data off the device.</li>
   <li><strong>We do not collect</strong> your phone number, location, contacts, photos, microphone, or camera.</li>
   <li><strong>Your fingerprint never leaves your phone.</strong> The app lock uses Android's own biometric prompt; Ather never sees or stores biometric data.</li>
   <li><strong>We do not sell your data</strong> or share it with anyone for any commercial purpose. Ever.</li>
 </ul>
+
+<div class="note">
+  <strong>Crash reporting — declared, not hidden.</strong> Store releases send a
+  report through Firebase Crashlytics when the app crashes or when a database write
+  fails: the error's stack trace, the device model and Android version, and the
+  technical state at the moment of failure. The report does not contain your study
+  record, lesson names, or scores, and it is used for one thing only: fixing crashes.
+  Development builds send nothing.
+</div>
 
 <h2>2. Where it is stored</h2>
 <ul>
@@ -258,10 +285,11 @@
     primary copy, and the app works fully offline.
   </li>
   <li>
-    <strong>Google Firebase</strong> (Firebase Authentication and Cloud Firestore), used
-    as our data processor. Your account and your cloud copy live there. The copy is
-    stored under your account alone, and security rules prevent any other account from
-    reading it.
+    <strong>Google Firebase</strong> (Firebase Authentication, Cloud Firestore, and
+    Crashlytics), used as our data processor. Your account and your cloud copy live
+    there. The copy is stored under your account alone, and security rules prevent any
+    other account from reading it. Crash reports, as described in section 1, go to
+    Crashlytics.
   </li>
   <li>
     <strong>And nowhere else.</strong> Android's automatic backup — the platform
@@ -294,8 +322,9 @@
 <h2>5. Students under 18</h2>
 <p>
   Ather is built for Thanaweya Amma students, some of whom are under 18. The app is
-  therefore designed to collect as little as possible: an email address and a study
-  record. No ads, no tracking, no third-party sharing.
+  therefore designed to collect as little as possible: an email address, a study
+  record, and technical crash reports that carry no study content. No ads, no
+  tracking, no third-party sharing.
 </p>
 <p>
   If you are a parent or guardian and want to review or delete your child's data, email

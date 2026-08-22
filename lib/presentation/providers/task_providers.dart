@@ -45,7 +45,11 @@ final tasksForSelectedDayProvider = Provider<List<DailyTask>>((ref) {
   final day = ref.watch(selectedTaskDayProvider);
   return <DailyTask>[
     for (final task in ref.watch(tasksValueProvider))
-      if (task.day == day) task,
+      // Compared as day numbers, not `task.day == day`: two DateTimes for one
+      // calendar day can still name different instants when one was built
+      // under another UTC offset (a row restored from a backup written in the
+      // other half of the year). Day numbers compare days.
+      if (dayNumber(task.day) == dayNumber(day)) task,
   ];
 });
 
@@ -56,9 +60,14 @@ final tasksForSelectedDayProvider = Provider<List<DailyTask>>((ref) {
 /// achievement, and filling its circle would be the app congratulating a
 /// student for writing nothing down.
 final taskCompleteDaysProvider = Provider<Set<DateTime>>((ref) {
+  // Keyed on the canonical midnight rather than the raw field: rows for one
+  // day must agree about which day they belong to even if one of them carries
+  // an instant from another offset, and a map keyed on raw DateTimes would
+  // silently split that day -- and its circle -- in two.
   final byDay = <DateTime, bool>{};
   for (final task in ref.watch(tasksValueProvider)) {
-    byDay[task.day] = (byDay[task.day] ?? true) && task.done;
+    final day = dayOf(task.day);
+    byDay[day] = (byDay[day] ?? true) && task.done;
   }
   return <DateTime>{
     for (final entry in byDay.entries)
