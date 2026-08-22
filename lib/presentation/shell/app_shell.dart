@@ -13,7 +13,7 @@ import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/pop_in.dart';
 import '../../core/widgets/pressable.dart';
 import '../../core/widgets/reduced_motion.dart';
-import '../providers/summary_providers.dart';
+import '../providers/app_providers.dart';
 
 /// The four-slot tab bar.
 ///
@@ -26,8 +26,9 @@ import '../providers/summary_providers.dart';
 /// after the fact, from a context that had none — and it was dead whenever no
 /// lesson existed yet, which is the state a new student is in. Logging an exam
 /// is now reachable only from somewhere that already knows the lesson: the
-/// "Exam" pill on the dashboard's up-next card, and the CTA on a lesson screen.
-/// One fewer control, and no route that can start with the question "which one?".
+/// "Exam" pill on the dashboard's up-next card, a Review Centre row, and the
+/// CTA on a lesson screen. One fewer control, and no route that can start with
+/// the question "which one?".
 ///
 /// Hand-built rather than a `NavigationBar` because Material insists on an
 /// indicator pill, a ripple and a tint on scroll — all three of which this
@@ -40,12 +41,14 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = L.of(context);
-    // `select`, not the whole summary: this widget holds the app's one
-    // `BackdropFilter`, so it is the most expensive thing in the tree to
-    // rebuild -- and it was rebuilding on every write anywhere in the app to
-    // read a single int that changes perhaps twice a week.
-    final overdue = ref.watch(
-      dashboardProvider.select((d) => d.overdueCount),
+    // The badge is exactly what tapping the tab opens: the length of the
+    // review queue, selected as an int so this widget -- which holds the app's
+    // one `BackdropFilter`, the most expensive thing in the tree to rebuild --
+    // does not rebuild when anything else in a summary moves. It used to read
+    // the dashboard's overdue count instead, a number that could disagree with
+    // the list rendered under the button.
+    final queueSize = ref.watch(
+      reviewQueueProvider.select((queue) => queue.length),
     );
 
     return Scaffold(
@@ -77,7 +80,7 @@ class AppShell extends ConsumerWidget {
                 glyph: AtherGlyph.review,
                 label: l.navReview,
                 selected: navigationShell.currentIndex == 1,
-                badge: overdue,
+                badge: queueSize,
                 onTap: () => _goBranch(1),
               ),
             ),
@@ -190,10 +193,11 @@ Widget _glassPill(BuildContext context, Widget content) {
       ),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          // 0.72 is a floor, not a starting point: below it the inactive label
-          // stops being legible over a white card. Everything that passes under
-          // this bar is lighter than the tint, except the toast -- which is why
-          // the toast is pinned clear of it. See AppSizes.toastBottom.
+          // AppMotion.glassTint is a floor, not a starting point: below 0.85
+          // the inactive label stops being legible over a white card. Everything
+          // that passes under this bar is lighter than the tint, except the
+          // toast -- which is why the toast is pinned clear of it. See
+          // AppSizes.toastBottom.
           color: context.colors.card.withValues(alpha: AppMotion.glassTint),
           border: border,
           borderRadius: radius,
@@ -302,7 +306,7 @@ class _Tab extends StatelessWidget {
                   PositionedDirectional(
                     top: -5,
                     end: -8,
-                    child: _OverdueBadge(count: badge),
+                    child: _QueueBadge(count: badge),
                   ),
                 ],
               ),
@@ -326,28 +330,29 @@ class _Tab extends StatelessWidget {
   }
 }
 
-/// The overdue count. Always a number, never a bare dot: three decayed lessons
-/// and thirty are not the same news.
+/// The review tab's badge: the row count of the queue the tab opens, nothing
+/// else. Always a number, never a bare dot: three rows of work and thirty are
+/// not the same news.
 ///
 /// It arrives with a pop keyed on the count -- keying it is what makes 3 -> 4
 /// replay instead of silently swapping a digit -- and leaves with a plain fade.
-/// The absence of overdue work is not an event worth animating away from.
-class _OverdueBadge extends StatefulWidget {
-  const _OverdueBadge({required this.count});
+/// An empty queue is not an event worth animating away from.
+class _QueueBadge extends StatefulWidget {
+  const _QueueBadge({required this.count});
 
   final int count;
 
   @override
-  State<_OverdueBadge> createState() => _OverdueBadgeState();
+  State<_QueueBadge> createState() => _QueueBadgeState();
 }
 
-class _OverdueBadgeState extends State<_OverdueBadge> {
+class _QueueBadgeState extends State<_QueueBadge> {
   /// The badge has to keep rendering its old number while it fades out, or the
   /// student watches "3" become "0" on the way to nothing.
   late int _shown = widget.count;
 
   @override
-  void didUpdateWidget(_OverdueBadge old) {
+  void didUpdateWidget(_QueueBadge old) {
     super.didUpdateWidget(old);
     if (widget.count > 0) _shown = widget.count;
   }

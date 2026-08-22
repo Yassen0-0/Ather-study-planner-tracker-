@@ -180,7 +180,11 @@ class _ChapterCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              if (summary.isMastered) ...<Widget>[
+              // The disc claims the closure still stands *today*, so it reads
+              // the same derived evidence the badge on the chapter screen and
+              // both counters read -- never `isMastered` alone, which is a
+              // dated event and would stay green over an unexamined lesson.
+              if (summary.isCurrentlyClosed) ...<Widget>[
                 const CheckDisc(size: 17, checkSize: 11, strokeWidth: 2.6),
                 const SizedBox(width: AppSpacing.md),
               ],

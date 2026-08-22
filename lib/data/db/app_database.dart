@@ -25,6 +25,7 @@ const List<SubjectCode> kSeededSubjects = <SubjectCode>[
     ExamEntries,
     ExamQuestionGroups,
     DailyTasks,
+    StudyEvents,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -37,20 +38,18 @@ class AppDatabase extends _$AppDatabase {
   /// `subjects.deleted_at`, which is what made subjects something a student can
   /// add, archive, and delete into a recycle bin.
   ///
-  /// `deleted_at` was folded into 3 rather than given a 4 of its own, and that
-  /// is safe for one specific reason: **version 3 has never shipped.** It has
-  /// only ever existed on an unpushed branch, so no student's phone can be
-  /// holding it, and a 3 -> 4 step would be a migration written for a state
-  /// that does not exist in the world. The moment a build carrying 3 leaves
-  /// this machine, that stops being true and the next column needs its own
-  /// version.
+  /// **4 added the `study_events` capture log** -- and with it, the paragraph
+  /// above stopped being hypothetical: version 3 has now shipped (1.8.0+14),
+  /// so every future column gets its own step in [migration]'s ladder, exactly
+  /// as this file always promised. The 3 -> 4 step adds one table and touches
+  /// nothing else; see its test for the byte-for-byte proof.
   ///
   /// Every student on an earlier build already has an older file on disk, so
   /// this number and [migration]'s `onUpgrade` move together -- bumping one
   /// without the other opens the app against a database missing a column it is
   /// about to read.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -77,6 +76,12 @@ class AppDatabase extends _$AppDatabase {
           // only add rows the student never had the ability to delete -- because
           // until this very migration, they did not.
           await _seedSubjects();
+        }
+        if (from < 4) {
+          // 4 added the capture-only study event log. Written by nothing
+          // before it existed, so the upgrade has exactly one job: make the
+          // table exist, and leave every other byte alone.
+          await m.createTable(studyEvents);
         }
       } catch (error, stack) {
         // Report non-fatal error to Crashlytics before rethrowing.

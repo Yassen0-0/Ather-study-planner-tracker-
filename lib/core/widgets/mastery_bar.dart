@@ -62,15 +62,13 @@ class MasteryBar extends StatelessWidget {
 
 /// The dominant number on a summary card: `87%`.
 ///
-/// It used to append a grey `/ 100`, and the comment here defended it as the
-/// thing that made a *bare* number read as a score out of a hundred "without
-/// the word percent appearing anywhere". That was true when it was written.
-/// `percentLabel` later grew a `%`, and nothing came back to this composition,
-/// so the card rendered `38% / 100` -- a percentage divided by a hundred, two
-/// notations for one number, on the largest type on the screen.
-///
-/// The `%` won because the rest of the app already speaks it: every subject
-/// row, every exam result, every chart label. One notation.
+/// This used to compose the number with a grey `/ 100` in a baseline-aligned
+/// row, and the comment here defended that as what made a *bare* number read
+/// as a score out of a hundred. Then `percentLabel` grew a `%` and nothing came
+/// back to this composition, so the card rendered `38% / 100` -- two notations
+/// for one number on the largest type on the screen. The `%` won because the
+/// rest of the app already speaks it: every subject row, every exam result,
+/// every chart label. One notation, and no structure left over from the other.
 class MasteryNumber extends StatelessWidget {
   const MasteryNumber({
     super.key,
@@ -91,18 +89,11 @@ class MasteryNumber extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Ltr(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: <Widget>[
-          AnimatedPercentage(
-            value: value,
-            hasData: hasData,
-            color: color,
-            style: style,
-          ),
-        ],
+      child: AnimatedPercentage(
+        value: value,
+        hasData: hasData,
+        color: color,
+        style: style,
       ),
     );
   }

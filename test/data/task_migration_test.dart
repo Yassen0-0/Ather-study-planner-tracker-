@@ -96,7 +96,7 @@ void main() {
     // The seed is still idempotent across the upgrade: four subjects, not eight.
     expect(await db.select(db.subjects).get(), hasLength(4));
 
-    expect(db.schemaVersion, 3);
+    expect(db.schemaVersion, 4); // 4 = study_events capture table
   });
 
   test('upgrading from v2 adds the subject columns and keeps everything', () async {
@@ -125,7 +125,7 @@ void main() {
     expect(chapters, hasLength(1));
     expect(chapters.single.name, 'الباب الأول — الخلية');
 
-    expect(db.schemaVersion, 3);
+    expect(db.schemaVersion, 4); // 4 = study_events capture table
   });
 
   test('the seed never runs again once a subject can be deleted', () async {
@@ -156,6 +156,6 @@ void main() {
 
     expect(await db.select(db.dailyTasks).get(), isEmpty);
     expect(await db.select(db.subjects).get(), hasLength(4));
-    expect(db.schemaVersion, 3);
+    expect(db.schemaVersion, 4); // 4 = study_events capture table
   });
 }

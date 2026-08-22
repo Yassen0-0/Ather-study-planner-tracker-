@@ -12,7 +12,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/mastery_palette.dart';
-import '../../domain/entities/mastery.dart';
 import '../../domain/services/summaries.dart';
 import '../common/subject_presentation.dart';
 import 'widget_raster.dart';
@@ -185,19 +184,17 @@ class _Row extends StatelessWidget {
   }
 }
 
-/// Lessons the student has actually proved, by the app's own definition.
+/// Lessons the student has actually proven, by the app's one definition.
 ///
-/// `hasExam` first, and it is the whole point: a lesson with no exam has a
-/// mastery of 0, so counting on the percentage alone would be counting
-/// untouched lessons as failed ones rather than as unmeasured. The threshold is
-/// [kChapterMasteryThreshold] -- the same 70 that decides whether a chapter can
-/// be marked mastered -- rather than a second number invented for this card.
+/// The policy lives on [LessonSummary.isProven] and this card only counts it:
+/// an exam behind the lesson, the evidence still fresh, at or above
+/// [kChapterMasteryThreshold]. Freshness is not optional here — before it was
+/// added, a lesson scored 75% two months ago was shared to a group chat as
+/// "proven" while the dashboard below called the same lesson overdue.
 int lessonsAboveThreshold(DashboardSummary dashboard) => dashboard.subjects
     .expand((subject) => subject.chapters)
     .expand((chapter) => chapter.lessons)
-    .where(
-      (lesson) => lesson.hasExam && lesson.mastery >= kChapterMasteryThreshold,
-    )
+    .where((lesson) => lesson.isProven)
     .length;
 
 /// Builds the card, photographs it, and hands the PNG to the share sheet.

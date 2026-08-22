@@ -29,7 +29,12 @@ void main() {
         .first;
   });
 
-  LessonSummary lesson(int id, double mastery, {required int examCount}) =>
+  LessonSummary lesson(
+    int id,
+    double mastery, {
+    required int examCount,
+    bool needsReview = false,
+  }) =>
       LessonSummary(
         lesson: Lesson(
           id: id,
@@ -46,8 +51,8 @@ void main() {
         ),
         mastery: mastery,
         examCount: examCount,
-        needsReview: false,
-        daysOverdue: 0,
+        needsReview: needsReview,
+        daysOverdue: needsReview ? 5 : 0,
         daysUntilDue: null,
         latestHomeworkPercentage: null,
       );
@@ -171,6 +176,19 @@ void main() {
           lesson(1, 69, examCount: 1),
         ])),
         0,
+      );
+    });
+
+    test('a stale high score is not shared as proven', () {
+      // 85% earned forty days ago has decayed -- the dashboard calls it
+      // overdue. The card used to count it anyway, so the picture that leaves
+      // the phone claimed a lesson the app itself had turned red.
+      expect(
+        lessonsAboveThreshold(dashboardWith(<LessonSummary>[
+          lesson(1, 85, examCount: 2),
+          lesson(2, 85, examCount: 2, needsReview: true),
+        ])),
+        1,
       );
     });
 

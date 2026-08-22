@@ -21,6 +21,39 @@ import 'subject.dart';
 /// not carry the subjects would land chapters pointing at rows that do not
 /// exist -- a foreign key failure at best, and a silently emptied subject at
 /// worst.
+/// One captured moment of study activity, as the backup carries it.
+///
+/// Capture-only: nothing in the app reads these rows yet. They ride in the
+/// backup for one reason -- a cloud copy without them would let the first
+/// restore erase exactly the history the events table exists to keep.
+final class StudyEvent {
+  const StudyEvent({
+    required this.id,
+    required this.type,
+    required this.refId,
+    required this.at,
+  });
+
+  /// A lesson checklist tick (one row per changed step).
+  static const String typeChecklist = 'checklist';
+
+  /// A daily task's done flag flipping either way.
+  static const String typeTaskDone = 'task_done';
+
+  final int id;
+
+  /// [typeChecklist] or [typeTaskDone]. Kept as the literal string rather than
+  /// an enum so an older build parsing a newer file can carry a kind it does
+  /// not know instead of failing on it -- the same reasoning as subject codes.
+  final String type;
+
+  /// The id of the row the event is about: a lessonId or a taskId, decided by
+  /// [type].
+  final int refId;
+
+  final DateTime at;
+}
+
 final class StudyBackup {
   const StudyBackup({
     required this.subjects,
@@ -29,6 +62,7 @@ final class StudyBackup {
     required this.exams,
     required this.homework,
     required this.tasks,
+    this.events = const <StudyEvent>[],
   });
 
   /// Bumped only when the shape changes in a way an older app cannot read.
@@ -48,7 +82,12 @@ final class StudyBackup {
   /// verifies the checksum only when one is present. Students have version 2
   /// blobs in the cloud right now, and refusing them would be data loss dressed
   /// up as a safety check.
-  static const int formatVersion = 3;
+  ///
+  /// 4 added `events` -- and, unlike the checksum bump, the payload shape moved
+  /// with it. Tolerance still runs one way only: a blob *without* the key
+  /// parses as "nothing captured yet" (every blob in the cloud today), while a
+  /// newer app reading this file gets the full history.
+  static const int formatVersion = 4;
 
   /// Empty in a version 1 backup, which is not a loss: every subject that could
   /// exist when those were written is seeded on the receiving device already.
@@ -60,6 +99,10 @@ final class StudyBackup {
   final List<HomeworkEntry> homework;
   final List<DailyTask> tasks;
 
+  /// The capture history. Empty for every blob written before format 4 -- read
+  /// as "nothing had been captured yet", never as corruption.
+  final List<StudyEvent> events;
+
   bool get isEmpty =>
       chapters.isEmpty && lessons.isEmpty && exams.isEmpty && tasks.isEmpty;
 
@@ -70,8 +113,9 @@ final class StudyBackup {
 
   static StudyBackup fromSnapshot(
     StudySnapshot snapshot,
-    List<DailyTask> tasks,
-  ) {
+    List<DailyTask> tasks, {
+    List<StudyEvent> events = const <StudyEvent>[],
+  }) {
     return StudyBackup(
       subjects: snapshot.subjects,
       chapters: snapshot.chapters,
@@ -79,6 +123,7 @@ final class StudyBackup {
       exams: snapshot.exams,
       homework: snapshot.homework,
       tasks: tasks,
+      events: events,
     );
   }
 
@@ -166,6 +211,18 @@ final class StudyBackup {
           'done': t.done,
           'sortOrder': t.sortOrder,
           'createdAt': _epoch(t.createdAt),
+        },
+    ],
+    // The id rides along so a restoring device can re-allocate above the
+    // file's highest event id -- nothing references these ids, but keeping
+    // the arithmetic deterministic makes the restore testable.
+    'events': <Object?>[
+      for (final e in events)
+        <String, Object?>{
+          'id': e.id,
+          'type': e.type,
+          'refId': e.refId,
+          'at': _epoch(e.at),
         },
     ],
   };
@@ -303,6 +360,18 @@ final class StudyBackup {
             done: t['done']! as bool,
             sortOrder: t['sortOrder']! as int,
             createdAt: _date(t['createdAt']),
+          ),
+      ],
+      // Tolerant in exactly one direction: every blob sitting in the cloud
+      // right now lacks the key, and its absence reads as "nothing had been
+      // captured yet" rather than corruption.
+      events: <StudyEvent>[
+        for (final e in _list(json['events']))
+          StudyEvent(
+            id: e['id']! as int,
+            type: e['type']! as String,
+            refId: e['refId']! as int,
+            at: _date(e['at']),
           ),
       ],
     );

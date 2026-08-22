@@ -34,7 +34,10 @@
   "overallMastery": "الإتقان العام",
   "statLessonsRemaining": "دروس متبقّية",
   "statNeedsReview": "يحتاج مراجعة",
-  "statMastered": "متقَن",
+  "statMastered": "متفوق",
+  "@statMastered": {
+    "description": "The third stat counts lessons that are «متفوق»: examined, not overdue, and at or above 90. Ather names three states and never one word for all of them: «أثبت» (examined, fresh, ≥70), «متفوق» (examined, fresh, ≥90), and «باب مُغلق» (a dated closure event whose evidence still stands)."
+  },
   "sectionSubjects": "المواد",
   "firstRunTitle": "ابدأ من هنا",
   "firstRunBody": "الإتقان يُحسب من امتحاناتك وحدها، لا من إنهاء الدرس.",
@@ -106,7 +109,13 @@
   "chapterNeedsReview": "يحتاج مراجعة",
   "chapterMasteredAt": "أتقنته في {date}",
   "@chapterMasteredAt": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": { "date": { "type": "String" } },
+    "description": "Shown in green only while the closure's evidence still stands (every lesson examined, chapter mean at or above 70 today)."
+  },
+  "chapterClosureDated": "أُغلِق {date}",
+  "@chapterClosureDated": {
+    "placeholders": { "date": { "type": "String" } },
+    "description": "Neutral line shown when the chapter carries a closure date whose evidence has since broken — the date stays, the green tick does not."
   },
   "masterChapter": "أتقنت الباب",
   "viewChapterReport": "تقرير الباب",
@@ -281,6 +290,8 @@
     }
   },
   "trendFlat": "تحتاج امتحانات أكثر لقياس التقدّم",
+  "trendSteady": "ثابتة — النصفان على المستوى نفسه",
+  "chapterReportMasteryLabel": "الإتقان",
   "weakestLessonBadge": "أضعف درس",
 
   "celebrationTitle": "أتقنت الباب!",
@@ -476,10 +487,11 @@
   "shareCardAction": "شارك تقدّمك",
   "shareCardTitle": "إتقاني في أثر",
   "shareCardOverall": "الإتقان العام",
-  "shareCardLessonsAbove": "{count,plural, =0{لا توجد دروس متقنة بعد} =1{درس واحد فوق حد الإتقان} =2{درسان فوق حد الإتقان} few{{count} دروس فوق حد الإتقان} other{{count} درساً فوق حد الإتقان}}",
+  "shareCardLessonsAbove": "{count,plural, =0{لا توجد دروس أثبتَها فوق حد الإتقان بعد} =1{درس واحد أثبتَه فوق حد الإتقان} =2{درسان أثبتَهما فوق حد الإتقان} few{{count} دروس أثبتَها فوق حد الإتقان} many{{count} درساً أثبتَها فوق حد الإتقان} other{{count} درساً أثبتَها فوق حد الإتقان}}",
   "shareCardError": "تعذّر تجهيز صورة التقدّم",
   "@shareCardLessonsAbove": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": { "count": { "type": "int" } },
+    "description": "Counts «أثبت» lessons only: an exam behind the lesson, the evidence still fresh (not overdue), at or above 70. The old wording said «متقنة» and counted stale scores."
   },
 
   "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",

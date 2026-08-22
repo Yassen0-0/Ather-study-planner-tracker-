@@ -75,7 +75,7 @@ class LEn extends L {
   String get statNeedsReview => 'Needs review';
 
   @override
-  String get statMastered => 'Mastered';
+  String get statMastered => 'Excellent';
 
   @override
   String get sectionSubjects => 'Subjects';
@@ -203,6 +203,11 @@ class LEn extends L {
   @override
   String chapterMasteredAt(String date) {
     return 'Mastered on $date';
+  }
+
+  @override
+  String chapterClosureDated(String date) {
+    return 'Closed $date';
   }
 
   @override
@@ -504,6 +509,12 @@ class LEn extends L {
 
   @override
   String get trendFlat => 'More exams are needed to measure progress';
+
+  @override
+  String get trendSteady => 'Steady -- both halves sit at the same level';
+
+  @override
+  String get chapterReportMasteryLabel => 'Mastery';
 
   @override
   String get weakestLessonBadge => 'Weakest lesson';
@@ -1000,9 +1011,9 @@ class LEn extends L {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count lessons above the mastery threshold',
-      one: '1 lesson above the mastery threshold',
-      zero: 'No lessons mastered yet',
+      other: '$count lessons proven above the mastery threshold',
+      one: '1 lesson proven above the mastery threshold',
+      zero: 'No lessons proven above the mastery threshold yet',
     );
     return '$_temp0';
   }

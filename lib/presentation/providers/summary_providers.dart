@@ -13,20 +13,21 @@ import 'app_providers.dart';
 ///
 /// All three share the same denominator — every lesson the student has created
 /// — so the row reads as one picture of the same set rather than three
-/// unrelated numbers. "متقن" deliberately excludes overdue lessons: a lesson
-/// that scored 95% two months ago is not currently mastered.
+/// unrelated numbers. The third figure is «متفوق»: lessons whose proof is both
+/// strong (≥ 90) and fresh. It is derived by [LessonSummary.isExcellent] in the
+/// domain; this row only counts it.
 final class HomeStats {
   const HomeStats({
     required this.totalLessons,
     required this.remaining,
     required this.overdue,
-    required this.mastered,
+    required this.excellent,
   });
 
   final int totalLessons;
   final int remaining;
   final int overdue;
-  final int mastered;
+  final int excellent;
 
   double fraction(int value) => totalLessons == 0 ? 0 : value / totalLessons;
 }
@@ -37,7 +38,7 @@ final homeStatsProvider = Provider<HomeStats>((ref) {
   var total = 0;
   var examined = 0;
   var overdue = 0;
-  var mastered = 0;
+  var excellent = 0;
 
   for (final subject in dashboard.subjects) {
     for (final chapter in subject.chapters) {
@@ -45,9 +46,7 @@ final homeStatsProvider = Provider<HomeStats>((ref) {
         total++;
         if (lesson.hasExam) examined++;
         if (lesson.needsReview) overdue++;
-        if (lesson.hasExam && !lesson.needsReview && lesson.mastery >= 90) {
-          mastered++;
-        }
+        if (lesson.isExcellent) excellent++;
       }
     }
   }
@@ -56,7 +55,7 @@ final homeStatsProvider = Provider<HomeStats>((ref) {
     totalLessons: total,
     remaining: total - examined,
     overdue: overdue,
-    mastered: mastered,
+    excellent: excellent,
   );
 });
 
@@ -95,16 +94,4 @@ final lessonSummaryProvider = Provider.family<LessonSummary?, int>((
   final lesson = snapshot.lessonById(lessonId);
   if (lesson == null) return null;
   return Summaries.lesson(snapshot, lesson, ref.watch(nowValueProvider));
-});
-
-/// The chapter a lesson belongs to -- needed by the lesson screen's breadcrumb
-/// and by the exam wizard when it reports which chapter was affected.
-final chapterOfLessonProvider = Provider.family<ChapterSummary?, int>((
-  ref,
-  lessonId,
-) {
-  final snapshot = ref.watch(snapshotValueProvider);
-  final lesson = snapshot.lessonById(lessonId);
-  if (lesson == null) return null;
-  return ref.watch(chapterSummaryProvider(lesson.chapterId));
 });

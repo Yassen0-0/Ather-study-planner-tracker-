@@ -9,7 +9,7 @@ import 'icon_motion.dart';
 import 'pressable.dart';
 import 'reduced_motion.dart';
 
-/// A 24px round checkbox: white with a grey ring when off, solid black with a
+/// A 24px round checkbox: white with a grey ring when off, solid accent with a
 /// white tick when on. The label fades to grey once ticked, so a completed
 /// list reads as quieter rather than louder.
 class AtherCheckbox extends StatelessWidget {
@@ -76,7 +76,7 @@ class AtherCheckbox extends StatelessWidget {
   }
 }
 
-/// A 50x30 switch. Green when on with the knob at the **end** of the track —
+/// A 50x30 switch. Accent when on with the knob at the **end** of the track —
 /// which under RTL is the physical left, so the control is forced LTR: a
 /// switch is a physical metaphor, and mirroring it makes "on" look like "off".
 class AtherSwitch extends StatelessWidget {

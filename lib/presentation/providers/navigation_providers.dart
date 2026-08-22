@@ -72,31 +72,3 @@ final nextTargetProvider = Provider<NextTarget?>((ref) {
   return null;
 });
 
-/// Where the tab bar's black "+" lands.
-///
-/// The same target as the dashboard card, but falling back to the first lesson
-/// once everything has been examined and nothing is overdue. The "+" is the
-/// shortest path from "I just sat a paper" to "it is recorded", so it must
-/// never be a dead end while any lesson exists.
-final quickExamTargetProvider = Provider<NextTarget?>((ref) {
-  final next = ref.watch(nextTargetProvider);
-  if (next != null) return next;
-
-  final snapshot = ref.watch(snapshotValueProvider);
-  final now = ref.watch(nowValueProvider);
-  for (final subject in snapshot.activeSubjects) {
-    for (final chapter in snapshot.chaptersIn(subject.id)) {
-      for (final lesson in snapshot.lessonsIn(chapter.id)) {
-        return NextTarget(
-          lesson: lesson,
-          chapterId: chapter.id,
-          subjectId: subject.id,
-          isOverdue: ReviewCycleService.needsReview(lesson, now),
-          hasExam: snapshot.examsFor(lesson.id).isNotEmpty,
-          daysOverdue: ReviewCycleService.daysOverdue(lesson, now),
-        );
-      }
-    }
-  }
-  return null;
-});

@@ -48,8 +48,8 @@ abstract final class Routes {
 
   /// [fromLesson] records whether the wizard was opened from the lesson screen
   /// itself. On save the wizard has to land the student on the lesson -- if it
-  /// was launched from the review list or the tab-bar "+", there is no lesson
-  /// underneath to pop back to.
+  /// was launched from the review centre or the dashboard's up-next card,
+  /// there is no lesson underneath to pop back to.
   static String exam(int lessonId, {required bool fromLesson}) =>
       '/lesson/$lessonId/exam?from=${fromLesson ? 'lesson' : 'list'}';
 }

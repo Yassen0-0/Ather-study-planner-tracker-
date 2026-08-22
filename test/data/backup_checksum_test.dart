@@ -134,7 +134,7 @@ void main() {
       // as bytes, or truncated, would still be "a String" and would still
       // compare equal to itself -- and would still be useless.
       expect((data['checksum']! as String).length, 64);
-      expect(data['formatVersion'], 3);
+      expect(data['formatVersion'], 4);
     });
 
     test('round-trips through download intact', () async {
@@ -261,12 +261,12 @@ void main() {
       expect(metadata.examCount, 1);
     });
 
-    test('the next upload replaces it with a checksummed version 3', () async {
+    test('the next upload replaces it with a checksummed version 4', () async {
       await writeRaw(populated(), version: 2);
       await repository.upload(populated());
 
       final data = (await doc().get()).data()!;
-      expect(data['formatVersion'], 3);
+      expect(data['formatVersion'], 4);
       expect(data['checksum'], isA<String>());
     });
   });

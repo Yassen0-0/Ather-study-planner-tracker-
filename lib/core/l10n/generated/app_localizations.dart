@@ -229,10 +229,10 @@ abstract class L {
   /// **'يحتاج مراجعة'**
   String get statNeedsReview;
 
-  /// No description provided for @statMastered.
+  /// The third stat counts lessons that are «متفوق»: examined, not overdue, and at or above 90. Ather names three states and never one word for all of them: «أثبت» (examined, fresh, ≥70), «متفوق» (examined, fresh, ≥90), and «باب مُغلق» (a dated closure event whose evidence still stands).
   ///
   /// In ar, this message translates to:
-  /// **'متقَن'**
+  /// **'متفوق'**
   String get statMastered;
 
   /// No description provided for @sectionSubjects.
@@ -427,11 +427,17 @@ abstract class L {
   /// **'يحتاج مراجعة'**
   String get chapterNeedsReview;
 
-  /// No description provided for @chapterMasteredAt.
+  /// Shown in green only while the closure's evidence still stands (every lesson examined, chapter mean at or above 70 today).
   ///
   /// In ar, this message translates to:
   /// **'أتقنته في {date}'**
   String chapterMasteredAt(String date);
+
+  /// Neutral line shown when the chapter carries a closure date whose evidence has since broken — the date stays, the green tick does not.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُغلِق {date}'**
+  String chapterClosureDated(String date);
 
   /// No description provided for @masterChapter.
   ///
@@ -954,6 +960,18 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'تحتاج امتحانات أكثر لقياس التقدّم'**
   String get trendFlat;
+
+  /// No description provided for @trendSteady.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثابتة — النصفان على المستوى نفسه'**
+  String get trendSteady;
+
+  /// No description provided for @chapterReportMasteryLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإتقان'**
+  String get chapterReportMasteryLabel;
 
   /// No description provided for @weakestLessonBadge.
   ///
@@ -1825,10 +1843,10 @@ abstract class L {
   /// **'الإتقان العام'**
   String get shareCardOverall;
 
-  /// No description provided for @shareCardLessonsAbove.
+  /// Counts «أثبت» lessons only: an exam behind the lesson, the evidence still fresh (not overdue), at or above 70. The old wording said «متقنة» and counted stale scores.
   ///
   /// In ar, this message translates to:
-  /// **'{count,plural, =0{لا توجد دروس متقنة بعد} =1{درس واحد فوق حد الإتقان} =2{درسان فوق حد الإتقان} few{{count} دروس فوق حد الإتقان} other{{count} درساً فوق حد الإتقان}}'**
+  /// **'{count,plural, =0{لا توجد دروس أثبتَها فوق حد الإتقان بعد} =1{درس واحد أثبتَه فوق حد الإتقان} =2{درسان أثبتَهما فوق حد الإتقان} few{{count} دروس أثبتَها فوق حد الإتقان} many{{count} درساً أثبتَها فوق حد الإتقان} other{{count} درساً أثبتَها فوق حد الإتقان}}'**
   String shareCardLessonsAbove(int count);
 
   /// No description provided for @shareCardError.

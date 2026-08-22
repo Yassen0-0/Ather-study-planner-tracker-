@@ -97,6 +97,9 @@ class _ChapterReportScreenState extends ConsumerState<ChapterReportScreen> {
         await service.build(blocks),
         service.buildFilename(summary.chapter.name, DateTime.now()),
       );
+      if (mounted) {
+        showAtherToastOn(overlay, direction, l.chapterReportExportDone);
+      }
     } on Object catch (error, stack) {
       debugPrint('Ather: chapter report export failed -- $error');
       debugPrintStack(stackTrace: stack);
@@ -198,22 +201,52 @@ class _ReportCard extends StatelessWidget {
   final ChapterSummary summary;
   final List<ExamEntry> exams;
 
-  /// Compares where the chapter started against where it is now.
+  /// Compares earlier exams against later ones, like for like.
+  ///
+  /// Both endpoints are means of raw exam percentages — the same unit the
+  /// "متوسط الامتحانات" line reports in. The previous version compared the
+  /// single oldest raw exam against the weighted chapter mastery: two different
+  /// measures, so a student who opened with a strong paper and then added new
+  /// lessons read "انخفضت من ١٠٠٪ إلى ٧٣٪" although 73% was no paper of theirs
+  /// — new material entering the mean, not a score falling. Splitting the
+  /// chronological list and averaging each half keeps every figure printed
+  /// here a real measurement, and lets the anchor age: once enough newer exams
+  /// exist, the opening paper no longer speaks for the present. The extra exam
+  /// goes to the recent half — recency is the side this line describes.
   ///
   /// Under one percentage point of movement counts as flat: reporting "up 0.4%"
   /// as improvement is the same flattery the honest-trend fix removed.
   (String, Color) _trend(AppColors colors) {
     if (exams.length < 2) return (l.trendFlat, colors.textSecondary);
 
-    final first = exams.first.percentage;
-    final delta = summary.mastery - first;
-    if (delta.abs() < 1) return (l.trendFlat, colors.textSecondary);
+    final split = exams.length ~/ 2;
+    final older = _meanPercentage(exams.sublist(0, split));
+    final newer = _meanPercentage(exams.sublist(split));
+    final delta = newer - older;
+    // Two distinct flat texts: with fewer than two exams there is nothing to
+    // measure yet, while a plentiful record whose halves agree has been
+    // measured and simply holds level. Saying "more exams are needed" to the
+    // second student denies the data they can see on this very card.
+    if (delta.abs() < 1) {
+      return (
+        exams.length <= 4 ? l.trendFlat : l.trendSteady,
+        colors.textSecondary,
+      );
+    }
 
-    final from = percent(first);
-    final to = percent(summary.mastery);
+    final from = percent(older);
+    final to = percent(newer);
     return delta > 0
         ? (l.trendUp(from, to), colors.rightText)
         : (l.trendDown(from, to), colors.wrong);
+  }
+
+  static double _meanPercentage(List<ExamEntry> exams) {
+    var total = 0.0;
+    for (final exam in exams) {
+      total += exam.percentage;
+    }
+    return total / exams.length;
   }
 
   @override
@@ -243,6 +276,14 @@ class _ReportCard extends StatelessWidget {
               percentLabel(summary.mastery, hasData: hasData),
               style: AppTypography.resultNumber.copyWith(color: color),
             ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            // A single chapter's mastery, so the by-chapter comparison label
+            // would promise a breakdown this card does not have.
+            l.chapterReportMasteryLabel,
+            textAlign: TextAlign.center,
+            style: context.text.sublabel,
           ),
           const SizedBox(height: AppSpacing.xl),
           MasteryBar(

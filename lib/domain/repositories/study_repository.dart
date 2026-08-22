@@ -17,6 +17,11 @@ abstract interface class StudyRepository {
   /// scheduling, the lifecycle reconciliation pass).
   Future<StudySnapshot> readSnapshot();
 
+  /// The captured study events, oldest first. Capture-only so far -- nothing
+  /// in the app reads them yet -- but backups must carry them, or the first
+  /// cloud restore would erase exactly the history this table exists to keep.
+  Future<List<StudyEvent>> readEvents();
+
   // --- Subjects -------------------------------------------------------------
   /// Adds a subject the student named. Returns its new id.
   ///
@@ -113,6 +118,7 @@ abstract interface class StudyRepository {
   Future<void> updateChecklist({
     required int lessonId,
     required LessonChecklist checklist,
+    DateTime? at,
   });
 
   /// Records that a review reminder was posted, so the same overdue lesson does

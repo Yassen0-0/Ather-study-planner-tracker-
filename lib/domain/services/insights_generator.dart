@@ -100,8 +100,27 @@ abstract final class InsightsGenerator {
     return insights.take(_maxInsights).toList();
   }
 
-  /// Compares each subject's mastery now against its mastery computed from
-  /// only the exams that existed at the start of the window.
+  /// Compares each subject's recent exam scores against where that subject
+  /// stood when the window opened.
+  ///
+  /// Both sides are plain means of raw exam percentages read straight off
+  /// the snapshot -- not the weighted mastery figure -- so one claim never
+  /// mixes two different units.
+  ///
+  /// The baseline:
+  ///
+  /// - exams before the window exist -> their mean. The ordinary case.
+  /// - none do -> the subject was born inside the window, so its **first**
+  ///   exam is the baseline and the rise is measured only in what came
+  ///   after it. Skipping zero-baseline subjects outright -- the old rule --
+  ///   meant the best improvement story there is, 0 -> 90 in a first month,
+  ///   could never be told until a month of history existed. Starting at
+  ///   zero is a real starting point; only having no paper after it is
+  ///   nothing to measure.
+  ///
+  /// Either way [_minimumImprovement] stands guard: against a one-exam
+  /// baseline especially, a smaller move is noise from a single paper, and
+  /// reporting it would be flattery rather than insight.
   static void _addImprovement(
     StudySnapshot snapshot,
     DateTime now,
@@ -114,13 +133,37 @@ abstract final class InsightsGenerator {
     var bestDelta = 0.0;
 
     for (final subject in snapshot.activeSubjects) {
-      final before = subjectMasteryAsOf(snapshot, subject.id, cutoff);
-      // A subject with no exam history before the window has nothing to improve
-      // *from* -- reporting "up 90%" on a first-ever exam is meaningless.
-      if (before <= 0) continue;
+      final chronological =
+          List<ExamEntry>.of(_examsIn(snapshot, subject.id))
+            ..sort(_oldestFirst);
 
-      final delta =
-          MasteryCalculator.subjectMasteryOf(snapshot, subject.id) - before;
+      final before = <double>[];
+      final inside = <ExamEntry>[];
+      for (final exam in chronological) {
+        if (exam.createdAt.isAfter(cutoff)) {
+          inside.add(exam);
+        } else {
+          before.add(exam.percentage);
+        }
+      }
+      // Nothing sat inside the window: whatever changed changed too long
+      // ago for "you improved" to be news today.
+      if (inside.isEmpty) continue;
+
+      final double baseline;
+      final List<ExamEntry> measured;
+      if (before.isNotEmpty) {
+        baseline = _averageOf(before);
+        measured = inside;
+      } else {
+        baseline = inside.first.percentage;
+        measured = inside.sublist(1);
+      }
+      if (measured.isEmpty) continue;
+
+      final delta = _averageOf(<double>[
+        for (final exam in measured) exam.percentage,
+      ]) - baseline;
       if (delta >= _minimumImprovement && delta > bestDelta) {
         bestDelta = delta;
         bestSubject = subject.id;
@@ -136,6 +179,24 @@ abstract final class InsightsGenerator {
       );
     }
   }
+
+  /// Every exam recorded under a subject's lessons, across all its chapters.
+  static List<ExamEntry> _examsIn(StudySnapshot snapshot, int subjectId) =>
+      <ExamEntry>[
+        for (final lesson in snapshot.lessonsInSubject(subjectId))
+          ...snapshot.examsFor(lesson.id),
+      ];
+
+  /// Oldest first; ties break by ascending id -- the mirror of
+  /// [StudySnapshot.compareExamsNewestFirst], so "the first exam" stays
+  /// deterministic even between papers saved in the same millisecond.
+  static int _oldestFirst(ExamEntry a, ExamEntry b) {
+    final byDate = a.createdAt.compareTo(b.createdAt);
+    return byDate != 0 ? byDate : a.id.compareTo(b.id);
+  }
+
+  static double _averageOf(List<double> values) =>
+      values.reduce((a, b) => a + b) / values.length;
 
   static void _addWeakestChapter(StudySnapshot snapshot, List<Insight> out) {
     ({int chapterId, int subjectId, String name, double mastery})? worst;
@@ -309,6 +370,12 @@ final class SubjectTrajectory {
   /// same unit the whole app is built around, so the figure is comparable to
   /// everything else the student reads here.
   ///
+  /// Measured across the trailing [MasteryTrends.velocityWindowPoints]
+  /// readings of [points], not the whole line: it is displayed as the speed
+  /// *today*, and anchoring its far end at the first exam ever taken let one
+  /// early panic paper speak for months of stillness. See
+  /// [MasteryTrends.velocityOf].
+  ///
   /// Zero for a flat line, and zero when there is nothing to measure across.
   /// Negative when they are going backwards, which is the case worth showing
   /// and the reason this is not clamped at zero.
@@ -336,9 +403,18 @@ abstract final class MasteryTrends {
   ///
   /// A student with two years of weekly exams has around a hundred exam days,
   /// and a hundred segments in a card 56 pixels tall is a smear rather than a
-  /// line. Thinned evenly, always keeping the first and last reading, so the
-  /// endpoints the velocity is computed from are the endpoints drawn.
+  /// line. Thinned evenly, always keeping the first and last reading so the
+  /// drawn line still spans the whole history; [velocityOf] measures only
+  /// across its trailing [velocityWindowPoints] of these.
   static const int maxPoints = 12;
+
+  /// How many trailing readings the velocity is measured across.
+  ///
+  /// Four exam days reach back roughly two review cycles for a student who
+  /// sits papers every fortnight to month -- the stretch "how am I doing
+  /// lately?" lives in -- while staying wide enough that no single odd paper
+  /// can swing the rate on its own.
+  static const int velocityWindowPoints = 4;
 
   /// Every active subject's trajectory, in the snapshot's subject order.
   ///
@@ -385,12 +461,24 @@ abstract final class MasteryTrends {
     );
   }
 
-  /// Change per review cycle across the whole series.
+  /// Change per review cycle across the student's most recent readings --
+  /// the trailing [velocityWindowPoints] points of [points], never the whole
+  /// history.
   ///
-  /// Endpoint-to-endpoint rather than a fitted slope: the student can check
-  /// this against the two ends of the line they are looking at, and a
-  /// least-squares figure that disagrees with the picture would be a number
-  /// they cannot verify. Ather's one rule is that its figures are checkable.
+  /// **Why a recent window:** this figure answers the question the student
+  /// asks when they see it -- "am I improving *now*?" Measuring first-to-last
+  /// across the entire series answers a different question ("how far have I
+  /// come since the beginning?") and goes stale: one panicked first exam
+  /// kept reporting "+12 per cycle" beneath a line flat for four months, and
+  /// a strong start kept reporting decline through months of holding
+  /// steady. The window ages those anchors out -- what happened before the
+  /// last few readings is history, not speed.
+  ///
+  /// Endpoint-to-endpoint within that window rather than a fitted slope: the
+  /// student can check this against the two ends of the segment it describes
+  /// -- both of them drawn on the chart -- and a least-squares figure that
+  /// disagrees with the picture would be a number they cannot verify.
+  /// Ather's one rule is that its figures are checkable.
   ///
   /// Returns 0 for fewer than two points, and 0 when both readings land on the
   /// same day -- an interval of no time has no rate, and dividing by it would
@@ -398,8 +486,14 @@ abstract final class MasteryTrends {
   static double velocityOf(List<TrajectoryPoint> points) {
     if (points.length < 2) return 0;
 
-    final first = points.first;
-    final last = points.last;
+    // Only the trailing edge measures; the older points are context for the
+    // eye, not input to the rate.
+    final recent = points.length <= velocityWindowPoints
+        ? points
+        : points.sublist(points.length - velocityWindowPoints);
+
+    final first = recent.first;
+    final last = recent.last;
     // Calendar days, through the review cycle's own helper. **Not**
     // `difference().inDays`: that is elapsed time, and across the night Egypt
     // puts its clocks forward a 30-day span measures 29, which would report a

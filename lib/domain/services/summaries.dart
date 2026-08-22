@@ -36,6 +36,22 @@ final class LessonSummary {
   bool get hasExam => examCount > 0;
   MasteryBand get band => MasteryBand.fromPercentage(mastery);
 
+  /// «أثبت» — there is exam evidence behind this lesson and it still stands
+  /// today: examined, not decayed, at or above the chapter threshold.
+  ///
+  /// This is the app's one definition of a proven lesson. Every surface that
+  /// says a lesson has been *proven* derives it from here — never from
+  /// `masteredAt`, never from the percentage alone, and never from a compound
+  /// condition re-written at the call site.
+  bool get isProven =>
+      hasExam && !needsReview && mastery >= kChapterMasteryThreshold;
+
+  /// «متفوق» — proven, and in the excellent band (≥ 90).
+  ///
+  /// The boundary comes from [MasteryBand] rather than a second literal, so the
+  /// 90 that colours every screen decides this too.
+  bool get isExcellent => isProven && band == MasteryBand.excellent;
+
   /// True when the student has logged homework and it says "study more".
   bool get homeworkSuggestsMoreStudy {
     final hw = latestHomeworkPercentage;
@@ -67,6 +83,21 @@ final class ChapterSummary {
   int get examinedLessonCount => lessons.where((l) => l.hasExam).length;
   MasteryBand get band => MasteryBand.fromPercentage(mastery);
   bool get isMastered => chapter.isMastered;
+
+  /// «باب مُغلق حاليًا» — the closure event happened (`masteredAt` is set)
+  /// **and** its evidence still stands today: every lesson examined, and the
+  /// chapter mean at or above the threshold right now.
+  ///
+  /// [isMastered] alone is a date, not a standing quality — a chapter closed in
+  /// March that gains an unexamined lesson in April was mastered once but is
+  /// not closed *now*. This is the gate for every present-tense claim: the
+  /// «أتقنت X من Y باب» counter and the green badge both read it. The date
+  /// itself keeps being shown (neutrally) even when this is false.
+  bool get isCurrentlyClosed =>
+      chapter.masteredAt != null &&
+      lessons.isNotEmpty &&
+      lessons.every((l) => l.hasExam) &&
+      mastery >= kChapterMasteryThreshold;
 
   /// Whether any evidence exists at all. Drives neutral-vs-red rendering, so an
   /// untouched chapter never looks like a failed one.
@@ -100,7 +131,13 @@ final class SubjectSummary {
   final int? mostRecentLessonId;
 
   int get chapterCount => chapters.length;
-  int get masteredChapterCount => chapters.where((c) => c.isMastered).length;
+
+  /// Chapters whose closure still stands today. Present tense on purpose: a
+  /// chapter mastered last month that has since gained an unexamined lesson
+  /// does not count here, or the row would claim «X من Y باب» the dashboard
+  /// below it contradicts.
+  int get masteredChapterCount =>
+      chapters.where((c) => c.isCurrentlyClosed).length;
   MasteryBand get band => MasteryBand.fromPercentage(mastery);
   bool get hasContent => chapters.isNotEmpty;
 
@@ -283,7 +320,11 @@ abstract final class Summaries {
     for (final subject in subjects) {
       for (final chapter in subject.chapters) {
         totalChapters++;
-        if (chapter.isMastered) masteredChapters++;
+        // The counter reads the closure's *current* evidence, not the raw
+        // masteredAt date. A chapter whose conditions have since broken (a new
+        // unexamined lesson, a mean that slipped) leaves the count here and
+        // stops being claimed anywhere else either.
+        if (chapter.isCurrentlyClosed) masteredChapters++;
         for (final lesson in chapter.lessons) {
           if (!lesson.hasExam || lesson.mastery < kChapterMasteryThreshold) {
             lessonsRemaining++;

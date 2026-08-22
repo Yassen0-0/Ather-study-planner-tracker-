@@ -69,9 +69,10 @@ void showAtherToastOn(
       right: 20,
       // Load-bearing, not a taste decision, and derived from the bar's own
       // geometry rather than typed twice -- see AppSizes.toastBottom. The tab
-      // bar is glass and this card is the one black surface in the app: passing
-      // under the 0.72 white tint it would drop the inactive tab label to
-      // 1.5:1, so it has to clear the bar entirely.
+      // bar is glass and this card is the one black surface in the app: an
+      // inactive tab label reading through its white tint (AppMotion.glassTint)
+      // onto this card sits at the very floor of legibility, so the toast has
+      // to clear the bar entirely.
       // The system inset is added at build time rather than baked into the
       // constant: a gesture bar is 34px on one phone and 0 on another, and the
       // bar this has to clear sits on top of whichever it is.

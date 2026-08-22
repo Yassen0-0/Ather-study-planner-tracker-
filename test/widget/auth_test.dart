@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:drift/native.dart';
 import 'package:ather/app/app.dart';
+import 'package:ather/data/db/app_database.dart';
 import 'package:ather/core/clock/clock.dart';
 import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
@@ -39,6 +41,14 @@ StudySnapshot emptySnapshot() => StudySnapshot(
   homework: const <dynamic>[].cast(),
 );
 
+/// One in-memory database per file: the backup sync now reads the capture
+/// history on every pass, and a boot without a database override would open
+/// the real file inside the test's fake-async zone and hang forever. The
+/// snapshot itself is overridden below, so only the (always-empty) events
+/// table is ever touched here.
+// ignore: avoid_unused_constructor_parameters
+final _bootDb = AppDatabase(NativeDatabase.memory());
+
 Future<Widget> boot(
   FakeAuthRepository auth, {
   bool lockOn = false,
@@ -57,6 +67,7 @@ Future<Widget> boot(
         FakeBackupRepository.failing(),
       ),
       sharedPreferencesProvider.overrideWithValue(preferences),
+      databaseProvider.overrideWithValue(_bootDb),
       snapshotProvider.overrideWith(
         (ref) => Stream<StudySnapshot>.value(emptySnapshot()),
       ),

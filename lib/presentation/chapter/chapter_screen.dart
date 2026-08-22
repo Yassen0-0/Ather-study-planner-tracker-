@@ -367,20 +367,37 @@ class _ChapterSummaryCard extends StatelessWidget {
           ),
           if (summary.chapter.masteredAt != null) ...<Widget>[
             const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: <Widget>[
-                const CheckDisc(size: 15, checkSize: 10, strokeWidth: 2.8),
-                const SizedBox(width: AppSpacing.textGap),
-                Expanded(
-                  child: Text(
-                    l.chapterMasteredAt(dateLabel(summary.chapter.masteredAt!)),
-                    style: AppTypography.statusLine.copyWith(
-                      color: context.colors.rightText,
+            // Green only while the closure's evidence still stands. masteredAt
+            // is the date of an event, not a standing quality: once a later
+            // lesson breaks the conditions -- an unexamined lesson, a mean that
+            // slipped below 70 -- the tick goes green-to-neutral and the line
+            // keeps only its date. A green badge over a chapter holding an
+            // unexamined lesson is precisely the false claim this screen must
+            // not make.
+            if (summary.isCurrentlyClosed)
+              Row(
+                children: <Widget>[
+                  const CheckDisc(size: 15, checkSize: 10, strokeWidth: 2.8),
+                  const SizedBox(width: AppSpacing.textGap),
+                  Expanded(
+                    child: Text(
+                      l.chapterMasteredAt(
+                        dateLabel(summary.chapter.masteredAt!),
+                      ),
+                      style: AppTypography.statusLine.copyWith(
+                        color: context.colors.rightText,
+                      ),
                     ),
                   ),
+                ],
+              )
+            else
+              Text(
+                l.chapterClosureDated(dateLabel(summary.chapter.masteredAt!)),
+                style: AppTypography.statusLine.copyWith(
+                  color: context.colors.textSecondary,
                 ),
-              ],
-            ),
+              ),
           ],
         ],
       ),

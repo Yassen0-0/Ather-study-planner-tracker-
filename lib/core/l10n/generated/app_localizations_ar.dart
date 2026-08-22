@@ -75,7 +75,7 @@ class LAr extends L {
   String get statNeedsReview => 'يحتاج مراجعة';
 
   @override
-  String get statMastered => 'متقَن';
+  String get statMastered => 'متفوق';
 
   @override
   String get sectionSubjects => 'المواد';
@@ -209,6 +209,11 @@ class LAr extends L {
   @override
   String chapterMasteredAt(String date) {
     return 'أتقنته في $date';
+  }
+
+  @override
+  String chapterClosureDated(String date) {
+    return 'أُغلِق $date';
   }
 
   @override
@@ -507,6 +512,12 @@ class LAr extends L {
 
   @override
   String get trendFlat => 'تحتاج امتحانات أكثر لقياس التقدّم';
+
+  @override
+  String get trendSteady => 'ثابتة — النصفان على المستوى نفسه';
+
+  @override
+  String get chapterReportMasteryLabel => 'الإتقان';
 
   @override
   String get weakestLessonBadge => 'أضعف درس';
@@ -1005,11 +1016,12 @@ class LAr extends L {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count درساً فوق حد الإتقان',
-      few: '$count دروس فوق حد الإتقان',
-      two: 'درسان فوق حد الإتقان',
-      one: 'درس واحد فوق حد الإتقان',
-      zero: 'لا توجد دروس متقنة بعد',
+      other: '$count درساً أثبتَها فوق حد الإتقان',
+      many: '$count درساً أثبتَها فوق حد الإتقان',
+      few: '$count دروس أثبتَها فوق حد الإتقان',
+      two: 'درسان أثبتَهما فوق حد الإتقان',
+      one: 'درس واحد أثبتَه فوق حد الإتقان',
+      zero: 'لا توجد دروس أثبتَها فوق حد الإتقان بعد',
     );
     return '$_temp0';
   }

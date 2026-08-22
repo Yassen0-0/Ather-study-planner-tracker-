@@ -1,14 +1,17 @@
 import 'package:drift/drift.dart';
 
+import '../../core/clock/clock.dart';
 import '../../domain/entities/daily_task.dart';
+import '../../domain/entities/study_backup.dart';
 import '../../domain/repositories/task_repository.dart';
 import '../db/app_database.dart';
 
 /// Drift-backed [TaskRepository].
 class DriftTaskRepository implements TaskRepository {
-  DriftTaskRepository(this._db);
+  DriftTaskRepository(this._db, {this._clock = const SystemClock()});
 
   final AppDatabase _db;
+  final Clock _clock;
 
   @override
   Stream<List<DailyTask>> watchTasks() {
@@ -76,9 +79,32 @@ class DriftTaskRepository implements TaskRepository {
 
   @override
   Future<void> setTaskDone({required int taskId, required bool done}) async {
-    await (_db.update(_db.dailyTasks)..where((t) => t.id.equals(taskId))).write(
-      DailyTasksCompanion(done: Value(done)),
-    );
+    // One transaction around read, write and event: the tick and its history
+    // land together or not at all. A flip on a missing task records nothing.
+    await _db.transaction(() async {
+      final current =
+          await (_db.select(
+            _db.dailyTasks,
+          )..where((t) => t.id.equals(taskId))).getSingleOrNull();
+      if (current == null || current.done == done) return;
+
+      await (_db.update(
+        _db.dailyTasks,
+      )..where((t) => t.id.equals(taskId))).write(
+        DailyTasksCompanion(done: Value(done)),
+      );
+
+      // Transition-only: a no-op flip is not something that happened.
+      await _db
+          .into(_db.studyEvents)
+          .insert(
+            StudyEventsCompanion.insert(
+              type: StudyEvent.typeTaskDone,
+              refId: taskId,
+              at: _clock.now(),
+            ),
+          );
+    });
   }
 
   @override

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
+import '../../core/clock/clock.dart';
 import '../../domain/entities/chapter.dart';
 import '../../domain/entities/exam_entry.dart';
 import '../../domain/entities/homework_entry.dart';
@@ -15,9 +16,10 @@ import '../db/app_database.dart';
 
 /// Drift-backed [StudyRepository].
 class DriftStudyRepository implements StudyRepository {
-  DriftStudyRepository(this._db);
+  DriftStudyRepository(this._db, {this._clock = const SystemClock()});
 
   final AppDatabase _db;
+  final Clock _clock;
 
   // --- Reads ----------------------------------------------------------------
 
@@ -58,6 +60,20 @@ class DriftStudyRepository implements StudyRepository {
       results[4].cast<ExamQuestionGroupRow>(),
       results[5].cast<HomeworkEntryRow>(),
     );
+  }
+
+  @override
+  Future<List<StudyEvent>> readEvents() async {
+    final rows = await (_db.select(
+      _db.studyEvents,
+    )..orderBy(<OrderClauseGenerator<$StudyEventsTable>>[
+      (t) => OrderingTerm(expression: t.at),
+      (t) => OrderingTerm(expression: t.id),
+    ])).get();
+    return <StudyEvent>[
+      for (final r in rows)
+        StudyEvent(id: r.id, type: r.type, refId: r.refId, at: r.at),
+    ];
   }
 
   StudySnapshot _buildSnapshot(
@@ -364,17 +380,55 @@ class DriftStudyRepository implements StudyRepository {
   Future<void> updateChecklist({
     required int lessonId,
     required LessonChecklist checklist,
+    DateTime? at,
   }) async {
-    await (_db.update(_db.lessons)..where((t) => t.id.equals(lessonId))).write(
-      LessonsCompanion(
-        watchedLesson: Value(checklist.watchedLesson),
-        readNotes: Value(checklist.readNotes),
-        didHomework: Value(checklist.didHomework),
-        didExam: Value(checklist.didExam),
-        reviewedNotes: Value(checklist.reviewedNotes),
-      ),
-    );
+    // One transaction around the read, the write and every event row: a
+    // checklist save and its history either both land or neither does.
+    await _db.transaction(() async {
+      final current =
+          await (_db.select(
+            _db.lessons,
+          )..where((t) => t.id.equals(lessonId))).getSingleOrNull();
+      if (current == null) return; // a tick on a missing lesson records nothing
+
+      await (_db.update(
+        _db.lessons,
+      )..where((t) => t.id.equals(lessonId))).write(
+        LessonsCompanion(
+          watchedLesson: Value(checklist.watchedLesson),
+          readNotes: Value(checklist.readNotes),
+          didHomework: Value(checklist.didHomework),
+          didExam: Value(checklist.didExam),
+          reviewedNotes: Value(checklist.reviewedNotes),
+        ),
+      );
+
+      // History remembers changes, not attempts: one row per step whose value
+      // actually moved, in either direction. An identical rewrite is not an
+      // event.
+      final stamp = at ?? _clock.now();
+      final events = <StudyEventsCompanion>[
+        if (current.watchedLesson != checklist.watchedLesson)
+          _event(StudyEvent.typeChecklist, lessonId, stamp),
+        if (current.readNotes != checklist.readNotes)
+          _event(StudyEvent.typeChecklist, lessonId, stamp),
+        if (current.didHomework != checklist.didHomework)
+          _event(StudyEvent.typeChecklist, lessonId, stamp),
+        if (current.didExam != checklist.didExam)
+          _event(StudyEvent.typeChecklist, lessonId, stamp),
+        if (current.reviewedNotes != checklist.reviewedNotes)
+          _event(StudyEvent.typeChecklist, lessonId, stamp),
+      ];
+      if (events.isNotEmpty) {
+        await _db.batch((Batch batch) {
+          batch.insertAll(_db.studyEvents, events);
+        });
+      }
+    });
   }
+
+  StudyEventsCompanion _event(String type, int refId, DateTime stamp) =>
+      StudyEventsCompanion.insert(type: type, refId: refId, at: stamp);
 
   @override
   Future<void> markLessonNotified({
@@ -672,6 +726,26 @@ class DriftStudyRepository implements StudyRepository {
           ]);
       });
 
+      // The capture history is replaced, never merged -- restore means "the
+      // cloud copy is the record". Ids re-allocate above the file's highest,
+      // in file order: nothing references an event id, so renumbering is
+      // free; determinism is what makes it testable.
+      await _db.delete(_db.studyEvents).go();
+      if (backup.events.isNotEmpty) {
+        var eventId = _highestId(backup.events.map((e) => e.id));
+        await _db.batch((Batch batch) {
+          batch.insertAll(_db.studyEvents, <StudyEventsCompanion>[
+            for (final e in backup.events)
+              StudyEventsCompanion.insert(
+                id: Value(++eventId),
+                type: e.type,
+                refId: e.refId,
+                at: e.at,
+              ),
+          ]);
+        });
+      }
+
       if (preserved != null && preserved.isNotEmpty) {
         await _reinsertCustomSubjectData(preserved, backup);
       }
@@ -851,6 +925,10 @@ class DriftStudyRepository implements StudyRepository {
     // again to an app with no subjects at all.
     return _db.transaction(() async {
       await _db.delete(_db.chapters).go();
+      // "Everything on this device" includes the capture history: a wiped
+      // curriculum that remembered its own ticks would be a log about
+      // nobody.
+      await _db.delete(_db.studyEvents).go();
       await _db.resetSubjectsToSeed();
     });
   }

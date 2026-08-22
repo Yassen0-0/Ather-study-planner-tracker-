@@ -325,10 +325,10 @@ class _StatsCard extends StatelessWidget {
           Expanded(
             child: _Stat(
               label: l.statMastered,
-              value: stats.mastered,
+              value: stats.excellent,
               total: stats.totalLessons,
-              fraction: stats.fraction(stats.mastered),
-              color: stats.mastered > 0
+              fraction: stats.fraction(stats.excellent),
+              color: stats.excellent > 0
                   ? context.colors.rightText
                   : context.colors.textPrimary,
             ),

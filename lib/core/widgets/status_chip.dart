@@ -71,8 +71,8 @@ class MiniBadge extends StatelessWidget {
   }
 }
 
-/// A filter chip on the progress screen. Selected is a solid black pill;
-/// unselected is a white one.
+/// A filter chip on the progress screen. Selected is a solid accent pill;
+/// unselected takes the card colour.
 class AtherFilterChip extends StatelessWidget {
   const AtherFilterChip({
     super.key,

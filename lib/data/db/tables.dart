@@ -167,3 +167,30 @@ class ExamQuestionGroups extends Table {
   IntColumn get questionCount => integer()();
   IntColumn get correctCount => integer()();
 }
+
+/// The capture-only study event log -- the answer to "what did this student
+/// do, and when?", which until version 4 had no home at all: checklist flags
+/// were booleans overwritten in place and task ticks carried no date, so any
+/// daily statistics a future feature might want were not merely missing but
+/// **underivable**. Every day this table waits is history nobody can get back,
+/// which is why it ships while nothing reads it.
+///
+/// Deliberately outside [StudySnapshot]: readers would put it on every screen's
+/// rebuild path for data no screen shows. The two writers below are its only
+/// members -- captured, never yet read.
+@DataClassName('StudyEventRow')
+class StudyEvents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// [StudyEvent.typeChecklist] or [StudyEvent.typeTaskDone]. A string rather
+  /// than an enum column so a future kind can be written by an older reader's
+  /// backup without failing it -- the same reasoning as subject codes.
+  TextColumn get type => text()();
+
+  /// The lessonId or taskId the event is about, decided by [type]. No foreign
+  /// key on purpose: the referenced row can be deleted while its history
+  /// remains, and that is the point of a log.
+  IntColumn get refId => integer()();
+
+  DateTimeColumn get at => dateTime()();
+}

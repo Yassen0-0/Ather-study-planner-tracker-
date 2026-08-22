@@ -142,9 +142,15 @@ class BackupSyncNotifier extends Notifier<SyncState> {
 
     state = state.copyWith(status: SyncStatus.saving, clearFailure: true);
     try {
+      // Capture history rides with every upload: a cloud copy without it
+      // would let the first restore erase exactly what the events table
+      // exists to keep.
+      final events = await ref.read(studyRepositoryProvider).readEvents();
       await ref
           .read(backupRepositoryProvider)
-          .upload(StudyBackup.fromSnapshot(snapshot, tasks));
+          .upload(
+            StudyBackup.fromSnapshot(snapshot, tasks, events: events),
+          );
       state = state.copyWith(
         status: SyncStatus.saved,
         lastSavedAt: ref.read(clockProvider).now(),

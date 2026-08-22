@@ -106,8 +106,9 @@ void main() {
       ).whereType<SubjectImprovedInsight>().single;
 
       expect(insight.subjectId, 1);
-      // mastery before = 40; now = 90*0.7 + 40*0.3 = 75. Delta = 35.
-      expect(insight.deltaPercentagePoints, closeTo(35, 1e-9));
+      // Baseline: the plain mean of the pre-window papers = 40. The papers
+      // inside the window average 90, so the delta reads 50.
+      expect(insight.deltaPercentagePoints, closeTo(50, 1e-9));
     });
 
     test('ignores a rise too small to be meaningful', () async {
@@ -177,6 +178,83 @@ void main() {
           kNow,
         ).whereType<SubjectImprovedInsight>(),
         isEmpty,
+      );
+    });
+
+    test('a first-month subject rising 0 -> 90 gets the insight', () async {
+      final snap = await buildSnapshot((repo) async {
+        final chapter = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final lesson = await repo.createLesson(
+          chapterId: chapter,
+          name: 'درس',
+          at: kSeedInstant,
+        );
+        // The whole story lives inside the window -- opened at zero and now
+        // at 90. Exactly the shape the old before<=0 gate refused to tell.
+        await recordPercentage(
+          repo,
+          lesson,
+          0,
+          kNow.subtract(const Duration(days: 20)),
+        );
+        await recordPercentage(
+          repo,
+          lesson,
+          90,
+          kNow.subtract(const Duration(days: 5)),
+        );
+      });
+
+      final insight = InsightsGenerator.generate(
+        snap,
+        kNow,
+      ).whereType<SubjectImprovedInsight>().single;
+
+      expect(insight.subjectId, 1);
+      // Baseline = the first paper ever (0); the papers after it average 90.
+      expect(insight.deltaPercentagePoints, closeTo(90, 1e-9));
+    });
+
+    test('a first-month jump smaller than the minimum is not flattered',
+        () async {
+      final snap = await buildSnapshot((repo) async {
+        final chapter = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final lesson = await repo.createLesson(
+          chapterId: chapter,
+          name: 'درس',
+          at: kSeedInstant,
+        );
+        // A thin baseline makes even a small rise look like a story; the
+        // minimum-improvement guard has to hold here too.
+        await recordPercentage(
+          repo,
+          lesson,
+          2,
+          kNow.subtract(const Duration(days: 20)),
+        );
+        await recordPercentage(
+          repo,
+          lesson,
+          4,
+          kNow.subtract(const Duration(days: 5)),
+        );
+      });
+
+      expect(
+        InsightsGenerator.generate(
+          snap,
+          kNow,
+        ).whereType<SubjectImprovedInsight>(),
+        isEmpty,
+        reason: '2% -> 4% in a first month is noise, not progress',
       );
     });
   });
@@ -606,6 +684,69 @@ void main() {
         0,
         reason: 'an interval of no time has no rate',
       );
+    });
+
+    test('an old spike does not govern a line flat for months', () async {
+      // The anchor defect itself: one panicked first paper, months of
+      // genuinely steady work after it. Endpoint-to-endpoint across the
+      // whole history reported ~+7 per cycle for this data; the flat right
+      // end of the line must read flat.
+      final snap = await buildSnapshot((repo) async {
+        final chapter = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        final opener = await repo.createLesson(
+          chapterId: chapter,
+          name: 'الافتتاحية',
+          at: kSeedInstant,
+        );
+        final steady = await repo.createLesson(
+          chapterId: chapter,
+          name: 'المستقرة',
+          at: kSeedInstant,
+        );
+
+        await recordPercentage(repo, opener, 15, daysBefore(kNow, 200));
+        // Five identical readings spread wider than the velocity window,
+        // so every point it measures across is the same height.
+        for (var i = 0; i < 5; i++) {
+          await recordPercentage(
+            repo,
+            steady,
+            80,
+            daysBefore(kNow, 160 - i * 30),
+          );
+        }
+      });
+
+      final trajectory = MasteryTrends.forSubject(snap, 1);
+      // The spike must be real for this test to mean anything: the drawn
+      // line does climb from its opening to its plateau...
+      expect(
+        trajectory.points.first.mastery,
+        lessThan(trajectory.points.last.mastery),
+      );
+      // ...and yet today's speed reads exactly zero.
+      expect(trajectory.velocityPerCycle, closeTo(0, 1e-9));
+    });
+
+    test('velocity measures across the trailing window, not the series', () {
+      DateTime d(int daysAgo) => daysBefore(kNow, daysAgo);
+      final rate = MasteryTrends.velocityOf(<TrajectoryPoint>[
+        TrajectoryPoint(at: d(400), mastery: 10), // ancient panic, long gone
+        TrajectoryPoint(at: d(90), mastery: 60),
+        TrajectoryPoint(at: d(60), mastery: 65),
+        TrajectoryPoint(at: d(30), mastery: 70),
+        TrajectoryPoint(at: kNow, mastery: 75),
+      ]);
+
+      // Last four readings only: +15 over 90 days -> +5 per cycle.
+      // Anchoring at the first reading would have reported (75 - 10) / 400
+      // x 30 ~= +4.9 -- close enough to pass a loose test, so the tolerance
+      // below is tight on purpose.
+      expect(rate, closeTo(5, 1e-9));
     });
   });
 }

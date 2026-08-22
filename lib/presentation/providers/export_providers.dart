@@ -62,7 +62,10 @@ class DataExportNotifier extends Notifier<ExportState> {
   Future<StudyBackup> _buildBackup() async {
     final snapshot = await ref.read(snapshotProvider.future);
     final tasks = await ref.read(tasksProvider.future);
-    return StudyBackup.fromSnapshot(snapshot, tasks);
+    // The capture history rides along: a backup without it would hand the
+    // first restore a blank slate where the events table had a record.
+    final events = await ref.read(studyRepositoryProvider).readEvents();
+    return StudyBackup.fromSnapshot(snapshot, tasks, events: events);
   }
 }
 

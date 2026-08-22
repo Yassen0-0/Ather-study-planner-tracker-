@@ -25,9 +25,10 @@ final tasksValueProvider = Provider<List<DailyTask>>(
 
 /// Which day the tasks screen is showing.
 ///
-/// Seeded with `read`, never `watch`: [nowValueProvider] re-emits every minute,
-/// and watching it here would drag the student back to today sixty times an
-/// hour while they were looking at another day.
+/// Seeded with `read`, never `watch`: [nowValueProvider] re-emits whenever the
+/// *day* changes -- once just past midnight, and on resume if the clock moved
+/// across a date boundary -- and watching it here would drag the student back
+/// to today while they were reading another day.
 class SelectedTaskDayNotifier extends Notifier<DateTime> {
   @override
   DateTime build() => dayOf(ref.read(clockProvider).now());

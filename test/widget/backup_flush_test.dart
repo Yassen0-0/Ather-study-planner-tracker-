@@ -8,6 +8,8 @@ import 'package:ather/core/clock/clock.dart';
 import 'package:ather/domain/entities/chapter.dart';
 import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
+import 'package:ather/domain/entities/study_backup.dart';
+import 'package:ather/domain/repositories/study_repository.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_providers.dart';
@@ -15,6 +17,19 @@ import 'package:ather/presentation/providers/task_providers.dart';
 
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
+
+/// Satisfies the one repository touch the upload path makes beyond its
+/// streams: reading the capture history. These tests stub the *streams*, so a
+/// real database here would be an accident; the empty list is the honest
+/// stand-in, and `noSuchMethod` keeps the fake to exactly the member in use.
+class _EventsOnlyStudyRepository implements StudyRepository {
+  @override
+  Future<List<StudyEvent>> readEvents() async => const <StudyEvent>[];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName} not stubbed');
+}
 
 /// The **upload** direction of cloud backup.
 ///
@@ -74,6 +89,7 @@ void main() {
       overrides: [
         authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
         backupRepositoryProvider.overrideWithValue(backup),
+        studyRepositoryProvider.overrideWithValue(_EventsOnlyStudyRepository()),
         sharedPreferencesProvider.overrideWithValue(preferences),
         clockProvider.overrideWithValue(MutableClock(now)),
         snapshotProvider.overrideWith((ref) => snapshots),
