@@ -10,7 +10,7 @@ import '../../core/widgets/ather_card.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
-import '../../domain/services/data_export_service.dart';
+import '../../data/export/data_export_service.dart';
 import '../providers/export_providers.dart';
 
 /// The student's own record, on its way out of the app.

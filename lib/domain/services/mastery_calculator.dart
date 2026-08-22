@@ -3,6 +3,22 @@ import '../entities/homework_entry.dart';
 import '../entities/mastery.dart';
 import '../entities/study_snapshot.dart';
 
+/// Weight of the most recent exam in the mastery formula.
+///
+/// Why 0.7: the figure must describe how the student performs **now**, so the
+/// latest paper carries the majority of the weight -- but not all of it. A pure
+/// last-exam rule would let one bad morning erase a term of evidence, and one
+/// lucky guess fake a term of it.
+const double kRecentWeight = 0.7;
+
+/// Weight of the mean of every exam before the most recent one.
+///
+/// Why 0.3: history must keep exerting a real pull against a single outlier,
+/// yet stay the minority voice next to [kRecentWeight]. The two sum to exactly
+/// 1 so mastery stays on the 0-100 scale. Changing either number rewrites
+/// every figure in the app at once -- a product decision, not a tweak.
+const double kHistoryWeight = 0.3;
+
 /// The mastery formula. Pure, dependency-free, and the single place these rules
 /// exist -- no screen re-implements any of it.
 ///
@@ -14,11 +30,10 @@ abstract final class MasteryCalculator {
   ///
   /// - no exams  -> 0 (an unexamined lesson is not "in progress", it is unproven)
   /// - one exam  -> that exam's percentage
-  /// - n exams   -> `last * 0.7 + mean(all others) * 0.3`
+  /// - n exams   -> `last * kRecentWeight + mean(all others) * kHistoryWeight`
   ///
-  /// The 70/30 weighting means the most recent attempt dominates -- current
-  /// understanding is what matters -- while history still exerts a pull, so one
-  /// lucky paper cannot erase a run of weak ones.
+  /// The weighting lives in [kRecentWeight] and [kHistoryWeight]; see them for
+  /// why these two numbers.
   ///
   /// [exams] may be in any order; this sorts defensively rather than trusting
   /// the caller, because getting "the last exam" wrong silently corrupts every
@@ -31,20 +46,9 @@ abstract final class MasteryCalculator {
   /// it. The defensive sort stays — this is a public entry point and a caller
   /// handing it unsorted exams must still get the right answer.
   static double lessonMastery(List<ExamEntry> exams) {
-    if (exams.isEmpty) return 0;
-
     final sorted = List<ExamEntry>.of(exams)
       ..sort(StudySnapshot.compareExamsNewestFirst);
-
-    if (sorted.length == 1) return sorted.first.percentage;
-
-    final last = sorted.first;
-    final previous = sorted.skip(1);
-    final previousAverage =
-        previous.map((e) => e.percentage).reduce((a, b) => a + b) /
-        previous.length;
-
-    return last.percentage * 0.7 + previousAverage * 0.3;
+    return _masteryFromSorted(sorted);
   }
 
   /// Every lesson's mastery, computed once.
@@ -56,24 +60,32 @@ abstract final class MasteryCalculator {
   static Map<int, double> lessonMasteries(StudySnapshot snapshot) {
     final byLesson = <int, double>{};
     for (final lesson in snapshot.lessons) {
-      final exams = snapshot.examsFor(lesson.id);
-      if (exams.isEmpty) {
-        byLesson[lesson.id] = 0;
-        continue;
-      }
-      if (exams.length == 1) {
-        byLesson[lesson.id] = exams.first.percentage;
-        continue;
-      }
-      var previousTotal = 0.0;
-      for (var i = 1; i < exams.length; i++) {
-        previousTotal += exams[i].percentage;
-      }
-      byLesson[lesson.id] =
-          exams.first.percentage * 0.7 +
-          (previousTotal / (exams.length - 1)) * 0.3;
+      byLesson[lesson.id] = _masteryFromSorted(snapshot.examsFor(lesson.id));
     }
     return byLesson;
+  }
+
+  /// The mastery arithmetic itself, over exams already sorted newest-first.
+  ///
+  /// Both entry points funnel through here -- [lessonMastery] after its
+  /// defensive sort, [lessonMasteries] on the snapshot's constructor-sorted
+  /// lists -- so the formula exists at exactly one place and the two paths
+  /// cannot drift apart. Callers own the ordering contract; the size cases are
+  /// part of the formula:
+  ///
+  /// - no exams  -> 0
+  /// - one exam  -> that percentage
+  /// - n exams  -> `first * kRecentWeight + mean(rest) * kHistoryWeight`
+  static double _masteryFromSorted(List<ExamEntry> sorted) {
+    if (sorted.isEmpty) return 0;
+    if (sorted.length == 1) return sorted.first.percentage;
+
+    var previousTotal = 0.0;
+    for (var i = 1; i < sorted.length; i++) {
+      previousTotal += sorted[i].percentage;
+    }
+    return sorted.first.percentage * kRecentWeight +
+        (previousTotal / (sorted.length - 1)) * kHistoryWeight;
   }
 
   /// Mastery for a chapter: the plain mean of its lessons' mastery.
@@ -109,6 +121,14 @@ abstract final class MasteryCalculator {
   }
 
   /// Overall mastery: the mean of all four subject masteries.
+  ///
+  /// This is the **official interface** for computing the number standalone --
+  /// reports, insights, tests. [Summaries.dashboard] deliberately does not call
+  /// it: the dashboard derives the same mean inline from the subject summaries
+  /// it has already built rather than walking the curriculum a second time.
+  /// That inline path and this one are pinned together by the parity contract
+  /// test in `test/domain/mastery_calculator_test.dart`, so neither can drift
+  /// from the figure the student actually sees.
   ///
   /// Untouched subjects count as 0 and are **not** excluded, matching the rule
   /// used for empty lessons inside a chapter. An overall figure that quietly

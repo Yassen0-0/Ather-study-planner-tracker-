@@ -43,9 +43,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final l = L.of(context);
     final dashboard = ref.watch(dashboardProvider);
     final insights = ref.watch(insightsProvider);
-    final trajectories = MasteryTrends.forAllSubjects(
-      ref.watch(snapshotValueProvider),
-    );
+    // Computed once per snapshot by the provider, not here: this build runs
+    // again on every filter tap below, and the series does not care which
+    // filter is showing.
+    final trajectories = ref.watch(trajectoriesProvider);
 
     final subjects = dashboard.subjects;
     final filtered = _subjectFilter == null

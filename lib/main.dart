@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -27,12 +28,18 @@ Future<void> main() async {
   // Wrapped because initialisation must never be what stops a student reaching
   // their own offline data: if it fails, the app still boots and the login
   // screen reports the failure honestly.
+  //
+  // App Check used to sit in this chain, third of three awaits; it moved past
+  // `runApp` below. It is the only step here that can touch the network, and
+  // while enforcement is off nothing before the first frame needs its token --
+  // see [_activateAppCheck].
+  var firebaseReady = false;
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    await _activateAppCheck();
     await _initializeCrashlytics();
+    firebaseReady = true;
   } catch (error, stack) {
     debugPrint('Firebase init failed: $error\n$stack');
   }
@@ -43,6 +50,24 @@ Future<void> main() async {
       child: const AtherApp(),
     ),
   );
+
+  // App Check activates after the first frame rather than ahead of it. Of the
+  // three awaits that used to sit between process start and `runApp`, it was
+  // the only one whose cost is large *and* unpredictable -- Play Integrity
+  // talks to Play Services over the network -- and awaiting it held the white
+  // screen open for every student to buy something that today changes no
+  // behaviour at all. The other two waits stay where they are because the
+  // first frame genuinely reads their results (the persisted language above,
+  // and the cached sign-in session below).
+  //
+  // Guarded so activation is still only ever attempted once Firebase exists:
+  // a failed `initializeApp` previously skipped it by falling out of the try
+  // block, and that stays true here.
+  if (firebaseReady) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_activateAppCheck());
+    });
+  }
 }
 
 /// Attaches an App Check token to Firebase requests, so being in possession of
@@ -57,6 +82,18 @@ Future<void> main() async {
 /// which is a quota and billing problem rather than a confidentiality one — the
 /// rules still stop them reaching another student's data.
 ///
+/// **Why it runs after the first frame, not before it.** This used to be
+/// awaited in `main`, third in line behind `SharedPreferences` and
+/// `Firebase.initializeApp`. Those two stay ahead of `runApp` because the first
+/// frame genuinely reads their results — the persisted language, so it does not
+/// flash Arabic at an English-speaking student; the cached sign-in session, so
+/// a signed-in student can open the app in airplane mode. Attestation protects
+/// *requests*, and drawing frame one makes none; meanwhile activation is the
+/// one call in the boot chain whose cost is unknown — Play Integrity talks to
+/// Play Services over the network — so awaiting it put its worst case straight
+/// onto the white screen of every cold start. It therefore runs from the
+/// first post-frame callback, once the student is looking at the app.
+///
 /// **Why it ships before it is enforced, and why that order is not optional.**
 /// Enforcement is a server-side switch, and it rejects every client that cannot
 /// present a token. Versions 1.2.0 and 1.3.1 are already installed and contain
@@ -64,7 +101,9 @@ Future<void> main() async {
 /// students out of sign-in and backup with no route forward but an update they
 /// have not been offered. The sequence has to be: ship this, wait for the
 /// installed base to move, watch the console's *unverified requests* metric fall,
-/// and only then enforce.
+/// and only then enforce. Until then a token is requested and never demanded,
+/// which is what makes deferring the activation free today: no behaviour any
+/// student could observe depends on when it lands.
 ///
 /// Failure here is deliberately not fatal, for the same reason
 /// `Firebase.initializeApp` is wrapped: attestation is not allowed to stand

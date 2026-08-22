@@ -12,7 +12,13 @@ import 'app_providers.dart';
 import 'auth_providers.dart';
 
 final notificationServiceProvider = Provider<ReviewNotificationService>((ref) {
-  return ReviewNotificationService(FlutterLocalNotificationsPlugin());
+  // Prefs are handed over so the service's applied-fingerprint survives cold
+  // starts: without it, every launch paid a full cancel-and-reschedule for a
+  // schedule that had not moved while the app was closed.
+  return ReviewNotificationService(
+    FlutterLocalNotificationsPlugin(),
+    preferences: ref.watch(sharedPreferencesProvider),
+  );
 });
 
 /// Whether the OS will actually deliver a notification.

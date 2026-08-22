@@ -175,6 +175,21 @@ final insightsProvider = Provider<List<Insight>>((ref) {
   );
 });
 
+/// Score-over-time lines for every active subject, for the analytics screen.
+///
+/// A provider rather than an inline call in the screen's `build()` because the
+/// series is not free to compute: every sampled point re-walks its subject --
+/// chapters, lessons and each lesson's exam history -- so four subjects at
+/// [MasteryTrends.maxPoints] points cost dozens of full subject sweeps.
+/// Inline, that bill was paid on *every* rebuild of the screen: each filter
+/// tap, each theme or language change, each return to the tab -- all for a
+/// result that depends on nothing but the snapshot. Watching here computes it
+/// once per snapshot and lets Riverpod hand the same list to every rebuild
+/// after it, exactly like [insightsProvider] one block above.
+final trajectoriesProvider = Provider<List<SubjectTrajectory>>((ref) {
+  return MasteryTrends.forAllSubjects(ref.watch(snapshotValueProvider));
+});
+
 // --- Settings ---------------------------------------------------------------
 
 /// Overridden in `main()` once `SharedPreferences` has loaded.

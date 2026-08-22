@@ -15,8 +15,8 @@ import '../../core/widgets/mastery_bar.dart';
 import '../../core/widgets/status_chip.dart';
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
+import '../../data/export/pdf_export_service.dart';
 import '../../domain/entities/exam_entry.dart';
-import '../../domain/services/pdf_export_service.dart';
 import '../../domain/services/summaries.dart';
 import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
@@ -95,7 +95,10 @@ class _ChapterReportScreenState extends ConsumerState<ChapterReportScreen> {
       const service = PdfExportService();
       await service.share(
         await service.build(blocks),
-        service.buildFilename(summary.chapter.name, DateTime.now()),
+        service.buildFilename(
+          summary.chapter.name,
+          ref.read(clockProvider).now(),
+        ),
       );
       if (mounted) {
         showAtherToastOn(overlay, direction, l.chapterReportExportDone);

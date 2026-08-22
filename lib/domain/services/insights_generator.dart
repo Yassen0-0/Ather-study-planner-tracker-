@@ -92,10 +92,17 @@ abstract final class InsightsGenerator {
   }) {
     final insights = <Insight>[];
 
+    // Every lesson's mastery, computed once and threaded through everything
+    // below -- the same arrangement `Summaries.dashboard` uses. The walks this
+    // replaces each reached every lesson again and copied and re-sorted its
+    // exam list on every visit; the map holds exactly those same values read
+    // off the ordering the snapshot already guarantees.
+    final masteries = MasteryCalculator.lessonMasteries(snapshot);
+
     _addImprovement(snapshot, now, window, insights);
-    _addWeakestChapter(snapshot, insights);
+    _addWeakestChapter(snapshot, masteries, insights);
     _addStalestLesson(snapshot, now, insights);
-    _addStrongestSubject(snapshot, insights);
+    _addStrongestSubject(snapshot, masteries, insights);
 
     return insights.take(_maxInsights).toList();
   }
@@ -198,7 +205,11 @@ abstract final class InsightsGenerator {
   static double _averageOf(List<double> values) =>
       values.reduce((a, b) => a + b) / values.length;
 
-  static void _addWeakestChapter(StudySnapshot snapshot, List<Insight> out) {
+  static void _addWeakestChapter(
+    StudySnapshot snapshot,
+    Map<int, double> masteries,
+    List<Insight> out,
+  ) {
     ({int chapterId, int subjectId, String name, double mastery})? worst;
 
     // Active subjects only. The snapshot carries binned and archived subjects
@@ -213,7 +224,7 @@ abstract final class InsightsGenerator {
         if (lessons.isEmpty) continue;
         if (!lessons.any((l) => snapshot.examsFor(l.id).isNotEmpty)) continue;
 
-        final mastery = MasteryCalculator.chapterMasteryOf(snapshot, chapter.id);
+        final mastery = _chapterMastery(snapshot, chapter.id, masteries);
         if (mastery >= _attentionThreshold) continue;
 
         if (worst == null || mastery < worst.mastery) {
@@ -265,12 +276,16 @@ abstract final class InsightsGenerator {
     }
   }
 
-  static void _addStrongestSubject(StudySnapshot snapshot, List<Insight> out) {
+  static void _addStrongestSubject(
+    StudySnapshot snapshot,
+    Map<int, double> masteries,
+    List<Insight> out,
+  ) {
     int? best;
     var bestMastery = 0.0;
 
     for (final subject in snapshot.activeSubjects) {
-      final mastery = MasteryCalculator.subjectMasteryOf(snapshot, subject.id);
+      final mastery = _subjectMastery(snapshot, subject.id, masteries);
       if (mastery > bestMastery) {
         bestMastery = mastery;
         best = subject.id;
@@ -282,6 +297,39 @@ abstract final class InsightsGenerator {
     if (best != null && bestMastery >= kChapterMasteryThreshold) {
       out.add(StrongestSubjectInsight(subjectId: best, mastery: bestMastery));
     }
+  }
+
+  /// Chapter mastery read off a precomputed [masteries] map.
+  ///
+  /// The same arithmetic as `MasteryCalculator.chapterMasteryOf` with the same
+  /// answer -- the map holds exactly that function's per-lesson values -- minus
+  /// the fresh copy and defensive sort of every lesson's exam list at every
+  /// visit. An unexamined lesson is already mapped to 0, matching the rule
+  /// that untouched lessons count rather than being filtered out.
+  static double _chapterMastery(
+    StudySnapshot snapshot,
+    int chapterId,
+    Map<int, double> masteries,
+  ) {
+    return MasteryCalculator.chapterMastery(<double>[
+      for (final lesson in snapshot.lessonsIn(chapterId))
+        masteries[lesson.id] ?? 0,
+    ]);
+  }
+
+  /// Subject mastery read off the same shared map: the mean of its chapters'
+  /// means, each chapter an equal unit of curriculum, as before.
+  static double _subjectMastery(
+    StudySnapshot snapshot,
+    int subjectId,
+    Map<int, double> masteries,
+  ) {
+    final chapters = snapshot.chaptersIn(subjectId);
+    if (chapters.isEmpty) return 0;
+    final total = chapters
+        .map((c) => _chapterMastery(snapshot, c.id, masteries))
+        .reduce((a, b) => a + b);
+    return total / chapters.length;
   }
 
   /// Subject mastery as the student would have seen it on [asOf].
@@ -329,15 +377,43 @@ abstract final class InsightsGenerator {
       }
       var chapterTotal = 0.0;
       for (final lesson in lessons) {
-        final past = snapshot
-            .examsFor(lesson.id)
-            .where((e) => !e.createdAt.isAfter(asOf))
-            .toList();
-        chapterTotal += MasteryCalculator.lessonMastery(past);
+        chapterTotal += _masteryAt(snapshot.examsFor(lesson.id), asOf);
       }
       total += chapterTotal / lessons.length;
     }
     return total / chapters.length;
+  }
+
+  /// The 70/30 mastery figure over only the exams recorded by [asOf].
+  ///
+  /// Reads straight off the list instead of copying and re-sorting it:
+  /// `examsFor` arrives newest-first **sorted by construction** -- once, in the
+  /// snapshot's constructor -- and filtering by date preserves that order.
+  /// That is the same invariant `MasteryCalculator.lessonMasteries` relies on,
+  /// and this is its innermost loop: one call per lesson per trajectory point,
+  /// where the old defensive copy-and-sort at every visit dominated the whole
+  /// computation.
+  ///
+  /// The arithmetic is identical to `MasteryCalculator.lessonMastery`: newest
+  /// exam x 0.7 + mean of the rest x 0.3; none -> 0; a single paper -> its
+  /// percentage. Ties on date keep the snapshot's descending-id break, so "the
+  /// last exam" names the same paper both ways.
+  static double _masteryAt(List<ExamEntry> exams, DateTime asOf) {
+    ExamEntry? latest;
+    var previousTotal = 0.0;
+    var previousCount = 0;
+    for (final exam in exams) {
+      if (exam.createdAt.isAfter(asOf)) continue;
+      if (latest == null) {
+        latest = exam;
+      } else {
+        previousTotal += exam.percentage;
+        previousCount++;
+      }
+    }
+    if (latest == null) return 0;
+    if (previousCount == 0) return latest.percentage;
+    return latest.percentage * 0.7 + (previousTotal / previousCount) * 0.3;
   }
 }
 

@@ -38,9 +38,9 @@ final class PdfBlock {
 /// forms and looks those up in the embedded font's `cmap`, and Readex Pro joins
 /// through `GSUB` and carries none of them. Ten of the twenty-eight characters
 /// in a chapter title like `الفصل الأول: التفاضل والتكامل` come out blank. That
-/// is proven in `test/domain/pdf_export_test.dart`, not assumed. Flutter shapes
-/// the same string correctly, so the report is drawn by Flutter and arrives
-/// here as images. See `presentation/share/widget_raster.dart`.
+/// is proven in `test/data/export/pdf_export_test.dart`, not assumed. Flutter
+/// shapes the same string correctly, so the report is drawn by Flutter and
+/// arrives here as images. See `presentation/share/widget_raster.dart`.
 ///
 /// **Why blocks rather than one tall picture.** A single image the height of
 /// the whole report has to be cut somewhere to fit on pages, and the cut lands

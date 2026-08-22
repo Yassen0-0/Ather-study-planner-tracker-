@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../entities/study_backup.dart';
+import '../../domain/entities/study_backup.dart';
 
 /// Why an export did not complete.
 ///
 /// A structured enum, never a message string -- the same rule as
-/// [BackupFailure]. The domain layer has no localisation, so an English
+/// [BackupFailure]. This layer has no localisation, so an English
 /// platform error could never reach an Arabic student.
 enum ExportFailure {
   /// The file could not be written to the app's temporary directory. Almost
@@ -60,12 +60,17 @@ class DataExportService {
 
   /// Serialises [backup] and opens the system share sheet with it attached.
   ///
+  /// [now] stamps the exported filename. Time is handed in by the caller's
+  /// [Clock](see PROJECT.md §3.8) rather than read off the wall -- this used to
+  /// be the one `DateTime.now()` outside that rule, which made the name an
+  /// export would land under unpinnable in a test.
+  ///
   /// Returns normally when the sheet opened, whether or not the student went on
   /// to send the file -- backing out of a share sheet is a decision, not an
   /// error, and reporting it as one teaches students to distrust the message.
-  Future<void> share(StudyBackup backup) async {
+  Future<void> share(StudyBackup backup, {required DateTime now}) async {
     final json = encode(backup);
-    final filename = buildFilename(DateTime.now());
+    final filename = buildFilename(now);
 
     final File file;
     try {

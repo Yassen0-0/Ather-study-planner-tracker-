@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/export/data_export_service.dart';
 import '../../domain/entities/study_backup.dart';
-import '../../domain/services/data_export_service.dart';
 import 'app_providers.dart';
 import 'task_providers.dart';
 
@@ -39,7 +39,9 @@ class DataExportNotifier extends Notifier<ExportState> {
 
     try {
       final backup = await _buildBackup();
-      await ref.read(dataExportServiceProvider).share(backup);
+      await ref
+          .read(dataExportServiceProvider)
+          .share(backup, now: ref.read(clockProvider).now());
       state = const ExportState(status: ExportStatus.done);
     } on ExportException catch (e) {
       state = ExportState(status: ExportStatus.failed, failure: e.failure);

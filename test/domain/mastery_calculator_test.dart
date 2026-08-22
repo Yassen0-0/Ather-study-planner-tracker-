@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:ather/domain/entities/study_snapshot.dart';
 import '../support/instants.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/mastery.dart';
 import 'package:ather/domain/services/mastery_calculator.dart';
+import 'package:ather/domain/services/summaries.dart';
 
 import 'fixtures.dart';
 
@@ -475,6 +477,219 @@ void main() {
       // newest is 30, the other two average 75, so 30*0.7 + 75*0.3.
       final many = snap.lessons.firstWhere((l) => l.name == 'كتير');
       expect(fast[many.id], closeTo(30 * 0.7 + 75 * 0.3, 1e-9));
+    });
+  });
+
+  // P2-04 parity contract. The defensive path (MasteryCalculator.lessonMastery
+  // / chapterMasteryOf / subjectMasteryOf / overallMastery) and the fast
+  // summaries path (Summaries.lesson/chapter/subject/dashboard) must produce
+  // **literally equal** doubles at every level -- not merely close -- because
+  // they funnel through the same `_masteryFromSorted` arithmetic in the same
+  // order. Even a one-ULP drift would make two screens disagree about the same
+  // lesson with no error anywhere, so exact equality is itself the assertion.
+  group('parity contract: fast path == slow path at every level', () {
+    /// A fixture deliberately spanning every scenario the two paths could
+    /// conceivably disagree on: 0/1/2/n exams, both boundary scores (0 and
+    /// 100), out-of-order recording, and createdAt ties broken by id.
+    Future<StudySnapshot> diverseFixture() => buildSnapshot((repo) async {
+      // Subject 1 (seeded), chapter A.
+      final a = await repo.createChapter(
+        subjectId: 1,
+        name: 'أ',
+        at: kSeedInstant,
+      );
+
+      // Zero exams -- unproven, contributes 0 everywhere.
+      await repo.createLesson(
+        chapterId: a,
+        name: 'صفر امتحانات',
+        at: kSeedInstant,
+      );
+
+      // One exam, at the upper boundary.
+      final hundred = await repo.createLesson(
+        chapterId: a,
+        name: 'واحد',
+        at: kSeedInstant,
+      );
+      await recordPercentage(repo, hundred, 100, DateTime(2026, 2, 1));
+
+      // Two exams recorded out of chronological order, so a mis-sorted "last"
+      // would flip the answer.
+      final two = await repo.createLesson(
+        chapterId: a,
+        name: 'اثنان',
+        at: kSeedInstant,
+      );
+      await recordPercentage(repo, two, 90, DateTime(2026, 3, 1));
+      await recordPercentage(repo, two, 60, DateTime(2026, 1, 1));
+
+      // Subject 1, chapter B.
+      final b = await repo.createChapter(
+        subjectId: 1,
+        name: 'ب',
+        at: kSeedInstant,
+      );
+
+      // Many exams spanning both boundaries, again recorded out of order.
+      final many = await repo.createLesson(
+        chapterId: b,
+        name: 'خمسة',
+        at: kSeedInstant,
+      );
+      await recordPercentage(repo, many, 100, DateTime(2026, 5, 1));
+      await recordPercentage(repo, many, 40, DateTime(2026, 1, 1));
+      await recordPercentage(repo, many, 60, DateTime(2026, 2, 1));
+      await recordPercentage(repo, many, 80, DateTime(2026, 3, 1));
+      await recordPercentage(repo, many, 0, DateTime(2026, 4, 1));
+
+      // Three exams sharing one instant: ties must break deterministically by
+      // id identically on both paths.
+      final tied = await repo.createLesson(
+        chapterId: b,
+        name: 'متساوية',
+        at: kSeedInstant,
+      );
+      final tieInstant = DateTime(2026, 3, 15, 12);
+      await recordPercentage(repo, tied, 25, tieInstant);
+      await recordPercentage(repo, tied, 75, tieInstant);
+      await recordPercentage(repo, tied, 50, tieInstant);
+
+      // Subject 2 (seeded): the lower boundary and one more shape.
+      final c = await repo.createChapter(
+        subjectId: 2,
+        name: 'ج',
+        at: kSeedInstant,
+      );
+      final zero = await repo.createLesson(
+        chapterId: c,
+        name: 'صفر',
+        at: kSeedInstant,
+      );
+      await recordPercentage(repo, zero, 0, DateTime(2026, 2, 1));
+
+      final drop = await repo.createLesson(
+        chapterId: c,
+        name: 'هبوط',
+        at: kSeedInstant,
+      );
+      await recordPercentage(repo, drop, 100, DateTime(2026, 1, 1));
+      await recordPercentage(repo, drop, 30, DateTime(2026, 4, 1));
+
+      // Subjects 3 and 4 stay untouched: overall must count them as 0 rather
+      // than excluding them.
+    });
+
+    double lessonMasteryByName(StudySnapshot snap, String name) {
+      final lesson = snap.lessons.firstWhere((l) => l.name == name);
+      return MasteryCalculator.lessonMasteries(snap)[lesson.id]!;
+    }
+
+    test(
+      'the fixture itself is non-degenerate (parity over zeros is vacuous)',
+      () async {
+        final snap = await diverseFixture();
+
+        // 'خمسة': newest is May's 100, mean(0,80,60,40)=45 -> 83.5.
+        expect(lessonMasteryByName(snap, 'خمسة'), closeTo(83.5, 1e-9));
+        // 'متساوية': tie broken by id, 50 is last, mean(25,75)=50 -> 50.
+        expect(lessonMasteryByName(snap, 'متساوية'), closeTo(50, 1e-9));
+        // 'هبوط': newest 30, mean(100)=100 -> 51.
+        expect(lessonMasteryByName(snap, 'هبوط'), closeTo(51, 1e-9));
+        // 'صفر امتحانات' stays unproven at exactly 0.
+        expect(lessonMasteryByName(snap, 'صفر امتحانات'), 0);
+      },
+    );
+
+    test(
+      'lesson level: summary rows equal lessonMastery exactly',
+      () async {
+        final snap = await diverseFixture();
+        final dash = Summaries.dashboard(snap, DateTime(2026, 6, 1));
+
+        expect(dash.subjects, isNotEmpty);
+        for (final subject in dash.subjects) {
+          for (final chapter in subject.chapters) {
+            for (final lesson in chapter.lessons) {
+              expect(
+                lesson.mastery,
+                MasteryCalculator.lessonMastery(
+                  snap.examsFor(lesson.lesson.id),
+                ),
+                reason:
+                    'lesson "${lesson.lesson.name}" disagrees between paths',
+              );
+            }
+          }
+        }
+      },
+    );
+
+    test(
+      'chapter level: summary rows equal chapterMasteryOf exactly',
+      () async {
+        final snap = await diverseFixture();
+        final dash = Summaries.dashboard(snap, DateTime(2026, 6, 1));
+
+        expect(dash.subjects, isNotEmpty);
+        for (final subject in dash.subjects) {
+          for (final chapter in subject.chapters) {
+            expect(
+              chapter.mastery,
+              MasteryCalculator.chapterMasteryOf(snap, chapter.chapter.id),
+              reason:
+                  'chapter "${chapter.chapter.name}" disagrees between paths',
+            );
+          }
+        }
+      },
+    );
+
+    test(
+      'subject level: summary rows equal subjectMasteryOf exactly',
+      () async {
+        final snap = await diverseFixture();
+        final dash = Summaries.dashboard(snap, DateTime(2026, 6, 1));
+
+        // All four seeded subjects are active, so all four appear -- including
+        // the two with no chapters at all.
+        expect(dash.subjects.length, 4);
+        for (final subject in dash.subjects) {
+          expect(
+            subject.mastery,
+            MasteryCalculator.subjectMasteryOf(snap, subject.subject.id),
+            reason: 'subject ${subject.subject.id} disagrees between paths',
+          );
+        }
+
+        // And the untouched subjects still pull the overall figure down through
+        // both paths alike (checked at the overall level below).
+        expect(MasteryCalculator.overallMastery(snap), lessThan(30));
+      },
+    );
+
+    test(
+      'overall level: dashboard.overallMastery equals overallMastery exactly '
+      '(the dead-function contract)',
+      () async {
+        final snap = await diverseFixture();
+        final dash = Summaries.dashboard(snap, DateTime(2026, 6, 1));
+
+        // `Summaries.dashboard` computes its overall inline from summaries it
+        // already built; `MasteryCalculator.overallMastery` is the official
+        // standalone interface. This equality is what makes that safe: the two
+        // cannot drift, so the standalone number always names the live one.
+        expect(MasteryCalculator.overallMastery(snap), dash.overallMastery);
+      },
+    );
+
+    test('empty database: both paths agree on zero, never NaN', () async {
+      final snap = await buildSnapshot((_) async {});
+      final dash = Summaries.dashboard(snap, DateTime(2026, 6, 1));
+
+      expect(MasteryCalculator.overallMastery(snap), 0);
+      expect(MasteryCalculator.overallMastery(snap), dash.overallMastery);
+      expect(dash.overallMastery.isNaN, isFalse);
     });
   });
 }

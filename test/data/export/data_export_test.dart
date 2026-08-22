@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:ather/core/clock/clock.dart';
+import 'package:ather/data/export/data_export_service.dart';
 import 'package:ather/domain/entities/chapter.dart';
 import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
@@ -7,7 +9,6 @@ import 'package:ather/domain/entities/homework_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/study_backup.dart';
 import 'package:ather/domain/entities/subject.dart';
-import 'package:ather/domain/services/data_export_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The export, as text.
@@ -142,19 +143,36 @@ void main() {
     expect(text, contains('  "chapters"'));
   });
 
-  test('filenames are timestamped and free of characters that break shares', () {
-    final name = service.buildFilename(DateTime(2026, 8, 18, 14, 30, 45));
+  test(
+    'filenames are timestamped and free of characters that break shares',
+    () {
+      final name = service.buildFilename(DateTime(2026, 8, 18, 14, 30, 45));
 
-    expect(name, 'ather_export_2026-08-18_14-30-45.json');
-    // Colons are legal on Android and rejected by Windows and Drive, so a
-    // shared export carrying one fails at the far end rather than here.
-    expect(name, isNot(contains(':')));
-  });
+      expect(name, 'ather_export_2026-08-18_14-30-45.json');
+      // Colons are legal on Android and rejected by Windows and Drive, so a
+      // shared export carrying one fails at the far end rather than here.
+      expect(name, isNot(contains(':')));
+    },
+  );
 
   test('two exports a second apart do not collide', () {
     expect(
       service.buildFilename(DateTime(2026, 8, 18, 14, 30, 45)),
       isNot(service.buildFilename(DateTime(2026, 8, 18, 14, 30, 46))),
+    );
+  });
+
+  test('the exported name comes from the pinned date, not the wall', () {
+    // The service takes its timestamp from the caller -- `export_providers`
+    // hands in `clockProvider.now()` -- so a test pins a [MutableClock] and
+    // gets the exact filename an export at that moment would carry. If the
+    // service ever reads `DateTime.now()` itself again, no test in this file
+    // can control the name, which is precisely what this case guards.
+    final clock = MutableClock(DateTime(2026, 8, 18, 14, 30, 45));
+
+    expect(
+      service.buildFilename(clock.now()),
+      'ather_export_2026-08-18_14-30-45.json',
     );
   });
 }

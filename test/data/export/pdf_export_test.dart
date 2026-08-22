@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:ather/core/theme/app_theme.dart';
-import 'package:ather/domain/services/pdf_export_service.dart';
+import 'package:ather/data/export/pdf_export_service.dart';
 import 'package:ather/presentation/share/widget_raster.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -147,7 +147,8 @@ void main() {
       final images = await capture(tester, rows: rows);
 
       expect(images, hasLength(rows));
-      final capturedHeight = images.fold<int>(0, (sum, i) => sum + i.height) / 2;
+      final capturedHeight =
+          images.fold<int>(0, (sum, i) => sum + i.height) / 2;
       expect(
         capturedHeight,
         greaterThan(

@@ -26,7 +26,7 @@ import 'package:flutter/widgets.dart';
 /// Readex Pro joins Arabic through `GSUB` and carries none of them, so ten of
 /// the twenty-eight characters in a title like `الفصل الأول: التفاضل والتكامل`
 /// come out blank -- silently, with no exception to notice. That is asserted in
-/// `test/domain/pdf_export_test.dart` rather than left here as a claim. Flutter
+/// `test/data/export/pdf_export_test.dart` rather than left here as a claim. Flutter
 /// shapes the same string correctly, so the report is drawn by Flutter and goes
 /// into the PDF as pictures. The trade is real: the text in the PDF cannot be
 /// selected or searched. It buys Arabic that can be read, in the app's own

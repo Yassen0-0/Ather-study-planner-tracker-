@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -52,9 +53,15 @@ final class ScheduledReminder {
 /// reminder is useful. A reconciliation pass on resume repairs any drift
 /// (clock changes, reboots, exams recorded on another day).
 class ReviewNotificationService {
-  ReviewNotificationService(this._plugin);
+  /// [preferences] carries the store the applied-fingerprint persists through
+  /// (see [_applied]). Optional so tests can run the service with no store --
+  /// the dedupe then behaves exactly as it did when it was memory-only.
+  ReviewNotificationService(this._plugin, {SharedPreferences? preferences})
+     : _storedPrefs = preferences;
 
   final FlutterLocalNotificationsPlugin _plugin;
+
+  final SharedPreferences? _storedPrefs;
 
   static const String _channelId = 'sahm_review';
   static const String _channelName = 'Review reminders';
@@ -102,6 +109,13 @@ class ReviewNotificationService {
     );
 
     _initialised = true;
+
+    // Seed the applied-fingerprint from storage. This is the whole point of
+    // persisting it: `_applied` used to start every cold run as null, and null
+    // never matches anything, so the first pass after every launch paid a full
+    // `cancelAll()` plus one registration per reminder to rebuild a schedule
+    // that was already on the device and had not moved overnight.
+    _applied = _storedPrefs?.getString(kAppliedFingerprintKey);
   }
 
   /// Reads the current permission back from the OS, showing nothing.
@@ -149,10 +163,20 @@ class ReviewNotificationService {
   /// What the schedule currently on the device is made of, so an identical
   /// rebuild can be skipped entirely.
   ///
-  /// Null until the first successful pass, and cleared whenever a pass is
-  /// abandoned part-way -- an unknown device state must never look like a
-  /// matching one.
+  /// Seeded from [kAppliedFingerprintKey] in storage when [initialise] runs,
+  /// and written back through on every change, because a fingerprint that
+  /// lived only in memory died with every process: each cold run then paid
+  /// `cancelAll()` plus one platform round-trip per reminder for a schedule
+  /// that had not changed while the app was closed.
+  ///
+  /// Null until the first successful pass, and cleared -- here *and* in
+  /// storage -- whenever a pass is abandoned part-way. An unknown device state
+  /// must never look like a matching one, and after a process death mid-rebuild
+  /// only a cleared record keeps the next cold start honest.
   String? _applied;
+
+  /// The SharedPreferences key [_applied] is stored under.
+  static const String kAppliedFingerprintKey = 'review_schedule_fingerprint';
 
   /// The most alarms this app will ever hold registered at once.
   ///
@@ -285,7 +309,10 @@ class ReviewNotificationService {
   /// So the pass is fingerprinted first. Everything the schedule depends on
   /// goes into the fingerprint -- every reminder id, the moment each one fires,
   /// the bodies, and the enabled flag -- and an identical one returns before
-  /// touching the platform at all.
+  /// touching the platform at all. The comparison survives cold starts: the
+  /// fingerprint of the last successful pass is persisted, so a run that finds
+  /// the same schedule it left on the device yesterday does no platform work
+  /// at all.
   Future<void> reschedule({
     required StudySnapshot snapshot,
     required DateTime now,
@@ -316,11 +343,19 @@ class ReviewNotificationService {
     // Cleared, not set, before the platform work: if any call below throws, the
     // device is in a state this object cannot describe, and claiming otherwise
     // would strand the student with a stale schedule no later pass would fix.
+    // The stored copy is cleared first too, and deliberately before the
+    // platform calls: a process dying between `cancelAll()` and the last
+    // registration must not leave tomorrow's cold start reading yesterday's
+    // fingerprint for a device that no longer matches it. Clearing costs at
+    // worst one extra rebuild; trusting a stale record silently drops
+    // reminders.
     _applied = null;
+    await _writeStoredFingerprint(null);
 
     await _plugin.cancelAll();
     if (due.isEmpty) {
       _applied = fingerprint;
+      await _writeStoredFingerprint(fingerprint);
       return;
     }
 
@@ -351,6 +386,24 @@ class ReviewNotificationService {
 
     // Only once every call above has landed.
     _applied = fingerprint;
+    await _writeStoredFingerprint(fingerprint);
+  }
+
+  /// Mirrors [_applied] into storage, or removes the record when it is null.
+  ///
+  /// A failed write propagates: the caller's catch treats the pass as failed,
+  /// and the failure direction is the safe one -- memory already holds the new
+  /// state, so later passes this run skip correctly, while a cold start that
+  /// reads a stale or absent record pays one rebuild rather than trusting a
+  /// schedule that may not be there.
+  Future<void> _writeStoredFingerprint(String? fingerprint) async {
+    final prefs = _storedPrefs;
+    if (prefs == null) return;
+    if (fingerprint == null) {
+      await prefs.remove(kAppliedFingerprintKey);
+    } else {
+      await prefs.setString(kAppliedFingerprintKey, fingerprint);
+    }
   }
 
   Future<void> cancelAll() => _plugin.cancelAll();

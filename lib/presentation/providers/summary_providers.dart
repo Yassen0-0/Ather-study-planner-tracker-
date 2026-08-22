@@ -66,7 +66,23 @@ final dashboardProvider = Provider<DashboardSummary>((ref) {
   );
 });
 
-final subjectSummaryProvider = Provider.family<SubjectSummary?, int>((
+// Verified statically (audit P2-07): nothing keeps `dashboardProvider` alive
+// across tabs anymore. Its only listeners are `homeStatsProvider` above --
+// itself watched only by the dashboard screen -- the dashboard screen, and the
+// analytics screen. Each lives inside one tab branch of `AppShell`, where
+// `BranchCrossFade` wraps hidden branches in `TickerMode(enabled: false)`;
+// flutter_riverpod 3.4.2 pauses a ConsumerWidget's `ref.watch` subscriptions
+// under TickerMode (`consumer.dart`, `_updateTickerMode`), the element goes
+// inactive, and `onCancel` stops the upstream snapshot subscription -- so the
+// whole chain above stops recomputing for writes made from another tab. The
+// shell's own badge watches `reviewQueueProvider` (an O(lessons) pass over the
+// snapshot), not this provider -- that was audit finding P1, fixed by P1-03.
+//
+// What remains true: the *state* stays cached while the tab is hidden (these
+// are keepAlive providers by default in 3.x), and switching back replays
+// anything missed. Only the compute moves out of the hidden tabs' way.
+
+final subjectSummaryProvider = Provider.autoDispose.family<SubjectSummary?, int>((
   ref,
   subjectId,
 ) {
@@ -76,7 +92,7 @@ final subjectSummaryProvider = Provider.family<SubjectSummary?, int>((
   return Summaries.subject(snapshot, subject, ref.watch(nowValueProvider));
 });
 
-final chapterSummaryProvider = Provider.family<ChapterSummary?, int>((
+final chapterSummaryProvider = Provider.autoDispose.family<ChapterSummary?, int>((
   ref,
   chapterId,
 ) {
@@ -86,7 +102,7 @@ final chapterSummaryProvider = Provider.family<ChapterSummary?, int>((
   return Summaries.chapter(snapshot, chapter, ref.watch(nowValueProvider));
 });
 
-final lessonSummaryProvider = Provider.family<LessonSummary?, int>((
+final lessonSummaryProvider = Provider.autoDispose.family<LessonSummary?, int>((
   ref,
   lessonId,
 ) {
@@ -95,3 +111,18 @@ final lessonSummaryProvider = Provider.family<LessonSummary?, int>((
   if (lesson == null) return null;
   return Summaries.lesson(snapshot, lesson, ref.watch(nowValueProvider));
 });
+
+// The three families above are `.autoDispose` on purpose (audit P2-03, ج2-أ).
+// In riverpod 3.4.2 the manual provider API defaults to keepAlive
+// (`isAutoDispose = false`), and there is no family eviction: every
+// lesson/chapter/subject id a student ever opened kept its element and cached
+// summary until process death -- unbounded memory accumulation, dragging any
+// chained lookups with it. autoDispose disposes an element when its last
+// listener goes away, which is exactly a screen closing.
+//
+// The accepted trade: memoization is lost between visits, so reopening a
+// screen recomputes its O(lesson/chapter/subject) summary. That is cheap next
+// to what the screen does anyway, and correctness is untouched -- every call
+// site consumes these through `ref.watch` during build (and the wizard's one
+// `ref.read` in `_save` runs while its own build still holds a watch open), so
+// elements stay alive for as long as their screen is on the stack.
