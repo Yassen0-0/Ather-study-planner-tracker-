@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../domain/entities/mastery.dart' show kLowMasteryFlagThreshold;
 import '../../domain/entities/study_snapshot.dart';
+import '../../domain/services/mastery_calculator.dart';
 import '../../domain/services/review_cycle_service.dart';
 
 /// One reminder as it will be registered with the platform.
@@ -211,6 +213,8 @@ class ReviewNotificationService {
     required bool enabled,
     required String Function(String lesson, String chapter) buildBody,
     required String Function(String lesson, String chapter) buildEarlyBody,
+    String Function(String lesson)? buildDecliningBody,
+    String Function(String lesson)? buildWeakBody,
   }) {
     if (!enabled) return const <ScheduledReminder>[];
 
@@ -248,12 +252,41 @@ class ReviewNotificationService {
       // ago would be noise, not a reminder.
       if (!dueAt.isAfter(now)) continue;
 
+      // The due-day wording follows the lesson's actual state (P5-06): a
+      // lesson whose latest exam scored below the one before it gets the
+      // danger line, one sitting below [kLowMasteryFlagThreshold] gets the
+      // weak line -- declining first, because "your score is dropping" is the
+      // more specific and more alarming of the two truths. The callbacks are
+      // optional so an existing caller that passes none keeps exactly the
+      // plain sentence; the new texts need no fingerprint change because they
+      // are still just bodies.
+      //
+      // The guard on `exams.isNotEmpty` mirrors the Review Center's reason
+      // logic: an unexamined lesson computes to mastery 0, and this function
+      // only ever sees lessons with a review clock, but a clock without a
+      // recorded exam is no evidence of weakness either.
+      final exams = snapshot.examsFor(lesson.id);
+      String dueBody() {
+        final decliningBody = buildDecliningBody;
+        if (decliningBody != null && MasteryCalculator.isDeclining(exams)) {
+          return decliningBody(lesson.name);
+        }
+        final weakBody = buildWeakBody;
+        if (weakBody != null &&
+            exams.isNotEmpty &&
+            MasteryCalculator.lessonMastery(exams) <
+                kLowMasteryFlagThreshold) {
+          return weakBody(lesson.name);
+        }
+        return buildBody(lesson.name, chapterName);
+      }
+
       due.add(
         ScheduledReminder(
           id: lesson.id * 2,
           lessonId: lesson.id,
           at: dueAt,
-          body: buildBody(lesson.name, chapterName),
+          body: dueBody(),
           isEarly: false,
         ),
       );
@@ -319,6 +352,8 @@ class ReviewNotificationService {
     required bool enabled,
     required String Function(String lesson, String chapter) buildBody,
     required String Function(String lesson, String chapter) buildEarlyBody,
+    String Function(String lesson)? buildDecliningBody,
+    String Function(String lesson)? buildWeakBody,
     required String title,
   }) async {
     if (!_initialised) return;
@@ -331,6 +366,8 @@ class ReviewNotificationService {
       enabled: enabled && permissionGranted,
       buildBody: buildBody,
       buildEarlyBody: buildEarlyBody,
+      buildDecliningBody: buildDecliningBody,
+      buildWeakBody: buildWeakBody,
     );
 
     final fingerprint = fingerprintOf(
