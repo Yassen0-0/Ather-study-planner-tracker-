@@ -1,3 +1,63 @@
+# Ather — release build, 2026-08-23 · 1.8.0+16
+
+**The release where the app is honest from its first frame.** The tab icons are there when the
+screen lights, startup runs its two errands side by side instead of in line, a pile of owed
+lessons is labelled what it is — in red — and a task you gave up on can finally be recorded as
+what it was instead of being deleted out of history.
+
+Installs straight over `1.8.0+15`. Same upload key, `versionCode` 15 → 16, every exam kept.
+The database takes its step to schema 5 — tasks gain one flag, default false — and the
+migration was tested against real version-4 databases, with backups compatible in both
+directions, so upgrading in place is exactly what it looks like.
+
+## What changed since 1.8.0+15
+
+### Icons from frame one
+
+Open the app cold and the bottom bar's tabs used to arrive empty: the spring that carries each
+icon in was seeded at zero on the very first frame, so every glyph sat at scale nothing until
+your first tap woke the animation. They are drawn from the first frame now, in light mode and
+dark alike. Nothing else about how the tabs behave has moved.
+
+### The boot errands run together
+
+Loading your preferences and starting Firebase used to happen back-to-back, each waiting its
+turn while the app sat half-awake between them. They now run at the same time, and the app is on
+its feet sooner by exactly the shorter of the two jobs. The laziness is pinned by tests, so it
+cannot quietly turn back into a queue.
+
+### Subject rows stand on their titles
+
+The decorative glyphs beside the dashboard's subject rows are gone entirely — a deliberate
+decision, not an oversight. Titles sit flush where the ornaments used to shove them aside. The
+decay mark stays, because unlike the glyphs it says something: it marks a review clock that has
+slipped.
+
+### Debt looks like debt
+
+Owed lessons were counted under «دروس متبقية» — *lessons remaining* — painted a reassuring blue,
+which framed a growing debt as a tidy to-do list. It reads «دروس متراكمة» now, in the alarm red:
+lessons owed accumulate whether or not you look at them, and the label should not soften that.
+English had it closer all along — *Lessons owed*.
+
+### The lock answers more than one way
+
+You can now choose how the lock screen opens — fingerprint, password, or both — from Settings,
+so a phone without a working sensor is no longer shut out of having a lock at all. Setting a
+password stores only a salted hash, never the word itself, and a wrong attempt fails right there
+in the sheet where you typed it. If your fingerprint already guards the app, none of that
+changes for you.
+
+### Surrender is an answer the app finally knows
+
+Until now a task card had two endings: finished or deleted — and deleting rewrote history as if
+the attempt never happened. There is a third verdict students hand down every day, and the app
+now has a word for it: مستسلخة. A surrendered task takes an angry zigzag scribble across its
+title and counts as a failure for the day, which is what it is. A finished task keeps its clean
+straight strike and its check beside it, so the two verdicts never wear the same face.
+Surrendering asks you first, buzzes exactly once when you commit, and undoes silently if you
+change your mind.
+
 # Ather — release build, 2026-08-23 · 1.8.0+15
 
 **The release where the app starts moving like something physical.** Tabs, buttons, drags and
