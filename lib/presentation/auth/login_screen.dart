@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/branding/ather_logo.dart';
+import '../../core/branding/ather_brand.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/ather_card.dart';
 import '../../core/widgets/ather_controls.dart';
-// Prefixed: `AtherGlyph` is a brand-mark widget in ather_logo.dart and the icon
-// enum here. Two different things with one good name; the prefix says which.
+// Prefixed: the icon enum in ather_icons.dart is also called `AtherGlyph` --
+// the name the brand-mark widget this screen used to show still carries. The
+// mark here is now AtherMarkDrawOn; the prefix keeps the two names apart.
 import '../../core/widgets/ather_icons.dart' as icons;
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/buttons.dart';
@@ -156,9 +157,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // the one screen that carries the mark. Glyph rather than the
                 // plated icon: the plate is the page's own grey, and a square
                 // of it would only draw a box around the symbol.
-                const Align(
+                //
+                // Same draw-on beat as the lock screen (§SP-09), and it
+                // replays on every mount of this route -- signing out and
+                // back is another appearance, not a remembered one.
+                Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: AtherGlyph(size: 44),
+                  child: AtherMarkDrawOn(size: 44, label: l.appName),
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 Text(

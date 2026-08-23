@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 
-import '../../core/branding/ather_logo.dart';
+import '../../core/branding/ather_brand.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -145,7 +145,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                 // with the lock on -- the Android launch window hands straight
                 // over to it -- so the mark carries through from the splash
                 // rather than disappearing at the handover.
-                const AtherGlyph(size: 108),
+                //
+                // It draws itself on (§SP-09): the gate remounts this screen
+                // every time the lock comes down, so a fresh State replays the
+                // beat on every appearance -- not only the first launch.
+                AtherMarkDrawOn(size: 108, label: l.appName),
                 const SizedBox(height: AppSpacing.xl),
                 // The wordmark, and nothing under it. Two lines of standing
                 // instructional text used to sit here explaining that the app

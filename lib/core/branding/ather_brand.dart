@@ -34,6 +34,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../theme/app_spacing.dart';
+import '../widgets/reduced_motion.dart';
+
 /// The mark's proportions, verbatim from the design's `0 0 100 100` viewBox.
 ///
 /// Everything here is in that 100-unit grid, and [AtherMarkPainter] applies one
@@ -169,10 +172,41 @@ class AtherBrandPalette {
 /// same thing; the organic ring is deliberately lopsided, so centring it by
 /// viewBox would leave it visibly off in a launcher mask. A non-square box
 /// letterboxes rather than distorting.
+///
+/// ## Progress, and why the defaults are what they are
+///
+/// [ringProgress] and [accentProgress] exist for the opening beat on the lock
+/// and login screens (`animation/06_motion_specs.md` §SP-09 · IA-06): the ring
+/// draws on along its own length, then the 27% accent run sweeps after it. The
+/// widget that drives them is [AtherMarkDrawOn]; this painter only knows
+/// fractions of a stroke.
+///
+/// A progress of 1 — the default, so every caller that predates the beat takes
+/// it without naming it — draws through the exact statements the painter has
+/// always used. That is deliberate beyond tidiness: the share card, the
+/// settled frame on screen, and the launcher/splash bitmaps exported by
+/// `tool/branding/export_branding_test.dart` must all stay byte-identical to
+/// the pre-SP-09 output, not merely visually close to it.
 class AtherMarkPainter extends CustomPainter {
-  const AtherMarkPainter({required this.palette});
+  const AtherMarkPainter({
+    required this.palette,
+    this.ringProgress = 1,
+    this.accentProgress = 1,
+  });
 
   final AtherBrandPalette palette;
+
+  /// How much of the ring is drawn, as a fraction of the path's own length.
+  final double ringProgress;
+
+  /// How much of the 27% accent run is drawn, as a fraction of *that run* —
+  /// not of the whole path, so an accent mid-sweep never runs ahead of the
+  /// geometry the design authored.
+  final double accentProgress;
+
+  /// Clamps a progress to the unit range. Painters are public surface; a
+  /// caller passing 1.2 or -0.1 gets the end stops, not a longer stroke.
+  static double _unit(double value) => value < 0 ? 0 : value > 1 ? 1 : value;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -210,26 +244,43 @@ class AtherMarkPainter extends CustomPainter {
       ..isAntiAlias = true
       ..color = palette.ring;
 
-    canvas.drawPath(path, stroke);
+    // The ring. At full progress the whole path is handed to the canvas
+    // exactly as before the draw-on existed; below 1, it is walked along its
+    // own metric instead — the ring is not a circle, so there is no angle to
+    // sweep and no arc to tween (the same reason the accent is measured along
+    // the path).
+    if (ringProgress >= 1) {
+      canvas.drawPath(path, stroke);
+    } else if (ringProgress > 0) {
+      for (final ui.PathMetric metric in path.computeMetrics()) {
+        canvas.drawPath(
+          metric.extractPath(0, metric.length * _unit(ringProgress)),
+          stroke,
+        );
+        // One subpath. Anything after the first would be a second ring.
+        break;
+      }
+    }
 
-    // The accent run, measured along the path itself rather than swept through
-    // an angle: the ring is not a circle, so there is no angle to sweep.
-    for (final ui.PathMetric metric in path.computeMetrics()) {
-      canvas.drawPath(
-        metric.extractPath(
-          0,
-          metric.length * AtherMarkGeometry.sweepFraction,
-        ),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = AtherMarkGeometry.strokeWidth
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round
-          ..isAntiAlias = true
-          ..color = palette.accent,
-      );
-      // One subpath. Anything after the first would be a second ring.
-      break;
+    // The accent run: the first `sweepFraction` of the path again in the brand
+    // colour. Its own progress sweeps that run from its start — at 1 it covers
+    // exactly what it always covered.
+    final double accentFraction =
+        AtherMarkGeometry.sweepFraction * _unit(accentProgress);
+    if (accentFraction > 0) {
+      for (final ui.PathMetric metric in path.computeMetrics()) {
+        canvas.drawPath(
+          metric.extractPath(0, metric.length * accentFraction),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = AtherMarkGeometry.strokeWidth
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round
+            ..isAntiAlias = true
+            ..color = palette.accent,
+        );
+        break;
+      }
     }
 
     canvas.restore();
@@ -237,5 +288,133 @@ class AtherMarkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(AtherMarkPainter oldDelegate) =>
-      oldDelegate.palette != palette;
+      oldDelegate.palette != palette ||
+      oldDelegate.ringProgress != ringProgress ||
+      oldDelegate.accentProgress != accentProgress;
+}
+
+/// The mark that draws itself on when a gate screen appears.
+///
+/// §SP-09 (`animation/06_motion_specs.md`, idea IA-06): on the lock screen and
+/// the login screen — the two surfaces where the app introduces itself — the
+/// ring draws on, then the 27% accent run sweeps after it. Both phases are
+/// segments of **one** controller, cut by [Interval]s from the same two pinned
+/// durations, so there is no second ticker and no way for the beats to drift
+/// apart. When the accent lands the controller completes and stops: nothing
+/// repeats, no ticker survives, `pumpAndSettle` returns.
+///
+/// It plays per appearance by construction rather than by a "has played" flag:
+/// each appearance mounts a fresh State, and a State animates exactly once.
+/// The lock gate remounts its screen every time the lock comes down
+/// (`_LockGate` in app.dart), and the login route builds fresh on every push.
+///
+/// Reduce-motion shows the finished mark on the very first frame; the
+/// controller is never started, so not even an idle-to-completed ticker runs.
+///
+/// This lives beside the painter rather than inside the two screens because
+/// both need the identical beat, and duplicating motion logic across screens
+/// is how two screens end up moving differently. The semantic label arrives as
+/// a plain string — resolved by the caller with `L.of(context).appName`, the
+/// way `AtherGlyph` resolves it internally — so this file keeps no l10n
+/// dependency.
+class AtherMarkDrawOn extends StatefulWidget {
+  const AtherMarkDrawOn({super.key, required this.label, this.size = 24});
+
+  /// Accessible name of the mark, e.g. `l.appName`.
+  final String label;
+
+  /// Edge length of the square glyph, in logical pixels.
+  final double size;
+
+  @override
+  State<AtherMarkDrawOn> createState() => _AtherMarkDrawOnState();
+}
+
+class _AtherMarkDrawOnState extends State<AtherMarkDrawOn>
+    with SingleTickerProviderStateMixin {
+  /// Spec-pinned by §SP-09 — 350ms of ring, then 250ms of accent — and named
+  /// here rather than inlined because the intervals below are *derived* from
+  /// them: change one number and the handover moves with it automatically.
+  static const int _ringMs = 350;
+  static const int _accentMs = 250;
+
+  /// Where the ring segment hands the controller over to the accent segment:
+  /// 350/600 ≈ 0.5833 of the total timeline.
+  static const double _handover = _ringMs / (_ringMs + _accentMs);
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: _ringMs + _accentMs),
+  );
+
+  late final CurvedAnimation _ring = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0, _handover, curve: AppMotion.standard),
+  );
+
+  late final CurvedAnimation _accent = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(_handover, 1, curve: AppMotion.standard),
+  );
+
+  /// Whether this appearance animates at all. Decided once, before the first
+  /// build (which is why it lives in [didChangeDependencies] and not in
+  /// [build], where it would re-read on every rebuild).
+  bool _animate = false;
+  bool _decided = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_decided) return;
+    _decided = true;
+
+    // Decided here rather than in initState because reduce-motion is read off
+    // the MediaQuery, which needs a context that initState does not have.
+    // Under reduce-motion `forward()` is never called: the controller exists
+    // but no ticker ever runs, which is quieter than starting one and
+    // completing it on the first frame.
+    _animate = !prefersReducedMotion(context);
+    if (_animate) _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _accent.dispose();
+    _ring.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: widget.label,
+      image: true,
+      // Decoration everywhere it appears, never a control — same reasoning as
+      // the glyph in ather_logo.dart: a CustomPaint must not answer hit tests
+      // meant for whatever it sits inside.
+      child: IgnorePointer(
+        child: SizedBox.square(
+          dimension: widget.size,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              return CustomPaint(
+                painter: AtherMarkPainter(
+                  palette: AtherBrandPalette.of(context).withoutPlate,
+                  // An unstarted controller reads 0, which would paint an
+                  // empty box for the whole life of the screen — so under
+                  // reduce-motion the resting values go straight through and
+                  // the finished mark is what the first frame shows.
+                  ringProgress: _animate ? _ring.value : 1,
+                  accentProgress: _animate ? _accent.value : 1,
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
 }
