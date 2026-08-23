@@ -1321,6 +1321,31 @@ produced those numbers is untouched by the redesign.
 
 ## 10. Work Log
 
+**Motion round 1: the spring register lands, and eight specs ship through it (2026-08-23).**
+The declared §3.21 collision was adopted: `lib/core/motion/springs.dart` adds a four-entry
+spring register (`crisp`/`select`/`settle`/`celebrate`) beside the Cubic tokens, driven by an
+interruptible `SpringController` (value **and** velocity carried across retargets) and a
+reduce-motion-honouring `SpringScale`. On that foundation: `Pressable` answers with physics
+(crisp down / select release) and speaks its first haptic word; the tab pick dips to 0.90 and
+rebounds Telegram-style over the existing weight tween; the day picker drags on rubber-band
+square-law with Kowalski thresholds (45px / 0.11 px/ms) and springs home carrying the finger's
+release velocity; exam step-4 now measures one thing twice — number and bar fill the same 600ms
+window from t=120 — and the chapter celebration gained a ring echo and a 250ms-late sentence;
+analytics columns grow (450ms, stagger 30ms capped at 4) while the trajectory line draws itself
+(400ms) before its endpoint pops; the brand mark draws on for lock/login (350+250ms, once per
+appearance); an emptied queue earns the register's biggest pop. Haptics became a four-word
+vocabulary (`light/select/success/heavy`) behind a Settings toggle, with `heavy()` wired once
+inside `confirmDestructive`'s affirmative branch so every destructive commitment buzzes exactly
+once by construction.
+
+An independent review round then closed nine findings against this work: the readiness line now
+counts from the right origin (720ms), the reduce-motion double haptic is gone, SP-10's pop is
+diluted to its pinned ≈1.04/320ms via a locally-derived description rather than a sixth
+register entry, opacity-0 placeholders left the semantics tree, and `springWithVelocity`
+realized the register's fling promise so the picker drives kit code like everything else.
+Press depth stays `.97` per M-09 precedence over SP-07's `.96`, recorded where it is enforced.
+Shipped at 1.8.0+15 — the bump review flagged as overdue the moment schema v4 rode inside +14.
+
 **The week strip became a day picker, and a known layout defect closed with it (2026-08-15).**
 The tasks screen's date control is now `DayPicker`: a short row of day pills centred on the
 selected day, with `اليوم` as its fixed landmark. `WeekStrip` is deleted — the dashboard's inert
