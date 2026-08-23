@@ -20,37 +20,33 @@ Future<void> main() async {
   // Loaded before the first frame so the locale notifier can read the persisted
   // language synchronously -- otherwise the app flashes Arabic before switching
   // to English for a student who chose English.
-  final preferences = await SharedPreferences.getInstance();
-
-  // Seed the haptics gate from disk before the first frame. AppHaptics is a
-  // static API that cannot watch a provider, and its provider is built lazily,
-  // so without this a student who turned vibration off would get it back on
-  // every cold start until they happened to open Settings. Same reasoning as
-  // the persisted locale above: read here because the first frame reads it.
-  AppHaptics.configure?.call(preferences.getBool(kHapticsEnabledKey) ?? true);
-
+  //
   // Firebase reads its cached session from disk here, with no network call, so
   // by the first frame the router already knows whether this student is signed
   // in. That is what lets a signed-in student open the app in airplane mode.
   //
-  // Wrapped because initialisation must never be what stops a student reaching
-  // their own offline data: if it fails, the app still boots and the login
-  // screen reports the failure honestly.
-  //
-  // App Check used to sit in this chain, third of three awaits; it moved past
-  // `runApp` below. It is the only step here that can touch the network, and
-  // while enforcement is off nothing before the first frame needs its token --
-  // see [_activateAppCheck].
+  // The two are **independent** disk reads -- neither consumes the other's
+  // result -- so they run concurrently and `runApp` waits for both. Serially,
+  // the white screen paid for the sum; concurrently it pays for the slower of
+  // the two, which on a mid-range phone is Firebase by a wide margin, leaving
+  // SharedPreferences effectively free. Everything each step needs before the
+  // first frame is still guaranteed: the haptics gate below is seeded from
+  // prefs inside its own future, before the wait completes.
+  final preferencesFuture = _loadPreferences();
   var firebaseReady = false;
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await _initializeCrashlytics();
-    firebaseReady = true;
-  } catch (error, stack) {
-    debugPrint('Firebase init failed: $error\n$stack');
-  }
+  final firebaseFuture = () async {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      await _initializeCrashlytics();
+      firebaseReady = true;
+    } catch (error, stack) {
+      debugPrint('Firebase init failed: $error\n$stack');
+    }
+  }();
+  await Future.wait(<Future<void>>[preferencesFuture, firebaseFuture]);
+  final preferences = await preferencesFuture;
 
   runApp(
     ProviderScope(
@@ -76,6 +72,20 @@ Future<void> main() async {
       unawaited(_activateAppCheck());
     });
   }
+}
+
+/// Loads the preferences and seeds the haptics gate from disk before the first
+/// frame.
+///
+/// AppHaptics is a static API that cannot watch a provider, and its provider is
+/// built lazily, so without this a student who turned vibration off would get
+/// it back on every cold start until they happened to open Settings. Same
+/// reasoning as the persisted locale: read here because the first frame reads
+/// it.
+Future<SharedPreferences> _loadPreferences() async {
+  final preferences = await SharedPreferences.getInstance();
+  AppHaptics.configure?.call(preferences.getBool(kHapticsEnabledKey) ?? true);
+  return preferences;
 }
 
 /// Attaches an App Check token to Firebase requests, so being in possession of
