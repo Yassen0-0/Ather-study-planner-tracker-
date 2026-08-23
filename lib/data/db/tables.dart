@@ -147,6 +147,23 @@ class DailyTasks extends Table {
 
   BoolColumn get done => boolean().withDefault(const Constant(false))();
 
+  /// Set when the student surrenders the task -- استسلام, "I am giving up on
+  /// this one". Counted as failure for the day, which is why it is a state of
+  /// its own rather than an untick or a delete: deleting erases the plan,
+  /// unticking merely returns it to "not yet", and neither records that the
+  /// student faced the task and left it undone on purpose.
+  ///
+  /// **Mutually exclusive with [done] by construction**, not by convention:
+  /// `DriftTaskRepository` clears whichever flag the other one sets inside the
+  /// same transaction, so no caller can produce a row claiming both.
+  ///
+  /// Carries `DEFAULT false` rather than being nullable so the v4 -> v5
+  /// migration can `ADD COLUMN` onto existing installs in one statement --
+  /// SQLite only allows that with a non-null default, and every row written
+  /// before surrender existed reads back false, which is what it was.
+  BoolColumn get surrendered =>
+      boolean().withDefault(const Constant(false))();
+
   /// Manual position within its day. Dense (0, 1, 2 ...) and rewritten wholesale
   /// on reorder -- a day holds a handful of rows, so fractional indices would be
   /// cleverness bought with nothing.

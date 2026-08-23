@@ -31,6 +31,22 @@ abstract interface class TaskRepository {
 
   Future<void> setTaskDone({required int taskId, required bool done});
 
+  /// Marks [taskId] surrendered ([surrendered] true) or takes it back (false).
+  ///
+  /// Surrender is the student saying they gave up on the task that day --
+  /// استسلام. It is counted as failure, deliberately distinct from deleting
+  /// the task (which erases the plan entirely) and from leaving it unticked
+  /// (which only means "not yet"). A flip on a missing task does nothing.
+  ///
+  /// **Success and surrender are mutually exclusive**, and this interface is
+  /// where that is guaranteed rather than hoped for: setting either flag clears
+  /// the other in the same transaction, so no sequence of calls through a
+  /// [TaskRepository] can leave a row claiming both.
+  Future<void> setTaskSurrendered({
+    required int taskId,
+    required bool surrendered,
+  });
+
   Future<void> deleteTask(int taskId);
 
   /// Rewrites the whole day's order from [orderedIds].

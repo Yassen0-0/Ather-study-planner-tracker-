@@ -2746,6 +2746,21 @@ class $DailyTasksTable extends DailyTasks
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _surrenderedMeta = const VerificationMeta(
+    'surrendered',
+  );
+  @override
+  late final GeneratedColumn<bool> surrendered = GeneratedColumn<bool>(
+    'surrendered',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("surrendered" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _sortOrderMeta = const VerificationMeta(
     'sortOrder',
   );
@@ -2774,6 +2789,7 @@ class $DailyTasksTable extends DailyTasks
     day,
     title,
     done,
+    surrendered,
     sortOrder,
     createdAt,
   ];
@@ -2812,6 +2828,15 @@ class $DailyTasksTable extends DailyTasks
       context.handle(
         _doneMeta,
         done.isAcceptableOrUnknown(data['done']!, _doneMeta),
+      );
+    }
+    if (data.containsKey('surrendered')) {
+      context.handle(
+        _surrenderedMeta,
+        surrendered.isAcceptableOrUnknown(
+          data['surrendered']!,
+          _surrenderedMeta,
+        ),
       );
     }
     if (data.containsKey('sort_order')) {
@@ -2855,6 +2880,10 @@ class $DailyTasksTable extends DailyTasks
         DriftSqlType.bool,
         data['${effectivePrefix}done'],
       )!,
+      surrendered: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}surrendered'],
+      )!,
       sortOrder: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
@@ -2884,6 +2913,22 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
   final String title;
   final bool done;
 
+  /// Set when the student surrenders the task -- استسلام, "I am giving up on
+  /// this one". Counted as failure for the day, which is why it is a state of
+  /// its own rather than an untick or a delete: deleting erases the plan,
+  /// unticking merely returns it to "not yet", and neither records that the
+  /// student faced the task and left it undone on purpose.
+  ///
+  /// **Mutually exclusive with [done] by construction**, not by convention:
+  /// `DriftTaskRepository` clears whichever flag the other one sets inside the
+  /// same transaction, so no caller can produce a row claiming both.
+  ///
+  /// Carries `DEFAULT false` rather than being nullable so the v4 -> v5
+  /// migration can `ADD COLUMN` onto existing installs in one statement --
+  /// SQLite only allows that with a non-null default, and every row written
+  /// before surrender existed reads back false, which is what it was.
+  final bool surrendered;
+
   /// Manual position within its day. Dense (0, 1, 2 ...) and rewritten wholesale
   /// on reorder -- a day holds a handful of rows, so fractional indices would be
   /// cleverness bought with nothing.
@@ -2894,6 +2939,7 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
     required this.day,
     required this.title,
     required this.done,
+    required this.surrendered,
     required this.sortOrder,
     required this.createdAt,
   });
@@ -2904,6 +2950,7 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
     map['day'] = Variable<DateTime>(day);
     map['title'] = Variable<String>(title);
     map['done'] = Variable<bool>(done);
+    map['surrendered'] = Variable<bool>(surrendered);
     map['sort_order'] = Variable<int>(sortOrder);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -2915,6 +2962,7 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
       day: Value(day),
       title: Value(title),
       done: Value(done),
+      surrendered: Value(surrendered),
       sortOrder: Value(sortOrder),
       createdAt: Value(createdAt),
     );
@@ -2930,6 +2978,7 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
       day: serializer.fromJson<DateTime>(json['day']),
       title: serializer.fromJson<String>(json['title']),
       done: serializer.fromJson<bool>(json['done']),
+      surrendered: serializer.fromJson<bool>(json['surrendered']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -2942,6 +2991,7 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
       'day': serializer.toJson<DateTime>(day),
       'title': serializer.toJson<String>(title),
       'done': serializer.toJson<bool>(done),
+      'surrendered': serializer.toJson<bool>(surrendered),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -2952,6 +3002,7 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
     DateTime? day,
     String? title,
     bool? done,
+    bool? surrendered,
     int? sortOrder,
     DateTime? createdAt,
   }) => DailyTaskRow(
@@ -2959,6 +3010,7 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
     day: day ?? this.day,
     title: title ?? this.title,
     done: done ?? this.done,
+    surrendered: surrendered ?? this.surrendered,
     sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -2968,6 +3020,9 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
       day: data.day.present ? data.day.value : this.day,
       title: data.title.present ? data.title.value : this.title,
       done: data.done.present ? data.done.value : this.done,
+      surrendered: data.surrendered.present
+          ? data.surrendered.value
+          : this.surrendered,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -2980,6 +3035,7 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
           ..write('day: $day, ')
           ..write('title: $title, ')
           ..write('done: $done, ')
+          ..write('surrendered: $surrendered, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -2987,7 +3043,8 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
   }
 
   @override
-  int get hashCode => Object.hash(id, day, title, done, sortOrder, createdAt);
+  int get hashCode =>
+      Object.hash(id, day, title, done, surrendered, sortOrder, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2996,6 +3053,7 @@ class DailyTaskRow extends DataClass implements Insertable<DailyTaskRow> {
           other.day == this.day &&
           other.title == this.title &&
           other.done == this.done &&
+          other.surrendered == this.surrendered &&
           other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt);
 }
@@ -3005,6 +3063,7 @@ class DailyTasksCompanion extends UpdateCompanion<DailyTaskRow> {
   final Value<DateTime> day;
   final Value<String> title;
   final Value<bool> done;
+  final Value<bool> surrendered;
   final Value<int> sortOrder;
   final Value<DateTime> createdAt;
   const DailyTasksCompanion({
@@ -3012,6 +3071,7 @@ class DailyTasksCompanion extends UpdateCompanion<DailyTaskRow> {
     this.day = const Value.absent(),
     this.title = const Value.absent(),
     this.done = const Value.absent(),
+    this.surrendered = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -3020,6 +3080,7 @@ class DailyTasksCompanion extends UpdateCompanion<DailyTaskRow> {
     required DateTime day,
     required String title,
     this.done = const Value.absent(),
+    this.surrendered = const Value.absent(),
     required int sortOrder,
     required DateTime createdAt,
   }) : day = Value(day),
@@ -3031,6 +3092,7 @@ class DailyTasksCompanion extends UpdateCompanion<DailyTaskRow> {
     Expression<DateTime>? day,
     Expression<String>? title,
     Expression<bool>? done,
+    Expression<bool>? surrendered,
     Expression<int>? sortOrder,
     Expression<DateTime>? createdAt,
   }) {
@@ -3039,6 +3101,7 @@ class DailyTasksCompanion extends UpdateCompanion<DailyTaskRow> {
       if (day != null) 'day': day,
       if (title != null) 'title': title,
       if (done != null) 'done': done,
+      if (surrendered != null) 'surrendered': surrendered,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -3049,6 +3112,7 @@ class DailyTasksCompanion extends UpdateCompanion<DailyTaskRow> {
     Value<DateTime>? day,
     Value<String>? title,
     Value<bool>? done,
+    Value<bool>? surrendered,
     Value<int>? sortOrder,
     Value<DateTime>? createdAt,
   }) {
@@ -3057,6 +3121,7 @@ class DailyTasksCompanion extends UpdateCompanion<DailyTaskRow> {
       day: day ?? this.day,
       title: title ?? this.title,
       done: done ?? this.done,
+      surrendered: surrendered ?? this.surrendered,
       sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -3077,6 +3142,9 @@ class DailyTasksCompanion extends UpdateCompanion<DailyTaskRow> {
     if (done.present) {
       map['done'] = Variable<bool>(done.value);
     }
+    if (surrendered.present) {
+      map['surrendered'] = Variable<bool>(surrendered.value);
+    }
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
@@ -3093,6 +3161,7 @@ class DailyTasksCompanion extends UpdateCompanion<DailyTaskRow> {
           ..write('day: $day, ')
           ..write('title: $title, ')
           ..write('done: $done, ')
+          ..write('surrendered: $surrendered, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -5923,6 +5992,7 @@ typedef $$DailyTasksTableCreateCompanionBuilder =
       required DateTime day,
       required String title,
       Value<bool> done,
+      Value<bool> surrendered,
       required int sortOrder,
       required DateTime createdAt,
     });
@@ -5932,6 +6002,7 @@ typedef $$DailyTasksTableUpdateCompanionBuilder =
       Value<DateTime> day,
       Value<String> title,
       Value<bool> done,
+      Value<bool> surrendered,
       Value<int> sortOrder,
       Value<DateTime> createdAt,
     });
@@ -5962,6 +6033,11 @@ class $$DailyTasksTableFilterComposer
 
   ColumnFilters<bool> get done => $composableBuilder(
     column: $table.done,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get surrendered => $composableBuilder(
+    column: $table.surrendered,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6005,6 +6081,11 @@ class $$DailyTasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get surrendered => $composableBuilder(
+    column: $table.surrendered,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
@@ -6036,6 +6117,11 @@ class $$DailyTasksTableAnnotationComposer
 
   GeneratedColumn<bool> get done =>
       $composableBuilder(column: $table.done, builder: (column) => column);
+
+  GeneratedColumn<bool> get surrendered => $composableBuilder(
+    column: $table.surrendered,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
@@ -6079,6 +6165,7 @@ class $$DailyTasksTableTableManager
                 Value<DateTime> day = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<bool> done = const Value.absent(),
+                Value<bool> surrendered = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => DailyTasksCompanion(
@@ -6086,6 +6173,7 @@ class $$DailyTasksTableTableManager
                 day: day,
                 title: title,
                 done: done,
+                surrendered: surrendered,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
               ),
@@ -6095,6 +6183,7 @@ class $$DailyTasksTableTableManager
                 required DateTime day,
                 required String title,
                 Value<bool> done = const Value.absent(),
+                Value<bool> surrendered = const Value.absent(),
                 required int sortOrder,
                 required DateTime createdAt,
               }) => DailyTasksCompanion.insert(
@@ -6102,6 +6191,7 @@ class $$DailyTasksTableTableManager
                 day: day,
                 title: title,
                 done: done,
+                surrendered: surrendered,
                 sortOrder: sortOrder,
                 createdAt: createdAt,
               ),

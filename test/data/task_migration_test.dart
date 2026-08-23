@@ -50,7 +50,9 @@ void main() {
   }
 
   /// A v2 image: everything the tasks release shipped, without the two columns
-  /// version 3 added.
+  /// version 3 added -- and without the column version 5 added to
+  /// `daily_tasks`, which this image must not carry any more than a phone
+  /// updated straight from v2 would.
   Future<void> seedV2Database() async {
     final db = open();
     await db
@@ -65,6 +67,7 @@ void main() {
     await db.customStatement('ALTER TABLE subjects DROP COLUMN name');
     await db.customStatement('ALTER TABLE subjects DROP COLUMN archived_at');
     await db.customStatement('ALTER TABLE subjects DROP COLUMN deleted_at');
+    await db.customStatement('ALTER TABLE daily_tasks DROP COLUMN surrendered');
     await db.customStatement('PRAGMA user_version = 2');
     await db.close();
   }
@@ -96,7 +99,7 @@ void main() {
     // The seed is still idempotent across the upgrade: four subjects, not eight.
     expect(await db.select(db.subjects).get(), hasLength(4));
 
-    expect(db.schemaVersion, 4); // 4 = study_events capture table
+    expect(db.schemaVersion, 5); // 5 = study_events capture table, then surrender
   });
 
   test('upgrading from v2 adds the subject columns and keeps everything', () async {
@@ -125,7 +128,7 @@ void main() {
     expect(chapters, hasLength(1));
     expect(chapters.single.name, 'الباب الأول — الخلية');
 
-    expect(db.schemaVersion, 4); // 4 = study_events capture table
+    expect(db.schemaVersion, 5); // 5 = study_events capture table, then surrender
   });
 
   test('the seed never runs again once a subject can be deleted', () async {
@@ -156,6 +159,6 @@ void main() {
 
     expect(await db.select(db.dailyTasks).get(), isEmpty);
     expect(await db.select(db.subjects).get(), hasLength(4));
-    expect(db.schemaVersion, 4); // 4 = study_events capture table
+    expect(db.schemaVersion, 5); // 5 = study_events capture table, then surrender
   });
 }

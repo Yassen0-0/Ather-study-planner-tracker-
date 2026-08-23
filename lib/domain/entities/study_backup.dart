@@ -40,6 +40,12 @@ final class StudyEvent {
   /// A daily task's done flag flipping either way.
   static const String typeTaskDone = 'task_done';
 
+  /// A daily task being surrendered -- استسلام, given up, counted as failure.
+  /// Never written for a row whose done flag is being set in the same action:
+  /// the repository treats success and surrender as mutually exclusive, and
+  /// the history records whichever one actually happened.
+  static const String typeTaskSurrendered = 'task_surrendered';
+
   final int id;
 
   /// [typeChecklist] or [typeTaskDone]. Kept as the literal string rather than
@@ -87,7 +93,14 @@ final class StudyBackup {
   /// with it. Tolerance still runs one way only: a blob *without* the key
   /// parses as "nothing captured yet" (every blob in the cloud today), while a
   /// newer app reading this file gets the full history.
-  static const int formatVersion = 4;
+  ///
+  /// 5 added `surrendered` to every task -- and moved the payload shape with
+  /// it, for the same reason 4 did. A blob without the key parses as "no task
+  /// was ever surrendered", which is exactly true of everything written before
+  /// the flag existed. The bump is what stops an *older* build from accepting
+  /// this file: its parser would ignore `surrendered` and restore the record
+  /// with every surrender silently lost -- a half-read wearing a success.
+  static const int formatVersion = 5;
 
   /// Empty in a version 1 backup, which is not a loss: every subject that could
   /// exist when those were written is seeded on the receiving device already.
@@ -209,6 +222,7 @@ final class StudyBackup {
           'day': _epoch(t.day),
           'title': t.title,
           'done': t.done,
+          'surrendered': t.surrendered,
           'sortOrder': t.sortOrder,
           'createdAt': _epoch(t.createdAt),
         },
@@ -358,6 +372,10 @@ final class StudyBackup {
             day: _date(t['day']),
             title: t['title']! as String,
             done: t['done']! as bool,
+            // Absent in every blob written before surrender existed -- which
+            // reads back as false, which is what those tasks were. Required on
+            // write so a restore never has to guess.
+            surrendered: (t['surrendered'] ?? false) as bool,
             sortOrder: t['sortOrder']! as int,
             createdAt: _date(t['createdAt']),
           ),

@@ -38,18 +38,22 @@ class AppDatabase extends _$AppDatabase {
   /// `subjects.deleted_at`, which is what made subjects something a student can
   /// add, archive, and delete into a recycle bin.
   ///
-  /// **4 added the `study_events` capture log** -- and with it, the paragraph
-  /// above stopped being hypothetical: version 3 has now shipped (1.8.0+14),
-  /// so every future column gets its own step in [migration]'s ladder, exactly
-  /// as this file always promised. The 3 -> 4 step adds one table and touches
-  /// nothing else; see its test for the byte-for-byte proof.
+  /// **4 added the `study_events` capture log** (1.8.0+14) -- and with it, the
+  /// paragraph above stopped being hypothetical: every future column gets its
+  /// own step in [migration]'s ladder.
+  ///
+  /// **5 added `daily_tasks.surrendered`** (the استسلام state) as a plain
+  /// `ALTER TABLE ... ADD COLUMN ... NOT NULL DEFAULT 0` -- the one additive
+  /// statement SQLite allows on a table with rows in it, so no task a student
+  /// has ever written is read, rewritten or dropped on the way up. Its test is
+  /// the Rule-1 gate: 1.8.0+15 sits on real phones holding real history.
   ///
   /// Every student on an earlier build already has an older file on disk, so
   /// this number and [migration]'s `onUpgrade` move together -- bumping one
   /// without the other opens the app against a database missing a column it is
   /// about to read.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -82,6 +86,19 @@ class AppDatabase extends _$AppDatabase {
           // before it existed, so the upgrade has exactly one job: make the
           // table exist, and leave every other byte alone.
           await m.createTable(studyEvents);
+        }
+        if (from < 5 && from >= 2) {
+          // 5 added the surrender flag. ADD COLUMN with DEFAULT 0 is the only
+          // shape that can run against a table holding rows: SQLite applies
+          // the default to every existing row in place -- pre-existing tasks
+          // were never surrendered, and they now say so -- while nothing is
+          // rewritten and the done flags keep every value they had.
+          //
+          // Skipped when the climb starts below 2: there `daily_tasks` did
+          // not exist yet, and `createTable` above built it straight to the
+          // current shape -- column included -- so adding it again would fail
+          // on a duplicate column name.
+          await m.addColumn(dailyTasks, dailyTasks.surrendered);
         }
       } catch (error, stack) {
         // Report non-fatal error to Crashlytics before rethrowing.

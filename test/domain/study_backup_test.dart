@@ -85,6 +85,7 @@ void main() {
         day: dayOf(t0),
         title: 'أذاكر',
         done: true,
+        surrendered: true,
         sortOrder: 0,
         createdAt: t0,
       ),
@@ -131,6 +132,8 @@ void main() {
     expect(out.homework.single.score, 9);
     expect(out.tasks.single.title, 'أذاكر');
     expect(out.tasks.single.done, isTrue);
+    // Surrender rides beside done, never instead of it.
+    expect(out.tasks.single.surrendered, isTrue);
   });
 
   test('an empty backup round-trips to an empty backup', () {
@@ -183,6 +186,31 @@ void main() {
     expect(backup.chapterCount, 2);
     expect(backup.examCount, 1);
     expect(backup.isEmpty, isFalse);
+  });
+
+  test('a backup from before surrender existed imports with the flag false', () {
+    // Every blob in the cloud and on disk until this build: format 4, no
+    // `surrendered` key on any task. Its absence must read as "never
+    // surrendered" -- the truth -- rather than corruption or a thrown parse.
+    final legacy = populated().toJson()..['formatVersion'] = 4;
+    for (final task in (legacy['tasks']! as List<Object?>)) {
+      (task! as Map<String, Object?>).remove('surrendered');
+    }
+
+    final out = StudyBackup.fromJson(legacy);
+    expect(out.tasks.single.surrendered, isFalse);
+    // The fields that did exist came through untouched.
+    expect(out.tasks.single.done, isTrue);
+    expect(out.tasks.single.title, 'أذاكر');
+  });
+
+  test('a current backup writes the surrender key on every task', () {
+    final json = populated().toJson();
+    expect(json['formatVersion'], StudyBackup.formatVersion);
+    final tasks = (json['tasks']! as List<Object?>)
+        .cast<Map<String, Object?>>();
+    expect(tasks.every((t) => t.containsKey('surrendered')), isTrue);
+    expect(tasks.single['surrendered'], isTrue);
   });
 
   // --- Security audit, 2026-08-15 -------------------------------------------

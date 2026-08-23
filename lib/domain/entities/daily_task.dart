@@ -10,6 +10,7 @@ final class DailyTask {
     required this.day,
     required this.title,
     required this.done,
+    this.surrendered = false,
     required this.sortOrder,
     required this.createdAt,
   });
@@ -24,6 +25,14 @@ final class DailyTask {
 
   final String title;
   final bool done;
+
+  /// The student gave up on the task -- استسلام, counted as failure for the
+  /// day. Defaults to false so every construction site that predates surrender
+  /// (tests, older fixtures) keeps meaning "an ordinary task". Never true at
+  /// the same time as [done]: the repository clears whichever flag the other
+  /// one sets, so a caller holding both flags true has made a mistake this
+  /// class will not carry.
+  final bool surrendered;
 
   /// Position within [day]. Dense, and rewritten wholesale when the student
   /// drags a row.

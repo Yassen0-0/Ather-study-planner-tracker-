@@ -230,11 +230,11 @@ void main() {
       ],
     );
 
-    test('a version 4 blob carries events out and back intact', () async {
+    test('a version 5 blob carries events out and back intact', () async {
       // Through real JSON, not just the map: this is the Firestore shape.
       final json = jsonDecode(jsonEncode(backupWithEvents().toJson()))
           as Map<String, Object?>;
-      expect(json['formatVersion'], 4);
+      expect(json['formatVersion'], 5);
 
       final parsed = StudyBackup.fromJson(json);
       expect(parsed.events, hasLength(3));

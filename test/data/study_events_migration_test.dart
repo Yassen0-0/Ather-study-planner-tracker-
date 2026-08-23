@@ -58,6 +58,9 @@ void main() {
           ),
         );
     await db.customStatement('DROP TABLE study_events');
+    await db.customStatement(
+      'ALTER TABLE daily_tasks DROP COLUMN surrendered',
+    );
     await db.customStatement('PRAGMA user_version = 3');
     await db.close();
   }
@@ -100,7 +103,7 @@ void main() {
 
     expect(await db.select(db.subjects).get(), hasLength(4));
 
-    expect(db.schemaVersion, 4);
+    expect(db.schemaVersion, 5); // 5 = study_events capture table, then surrender
   });
 
   test('upgrading from v2 passes through and still adds everything', () async {
@@ -120,6 +123,9 @@ void main() {
     await db.customStatement('ALTER TABLE subjects DROP COLUMN archived_at');
     await db.customStatement('ALTER TABLE subjects DROP COLUMN deleted_at');
     await db.customStatement('DROP TABLE study_events');
+    await db.customStatement(
+      'ALTER TABLE daily_tasks DROP COLUMN surrendered',
+    );
     await db.customStatement('PRAGMA user_version = 2');
     await db.close();
 
@@ -148,6 +154,6 @@ void main() {
     expect(await db.select(db.studyEvents).get(), isEmpty);
     expect(await db.select(db.dailyTasks).get(), isEmpty);
     expect(await db.select(db.subjects).get(), hasLength(4));
-    expect(db.schemaVersion, 4);
+    expect(db.schemaVersion, 5);
   });
 }

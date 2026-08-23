@@ -109,6 +109,7 @@ void main() {
         day: dayOf(t0),
         title: 'مهمة',
         done: false,
+        surrendered: true,
         sortOrder: 0,
         createdAt: t0,
       ),
@@ -133,7 +134,12 @@ void main() {
     expect(exam.percentage, 70);
     expect(snapshot.homeworkFor(20).single.score, 8);
 
-    expect((await tasks.watchTasks().first).single.id, 4);
+    // The surrender state is part of the record a restore owes back: a
+    // restored task comes out exactly as the backup carried it in.
+    final restoredTask = await tasks.watchTasks().first;
+    expect(restoredTask.single.id, 4);
+    expect(restoredTask.single.surrendered, isTrue);
+    expect(restoredTask.single.done, isFalse);
   });
 
   test('restore replaces rather than merges', () async {

@@ -86,24 +86,80 @@ class DriftTaskRepository implements TaskRepository {
           await (_db.select(
             _db.dailyTasks,
           )..where((t) => t.id.equals(taskId))).getSingleOrNull();
-      if (current == null || current.done == done) return;
+      if (current == null) return;
+
+      // Success and surrender are mutually exclusive: marking done revokes a
+      // surrender in the same write, so no interleaving of calls can leave a
+      // row claiming both.
+      final revokesSurrender = done && current.surrendered;
+      if (current.done == done && !revokesSurrender) return;
 
       await (_db.update(
         _db.dailyTasks,
       )..where((t) => t.id.equals(taskId))).write(
-        DailyTasksCompanion(done: Value(done)),
+        DailyTasksCompanion(
+          done: Value(done),
+          surrendered:
+              revokesSurrender ? const Value(false) : const Value.absent(),
+        ),
       );
 
-      // Transition-only: a no-op flip is not something that happened.
-      await _db
-          .into(_db.studyEvents)
-          .insert(
-            StudyEventsCompanion.insert(
-              type: StudyEvent.typeTaskDone,
-              refId: taskId,
-              at: _clock.now(),
-            ),
-          );
+      // Transition-only: a no-op flip is not something that happened. Clearing
+      // a surrender as a side effect of ticking is part of that same single
+      // action and gets no event of its own.
+      if (current.done != done) {
+        await _db
+            .into(_db.studyEvents)
+            .insert(
+              StudyEventsCompanion.insert(
+                type: StudyEvent.typeTaskDone,
+                refId: taskId,
+                at: _clock.now(),
+              ),
+            );
+      }
+    });
+  }
+
+  @override
+  Future<void> setTaskSurrendered({
+    required int taskId,
+    required bool surrendered,
+  }) async {
+    // The mirror of [setTaskDone], down to the transaction shape: surrendering
+    // revokes success in the same write rather than leaving one row with two
+    // truths about the same day.
+    await _db.transaction(() async {
+      final current =
+          await (_db.select(
+            _db.dailyTasks,
+          )..where((t) => t.id.equals(taskId))).getSingleOrNull();
+      if (current == null) return;
+
+      final revokesDone = surrendered && current.done;
+      if (current.surrendered == surrendered && !revokesDone) return;
+
+      await (_db.update(
+        _db.dailyTasks,
+      )..where((t) => t.id.equals(taskId))).write(
+        DailyTasksCompanion(
+          surrendered: Value(surrendered),
+          done: revokesDone ? const Value(false) : const Value.absent(),
+        ),
+      );
+
+      // Transition-only, same rule as above.
+      if (current.surrendered != surrendered) {
+        await _db
+            .into(_db.studyEvents)
+            .insert(
+              StudyEventsCompanion.insert(
+                type: StudyEvent.typeTaskSurrendered,
+                refId: taskId,
+                at: _clock.now(),
+              ),
+            );
+      }
     });
   }
 
@@ -164,6 +220,7 @@ class DriftTaskRepository implements TaskRepository {
               day: dayOf(t.day),
               title: t.title,
               done: Value(t.done),
+              surrendered: Value(t.surrendered),
               sortOrder: t.sortOrder,
               createdAt: t.createdAt,
             ),
@@ -185,6 +242,7 @@ class DriftTaskRepository implements TaskRepository {
     day: dayOf(r.day),
     title: r.title,
     done: r.done,
+    surrendered: r.surrendered,
     sortOrder: r.sortOrder,
     createdAt: r.createdAt,
   );
