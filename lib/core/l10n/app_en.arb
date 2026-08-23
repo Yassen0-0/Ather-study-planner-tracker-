@@ -523,5 +523,21 @@
   "examEveBody": "The subject's lessons, ordered by what to prove tonight.",
   "examEveTierUnsettled": "Not yet proven -- no exam",
   "examEveTierWeakest": "Weakest first",
-  "examEveTierNearestDue": "Closest to falling due"
+  "examEveTierNearestDue": "Closest to falling due",
+  "reviewBodyDeclining": "The last exam in {lesson} dropped -- review it before it slips.",
+  "@reviewBodyDeclining": {
+    "placeholders": {
+      "lesson": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewBodyWeak": "{lesson} is still weak -- lock it in with an exam.",
+  "@reviewBodyWeak": {
+    "placeholders": {
+      "lesson": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -1160,4 +1160,14 @@ class LEn extends L {
 
   @override
   String get examEveTierNearestDue => 'Closest to falling due';
+
+  @override
+  String reviewBodyDeclining(String lesson) {
+    return 'The last exam in $lesson dropped -- review it before it slips.';
+  }
+
+  @override
+  String reviewBodyWeak(String lesson) {
+    return '$lesson is still weak -- lock it in with an exam.';
+  }
 }

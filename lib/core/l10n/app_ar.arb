@@ -734,5 +734,21 @@
   "examEveBody": "دروس المادة مرتبة حسب أولوية إثباتها الليلة.",
   "examEveTierUnsettled": "غير مُثبت — بلا امتحان",
   "examEveTierWeakest": "الأضعف إتقانًا",
-  "examEveTierNearestDue": "الأقرب سقوطًا"
+  "examEveTierNearestDue": "الأقرب سقوطًا",
+  "reviewBodyDeclining": "آخر امتحان في {lesson} نازل — راجعه قبل ما يوقع.",
+  "@reviewBodyDeclining": {
+    "placeholders": {
+      "lesson": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewBodyWeak": "{lesson} لسه ضعيف — ثبّته بامتحان.",
+  "@reviewBodyWeak": {
+    "placeholders": {
+      "lesson": {
+        "type": "String"
+      }
+    }
+  }
 }

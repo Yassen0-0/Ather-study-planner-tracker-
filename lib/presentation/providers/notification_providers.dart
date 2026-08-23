@@ -154,6 +154,12 @@ class _ReviewSchedulerState extends ConsumerState<ReviewScheduler>
         // the student can check against the countdown on the lesson screen.
         buildEarlyBody: (lesson, chapter) =>
             l.reviewNotificationEarlyBody(lesson, chapter),
+        // P5-06 -- the due-day body also names the lesson's actual state: a
+        // dropping score gets the danger line and a sub-50 mastery the weak
+        // line. The early warning above deliberately stays fixed; it speaks
+        // about timing, not about how good the lesson is.
+        buildDecliningBody: l.reviewBodyDeclining,
+        buildWeakBody: l.reviewBodyWeak,
       );
     } catch (_) {
       // Notifications are an enhancement, never a gate. If the platform
