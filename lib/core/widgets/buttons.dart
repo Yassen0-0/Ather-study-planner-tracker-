@@ -144,7 +144,7 @@ class PillButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xl,
-          vertical: 9,
+          vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
           color: context.colors.accent,
@@ -190,7 +190,10 @@ class DashedAddButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.radius = AppRadius.card,
-    this.padding = 15,
+    // [AppSpacing.cardPadding], so the label lines up with every real card's
+    // text above and below it -- the button is drawn as a card and has to
+    // share its metrics.
+    this.padding = AppSpacing.cardPadding,
   });
 
   final String label;

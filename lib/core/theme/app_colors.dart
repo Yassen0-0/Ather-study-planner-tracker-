@@ -66,6 +66,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.actionDisabled,
     required this.wrong,
     required this.wrongTint,
+    required this.wrongText,
     required this.right,
     required this.rightText,
     required this.onState,
@@ -151,11 +152,26 @@ class AppColors extends ThemeExtension<AppColors> {
   /// The one wash red is allowed: behind an error message, an overdue status
   /// chip, a review badge.
   ///
-  /// There used to be a second at 12% called `wrongChip`, for the overdue chip
-  /// specifically. Two reds two percent apart, on the same screen and often in
-  /// the same card, is not a distinction — it is a decision nobody made twice
-  /// on purpose. One wash, one name.
-  final Color wrongTint;
+    /// There used to be a second at 12% called `wrongChip`, for the overdue chip
+    /// specifically. Two reds two percent apart, on the same screen and often in
+    /// the same card, is not a distinction — it is a decision nobody made twice
+    /// on purpose. One wash, one name.
+    final Color wrongTint;
+
+    /// [wrong], darkened enough to be read as small text on light surfaces.
+    ///
+    /// `#FF3B30` measures **3.55 : 1** on the white card and less on the tint
+    /// washes red sits on — fine for the big mastery figures, which clear the
+    /// 3 : 1 large-text bar, but every *small* red sentence fails the 4.5 : 1
+    /// that body text owes WCAG AA: the error banner, the overdue chip, the
+    /// chart labels. This is the red pen's own text grade, on exactly the
+    /// precedent of [rightText]: the fill stays the brand red, only the pen
+    /// darkens.
+    ///
+    /// In dark the fill already measures 5.9 : 1 on black, so as with
+    /// [rightText] the two themes differ on purpose: dark keeps the brand red
+    /// exactly, and only light darkens it.
+    final Color wrongText;
 
   /// Right, mastered (>= 90%), mastered chapter, switch on.
   ///
@@ -232,7 +248,11 @@ class AppColors extends ThemeExtension<AppColors> {
     // #70707A is 4.9:1, still a clear step quieter than textSecondary (5.9:1),
     // so the ramp's ordering is untouched.
     textNoData: Color(0xFF70707A),
-    weekLabel: Color(0xFF8A8A8E),
+    // Was #8A8A8E, which is 3.0:1 on the page grey -- under AA for the small
+    // weekday letters it prints. Moved into textNoData's family (#70707A,
+    // 4.3:1) so it stays a clear step quieter than textSecondary and the grey
+    // ramp keeps its ordering; see §3.10's light-mode wave.
+    weekLabel: Color(0xFF70707A),
     actionPrimary: Color(0xFF000000),
     onPrimary: Color(0xFFFFFFFF),
     accent: Color(0xFF1B6EF3),
@@ -241,8 +261,13 @@ class AppColors extends ThemeExtension<AppColors> {
     actionDisabled: Color(0xFFE9E9EC),
     wrong: Color(0xFFFF3B30),
     wrongTint: Color(0x1AFF3B30), // 10%
+    // #C93229 measures 5.3:1 on the card, 4.8:1 on muted, and clears 4.5:1 on
+    // both the page grey (4.6) and the red tint wash itself (4.6) -- which is
+    // where its text actually sits: the error banner and the overdue chip
+    // print onto wrongTint. Still unmistakably the same red as the fill.
+    wrongText: Color(0xFFC93229),
     right: Color(0xFF34C759),
-    // 4.6:1 on white, 4.3:1 on the page grey -- AA for body text, and still
+    // 5.1:1 on white, 4.4:1 on the page grey -- AA for body text, and still
     // unmistakably the same green as the fill beside it.
     rightText: Color(0xFF1B7F3B),
     onState: Color(0xFFFFFFFF),
@@ -289,6 +314,9 @@ class AppColors extends ThemeExtension<AppColors> {
     actionDisabled: Color(0xFF2C2C2E),
     wrong: Color(0xFFFF3B30),
     wrongTint: Color(0x26FF3B30), // 15%
+    // Unchanged from [wrong]: 5.9:1 on black already. Darkening it here would
+    // only make it harder to read.
+    wrongText: Color(0xFFFF3B30),
     right: Color(0xFF34C759),
     // Unchanged from [right]: 7.7:1 on the dark card already. Darkening it here
     // would only make it harder to read.
@@ -331,6 +359,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? actionDisabled,
     Color? wrong,
     Color? wrongTint,
+    Color? wrongText,
     Color? right,
     Color? rightText,
     Color? onState,
@@ -362,6 +391,7 @@ class AppColors extends ThemeExtension<AppColors> {
       actionDisabled: actionDisabled ?? this.actionDisabled,
       wrong: wrong ?? this.wrong,
       wrongTint: wrongTint ?? this.wrongTint,
+      wrongText: wrongText ?? this.wrongText,
       right: right ?? this.right,
       rightText: rightText ?? this.rightText,
       onState: onState ?? this.onState,
@@ -401,6 +431,7 @@ class AppColors extends ThemeExtension<AppColors> {
       actionDisabled: mix(actionDisabled, other.actionDisabled),
       wrong: mix(wrong, other.wrong),
       wrongTint: mix(wrongTint, other.wrongTint),
+      wrongText: mix(wrongText, other.wrongText),
       right: mix(right, other.right),
       rightText: mix(rightText, other.rightText),
       onState: mix(onState, other.onState),

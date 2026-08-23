@@ -1148,4 +1148,22 @@ class LAr extends L {
   String restoreCopyCounts(String chapters, String exams) {
     return 'النسخة السحابية: $chapters باب، $exams امتحان';
   }
+
+  @override
+  String get examEveButton => 'ليلة الامتحان';
+
+  @override
+  String get examEveTitle => 'ليلة الامتحان';
+
+  @override
+  String get examEveBody => 'دروس المادة مرتبة حسب أولوية إثباتها الليلة.';
+
+  @override
+  String get examEveTierUnsettled => 'غير مُثبت — بلا امتحان';
+
+  @override
+  String get examEveTierWeakest => 'الأضعف إتقانًا';
+
+  @override
+  String get examEveTierNearestDue => 'الأقرب سقوطًا';
 }

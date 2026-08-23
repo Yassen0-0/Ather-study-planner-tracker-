@@ -265,8 +265,8 @@ class _ShareProgressButtonState extends State<_ShareProgressButton> {
         // stops a second tap from starting a second render.
         onTap: _share,
         semanticLabel: L.of(context).shareCardAction,
-        child: Icon(
-          Icons.ios_share,
+        child: AtherIcon(
+          AtherGlyph.share,
           size: 18,
           color: context.colors.textPrimary,
         ),

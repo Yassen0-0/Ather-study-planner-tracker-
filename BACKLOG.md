@@ -1,6 +1,6 @@
 # Backlog — what is left
 
-Everything the owner asked for is built and released as `1.7.0+12`. What
+Everything the owner asked for is built and released as `1.8.0+14`. What
 follows is what nobody has asked for yet, and the one thing still waiting on a
 hand at a keyboard.
 

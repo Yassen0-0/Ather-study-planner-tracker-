@@ -596,7 +596,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
               width: 80,
               child: NumberField(
                 controller: group.correct,
-                height: 48,
+                height: AppSizes.input,
                 textStyle: AppTypography.rowNumberSmall,
                 onChanged: (_) => _fieldChanged(),
               ),
@@ -661,7 +661,10 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
 
     return <Widget>[
       Padding(
-        padding: const EdgeInsets.only(top: 6, bottom: AppSpacing.xl),
+        padding: const EdgeInsets.only(
+          top: AppSpacing.textGap,
+          bottom: AppSpacing.xl,
+        ),
         child: Text(l.examStep4Title, style: AppTypography.stepTitle),
       ),
       AtherCard(

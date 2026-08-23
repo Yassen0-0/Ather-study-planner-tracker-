@@ -32,6 +32,13 @@ enum AtherGlyph {
   settings,
   edit,
 
+  /// The share sheet's affordance, in the dashboard and chapter-report
+  /// headers. It replaced the one Material glyph left in the app
+  /// (`Icons.ios_share`), whose optical weight sat visibly apart from the
+  /// hand-drawn cog and chevron beside it — one icon family means zero
+  /// Material imports that paint.
+  share,
+
   /// Chevron pointing along the reading direction's "forward". Drawn pointing
   /// right; the header flips it for RTL by placing it on the correct side.
   back,
@@ -280,6 +287,35 @@ class _GlyphPainter extends CustomPainter {
             ..close(),
           stroke,
         );
+
+      case AtherGlyph.share:
+        // The iOS paper-plane-free share mark: a tray open at the top, with
+        // the arrow rising out of it. Drawn on the same 24-grid and stroke as
+        // the header family around it (see [settings] and [back]), which is
+        // the entire point — the Material original carried a different weight
+        // and sat in the two most-seen headers in the app.
+        stroke.strokeWidth = strokeWidth ?? 1.9;
+        canvas.drawPath(
+          // The tray: three sides of a rounded-corner box, its top edge split
+          // to leave a gap the arrow leaves through.
+          Path()
+            ..moveTo(9.2, 10)
+            ..lineTo(6.5, 10)
+            ..lineTo(6.5, 20.5)
+            ..lineTo(17.5, 20.5)
+            ..lineTo(17.5, 10)
+            ..lineTo(14.8, 10),
+          stroke,
+        );
+        canvas
+          ..drawLine(const Offset(12, 13.2), const Offset(12, 3), stroke)
+          ..drawPath(
+            Path()
+              ..moveTo(8.4, 6.4)
+              ..lineTo(12, 3)
+              ..lineTo(15.6, 6.4),
+            stroke,
+          );
 
       case AtherGlyph.back:
         stroke.strokeWidth = strokeWidth ?? 2.4;

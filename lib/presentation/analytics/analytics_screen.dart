@@ -142,6 +142,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   }
 }
 
+/// The text-safe form of a mastery verdict, for printed figures.
+///
+/// [MasteryPalette.resolve] already returns [AppColors.rightText] for green
+/// because what it colours is a *number*; red needed the same treatment, and
+/// [AppColors.wrongText] exists for exactly that. Everything this screen
+/// prints in a verdict colour is `chartValue` (12px bold) — body-text rules
+/// apply, not the large-text 3:1 the big mastery figures are held to.
+Color _verdictText(AppColors colors, Color resolved) =>
+    resolved == colors.wrong ? colors.wrongText : resolved;
+
 class _InsightsCard extends ConsumerWidget {
   const _InsightsCard({required this.insights});
 
@@ -354,7 +364,7 @@ class _VerticalBar extends StatelessWidget {
       children: <Widget>[
         Text(
           percentLabel(mastery, hasData: hasData),
-          style: AppTypography.chartValue.copyWith(color: color),
+          style: AppTypography.chartValue.copyWith(color: _verdictText(context.colors, color)),
         ),
         const SizedBox(height: AppSpacing.xs),
         Expanded(
@@ -364,18 +374,21 @@ class _VerticalBar extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: context.colors.fill,
-                borderRadius: BorderRadius.circular(AppSpacing.xs),
+                borderRadius: BorderRadius.circular(AppRadius.segment),
               ),
               child: Align(
                 alignment: Alignment.bottomCenter,
+                // One minimum-visibility rule for every bar in the app, not a
+                // private clamp: see [MasteryPalette.barFraction].
                 child: FractionallySizedBox(
-                  heightFactor: hasData
-                      ? (mastery.clamp(0, 100) / 100).clamp(0.03, 1).toDouble()
-                      : 0,
+                  heightFactor: MasteryPalette.barFraction(
+                    percentage: mastery,
+                    hasData: hasData,
+                  ),
                   child: Container(
                     decoration: BoxDecoration(
                       color: fill,
-                      borderRadius: BorderRadius.circular(AppSpacing.xs),
+                      borderRadius: BorderRadius.circular(AppRadius.segment),
                     ),
                   ),
                 ),
@@ -438,7 +451,7 @@ class _ChapterBarsCard extends StatelessWidget {
                         hasData: chapter.hasAnyExam,
                         needsReview: chapter.needsReview,
                       ),
-                      height: 10,
+                      height: AppSizes.barTrack,
                       trackColor: context.colors.fill,
                     ),
                   ),
@@ -452,11 +465,14 @@ class _ChapterBarsCard extends StatelessWidget {
                       ),
                       textAlign: TextAlign.end,
                       style: AppTypography.chartValue.copyWith(
-                        color: MasteryPalette.resolve(
-                          colors: context.colors,
-                          percentage: chapter.mastery,
-                          hasData: chapter.hasAnyExam,
-                          needsReview: chapter.needsReview,
+                        color: _verdictText(
+                          context.colors,
+                          MasteryPalette.resolve(
+                            colors: context.colors,
+                            percentage: chapter.mastery,
+                            hasData: chapter.hasAnyExam,
+                            needsReview: chapter.needsReview,
+                          ),
                         ),
                       ),
                     ),
@@ -642,9 +658,11 @@ class _TrajectoryRow extends StatelessWidget {
     // a line the student can see has not moved.
     final rounded = trajectory.velocityPerCycle.round();
     final isFlat = rounded == 0;
+    // The text-safe verdict grades ([rightText]/[wrongText]): this is a 12px
+    // figure on a white card, and both fill colours fail body-text AA here.
     final velocityColor = isFlat
         ? colors.textSecondary
-        : (rounded > 0 ? colors.right : colors.wrong);
+        : _verdictText(colors, rounded > 0 ? colors.right : colors.wrong);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

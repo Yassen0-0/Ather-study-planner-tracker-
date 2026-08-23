@@ -239,10 +239,11 @@ class _TaskList extends StatelessWidget {
               ? child
               : AnimatedBuilder(
                   animation: animation,
-                  builder: (context, inner) => Transform.scale(
-                    scale: 1 + 0.02 * Curves.easeOut.transform(animation.value),
-                    child: inner,
-                  ),
+                   builder: (context, inner) => Transform.scale(
+                     scale: 1 +
+                         0.02 * AppMotion.standard.transform(animation.value),
+                     child: inner,
+                   ),
                   child: child,
                 ),
         );

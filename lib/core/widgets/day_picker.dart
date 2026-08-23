@@ -41,7 +41,7 @@ import 'reduced_motion.dart';
 /// Today's cell reads `اليوم` whether it is selected or not. The other cells
 /// change every time the student moves a day; this one does not, so it is the
 /// thing they navigate against. When it is off screen entirely the green edge
-/// glow says which side it is on and goes back in one tap.
+/// marker says which side it is on and goes back in one tap.
 class DayPicker extends StatefulWidget {
   const DayPicker({
     super.key,
@@ -249,7 +249,7 @@ class _DayPickerState extends State<DayPicker> {
                   ],
                 ),
                 if (home != null)
-                  _ReturnGlow(
+                  _ReturnEdge(
                     key: returnGlowKey,
                     edge: home,
                     onTap: () => widget.onSelect(widget.today),
@@ -266,8 +266,11 @@ class _DayPickerState extends State<DayPicker> {
 /// Which edge of the row today lies past.
 enum DayEdge { start, end }
 
-/// Identifies the "come back to today" glow, for tests: it is a gradient with
-/// no text and no icon, so there is nothing else to find it by.
+/// Identifies the "come back to today" marker, for tests: it is a bare
+/// coloured edge with no text and no icon, so there is nothing else to find it
+/// by. The `glow` in the name is historical -- the gradient it identified was
+/// replaced by a solid 2px edge (§3.10), and renaming the key would break the
+/// tests that find it.
 const Key returnGlowKey = Key('day-picker-return-glow');
 
 /// One day.
@@ -372,8 +375,13 @@ class _Cell extends StatelessWidget {
   }
 }
 
-/// The "today is not on screen" cue: a green gradient bleeding in from the edge
+/// The "today is not on screen" cue: a solid 2px edge in `right` on the side
 /// today actually lies past, tappable to jump straight back.
+///
+/// An edge, not a fade. §3.10 bans gradients outright and sanctions exactly
+/// one exception (the tab bar's glass, §3.19); a direction sign does not need
+/// one, because the hard edge *is* the signpost -- it says "off this way"
+/// without borrowing decoration to say it.
 ///
 /// Green rather than the accent on purpose. The accent means *selected* in the
 /// row directly beside it — a blue edge here would read as an eighth day to
@@ -383,15 +391,22 @@ class _Cell extends StatelessWidget {
 /// It appears only while today is off screen. When today is one of the cells
 /// there is nothing to signpost, and a marker for something already visible is
 /// a marker that has to be ignored.
-class _ReturnGlow extends StatelessWidget {
-  const _ReturnGlow({super.key, required this.edge, required this.onTap});
+class _ReturnEdge extends StatelessWidget {
+  const _ReturnEdge({super.key, required this.edge, required this.onTap});
 
   final DayEdge edge;
   final VoidCallback onTap;
 
-  /// Narrow enough to sit beside a pill rather than over its text. The strip's
-  /// was 34 and overlaid a whole day cell, which took that cell's taps.
+  /// Wide enough to be an easy tap beside the row; the visible mark inside it
+  /// is only [_edge]. The old gradient was 18 wide and overlaid a whole day
+  /// cell's worth of glow.
   static const double _width = 18;
+
+  /// The approved replacement for the gradient this cue used to draw: §3.10
+  /// bans gradients and sanctions one exception (the tab bar's glass), so the
+  /// signpost is the hard edge itself. A drawn line weight, like the icons'
+  /// 1.9-2.2 strokes -- artwork geometry, not a spacing-ladder value.
+  static const double _edge = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -407,21 +422,11 @@ class _ReturnGlow extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: atStart
-                  ? AlignmentDirectional.centerStart
-                  : AlignmentDirectional.centerEnd,
-              end: atStart
-                  ? AlignmentDirectional.centerEnd
-                  : AlignmentDirectional.centerStart,
-              colors: <Color>[
-                green.withValues(alpha: 0.32),
-                green.withValues(alpha: 0),
-              ],
-            ),
-          ),
+        child: Align(
+          alignment: atStart
+              ? AlignmentDirectional.centerStart
+              : AlignmentDirectional.centerEnd,
+          child: Container(width: _edge, color: green),
         ),
       ),
     );

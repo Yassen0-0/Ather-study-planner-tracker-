@@ -1141,4 +1141,23 @@ class LEn extends L {
   String restoreCopyCounts(String chapters, String exams) {
     return 'Cloud copy: $chapters chapters, $exams exams';
   }
+
+  @override
+  String get examEveButton => 'Exam eve';
+
+  @override
+  String get examEveTitle => 'Exam eve';
+
+  @override
+  String get examEveBody =>
+      'The subject\'s lessons, ordered by what to prove tonight.';
+
+  @override
+  String get examEveTierUnsettled => 'Not yet proven -- no exam';
+
+  @override
+  String get examEveTierWeakest => 'Weakest first';
+
+  @override
+  String get examEveTierNearestDue => 'Closest to falling due';
 }

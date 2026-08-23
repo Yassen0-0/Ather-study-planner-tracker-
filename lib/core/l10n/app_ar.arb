@@ -727,5 +727,12 @@
         "type": "String"
       }
     }
-  }
+  },
+  "@@x_comment_P5": "=== Batch P5: exam eve mode ===",
+  "examEveButton": "ليلة الامتحان",
+  "examEveTitle": "ليلة الامتحان",
+  "examEveBody": "دروس المادة مرتبة حسب أولوية إثباتها الليلة.",
+  "examEveTierUnsettled": "غير مُثبت — بلا امتحان",
+  "examEveTierWeakest": "الأضعف إتقانًا",
+  "examEveTierNearestDue": "الأقرب سقوطًا"
 }

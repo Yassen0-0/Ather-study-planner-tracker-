@@ -50,6 +50,10 @@ class _ReviewCenterScreenState extends ConsumerState<ReviewCenterScreen> {
     final l = L.of(context);
     final queue = ref.watch(reviewQueueProvider);
     final snapshot = ref.watch(snapshotValueProvider);
+    // Watched, not read once: the radar shifts a column every midnight the
+    // moment `nowProvider` emits, without waiting for the student to reopen
+    // the screen.
+    final now = ref.watch(nowValueProvider);
 
     // Narrowing happens here, not in the provider: the tab badge, the
     // notifications and every other reader of the queue must keep seeing all
@@ -60,6 +64,11 @@ class _ReviewCenterScreenState extends ConsumerState<ReviewCenterScreen> {
             for (final item in queue)
               if (item.subjectId == _subjectFilter) item,
           ];
+
+    // Whole-horizon by construction -- the same unfiltered view as the counter
+    // above it. Narrowing the columns to a chip would redraw the future to fit
+    // a filter that exists for one evening's list.
+    final dueByDay = ReviewCycleService.upcomingDueDistribution(snapshot, now);
 
     return AtherScreen(
       // A root screen: no back arrow, because there is nothing above it.
@@ -84,6 +93,14 @@ class _ReviewCenterScreenState extends ConsumerState<ReviewCenterScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
+          // The collapse radar (audit P5-03): the queue's next two weeks as
+          // fourteen columns, nearest day leading. Silent when there is
+          // nothing ahead to plot -- a chart of empty days would be noise
+          // standing where information was promised.
+          if (dueByDay.isNotEmpty) ...<Widget>[
+            _DueRadar(counts: dueByDay),
+            const SizedBox(height: AppSpacing.md),
+          ],
           _SubjectChips(
             queue: queue,
             snapshot: snapshot,
@@ -171,6 +188,115 @@ class _SubjectChips extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// The collapse radar's fourteen thin columns (audit P5-03): one per day, the
+/// count of lessons falling due above each, the day number below -- numbers
+/// only, because a legend would be one more sentence this screen does not
+/// need.
+///
+/// The nearest day leads, which in RTL reading order is the right edge; that
+/// is pinned here rather than inherited so the shape cannot silently flip if
+/// the ambient direction ever changes.
+class _DueRadar extends StatelessWidget {
+  const _DueRadar({required this.counts});
+
+  final Map<int, int> counts;
+
+  @override
+  Widget build(BuildContext context) {
+    var maxCount = 0;
+    for (final count in counts.values) {
+      if (count > maxCount) maxCount = count;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.opticalInset,
+      ),
+      child: SizedBox(
+        height: 80,
+        child: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Row(
+            children: <Widget>[
+              for (
+                var day = 1;
+                day <= ReviewCycleService.kRadarWindowDays;
+                day++
+              )
+                Expanded(
+                  child: _DueRadarColumn(
+                    day: day,
+                    count: counts[day] ?? 0,
+                    maxCount: maxCount,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The analytics column's anatomy, miniaturised: number over a fill over an
+/// axis label, with [MasteryPalette.barFraction] as the single visibility
+/// floor so a lonely 1 stays findable next to a 4-lesson Thursday without
+/// this chart growing its own clamping rule (06-design #2).
+class _DueRadarColumn extends StatelessWidget {
+  const _DueRadarColumn({
+    required this.day,
+    required this.count,
+    required this.maxCount,
+  });
+
+  final int day;
+  final int count;
+  final int maxCount;
+
+  @override
+  Widget build(BuildContext context) {
+    // Relative fill, expressed as a percentage of the tallest day.
+    final fraction = MasteryPalette.barFraction(
+      percentage: count * 100 / maxCount,
+      hasData: count > 0,
+    );
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        // An empty string holds the line open so every bar starts at the same
+        // height; days with nothing due say nothing rather than printing 0.
+        Text(count > 0 ? iso(count) : '', style: AppTypography.chartValue),
+        const SizedBox(height: AppSpacing.xxs),
+        Expanded(
+          child: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+            decoration: BoxDecoration(
+              color: context.colors.fill,
+              borderRadius: BorderRadius.circular(AppSpacing.xs),
+            ),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: FractionallySizedBox(
+                heightFactor: fraction,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: context.colors.accent,
+                    borderRadius: BorderRadius.circular(AppSpacing.xs),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(iso(day), style: context.text.chartLabel),
+      ],
     );
   }
 }

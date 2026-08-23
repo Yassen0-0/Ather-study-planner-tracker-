@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Lays a widget out away from the screen and photographs it, block by block.
 ///
@@ -140,4 +143,49 @@ Future<Uint8List> encodePng(ui.Image image) async {
     throw StateError('the block could not be encoded as a PNG');
   }
   return data.buffer.asUint8List();
+}
+
+/// Photographs [widget] off-screen once and hands the PNG to the share sheet.
+///
+/// The pipeline every shareable image goes through: [rasterizeBlocks] draws
+/// the card at [width], the single image is encoded and written to the
+/// temporary directory as `<fileNameBase>.png`, then opened in the system
+/// share sheet.
+///
+/// [fileNameBase] is fixed per card, never derived from a chapter's or a
+/// student's name: sharing twice overwrites yesterday's file instead of
+/// collecting them, and nothing identifying lands in a file path other apps
+/// can list.
+///
+/// [pixelRatio] defaults to 3 -- roughly a 1080-pixel-wide image, which is
+/// what the messaging apps this will be sent through re-encode to anyway.
+///
+/// Throws on failure. The caller decides what to say about it.
+Future<void> captureAndShare({
+  required Widget widget,
+  required double width,
+  required String fileNameBase,
+  required ui.FlutterView view,
+  double pixelRatio = 3,
+}) async {
+  final images = await rasterizeBlocks(
+    widget: widget,
+    width: width,
+    pixelRatio: pixelRatio,
+    view: view,
+  );
+
+  final Uint8List png;
+  try {
+    png = await encodePng(images.single);
+  } finally {
+    for (final image in images) {
+      image.dispose();
+    }
+  }
+
+  final directory = await getTemporaryDirectory();
+  final file = File('${directory.path}/$fileNameBase.png');
+  await file.writeAsBytes(png);
+  await Share.shareXFiles(<XFile>[XFile(file.path)]);
 }

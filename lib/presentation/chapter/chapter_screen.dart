@@ -19,6 +19,7 @@ import '../../core/widgets/celebration_overlay.dart';
 import '../../core/widgets/collapsing_removal.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/mastery_bar.dart';
+import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/pressable.dart';
 import '../../domain/entities/mastery.dart';
 import '../../domain/services/review_cycle_service.dart';
@@ -28,6 +29,7 @@ import '../common/subject_presentation.dart';
 import '../common/write_guard.dart';
 import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
+import '../share/mastery_card.dart';
 
 /// One chapter: its figure, the mastery gate, and its lessons.
 ///
@@ -50,6 +52,11 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
   /// earns are one event per tap -- a second tap landing inside the await used
   /// to stack a second celebration over the same closure (audit C2).
   bool _closing = false;
+
+  /// True while the certificate image is being built and shared: the share
+  /// button shows its ring and stops taking taps, exactly as the gate does
+  /// while its write is in flight.
+  bool _sharing = false;
 
   int get chapterId => widget.chapterId;
 
@@ -171,6 +178,40 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
     );
   }
 
+  /// Shares the closed chapter's certificate image.
+  ///
+  /// The overlay and direction are captured before the await, for the same
+  /// reason `showAtherToastOn` exists: the failure toast may fire after the
+  /// screen has been left.
+  Future<void> _shareCertificate(
+    BuildContext context,
+    ChapterSummary summary,
+  ) async {
+    if (_sharing) return;
+
+    final l = L.of(context);
+    final overlay = Overlay.of(context, rootOverlay: true);
+    final direction = Directionality.of(context);
+
+    setState(() => _sharing = true);
+    try {
+      await shareChapterCertificate(context: context, l: l, summary: summary);
+    } on Object catch (error, stack) {
+      debugPrint('Ather: certificate failed -- $error');
+      debugPrintStack(stackTrace: stack);
+      if (mounted) {
+        showAtherToastOn(
+          overlay,
+          direction,
+          l.shareCardError,
+          tone: ToastTone.failed,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
   Future<void> _showNotReadySheet(BuildContext context) {
     final l = L.of(context);
     final blockers = ReviewCycleService.chapterBlockers(
@@ -285,6 +326,19 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
       children: <Widget>[
         _ChapterSummaryCard(summary: summary),
         const SizedBox(height: AppSpacing.md),
+        // The celebration's aftermath: once the chapter is closed the
+        // certificate button sits above the report button. It reads from the
+        // same summary the screen shows, so what the picture claims is what
+        // the screen already said.
+        if (summary.isMastered) ...<Widget>[
+          PrimaryButton(
+            label: l.shareCardAction,
+            tone: PrimaryButtonTone.right,
+            busy: _sharing,
+            onTap: () => _shareCertificate(context, summary),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         _GateButton(
           summary: summary,
           busy: _closing,

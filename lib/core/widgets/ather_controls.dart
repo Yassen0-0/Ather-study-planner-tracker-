@@ -107,7 +107,7 @@ class AtherSwitch extends StatelessWidget {
         child: Ltr(
           child: AnimatedContainer(
             duration: reduced ? Duration.zero : AppMotion.press,
-            curve: Curves.easeOut,
+            curve: AppMotion.standard,
             width: 50,
             height: 30,
             decoration: BoxDecoration(
@@ -125,7 +125,7 @@ class AtherSwitch extends StatelessWidget {
             ),
             child: AnimatedAlign(
               duration: reduced ? Duration.zero : AppMotion.press,
-              curve: Curves.easeOut,
+              curve: AppMotion.standard,
               alignment: value ? Alignment.centerRight : Alignment.centerLeft,
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 2.5),

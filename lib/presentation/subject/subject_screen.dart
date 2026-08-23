@@ -23,6 +23,7 @@ import '../common/subject_presentation.dart';
 import '../common/write_guard.dart';
 import '../providers/app_providers.dart';
 import '../providers/summary_providers.dart';
+import 'exam_eve_sheet.dart';
 
 /// One subject: its overall figure, then the chapters the student built inside
 /// it. Subjects are fixed and cannot be added, renamed or deleted, so this
@@ -64,6 +65,13 @@ class SubjectScreen extends ConsumerWidget {
       );
     }
 
+    // A subject with no lessons has nothing for exam-eve mode to triage, so
+    // the button does not exist there rather than opening onto an empty sheet.
+    final lessonCount = summary.chapters.fold<int>(
+      0,
+      (count, chapter) => count + chapter.lessonCount,
+    );
+
     return AtherScreen(
       header: AtherHeader(
         title: summary.subject.label(l),
@@ -72,6 +80,13 @@ class SubjectScreen extends ConsumerWidget {
       children: <Widget>[
         _SubjectSummaryCard(summary: summary),
         const SizedBox(height: AppSpacing.xl),
+        if (lessonCount > 0) ...<Widget>[
+          PrimaryButton(
+            label: l.examEveButton,
+            onTap: () => showExamEveSheet(context, ref, subjectId),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+        ],
         if (summary.chapters.isEmpty)
           EmptyState(
             title: l.noChaptersYet,

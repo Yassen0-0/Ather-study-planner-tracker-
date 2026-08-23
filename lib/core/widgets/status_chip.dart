@@ -8,9 +8,11 @@ import 'pressable.dart';
 /// The small pill on the lesson screen: "باقي 21 يوم", "متأخر 16 يوم",
 /// "مفيش امتحان".
 ///
-/// Red only ever reaches the text and its 12% wash — never a card border or a
-/// card background. A student who is behind on six lessons should not open a
-/// screen that is entirely red; the point is to be honest, not punitive.
+/// Red only ever reaches the text and the tint wash behind it — never a card
+/// border or a card background. A student who is behind on six lessons should
+/// not open a screen that is entirely red; the point is to be honest, not
+/// punitive. The text takes [AppColors.wrongText], the text-safe grade: the
+/// fill red fails AA at this size on light surfaces.
 class StatusChip extends StatelessWidget {
   const StatusChip({super.key, required this.label, this.overdue = false});
 
@@ -36,7 +38,9 @@ class StatusChip extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: context.text.smallStrong.copyWith(
-          color: overdue ? context.colors.wrong : context.colors.textSecondary,
+          color: overdue
+              ? context.colors.wrongText
+              : context.colors.textSecondary,
         ),
       ),
     );
@@ -64,7 +68,7 @@ class MiniBadge extends StatelessWidget {
       child: Text(
         label,
         style: AppTypography.badgeLabel.copyWith(
-          color: wrong ? context.colors.wrong : context.colors.textSecondary,
+          color: wrong ? context.colors.wrongText : context.colors.textSecondary,
         ),
       ),
     );

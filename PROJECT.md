@@ -91,6 +91,7 @@ lib/
     repositories/ abstract interfaces
   data/
     db/           drift database, tables, DAOs
+    export/       pdf_export_service  data_export_service
     repositories/ drift-backed implementations
     seed/         the four fixed subjects
   presentation/   one folder per screen: *_screen.dart, widgets/, *_providers.dart
@@ -195,6 +196,14 @@ debug tool fast-forwards it". There is no such tool in the app and there never w
 `MutableClock` is reached only by the test suite and the `tool/render/` harness. Moving a real
 device's clock is how the 30-day cycle was finally watched end to end; see §9.)
 
+The export services were the last production code to read the wall directly:
+`DataExportService.share` stamped its filename with `DateTime.now()`, the one call site left
+outside the Clock path. It now takes `now` from the caller's clock, and the services live in
+`lib/data/export/` rather than domain — they do I/O, so they were never domain material.
+The single remaining direct `DateTime.now()` in `lib/` reads `.timeZoneOffset` while
+scheduling alarms (`review_notification_service.dart`) — it asks the device's UTC offset,
+which `Clock` does not model, not the time.
+
 ### 3.9 Checklist as five boolean columns, not a child table
 The spec fixes exactly five study steps with no add/remove. A child table would add a join
 and an ordering problem for zero flexibility gained.
@@ -219,6 +228,11 @@ The palette is white + grey + black plus exactly **one blue** (`AppColors.accent
 dark / `#1B6EF3` light), **one red** (`#FF3B30`, wrong / weak / overdue / delete) and **one
 green** (`#34C759`, right / mastered). No subject colours, no four-step mastery spectrum, no
 gradients, no blur.
+
+*(Gradient decision, recorded 2026-08: the day picker's "return to today" cue is a solid 2px
+edge in `right`, not the green fade it used to be. A direction sign needs an edge, not a
+decoration, and §3.19's glass stays the only sanctioned exception to this section's
+zero-gradient rule.)*
 
 **The blue and the two state colours are different vocabularies, and they never mix** (§3.27).
 Blue means *active*: the selected tab, a progress fill, a ticked box, a primary button, the
@@ -1029,7 +1043,7 @@ because of that:
 * **`onState`** — what prints *onto* those two fills. White in both themes. Using `onPrimary`
   there would turn a sign-out button's label black on red, and the tick inside a green disc black
   on green.
-* **`switchKnob`** — light in both themes. The knob rides the green track when on, and a knob the
+* **`switchKnob`** — light in both themes. The knob rides the accent track when on, and a knob the
   colour of the card is nearly invisible against `switchOff` on a dark page.
 
 Anything else that sits on a fixed fill belongs on `onState`, not `onPrimary`.

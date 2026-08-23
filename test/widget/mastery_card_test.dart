@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:ather/core/branding/ather_brand.dart';
@@ -10,6 +11,7 @@ import 'package:ather/domain/services/summaries.dart';
 import 'package:ather/presentation/share/mastery_card.dart';
 import 'package:ather/presentation/share/widget_raster.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The shareable progress card.
@@ -337,6 +339,124 @@ void main() {
         percent(82),
         percent(41),
       });
+    });
+  });
+
+  group('the chapter certificate', () {
+    testWidgets('draws what it was handed, and nothing else', (tester) async {
+      // Same structural rule as the progress card: chapter name and numbers
+      // are content, identity is not. If a future edit reaches for a provider,
+      // the drawn set stops matching the arguments and this notices.
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.rtl,
+          child: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.noScaling),
+            child: DefaultTextStyle(
+              style: const TextStyle(fontFamily: 'ReadexPro'),
+              child: RepaintBoundary(
+                child: ChapterCertificateCard(
+                  chapterName: 'الباب الأول — الخلية',
+                  closureLabel: 'أُغلِق ${dateLabel(t0)}',
+                  examsLabel: '5 امتحانات',
+                  masteryLabel: 'الإتقان',
+                  mastery: 82,
+                  hasData: true,
+                  needsReview: false,
+                  colors: AppColors.light,
+                  brand: AtherBrandPalette.light.withoutPlate,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final drawn = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data)
+          .whereType<String>()
+          .toSet();
+
+      expect(drawn, <String>{
+        'الباب الأول — الخلية',
+        'أُغلِق ${dateLabel(t0)}',
+        '5 امتحانات',
+        'الإتقان',
+        percent(82),
+      });
+    });
+
+    testWidgets('captureAndShare hands the share sheet one stable filename',
+        (tester) async {
+      // Every dart:io await below sits in `runAsync`: real filesystem calls
+      // never deliver inside the test's fake async.
+      final tempDir = (await tester.runAsync(
+        () => Directory.systemTemp.createTemp('ather_test'),
+      ))!;
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      const providerChannel = MethodChannel('plugins.flutter.io/path_provider');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        providerChannel,
+        (call) async =>
+            call.method == 'getTemporaryDirectory' ? tempDir.path : null,
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger
+            .setMockMethodCallHandler(providerChannel, null),
+      );
+
+      // share_plus 10 routes `shareXFiles` through this channel; the file has
+      // a real path, so what arrives here is exactly what captureAndShare wrote.
+      final shared = <String>[];
+      const shareChannel = MethodChannel('dev.fluttercommunity.plus/share');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        shareChannel,
+        (call) async {
+          if (call.method == 'shareFiles') {
+            final paths =
+                (call.arguments as Map<Object?, Object?>)['paths']! as List<Object?>;
+            shared.addAll(paths.whereType<String>());
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger
+            .setMockMethodCallHandler(shareChannel, null),
+      );
+
+      Future<void> share() => tester.runAsync(
+            () => captureAndShare(
+              widget: framed(
+                colors: AppColors.light,
+                brand: AtherBrandPalette.light.withoutPlate,
+                direction: TextDirection.rtl,
+              ),
+              width: MasteryCard.width,
+              fileNameBase: 'ather_progress',
+              pixelRatio: 2,
+              view: view,
+            ),
+          );
+
+      await share();
+
+      expect(shared, hasLength(1));
+      expect(File(shared.single).uri.pathSegments.last, 'ather_progress.png');
+
+      final bytes = (await tester.runAsync(
+        () => File(shared.single).readAsBytes(),
+      ))!;
+      expect(bytes.sublist(0, 4), <int>[0x89, 0x50, 0x4e, 0x47],
+          reason: 'the file is a PNG, not a half-written buffer');
+
+      // Sharing twice reuses the name rather than collecting files -- which is
+      // why the name must be fixed, never derived from names or dates.
+      shared.clear();
+      await share();
+      expect(File(shared.single).uri.pathSegments.last, 'ather_progress.png');
     });
   });
 }

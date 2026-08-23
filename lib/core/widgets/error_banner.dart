@@ -44,7 +44,9 @@ class ErrorBanner extends StatelessWidget {
           message,
           style: AppTypography.statusLine.copyWith(
             height: height,
-            color: context.colors.wrong,
+            // [wrongText], not [wrong]: the fill-grade red is 3.1:1 on this
+            // tint wash, and an error is the one sentence that has to be read.
+            color: context.colors.wrongText,
           ),
         ),
       ),

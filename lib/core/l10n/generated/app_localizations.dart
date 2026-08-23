@@ -2015,6 +2015,42 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'النسخة السحابية: {chapters} باب، {exams} امتحان'**
   String restoreCopyCounts(String chapters, String exams);
+
+  /// No description provided for @examEveButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليلة الامتحان'**
+  String get examEveButton;
+
+  /// No description provided for @examEveTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليلة الامتحان'**
+  String get examEveTitle;
+
+  /// No description provided for @examEveBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'دروس المادة مرتبة حسب أولوية إثباتها الليلة.'**
+  String get examEveBody;
+
+  /// No description provided for @examEveTierUnsettled.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مُثبت — بلا امتحان'**
+  String get examEveTierUnsettled;
+
+  /// No description provided for @examEveTierWeakest.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأضعف إتقانًا'**
+  String get examEveTierWeakest;
+
+  /// No description provided for @examEveTierNearestDue.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقرب سقوطًا'**
+  String get examEveTierNearestDue;
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

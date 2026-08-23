@@ -516,5 +516,12 @@
         "type": "String"
       }
     }
-  }
+  },
+  "@@x_comment_P5": "=== Batch P5: exam eve mode ===",
+  "examEveButton": "Exam eve",
+  "examEveTitle": "Exam eve",
+  "examEveBody": "The subject's lessons, ordered by what to prove tonight.",
+  "examEveTierUnsettled": "Not yet proven -- no exam",
+  "examEveTierWeakest": "Weakest first",
+  "examEveTierNearestDue": "Closest to falling due"
 }

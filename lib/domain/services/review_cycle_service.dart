@@ -215,6 +215,37 @@ abstract final class ReviewCycleService {
     return count;
   }
 
+  /// The horizon the collapse radar looks across (audit P5-03): two weeks,
+  /// far enough to show a pile-up forming, short enough that a column is
+  /// still something tonight can act on.
+  static const int kRadarWindowDays = 14;
+
+  /// Active lessons falling due on each of the next [kRadarWindowDays] days,
+  /// as `day -> count` where `day` counts calendar days from [now].
+  ///
+  /// The same walk [upcomingReviewCount] makes, one bucket per
+  /// [daysUntilDue] value instead of one total: that figure says seven
+  /// reviews are coming, not that four of them land on the same Thursday --
+  /// which is the difference between a plan and an ambush. Overdue lessons
+  /// have no "until due" left and never appear; neither do unexamined ones,
+  /// and anything past the window stays out of frame on purpose.
+  ///
+  /// Empty when nothing falls due soon enough to plot -- the caller hides
+  /// the whole chart rather than drawing fourteen zeroes.
+  static Map<int, int> upcomingDueDistribution(
+    StudySnapshot snapshot,
+    DateTime now,
+  ) {
+    final byDay = <int, int>{};
+    for (final lesson in snapshot.activeLessons) {
+      final remaining = daysUntilDue(lesson, now);
+      if (remaining != null && remaining <= kRadarWindowDays) {
+        byDay[remaining] = (byDay[remaining] ?? 0) + 1;
+      }
+    }
+    return byDay;
+  }
+
   /// Everything needing attention, sorted for the Review Center.
   ///
   /// Order: overdue first (most overdue at the top), then low mastery (weakest

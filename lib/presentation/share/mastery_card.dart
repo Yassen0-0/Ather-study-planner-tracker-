@@ -1,9 +1,4 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../core/branding/ather_brand.dart';
 import '../../core/l10n/formatting.dart';
@@ -262,26 +257,190 @@ Future<void> shareMasteryCard({
     ),
   );
 
-  final images = await rasterizeBlocks(
+  await captureAndShare(
     widget: card,
     width: MasteryCard.width,
-    // 3x: a 1080-pixel-wide image, which is what the messaging apps this will
-    // be sent through re-encode to anyway.
-    pixelRatio: 3,
+    // Fixed, not derived from anything the student typed: sharing twice
+    // overwrites this file rather than collecting them (see [captureAndShare]).
+    fileNameBase: 'ather_progress',
     view: view,
   );
+}
 
-  final Uint8List png;
-  try {
-    png = await encodePng(images.single);
-  } finally {
-    for (final image in images) {
-      image.dispose();
-    }
+/// A closed chapter's certificate: the chapter's name, the day it closed, how
+/// many exams stand behind that, and where mastery ended.
+///
+/// Same rules as [MasteryCard]: **nothing on it identifies the student** --
+/// the chapter's name is content, like a subject's is, but no profile name,
+/// email or uid rides along. It takes plain strings and numbers because it is
+/// drawn off-screen with no `Localizations` above it; see [rasterizeBlocks].
+class ChapterCertificateCard extends StatelessWidget {
+  const ChapterCertificateCard({
+    super.key,
+    required this.chapterName,
+    required this.closureLabel,
+    required this.examsLabel,
+    required this.masteryLabel,
+    required this.mastery,
+    required this.hasData,
+    required this.needsReview,
+    required this.colors,
+    required this.brand,
+  });
+
+  /// The same frame as [MasteryCard.width]: one card shape in the app's
+  /// share sheet, not two.
+  static const double width = MasteryCard.width;
+
+  final String chapterName;
+
+  /// «أُغلِق {date}» -- a date, phrased as an event. The certificate claims a
+  /// past fact, never a present standing: whether the closure still holds is
+  /// the screen's green badge to say, not the picture's.
+  final String closureLabel;
+
+  final String examsLabel;
+  final String masteryLabel;
+  final double mastery;
+
+  /// Rides along so an unmeasured number would draw "—" in grey rather than
+  /// red 0% -- unreachable for a mastered chapter today, but the palette's
+  /// rule is passed, not assumed (audit ح13).
+  final bool hasData;
+  final bool needsReview;
+  final AppColors colors;
+  final AtherBrandPalette brand;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = MasteryPalette.resolve(
+      colors: colors,
+      percentage: mastery,
+      hasData: hasData,
+      needsReview: needsReview,
+    );
+
+    return SizedBox(
+      width: width,
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: colors.card),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  SizedBox.square(
+                    dimension: 22,
+                    child: CustomPaint(
+                      painter: AtherMarkPainter(palette: brand),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      chapterName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.cardLabel.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                percentLabel(mastery, hasData: hasData),
+                textAlign: TextAlign.center,
+                style: AppTypography.resultNumber.copyWith(color: accent),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                masteryLabel,
+                textAlign: TextAlign.center,
+                style: AppTypography.cardLabel.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              Text(
+                examsLabel,
+                textAlign: TextAlign.center,
+                style: AppTypography.controlLabel.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                closureLabel,
+                textAlign: TextAlign.center,
+                style: AppTypography.statusLine.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
+}
 
-  final directory = await getTemporaryDirectory();
-  final file = File('${directory.path}/ather_progress.png');
-  await file.writeAsBytes(png);
-  await Share.shareXFiles(<XFile>[XFile(file.path)]);
+/// Builds the closed chapter's certificate and shares it through
+/// [captureAndShare]. [summary] must be a mastered chapter (`masteredAt` set)
+/// -- only then does its caller show the button.
+///
+/// Throws on failure. The caller decides what to say about it.
+Future<void> shareChapterCertificate({
+  required BuildContext context,
+  required L l,
+  required ChapterSummary summary,
+}) async {
+  assert(summary.chapter.masteredAt != null);
+  final colors = context.colors;
+  final brand = AtherBrandPalette.of(context).withoutPlate;
+  final direction = Directionality.of(context);
+  final view = View.of(context);
+
+  // One count of every exam behind the closure, lesson by lesson -- derived
+  // from the summaries the screen already shows, never recounted here.
+  final exams = summary.lessons.fold<int>(
+    0,
+    (total, lesson) => total + lesson.examCount,
+  );
+
+  final card = Directionality(
+    textDirection: direction,
+    child: MediaQuery(
+      data: const MediaQueryData(textScaler: TextScaler.noScaling),
+      child: DefaultTextStyle(
+        style: TextStyle(fontFamily: 'ReadexPro', color: colors.textPrimary),
+        child: RepaintBoundary(
+          child: ChapterCertificateCard(
+            chapterName: summary.chapter.name,
+            closureLabel: l.chapterClosureDated(
+              dateLabel(summary.chapter.masteredAt!),
+            ),
+            examsLabel: l.examCountLabel(exams),
+            masteryLabel: l.chapterReportMasteryLabel,
+            mastery: summary.mastery,
+            hasData: summary.hasAnyExam,
+            needsReview: summary.needsReview,
+            colors: colors,
+            brand: brand,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  await captureAndShare(
+    widget: card,
+    width: ChapterCertificateCard.width,
+    fileNameBase: 'ather_chapter_certificate',
+    view: view,
+  );
 }

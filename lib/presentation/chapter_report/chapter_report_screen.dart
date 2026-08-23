@@ -10,6 +10,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/mastery_palette.dart';
 import '../../core/widgets/ather_card.dart';
+import '../../core/widgets/ather_icons.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/mastery_bar.dart';
 import '../../core/widgets/status_chip.dart';
@@ -158,8 +159,8 @@ class _ChapterReportScreenState extends ConsumerState<ChapterReportScreen> {
             // is what keeps a second tap from starting a second render.
             onTap: () => _export(summary, ranked),
             semanticLabel: l.chapterReportExport,
-            child: Icon(
-              Icons.ios_share,
+            child: AtherIcon(
+              AtherGlyph.share,
               size: 18,
               color: context.colors.textPrimary,
             ),
