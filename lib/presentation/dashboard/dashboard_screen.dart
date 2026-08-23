@@ -29,7 +29,6 @@ import '../../domain/services/review_cycle_service.dart';
 import '../../domain/services/summaries.dart';
 import '../common/prompts.dart';
 import '../common/settings_button.dart';
-import '../common/subject_mark.dart';
 import '../common/subject_presentation.dart';
 import '../common/write_guard.dart';
 import '../share/mastery_card.dart';
@@ -588,8 +587,14 @@ class _SubjectRow extends StatelessWidget {
       onTap: () => context.push(Routes.subject(summary.subject.id)),
       child: Row(
         children: <Widget>[
-          SubjectMark(subject: summary.subject),
-          const SizedBox(width: AppSpacing.xl),
+          // No leading subject mark. The owner had the icons beside the
+          // subjects removed outright -- "الأيقونات اللي بجانب المواد تتشال
+          // خالص" (2026-08-23) -- so the title starts flush at the card's own
+          // padding, level with the status line beneath it. Do not re-add one
+          // to balance the row: `SubjectMark` still exists for the settings
+          // lists, which is exactly why its absence here can read as an
+          // oversight rather than a decision. The dashboard test suite fails
+          // if the mark comes back.
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

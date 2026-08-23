@@ -16,6 +16,7 @@ import 'package:ather/domain/entities/study_backup.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/domain/repositories/study_repository.dart';
+import 'package:ather/presentation/common/subject_mark.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_providers.dart';
@@ -205,6 +206,26 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(kLastOpenDayKey), kNow.toIso8601String());
+  });
+
+  testWidgets('a subject row starts at its title, with no leading mark', (
+    tester,
+  ) async {
+    final (snapshot, preferences) = awayEightDays();
+    await boot(tester, snapshot, preferences);
+
+    // The per-subject icons beside each row were removed outright on the
+    // owner's instruction ("الأيقونات اللي بجانب المواد تتشال خالص",
+    // 2026-08-23). `SubjectMark` itself survives for the settings screens,
+    // so the class existing proves nothing -- this asserts its absence on
+    // the one surface it was asked to leave.
+    expect(
+      find.byType(SubjectMark),
+      findsNothing,
+      reason: 'the owner asked for the marks beside the subjects to go '
+          'entirely; a reintroduced mark here is a reverted decision',
+    );
+    expect(find.text('أحياء'), findsOneWidget);
   });
 
   testWidgets('the next card names the subject and chapter of its lesson', (
