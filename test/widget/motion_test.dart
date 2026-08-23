@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:ather/core/haptics/app_haptics.dart';
 import 'package:ather/core/l10n/formatting.dart';
 import 'package:ather/core/theme/app_spacing.dart';
+import 'package:ather/core/theme/app_theme.dart';
 import 'package:ather/core/widgets/animated_percentage.dart';
 import 'package:ather/core/widgets/collapsing_removal.dart';
+import 'package:ather/core/widgets/icon_motion.dart';
 import 'package:ather/core/widgets/list_entrance.dart';
+import 'package:ather/core/widgets/mastery_bar.dart';
 import 'package:ather/core/widgets/pop_in.dart';
+import 'package:ather/core/widgets/pressable.dart';
 
 /// The motion system's own unit tests.
 ///
@@ -19,6 +24,20 @@ Widget harness(Widget child, {bool reduced = false}) {
     child: Directionality(
       textDirection: TextDirection.rtl,
       child: MaterialApp(home: Scaffold(body: child)),
+    ),
+  );
+}
+
+/// Same harness with the app theme, for widgets that read `context.colors`.
+Widget themedHarness(Widget child, {bool reduced = false}) {
+  return MediaQuery(
+    data: MediaQueryData(disableAnimations: reduced),
+    child: Directionality(
+      textDirection: TextDirection.rtl,
+      child: MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: child),
+      ),
     ),
   );
 }
@@ -259,6 +278,121 @@ void main() {
     });
   });
 
+  group('MasteryBar', () {
+    double fillOf(WidgetTester tester) => tester
+        .widget<FractionallySizedBox>(
+          find.descendant(
+            of: find.byType(MasteryBar),
+            matching: find.byType(FractionallySizedBox),
+          ),
+        )
+        .widthFactor!;
+
+    Widget bar(double fraction, {bool animateOnEnter = false, bool reduced = false}) =>
+        themedHarness(
+          MasteryBar(
+            fraction: fraction,
+            color: const Color(0xFF000000),
+            animateOnEnter: animateOnEnter,
+          ),
+          reduced: reduced,
+        );
+
+    testWidgets('stands pre-filled by default -- a fact does not perform', (
+      tester,
+    ) async {
+      await tester.pumpWidget(bar(0.6));
+      await tester.pump();
+
+      expect(fillOf(tester), 0.6);
+      await tester.pumpAndSettle();
+      expect(fillOf(tester), 0.6);
+    });
+
+    testWidgets('animateOnEnter holds the lead-in, fills with the value tween, '
+        'and lands exactly', (tester) async {
+      await tester.pumpWidget(bar(0.6, animateOnEnter: true));
+      await tester.pump();
+
+      // SP-04أ: the bar waits out the before→after lead-in (120ms) so it can
+      // start on the same beat as the count above it.
+      expect(fillOf(tester), 0.0);
+
+      // Mid-fill at t=300ms: 180ms into the 600ms ease-out, strictly between
+      // empty and full.
+      await tester.pump(const Duration(milliseconds: 300));
+      final fill = fillOf(tester);
+      expect(fill, greaterThan(0));
+      expect(fill, lessThan(0.6));
+
+      await tester.pumpAndSettle();
+      expect(fillOf(tester), closeTo(0.6, 0.001));
+    });
+
+    testWidgets('animateOnEnter under reduced motion lands immediately', (
+      tester,
+    ) async {
+      await tester.pumpWidget(bar(0.6, animateOnEnter: true, reduced: true));
+      await tester.pump();
+
+      expect(fillOf(tester), 0.6);
+      await tester.pumpAndSettle();
+      expect(fillOf(tester), 0.6);
+    });
+  });
+
+  group('CompletionDisc celebrateRing', () {
+    Widget disc({bool celebrateRing = false, bool done = true, bool reduced = false}) =>
+        themedHarness(
+          CompletionDisc(
+            size: 34,
+            done: done,
+            fill: const Color(0xFF1B7A43),
+            ring: const Color(0xFF888888),
+            ringWidth: 2,
+            tickSize: 16,
+            tickColor: const Color(0xFFFFFFFF),
+            celebrateRing: celebrateRing ? const Color(0xFF1B7A43) : null,
+          ),
+          reduced: reduced,
+        );
+
+    testWidgets('without the ring nothing changed for existing callers', (
+      tester,
+    ) async {
+      await tester.pumpWidget(disc());
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the ring floods once on mount and settles', (tester) async {
+      await tester.pumpWidget(disc(celebrateRing: true));
+      await tester.pump(const Duration(milliseconds: 30));
+      await tester.pumpAndSettle();
+
+      // The halo's end state is invisible; settling proves the one-shot ended.
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('reduced motion skips the halo entirely', (tester) async {
+      await tester.pumpWidget(disc(celebrateRing: true, reduced: true));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the plain flood still plays when done flips false→true', (
+      tester,
+    ) async {
+      await tester.pumpWidget(disc(done: false));
+      await tester.pumpAndSettle();
+
+      await tester.pumpWidget(disc(done: true));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('CollapsingList', () {
     Widget listOf(List<int> items) => harness(
       CollapsingList<int>(
@@ -344,6 +478,136 @@ void main() {
       expect(find.text('1'), findsNothing);
       expect(find.text('2'), findsNothing);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Pressable', () {
+    // SpringScale renders its live scale as a plain Transform about the
+    // centre; storage[0] is the uniform x-scale.
+    double scaleOf(WidgetTester tester) => tester
+        .widget<Transform>(
+          find.descendant(
+            of: find.byType(Pressable),
+            matching: find.byType(Transform),
+          ),
+        )
+        .transform
+        .storage[0];
+
+    // Same seam as test/core/haptics/app_haptics_test.dart: cues are routed
+    // into a recorder so no test here ever reaches a platform channel, and
+    // the original dispatch is put back so nothing leaks past the group.
+    final List<AppHapticCue> sent = <AppHapticCue>[];
+
+    setUp(() {
+      sent.clear();
+      final originalSend = AppHaptics.send;
+      AppHaptics.send = sent.add;
+      addTearDown(() => AppHaptics.send = originalSend);
+      AppHaptics.configure!(true);
+    });
+
+    testWidgets('dips to .97 while held and settles back at 1.0', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        harness(Pressable(onTap: () {}, child: Text('go'))),
+      );
+      await tester.pumpAndSettle();
+      expect(scaleOf(tester), 1.0);
+
+      final press = await tester.startGesture(tester.getCenter(find.text('go')));
+      await tester.pump();
+      // The dip spring terminates while the finger is still down, so this
+      // returns -- no simulation runs forever under a held Pressable.
+      await tester.pumpAndSettle();
+      expect(scaleOf(tester), closeTo(AppMotion.pressScale, 0.001));
+
+      await press.up();
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(
+        scaleOf(tester),
+        closeTo(1.0, 0.001),
+        reason: 'the rebound must land on rest exactly',
+      );
+    });
+
+    testWidgets('a release from half-press continues from the current value', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        harness(Pressable(onTap: () {}, child: Text('go'))),
+      );
+      await tester.pumpAndSettle();
+
+      final press = await tester.startGesture(tester.getCenter(find.text('go')));
+      await tester.pump();
+      // Part-way into the dip, but nowhere near landed.
+      await tester.pump(const Duration(milliseconds: 40));
+      final midPress = scaleOf(tester);
+      expect(midPress, inInclusiveRange(0.971, 0.999));
+
+      await press.up();
+      await tester.pump();
+      expect(
+        scaleOf(tester),
+        closeTo(midPress, 0.0001),
+        reason: 'the rebound starts where the finger left off, not at rest',
+      );
+
+      await tester.pumpAndSettle();
+      expect(scaleOf(tester), closeTo(1.0, 0.001));
+    });
+
+    testWidgets('reduce-motion pins the scale to rest, as before', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        harness(Pressable(onTap: () {}, child: Text('go')), reduced: true),
+      );
+      await tester.pump();
+
+      final press = await tester.startGesture(tester.getCenter(find.text('go')));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(scaleOf(tester), 1.0, reason: 'held, but nothing may dip');
+
+      await press.up();
+      await tester.pumpAndSettle();
+      expect(scaleOf(tester), 1.0);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('touch-down fires exactly one light cue, a held finger '
+        'never repeats it', (tester) async {
+      await tester.pumpWidget(
+        harness(Pressable(onTap: () {}, child: Text('go'))),
+      );
+      await tester.pumpAndSettle();
+
+      final press = await tester.startGesture(tester.getCenter(find.text('go')));
+      await tester.pump();
+      expect(sent, <AppHapticCue>[AppHapticCue.light]);
+
+      // Still held: frames pass under the finger, none may re-fire.
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(sent, hasLength(1), reason: 'a held finger must not repeat');
+
+      // Lifting adds nothing -- tap completion carries no cue.
+      await press.up();
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(sent, hasLength(1));
+
+      // Down again, as a rapid re-press would be: the new press-down fires.
+      final repress = await tester.startGesture(
+        tester.getCenter(find.text('go')),
+      );
+      await tester.pump();
+      expect(sent, <AppHapticCue>[AppHapticCue.light, AppHapticCue.light]);
+
+      await repress.up();
+      await tester.pumpAndSettle();
     });
   });
 }
