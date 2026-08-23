@@ -377,9 +377,23 @@ class _TabGlyphBounceState extends State<_TabGlyphBounce>
     with SingleTickerProviderStateMixin {
   static const _dip = 0.90;
 
-  /// Starts at rest: a tab that mounts already selected (deep link into
-  /// Review) must not begin its life mid-bounce -- or at scale 0.
-  late final SpringController _spring = SpringController(vsync: this);
+  /// Starts at rest -- and rest is 1, so [initial] must say so.
+  ///
+  /// [SpringController]'s default seed is 0, which is the right resting value
+  /// for a *dip* axis but not for a scale: seeded at 0, the first frame built
+  /// `Transform.scale(0)`, collapsing every glyph to zero area on a cold open,
+  /// in both themes -- and because nothing animates until the first pick, no
+  /// tick ever repaired it. The bar looked chrome-complete with invisible
+  /// icons until the student tapped a tab and that tab's own didUpdateWidget
+  /// ran a spring. [SpringScale] never shipped this bug because it always
+  /// seeds from its target (see springs.dart); the hand-rolled layer skipped
+  /// the seed. A tab that mounts already selected (deep link into Review)
+  /// must likewise not begin its life mid-bounce -- both cases are "first
+  /// frame sits on the end state", which 1 satisfies for free.
+  late final SpringController _spring = SpringController(
+    vsync: this,
+    initial: 1,
+  );
 
   @override
   void didChangeDependencies() {
