@@ -176,6 +176,8 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
   /// one event it must not miss is the keystroke right before the process
   /// dies. Same persistence pattern as the language toggle.
   void _persistDraft() {
+    // Keystrokes while an exam is submitting must not clobber the saved draft.
+    if (_saving) return;
     unawaited(
       ref
           .read(sharedPreferencesProvider)
