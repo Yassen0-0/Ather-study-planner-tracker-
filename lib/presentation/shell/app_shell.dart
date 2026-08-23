@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/haptics/app_haptics.dart';
 import '../../core/l10n/generated/app_localizations.dart';
+import '../../core/motion/springs.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
@@ -107,6 +109,12 @@ class AppShell extends ConsumerWidget {
   }
 
   void _goBranch(int index) {
+    // PH-04: picking a tab is a `select` cue -- but only when it *is* a pick.
+    // Tapping the already-selected tab returns to that branch's root, which is
+    // navigation housekeeping rather than a choice being registered, so it
+    // stays silent. The gate is independent of reduce-motion by design (see
+    // AppHaptics): vibration is not visual motion.
+    if (index != navigationShell.currentIndex) AppHaptics.select();
     navigationShell.goBranch(
       index,
       // Tapping the already-selected tab returns to that branch's root, the
@@ -302,7 +310,10 @@ class _Tab extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: <Widget>[
-                  glyphWidget,
+                  // SP-02 wraps the glyph only: the badge is news, not
+                  // feedback, and the label already moves with M-20 -- neither
+                  // should ride a rebound that belongs to the tap itself.
+                  _TabGlyphBounce(selected: selected, child: glyphWidget),
                   PositionedDirectional(
                     top: -5,
                     end: -8,
@@ -326,6 +337,95 @@ class _Tab extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// SP-02 · ارتداد أيقونة التاب — the pick bounce, layered over M-20.
+///
+/// M-20 (the 150ms weight/colour tween inside [TabGlyph]) and this bounce
+/// answer different questions, so they are separate layers rather than one
+/// merged animation. The tween says "this tab is yours" and runs on every
+/// switch, fifty times a day, which is exactly why it must stay the least
+/// motion in the app; the bounce says "the tap registered" and fires only on
+/// an unselected → selected transition. It sits **on top of** the tween --
+/// scale here, weight and colour crossing underneath, untouched -- per
+/// animation/06_motion_specs.md §SP-02.
+///
+/// Mechanism: the dip is not animated. On the selection frame the scale jumps
+/// straight to 0.90 and a single [Springs.select] spring (ζ≈0.70, overshoot
+/// ≈4.6%) carries it back to 1. The instant dip lands in the same frame the
+/// tween starts, so it reads as press-down rather than a glitch -- and there
+/// is exactly one live simulation to reason about. Tapping another tab
+/// mid-flight re-aims that spring from its current position *and velocity*
+/// ([SpringController.springTo]): no snap, no reverse restart, per §SP-02's
+/// interruption clause.
+///
+/// Reduce-motion: no scale transform is ever built -- the child is returned
+/// bare, which is what the spec's RM test asserts (absence of Transform).
+class _TabGlyphBounce extends StatefulWidget {
+  const _TabGlyphBounce({required this.selected, required this.child});
+
+  final bool selected;
+  final Widget child;
+
+  @override
+  State<_TabGlyphBounce> createState() => _TabGlyphBounceState();
+}
+
+class _TabGlyphBounceState extends State<_TabGlyphBounce>
+    with SingleTickerProviderStateMixin {
+  static const _dip = 0.90;
+
+  /// Starts at rest: a tab that mounts already selected (deep link into
+  /// Review) must not begin its life mid-bounce -- or at scale 0.
+  late final SpringController _spring = SpringController(vsync: this);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reduce-motion can flip mid-flight (the OS setting is live). Land any
+    // running rebound instantly; build() drops the transform on the same
+    // rebuild because it re-reads MediaQuery.
+    if (prefersReducedMotion(context)) _spring.jump(1);
+  }
+
+  @override
+  void didUpdateWidget(_TabGlyphBounce old) {
+    super.didUpdateWidget(old);
+    if (widget.selected == old.selected) return;
+    if (prefersReducedMotion(context)) {
+      _spring.jump(1);
+      return;
+    }
+    if (!widget.selected) {
+      // Deselected while a rebound was still in flight: carry its momentum
+      // home instead of cutting it. From rest this terminates immediately.
+      if (_spring.isAnimating || _spring.value != 1) {
+        _spring.springTo(1, spring: Springs.select);
+      }
+      return;
+    }
+    // The pick: dip now, rebound on the Telegram spring.
+    _spring.jump(_dip);
+    _spring.springTo(1, spring: Springs.select);
+  }
+
+  @override
+  void dispose() {
+    _spring.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Bare child under reduce-motion -- not a transform pinned at scale 1.
+    if (prefersReducedMotion(context)) return widget.child;
+    return AnimatedBuilder(
+      animation: _spring.view,
+      builder: (context, child) =>
+          Transform.scale(scale: _spring.value, child: child),
+      child: widget.child,
     );
   }
 }
