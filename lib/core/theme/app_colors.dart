@@ -152,26 +152,26 @@ class AppColors extends ThemeExtension<AppColors> {
   /// The one wash red is allowed: behind an error message, an overdue status
   /// chip, a review badge.
   ///
-    /// There used to be a second at 12% called `wrongChip`, for the overdue chip
-    /// specifically. Two reds two percent apart, on the same screen and often in
-    /// the same card, is not a distinction — it is a decision nobody made twice
-    /// on purpose. One wash, one name.
-    final Color wrongTint;
+  /// There used to be a second at 12% called `wrongChip`, for the overdue chip
+  /// specifically. Two reds two percent apart, on the same screen and often in
+  /// the same card, is not a distinction — it is a decision nobody made twice
+  /// on purpose. One wash, one name.
+  final Color wrongTint;
 
-    /// [wrong], darkened enough to be read as small text on light surfaces.
-    ///
-    /// `#FF3B30` measures **3.55 : 1** on the white card and less on the tint
-    /// washes red sits on — fine for the big mastery figures, which clear the
-    /// 3 : 1 large-text bar, but every *small* red sentence fails the 4.5 : 1
-    /// that body text owes WCAG AA: the error banner, the overdue chip, the
-    /// chart labels. This is the red pen's own text grade, on exactly the
-    /// precedent of [rightText]: the fill stays the brand red, only the pen
-    /// darkens.
-    ///
-    /// In dark the fill already measures 5.9 : 1 on black, so as with
-    /// [rightText] the two themes differ on purpose: dark keeps the brand red
-    /// exactly, and only light darkens it.
-    final Color wrongText;
+  /// [wrong], darkened enough to be read as small text on light surfaces.
+  ///
+  /// `#FF3B30` measures **3.55 : 1** on the white card and less on the tint
+  /// washes red sits on — fine for the big mastery figures, which clear the
+  /// 3 : 1 large-text bar, but every *small* red sentence fails the 4.5 : 1
+  /// that body text owes WCAG AA: the error banner, the overdue chip, the
+  /// chart labels. This is the red pen's own text grade, on exactly the
+  /// precedent of [rightText]: the fill stays the brand red, only the pen
+  /// darkens.
+  ///
+  /// In dark the fill already measures 5.9 : 1 on black, so as with
+  /// [rightText] the two themes differ on purpose: dark keeps the brand red
+  /// exactly, and only light darkens it.
+  final Color wrongText;
 
   /// Right, mastered (>= 90%), mastered chapter, switch on.
   ///
@@ -248,11 +248,13 @@ class AppColors extends ThemeExtension<AppColors> {
     // #70707A is 4.9:1, still a clear step quieter than textSecondary (5.9:1),
     // so the ramp's ordering is untouched.
     textNoData: Color(0xFF70707A),
-    // Was #8A8A8E, which is 3.0:1 on the page grey -- under AA for the small
-    // weekday letters it prints. Moved into textNoData's family (#70707A,
-    // 4.3:1) so it stays a clear step quieter than textSecondary and the grey
-    // ramp keeps its ordering; see §3.10's light-mode wave.
-    weekLabel: Color(0xFF70707A),
+    // Was #8A8A8E (3.0:1 on the page grey), then textNoData's #70707A -- which
+    // measures 4.27:1 on the page grey these letters print on, still under AA
+    // at their small size (textNoData passes only because it lands on white
+    // cards). #676770 clears AA where weekLabel actually sits -- 4.9:1 on the
+    // page grey -- while staying a clear step quieter than textSecondary, so
+    // the grey ramp keeps its ordering; see §3.10's light-mode wave.
+    weekLabel: Color(0xFF676770),
     actionPrimary: Color(0xFF000000),
     onPrimary: Color(0xFFFFFFFF),
     accent: Color(0xFF1B6EF3),

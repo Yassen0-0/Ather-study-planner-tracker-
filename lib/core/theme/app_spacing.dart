@@ -4,7 +4,11 @@ import 'package:flutter/animation.dart';
 ///
 /// Every rung is a multiple of 4, and the standing rule — anything off this
 /// ladder is a sign the layout is wrong, not that the ladder is missing a rung
-/// — is now true of the whole of it.
+/// — is what decided the rebuild recorded below. It is a judgement applied at
+/// call sites, not a finished fact about the tree: a few single-use values
+/// still sit off-ladder (the wizard's dashed add-button padding, two analytics
+/// column widths), and each of those is a debt to settle rather than evidence
+/// for a new rung.
 ///
 /// It used to carry 10, 14, 18 and 22 as well, which made it *two* ladders laid
 /// over each other: a 4-grid and a 4+2 grid, with no written rule for which one

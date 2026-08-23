@@ -111,7 +111,7 @@ class ExamEveSheet extends StatelessWidget {
             ),
             ExamEveTier.nearestDue =>
               entry.daysUntilDue == null
-                  ? context.colors.wrong
+                  ? context.colors.wrongText
                   : context.colors.textSecondary,
           },
           onTap: () => onOpenLesson(entry.lesson.id),
