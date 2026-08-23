@@ -17,6 +17,7 @@ import 'package:ather/presentation/providers/backup_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/tasks/tasks_screen.dart';
 import 'package:ather/presentation/tasks/widgets/task_row.dart';
+import 'package:ather/core/widgets/task_strike_marks.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/fake_backup.dart';
@@ -145,6 +146,31 @@ void main() {
     matching: find.byWidgetPredicate(
       (w) => w is AtherIcon && w.glyph == AtherGlyph.edit,
     ),
+  );
+
+  /// The surrender control on a task row, by its painted slashed-circle face
+  /// rather than a test-only key: asserting on the glyph is asserting on what
+  /// the student actually sees.
+  Finder surrenderButton() => find.descendant(
+    of: find.byType(TaskRow),
+    matching: find.byWidgetPredicate(
+      (w) => w is CustomPaint && w.painter is SurrenderMarkIconPainter,
+    ),
+  );
+
+  /// A strike mark drawn **over** a task title (foregroundPainter, never
+  /// TextDecoration), typed so the straight and zigzag marks assert apart.
+  Finder strike<T extends CustomPainter>() => find.descendant(
+    of: find.byType(TaskRow),
+    matching: find.byWidgetPredicate(
+      (w) => w is CustomPaint && w.foregroundPainter is T,
+    ),
+  );
+
+  /// The state label the row publishes for screen readers. Found as a widget
+  /// property because widget tests run with the semantics tree disabled.
+  Finder semantics(String label) => find.byWidgetPredicate(
+    (w) => w is Semantics && w.properties.label == label,
   );
 
   /// A cell in **this** screen's day picker, by the text a student reads on it.
@@ -442,6 +468,98 @@ void main() {
       ),
       findsNothing,
     );
+
+    await closeApp(tester);
+  });
+
+  testWidgets('ticking a task draws the straight strike and says so', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    await openTasks(tester);
+    await addTask(tester, 'أذاكر الباب الأول');
+
+    // Untouched: no mark at all. The pen exists for states, not decoration.
+    expect(strike<StraightStrikePainter>(), findsNothing);
+    expect(strike<ZigzagScribblePainter>(), findsNothing);
+
+    await tester.tap(find.text('أذاكر الباب الأول'));
+    await tester.pumpAndSettle();
+
+    // Line through the words, tick in the disc -- one sentence in two marks.
+    expect(strike<StraightStrikePainter>(), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(TaskRow),
+        matching: find.byWidgetPredicate(
+          (w) => w is AtherIcon && w.glyph == AtherGlyph.check,
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(semantics(l.taskCompletedStrike), findsOneWidget);
+    expect((await tasksOn(tester, now)).single.done, isTrue);
+
+    await closeApp(tester);
+  });
+
+  testWidgets('surrendering is confirmed once, scribbled, and undoable', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    await openTasks(tester);
+    await addTask(tester, 'مهمة مستسلمة');
+
+    await tester.tap(surrenderButton());
+    await tester.pumpAndSettle();
+    expect(find.text(l.surrenderConfirmTitle), findsOneWidget);
+
+    // The affirmative answer IS the commit; the confirm seam owns its weight.
+    await tester.tap(find.text(l.surrenderTask).hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(strike<ZigzagScribblePainter>(), findsOneWidget);
+    expect(strike<StraightStrikePainter>(), findsNothing);
+    expect(semantics(l.taskMarkedSurrendered), findsOneWidget);
+    expect(
+      haptics.where((cue) => cue == AppHapticCue.heavy),
+      hasLength(1),
+      reason: 'exactly one heavy per committed surrender',
+    );
+    expect((await tasksOn(tester, now)).single.surrendered, isTrue);
+
+    // Undo is a restoration, not a destruction: the same button, no dialog.
+    await tester.tap(surrenderButton());
+    await tester.pumpAndSettle();
+    expect(find.text(l.surrenderConfirmTitle), findsNothing);
+
+    expect(strike<ZigzagScribblePainter>(), findsNothing);
+    expect((await tasksOn(tester, now)).single.surrendered, isFalse);
+    expect(
+      haptics.where((cue) => cue == AppHapticCue.heavy),
+      hasLength(1),
+      reason: 'undo adds no second heavy',
+    );
+
+    await closeApp(tester);
+  });
+
+  testWidgets('under reduced motion the marks are there on the first frame', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    await openTasks(tester, reduced: true);
+    await addTask(tester, 'مهمة');
+
+    await tester.tap(find.text('مهمة'));
+    // No settle: one frame plus the tick that lets the database notification
+    // land. The marks do not animate into place under any setting, so under
+    // reduced motion the final state must already be on screen here.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 10));
+
+    expect(strike<StraightStrikePainter>(), findsOneWidget);
+    expect(semantics(l.taskCompletedStrike), findsOneWidget);
 
     await closeApp(tester);
   });

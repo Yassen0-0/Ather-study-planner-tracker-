@@ -768,5 +768,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "taskMarkedSurrendered": "مهمة مستسلكة",
+  "taskCompletedStrike": "مهمة مكتملة",
+  "surrenderTask": "استسلام",
+  "surrenderConfirmTitle": "تأكيد الاستسلام؟",
+  "surrenderConfirmBody": "المهمة دي هتتحسب فشل، ويُشطب عليها بخط متعرج.",
+  "undoSurrender": "تراجع عن الاستسلام"
 }

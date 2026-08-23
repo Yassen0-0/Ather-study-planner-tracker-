@@ -557,5 +557,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "taskMarkedSurrendered": "Surrendered task",
+  "taskCompletedStrike": "Completed task",
+  "surrenderTask": "Surrender",
+  "surrenderConfirmTitle": "Confirm surrender?",
+  "surrenderConfirmBody": "This task will count as a failure, struck through with a scribble.",
+  "undoSurrender": "Undo surrender"
 }

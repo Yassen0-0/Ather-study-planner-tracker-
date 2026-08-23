@@ -2093,6 +2093,42 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'{lesson} لسه ضعيف — ثبّته بامتحان.'**
   String reviewBodyWeak(String lesson);
+
+  /// No description provided for @taskMarkedSurrendered.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهمة مستسلكة'**
+  String get taskMarkedSurrendered;
+
+  /// No description provided for @taskCompletedStrike.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهمة مكتملة'**
+  String get taskCompletedStrike;
+
+  /// No description provided for @surrenderTask.
+  ///
+  /// In ar, this message translates to:
+  /// **'استسلام'**
+  String get surrenderTask;
+
+  /// No description provided for @surrenderConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الاستسلام؟'**
+  String get surrenderConfirmTitle;
+
+  /// No description provided for @surrenderConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهمة دي هتتحسب فشل، ويُشطب عليها بخط متعرج.'**
+  String get surrenderConfirmBody;
+
+  /// No description provided for @undoSurrender.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع عن الاستسلام'**
+  String get undoSurrender;
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

@@ -124,6 +124,41 @@ class TasksScreen extends ConsumerWidget {
     );
   }
 
+  /// Surrender, or take it back. The asymmetry is the design: surrendering
+  /// counts the task as a failure, so it passes through the destructive-confirm
+  /// seam — whose affirmative answer *is* the commit and fires [AppHaptics.heavy]
+  /// exactly once, after the sheet resolves and before the write. Taking it
+  /// back is a restoration, not a destruction: no dialog, one light tap on the
+  /// wrist. The repository clears `done` in the same transaction, so a task
+  /// can never be ticked and surrendered at once.
+  Future<void> _setSurrender(
+    BuildContext context,
+    WidgetRef ref,
+    DailyTask task,
+  ) async {
+    final l = L.of(context);
+    final bool target = !task.surrendered;
+
+    if (target) {
+      final confirmed = await confirmDestructive(
+        context,
+        title: l.surrenderConfirmTitle,
+        message: l.surrenderConfirmBody,
+        confirmLabel: l.surrenderTask,
+      );
+      if (!confirmed || !context.mounted) return;
+    } else {
+      AppHaptics.light();
+    }
+
+    await runWrite(
+      context,
+      () => ref
+          .read(taskRepositoryProvider)
+          .setTaskSurrendered(taskId: task.id, surrendered: target),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = L.of(context);
@@ -181,6 +216,7 @@ class TasksScreen extends ConsumerWidget {
                       .read(taskRepositoryProvider)
                       .setTaskDone(taskId: task.id, done: !task.done),
                 ),
+                onSurrender: (task) => _setSurrender(context, ref, task),
                 onEdit: (task) => _edit(context, ref, task),
                 onReorder: (oldIndex, newIndex) =>
                     _reorder(context, ref, tasks, oldIndex, newIndex),
@@ -311,12 +347,14 @@ class _TaskList extends StatelessWidget {
   const _TaskList({
     required this.tasks,
     required this.onToggle,
+    required this.onSurrender,
     required this.onEdit,
     required this.onReorder,
   });
 
   final List<DailyTask> tasks;
   final ValueChanged<DailyTask> onToggle;
+  final ValueChanged<DailyTask> onSurrender;
   final ValueChanged<DailyTask> onEdit;
   final void Function(int oldIndex, int newIndex) onReorder;
 
@@ -365,6 +403,7 @@ class _TaskList extends StatelessWidget {
           child: TaskRow(
             task: tasks[i],
             onToggle: () => onToggle(tasks[i]),
+            onSurrender: () => onSurrender(tasks[i]),
             onEdit: () => onEdit(tasks[i]),
           ),
         ),
