@@ -1191,4 +1191,23 @@ class LEn extends L {
   String reviewBodyWeak(String lesson) {
     return '$lesson is still weak -- lock it in with an exam.';
   }
+
+  @override
+  String get taskMarkedSurrendered => 'Surrendered task';
+
+  @override
+  String get taskCompletedStrike => 'Completed task';
+
+  @override
+  String get surrenderTask => 'Surrender';
+
+  @override
+  String get surrenderConfirmTitle => 'Confirm surrender?';
+
+  @override
+  String get surrenderConfirmBody =>
+      'This task will count as a failure, struck through with a scribble.';
+
+  @override
+  String get undoSurrender => 'Undo surrender';
 }

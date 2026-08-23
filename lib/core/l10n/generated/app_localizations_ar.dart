@@ -1197,4 +1197,23 @@ class LAr extends L {
   String reviewBodyWeak(String lesson) {
     return '$lesson لسه ضعيف — ثبّته بامتحان.';
   }
+
+  @override
+  String get taskMarkedSurrendered => 'مهمة مستسلكة';
+
+  @override
+  String get taskCompletedStrike => 'مهمة مكتملة';
+
+  @override
+  String get surrenderTask => 'استسلام';
+
+  @override
+  String get surrenderConfirmTitle => 'تأكيد الاستسلام؟';
+
+  @override
+  String get surrenderConfirmBody =>
+      'المهمة دي هتتحسب فشل، ويُشطب عليها بخط متعرج.';
+
+  @override
+  String get undoSurrender => 'تراجع عن الاستسلام';
 }
