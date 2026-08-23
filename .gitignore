@@ -96,3 +96,8 @@ public/*.apk
 .worktrees/
 .security-key
 logs/security/
+
+# Session worktree roots at the repository root: gitlinks for them were
+# committed by mistake, which made git treat real worktrees as submodules.
+wt-session-a/
+wt-session-b/
