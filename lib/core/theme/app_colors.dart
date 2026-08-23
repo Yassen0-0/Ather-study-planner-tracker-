@@ -248,11 +248,13 @@ class AppColors extends ThemeExtension<AppColors> {
     // #70707A is 4.9:1, still a clear step quieter than textSecondary (5.9:1),
     // so the ramp's ordering is untouched.
     textNoData: Color(0xFF70707A),
-    // Was #8A8A8E, which is 3.0:1 on the page grey -- under AA for the small
-    // weekday letters it prints. Moved into textNoData's family (#70707A,
-    // 4.3:1) so it stays a clear step quieter than textSecondary and the grey
-    // ramp keeps its ordering; see §3.10's light-mode wave.
-    weekLabel: Color(0xFF70707A),
+    // Was #8A8A8E (3.0:1 on the page grey), then textNoData's #70707A -- which
+    // measures 4.27:1 on the page grey these letters print on, still under AA
+    // at their small size (textNoData passes only because it lands on white
+    // cards). #676770 clears AA where weekLabel actually sits -- 4.9:1 on the
+    // page grey -- while staying a clear step quieter than textSecondary, so
+    // the grey ramp keeps its ordering; see §3.10's light-mode wave.
+    weekLabel: Color(0xFF676770),
     actionPrimary: Color(0xFF000000),
     onPrimary: Color(0xFFFFFFFF),
     accent: Color(0xFF1B6EF3),
