@@ -1296,6 +1296,18 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'قفل بالبصمة'**
   String get lockSetting;
+  String get lockMethodsTitle;
+  String get lockMethodBiometric;
+  String get lockMethodPassword;
+  String get lockMethodBoth;
+  String get setPasswordTitle;
+  String get newPasswordLabel;
+  String get confirmNewPasswordLabel;
+  String get currentPasswordLabel;
+  String get passwordMismatch;
+  String get passwordTooShort;
+  String get wrongPassword;
+  String get unlockWithPassword;
 
   /// No description provided for @hapticsSetting.
   ///

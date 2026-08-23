@@ -694,6 +694,18 @@ class LAr extends L {
 
   @override
   String get lockSetting => 'قفل بالبصمة';
+  String get lockMethodsTitle => 'طريقة الفتح';
+  String get lockMethodBiometric => 'بصمة فقط';
+  String get lockMethodPassword => 'كلمة سر فقط';
+  String get lockMethodBoth => 'الاثنين معًا';
+  String get setPasswordTitle => 'تعيين كلمة السر';
+  String get newPasswordLabel => 'كلمة السر الجديدة';
+  String get confirmNewPasswordLabel => 'تأكيد كلمة السر الجديدة';
+  String get currentPasswordLabel => 'كلمة السر الحالية';
+  String get passwordMismatch => 'كلمتا السر غير متطابقتين.';
+  String get passwordTooShort => 'كلمة السر ٤ أحرف على الأقل.';
+  String get wrongPassword => 'كلمة السر غير صحيحة.';
+  String get unlockWithPassword => 'افتح بكلمة السر';
 
   @override
   String get hapticsSetting => 'الاهتزاز';

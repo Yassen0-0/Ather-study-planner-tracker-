@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/app_passcode.dart';
 import '../../core/l10n/formatting.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/ather_controls.dart';
 import '../../core/widgets/ather_icons.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/ather_sheet.dart';
@@ -81,11 +83,14 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final account = ref.watch(accountValueProvider);
     final lockEnabled = ref.watch(appLockEnabledProvider);
-    // The lock switch is only offered where the device can actually satisfy it;
-    // a toggle that locks the app behind a sensor that will never answer would
-    // shut the student out of their own work.
-    final biometricsAvailable =
-        ref.watch(biometricsAvailableProvider).value ?? false;
+    final lockMethod = ref.watch(lockMethodProvider);
+    final hasPasscode = ref.watch(appPasscodeProvider) != null;
+    // Which fingerprint options exist on this device. The lock itself is
+    // offered everywhere now (T4): a password needs no sensor, so the master
+    // switch no longer disappears on phones without one. Kept watched here
+    // rather than read cold in the handlers: a FutureProvider answers its
+    // first `.value` only once something has started it.
+    ref.watch(biometricsAvailableProvider);
 
     final sync = ref.watch(backupSyncProvider);
     final cloud = ref.watch(backupMetadataProvider).value;
@@ -157,12 +162,27 @@ class SettingsScreen extends ConsumerWidget {
               onToggle: (value) =>
                   ref.read(hapticsEnabledProvider.notifier).set(value),
             ),
-            if (biometricsAvailable)
-              SettingsRow.toggle(
-                label: l.lockSetting,
-                toggle: lockEnabled,
-                onToggle: (value) =>
-                    ref.read(appLockEnabledProvider.notifier).set(value),
+            // Master switch. Enabling on a phone with no sensor walks the
+            // student through choosing a password first -- see [_toggleLock];
+            // a lock nothing can open is never promised.
+            SettingsRow.toggle(
+              label: l.lockSetting,
+              toggle: lockEnabled,
+              onToggle: (value) => _toggleLock(context, ref, value),
+            ),
+            if (lockEnabled)
+              SettingsRow(
+                label: l.lockMethodsTitle,
+                value: _lockMethodLabel(l, lockMethod),
+                onTap: () => _pickLockMethod(context, ref),
+              ),
+            // Present only while the password is one of the ways in: a row
+            // about a password the method never asks for is noise.
+            if (lockEnabled && lockMethod.usesPassword)
+              SettingsRow(
+                label: l.setPasswordTitle,
+                value: hasPasscode ? '✓' : null,
+                onTap: () => _editPasscode(context, ref),
               ),
           ],
         ),
@@ -218,6 +238,80 @@ class SettingsScreen extends ConsumerWidget {
     await ref.read(localeProvider.notifier).set(Locale(picked));
   }
 
+  static String _lockMethodLabel(L l, LockMethod method) => switch (method) {
+    LockMethod.biometric => l.lockMethodBiometric,
+    LockMethod.password => l.lockMethodPassword,
+    LockMethod.both => l.lockMethodBoth,
+  };
+
+  /// The lock turns on only if something can actually answer it.
+  ///
+  /// With a sensor present, today's behaviour: on it goes, and the method in
+  /// force is whatever the student last chose. Without one, the password has
+  /// to carry the lock alone -- so either a password already exists (and a
+  /// biometric-only choice is quietly re-pointed at it) or the student is
+  /// walked through choosing one first. Cancelling that sheet leaves the
+  /// switch off rather than promising a lock nothing can open.
+  Future<void> _toggleLock(
+    BuildContext context,
+    WidgetRef ref,
+    bool enable,
+  ) async {
+    final lock = ref.read(appLockEnabledProvider.notifier);
+    if (!enable) {
+      await lock.set(false);
+      return;
+    }
+    final biometrics = ref.read(biometricsAvailableProvider).value ?? false;
+    if (biometrics) {
+      await lock.set(true);
+      return;
+    }
+    final hasPasscode = ref.read(appPasscodeProvider) != null;
+    if (!hasPasscode) {
+      final saved = await _editPasscode(context, ref);
+      if (!saved) return;
+      await ref.read(lockMethodProvider.notifier).set(LockMethod.password);
+    } else if (!ref.read(lockMethodProvider).usesPassword) {
+      await ref.read(lockMethodProvider.notifier).set(LockMethod.password);
+    }
+    await lock.set(true);
+  }
+
+  /// Offers whichever methods this device could actually satisfy, then makes
+  /// sure a password exists before one is promised. Backing out of the
+  /// password sheet changes nothing.
+  Future<void> _pickLockMethod(BuildContext context, WidgetRef ref) async {
+    final l = L.of(context);
+    final biometrics = ref.read(biometricsAvailableProvider).value ?? false;
+    final picked = await _pickOne<LockMethod>(
+      context,
+      title: l.lockMethodsTitle,
+      options: <(LockMethod, String)>[
+        if (biometrics) (LockMethod.biometric, l.lockMethodBiometric),
+        (LockMethod.password, l.lockMethodPassword),
+        if (biometrics) (LockMethod.both, l.lockMethodBoth),
+      ],
+      selected: ref.read(lockMethodProvider),
+    );
+    if (picked == null || picked == ref.read(lockMethodProvider)) return;
+    if (!context.mounted) return;
+    if (picked.usesPassword && ref.read(appPasscodeProvider) == null) {
+      final saved = await _editPasscode(context, ref);
+      if (!saved) return;
+    }
+    await ref.read(lockMethodProvider.notifier).set(picked);
+  }
+
+  /// The set/change-password sheet. Answers through the popped value because
+  /// the callers above have decisions of their own to gate on it.
+  Future<bool> _editPasscode(BuildContext context, WidgetRef ref) async =>
+      await showAtherSheet<bool>(
+        context: context,
+        builder: (_) => const _PasscodeSheet(),
+      ) ??
+      false;
+
   Future<void> _pickTheme(
     BuildContext context,
     WidgetRef ref,
@@ -267,6 +361,113 @@ Future<T?> _pickOne<T>(
       ),
     ),
   );
+}
+
+/// Asks for -- and stores only the digest of -- the app password.
+///
+/// First time through it wants the new word twice; when a password already
+/// stands, the current one comes first, so someone handed the phone cannot
+/// quietly replace what guards it. Every failure says exactly which rule
+/// broke, and nothing about the password itself is written anywhere.
+class _PasscodeSheet extends ConsumerStatefulWidget {
+  const _PasscodeSheet();
+
+  @override
+  ConsumerState<_PasscodeSheet> createState() => _PasscodeSheetState();
+}
+
+class _PasscodeSheetState extends ConsumerState<_PasscodeSheet> {
+  final TextEditingController _current = TextEditingController();
+  final TextEditingController _new = TextEditingController();
+  final TextEditingController _confirm = TextEditingController();
+
+  /// True when a password already exists and this pass changes it.
+  late final bool _changing;
+
+  String? Function(L)? _message;
+
+  @override
+  void initState() {
+    super.initState();
+    _changing = ref.read(appPasscodeProvider) != null;
+  }
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _new.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final stored = ref.read(appPasscodeProvider);
+    // The standing password is checked before the new one is even read
+    // closely: a wrong current answer ends it here.
+    if (_changing &&
+        (stored == null || !AppPasscode.verify(_current.text, stored.hash))) {
+      setState(() => _message = (l) => l.wrongPassword);
+      return;
+    }
+    if (_new.text.length < AppPasscode.minLength) {
+      setState(() => _message = (l) => l.passwordTooShort);
+      return;
+    }
+    if (_new.text != _confirm.text) {
+      setState(() => _message = (l) => l.passwordMismatch);
+      return;
+    }
+    ref
+        .read(appPasscodeProvider.notifier)
+        .set(
+          StoredAppPasscode(
+            hash: AppPasscode.hash(_new.text),
+            digitsOnly: AppPasscode.looksNumeric(_new.text),
+          ),
+        );
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.of(context);
+
+    return AtherSheetBody(
+      title: l.setPasswordTitle,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (_changing)
+            AtherTextField(
+              controller: _current,
+              label: l.currentPasswordLabel,
+              obscure: true,
+            ),
+          AtherTextField(
+            controller: _new,
+            label: l.newPasswordLabel,
+            obscure: true,
+            autofocus: !_changing,
+            textInputAction: TextInputAction.next,
+          ),
+          AtherTextField(
+            controller: _confirm,
+            label: l.confirmNewPasswordLabel,
+            obscure: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+          ),
+          if (_message != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.md),
+            ErrorBanner(message: _message!(l)!),
+          ],
+          const SizedBox(height: AppSpacing.xxl),
+          PrimaryButton(label: l.commonSave, onTap: _submit),
+        ],
+      ),
+    );
+  }
 }
 
 /// Who is signed in, at the top of the page, and the way into the profile.
@@ -330,11 +531,7 @@ class _AccountHeader extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
-          AtherIcon(
-            AtherGlyph.chevron,
-            size: 18,
-            color: colors.textTertiary,
-          ),
+          AtherIcon(AtherGlyph.chevron, size: 18, color: colors.textTertiary),
         ],
       ),
     );

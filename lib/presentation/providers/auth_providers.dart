@@ -90,6 +90,95 @@ final appLockEnabledProvider = NotifierProvider<AppLockNotifier, bool>(
   AppLockNotifier.new,
 );
 
+// --- Lock methods (T4): password alongside the fingerprint ------------------
+
+/// The ways in the lock accepts, as the student chose them in Settings.
+enum LockMethod {
+  /// Today's behaviour: the sensor (with the device PIN behind it).
+  biometric,
+
+  /// A password only this app asks for.
+  password,
+
+  /// Either answer opens. Nothing else changes: each path alone is exactly
+  /// what it is in the single-method modes.
+  both,
+}
+
+extension LockMethodX on LockMethod {
+  bool get usesBiometric => this != LockMethod.password;
+  bool get usesPassword => this != LockMethod.biometric;
+}
+
+const String _kLockMethodKey = 'lock_methods';
+const String _kPasscodeHashKey = 'lock_password_hash';
+const String _kPasscodeDigitsKey = 'lock_password_digits';
+
+/// Tolerant read of the stored preference. Anything unrecognised -- including
+/// a key missing entirely on an install upgraded from before T4 -- lands on
+/// [LockMethod.biometric], which is precisely what those installs were doing.
+LockMethod parseLockMethod(String? raw) => switch (raw) {
+  'password' => LockMethod.password,
+  'both' => LockMethod.both,
+  _ => LockMethod.biometric,
+};
+
+class LockMethodNotifier extends Notifier<LockMethod> {
+  @override
+  LockMethod build() => parseLockMethod(
+    ref.watch(sharedPreferencesProvider).getString(_kLockMethodKey),
+  );
+
+  Future<void> set(LockMethod method) async {
+    state = method;
+    await ref
+        .read(sharedPreferencesProvider)
+        .setString(_kLockMethodKey, method.name);
+  }
+}
+
+final lockMethodProvider = NotifierProvider<LockMethodNotifier, LockMethod>(
+  LockMethodNotifier.new,
+);
+
+/// What is stored about the app password: the salted digest, plus whether it
+/// is digits-only so the gate can raise the numeric keyboard for it.
+///
+/// The plaintext never reaches here or anywhere else; see `AppPasscode`.
+class StoredAppPasscode {
+  const StoredAppPasscode({required this.hash, required this.digitsOnly});
+
+  /// `<salt-hex>:<hash-hex>` from [AppPasscode.hash].
+  final String hash;
+
+  final bool digitsOnly;
+}
+
+class AppPasscodeNotifier extends Notifier<StoredAppPasscode?> {
+  @override
+  StoredAppPasscode? build() {
+    final prefs = ref.watch(sharedPreferencesProvider);
+    final hash = prefs.getString(_kPasscodeHashKey);
+    if (hash == null) return null;
+    return StoredAppPasscode(
+      hash: hash,
+      digitsOnly: prefs.getBool(_kPasscodeDigitsKey) ?? false,
+    );
+  }
+
+  Future<void> set(StoredAppPasscode passcode) async {
+    state = passcode;
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setString(_kPasscodeHashKey, passcode.hash);
+    await prefs.setBool(_kPasscodeDigitsKey, passcode.digitsOnly);
+  }
+}
+
+final appPasscodeProvider =
+    NotifierProvider<AppPasscodeNotifier, StoredAppPasscode?>(
+      AppPasscodeNotifier.new,
+    );
+
 /// Whether the lock screen is currently covering the app.
 ///
 /// Starts locked so the very first frame after launch is the lock, never a

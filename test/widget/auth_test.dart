@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
 import 'package:ather/app/app.dart';
-import 'package:ather/data/db/app_database.dart';
+import 'package:ather/core/auth/app_passcode.dart';
 import 'package:ather/core/clock/clock.dart';
+import 'package:ather/data/db/app_database.dart';
 import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/entities/subject.dart';
@@ -53,10 +54,12 @@ Future<Widget> boot(
   FakeAuthRepository auth, {
   bool lockOn = false,
   String profileName = '',
+  Map<String, Object> prefs = const <String, Object>{},
 }) async {
   SharedPreferences.setMockInitialValues(<String, Object>{
     'app_lock_enabled': lockOn,
     if (profileName.isNotEmpty) 'profile_name': profileName,
+    ...prefs,
   });
   final preferences = await SharedPreferences.getInstance();
 
@@ -367,6 +370,32 @@ void main() {
     await tester.pump();
 
     // The very first frame is the lock, never a glimpse of the dashboard.
+    expect(find.text('أثر'), findsOneWidget);
+    expect(find.text('اليوم'), findsNothing);
+  });
+
+  testWidgets('the lock honours a password method chosen before T4', (
+    tester,
+  ) async {
+    // An install that set a password under an earlier build must come up
+    // asking for it -- not fall back to a sensor it may not have.
+    final auth = FakeAuthRepository.signedIn();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(
+      await boot(
+        auth,
+        lockOn: true,
+        prefs: <String, Object>{
+          'lock_methods': 'password',
+          'lock_password_hash': AppPasscode.hash('1111'),
+          'lock_password_digits': true,
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextField), findsOneWidget);
     expect(find.text('أثر'), findsOneWidget);
     expect(find.text('اليوم'), findsNothing);
   });
