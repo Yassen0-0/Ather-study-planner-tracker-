@@ -20,7 +20,10 @@
   "todayLabel": "Today",
   "dashboardTitle": "Today",
   "overallMastery": "Overall mastery",
-  "statLessonsRemaining": "Lessons left",
+  "statLessonsRemaining": "Lessons owed",
+  "@statLessonsRemaining": {
+    "description": "Was «دروس متبقّية» ('Lessons left'). Owner decision 2026-08-23: the backlog stat reads «دروس متراكمة» -- 'lessons owed', not a neutral countdown -- and borrows the wrong/red alarm on purpose so the student clears the debt early."
+  },
   "statNeedsReview": "Needs review",
   "statMastered": "Excellent",
   "@statMastered": {

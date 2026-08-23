@@ -69,7 +69,7 @@ class LAr extends L {
   String get overallMastery => 'الإتقان العام';
 
   @override
-  String get statLessonsRemaining => 'دروس متبقّية';
+  String get statLessonsRemaining => 'دروس متراكمة';
 
   @override
   String get statNeedsReview => 'يحتاج مراجعة';

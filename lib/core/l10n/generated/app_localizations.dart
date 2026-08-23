@@ -217,10 +217,10 @@ abstract class L {
   /// **'الإتقان العام'**
   String get overallMastery;
 
-  /// No description provided for @statLessonsRemaining.
+  /// Was «دروس متبقّية» ('Lessons left'). Owner decision 2026-08-23: the backlog stat reads «دروس متراكمة» -- 'lessons owed', not a neutral countdown -- and borrows the wrong/red alarm on purpose so the student clears the debt early.
   ///
   /// In ar, this message translates to:
-  /// **'دروس متبقّية'**
+  /// **'دروس متراكمة'**
   String get statLessonsRemaining;
 
   /// No description provided for @statNeedsReview.

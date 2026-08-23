@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ather/app/app.dart';
 import 'package:ather/core/clock/clock.dart';
 import 'package:ather/core/l10n/generated/app_localizations.dart';
+import 'package:ather/core/theme/app_colors.dart';
 import 'package:ather/core/widgets/ather_icons.dart';
 import 'package:ather/core/widgets/ather_sheet.dart';
 import 'package:ather/core/widgets/buttons.dart';
@@ -187,6 +188,45 @@ void main() {
     // later cannot show the same gap twice.
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(kLastOpenDayKey), kNow.toIso8601String());
+  });
+
+  testWidgets('the backlog stat reads «متراكمة» and wears the alarm red', (
+    tester,
+  ) async {
+    final (snapshot, preferences) = awayEightDays();
+    await boot(tester, snapshot, preferences);
+
+    // Owner decision 2026-08-23: «دروس متبقّية» became «دروس متراكمة» and the
+    // label borrows the overdue red on purpose. Pinned by string and by token
+    // so neither can quietly revert to the neutral countdown it used to be.
+    expect(find.text('دروس متراكمة'), findsOneWidget);
+    expect(find.text('دروس متبقّية'), findsNothing);
+
+    final context = tester.element(find.text('دروس متراكمة'));
+    final colors = AppColors.of(context);
+    final label = context.widget as Text;
+    // The name takes [wrongText], the text-safe grade: the fill-grade red is
+    // under AA at this size.
+    expect(label.style?.color, colors.wrongText);
+
+    // Both fixture lessons are unexamined, so the count sits at 2 of 2 and
+    // takes the same fill-grade red an overdue sibling's count uses. The
+    // label's parent element is _Stat's own Column.
+    Element? column;
+    context.visitAncestorElements((element) {
+      if (element.widget is Column) {
+        column = element;
+        return false;
+      }
+      return true;
+    });
+    final value = tester.widget<Text>(
+      find.descendant(
+        of: find.byWidgetPredicate((w) => identical(w, column!.widget)),
+        matching: find.text('2'),
+      ),
+    );
+    expect(value.style?.color, colors.wrong);
   });
 
   testWidgets('opening again after one day stays silent', (tester) async {

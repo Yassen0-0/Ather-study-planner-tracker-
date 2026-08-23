@@ -402,7 +402,17 @@ class _StatsCard extends StatelessWidget {
               value: stats.remaining,
               total: stats.totalLessons,
               fraction: stats.fraction(stats.remaining),
-              color: context.colors.textPrimary,
+              // Red elsewhere means decay -- an overdue lesson, a failed exam.
+              // This stat borrows it on purpose: owner decision 2026-08-23
+              // renamed the backlog «متراكمة» ("owed", not "left") and asked
+              // for the alarm colour so the student clears it early. The name
+              // itself is always red, in [wrongText] -- the text-safe grade,
+              // because 14px fails AA in the fill-grade red -- and the count
+              // joins it on exactly the overdue sibling's terms below.
+              labelColor: context.colors.wrongText,
+              color: stats.remaining > 0
+                  ? context.colors.wrong
+                  : context.colors.textPrimary,
             ),
           ),
           const SizedBox(width: AppSpacing.xl),
@@ -443,6 +453,7 @@ class _Stat extends StatelessWidget {
     required this.total,
     required this.fraction,
     required this.color,
+    this.labelColor,
   });
 
   final String label;
@@ -450,6 +461,12 @@ class _Stat extends StatelessWidget {
   final int total;
   final double fraction;
   final Color color;
+
+  /// The label's own colour, when a stat's *name* carries the verdict.
+  ///
+  /// Null keeps [AppTypography.statLabel]'s neutral ink; the only caller that
+  /// sets it paints the backlog stat red (owner decision 2026-08-23).
+  final Color? labelColor;
 
   @override
   Widget build(BuildContext context) {
@@ -460,7 +477,9 @@ class _Stat extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.statLabel,
+          style: labelColor == null
+              ? AppTypography.statLabel
+              : AppTypography.statLabel.copyWith(color: labelColor),
         ),
         const SizedBox(height: AppSpacing.xxs),
         Ltr(

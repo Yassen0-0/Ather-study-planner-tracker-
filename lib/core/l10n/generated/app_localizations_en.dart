@@ -69,7 +69,7 @@ class LEn extends L {
   String get overallMastery => 'Overall mastery';
 
   @override
-  String get statLessonsRemaining => 'Lessons left';
+  String get statLessonsRemaining => 'Lessons owed';
 
   @override
   String get statNeedsReview => 'Needs review';
