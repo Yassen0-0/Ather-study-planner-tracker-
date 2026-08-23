@@ -20,6 +20,8 @@ import 'package:ather/domain/repositories/study_repository.dart';
 import 'package:ather/domain/services/mastery_calculator.dart';
 import 'package:ather/domain/services/review_cycle_service.dart';
 import 'package:ather/domain/services/summaries.dart';
+import 'package:ather/core/widgets/animated_percentage.dart';
+import 'package:ather/core/widgets/mastery_bar.dart';
 import 'package:ather/presentation/exam_entry/exam_entry_screen.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
 
@@ -560,6 +562,62 @@ void main() {
         await tester.tap(find.text('التالي'));
         await tester.pumpAndSettle();
         expect(find.text('3'), findsOneWidget);
+
+        dbClosedByTest = true;
+        await db.close();
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+
+    testWidgets(
+      'step 4: the bar and the number land on one beat (SP-04أ)',
+      (tester) async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final preferences = await SharedPreferences.getInstance();
+
+        await pumpWizard(tester, preferences);
+
+        // Steps 1–3 have no entrance of their own to wait out.
+        await tester.enterText(find.byType(TextField).first, '5');
+        await tester.tap(find.text('التالي'));
+        await tester.pumpAndSettle();
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), '5');
+        await tester.enterText(fields.at(1), '2');
+        await tester.tap(find.text('التالي'));
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField).first, '3');
+
+        double step4BarFill() => tester
+            .widget<FractionallySizedBox>(
+              find.descendant(
+                of: find.byType(MasteryBar),
+                matching: find.byType(FractionallySizedBox),
+              ),
+            )
+            .widthFactor!;
+
+        // Arrive at step 4 and hold time manually -- a pumpAndSettle here
+        // would skip straight past the moment under test.
+        await tester.tap(find.text('التالي'));
+        await tester.pump(const Duration(milliseconds: 50));
+
+        // Inside the lead-in: the bar is empty and the count has not even
+        // mounted. Before this fix the bar stood pre-filled from frame one.
+        expect(step4BarFill(), 0.0);
+        expect(find.byType(CountUpFromZero), findsNothing);
+
+        // t≈300ms: both mid-flight. The big number is still counting, so only
+        // the "after" side of the before→after card carries 60%.
+        await tester.pump(const Duration(milliseconds: 250));
+        final fill = step4BarFill();
+        expect(fill, greaterThan(0));
+        expect(fill, lessThan(0.6), reason: 'the fill must still be travelling');
+        expect(find.text(iso('60%')), findsExactly(1));
+
+        await tester.pumpAndSettle();
+        expect(find.text(iso('60%')), findsExactly(2));
+        expect(step4BarFill(), closeTo(0.6, 0.001));
 
         dbClosedByTest = true;
         await db.close();

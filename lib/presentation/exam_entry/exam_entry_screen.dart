@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
+import '../../core/haptics/app_haptics.dart';
 import '../../core/l10n/formatting.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
@@ -175,7 +176,12 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
   /// deliberately. The write is an in-memory set plus an async flush, and the
   /// one event it must not miss is the keystroke right before the process
   /// dies. Same persistence pattern as the language toggle.
+  ///
+  /// Silent while the save is in flight: the fields stay live until the pop,
+  /// and a keystroke landing after [_clearDraft] would otherwise resurrect a
+  /// finished paper as a pending draft.
   void _persistDraft() {
+    if (_saving) return;
     unawaited(
       ref
           .read(sharedPreferencesProvider)
@@ -405,6 +411,12 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
     }
 
     if (overlay != null) showAtherToastOn(overlay, direction, message);
+
+    // PH-04: "exam saved ✓" is one of the four haptic moments. It rides the
+    // toast's beat -- reached only after the write landed and the wizard is on
+    // its way out; the failure catch and the cancel path return earlier and
+    // stay silent.
+    AppHaptics.success();
   }
 
   @override
@@ -675,7 +687,11 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
             // The one place in the app that counts from zero, and it does it
             // once. Stepping back to 3 and forward again shows a fact, not
             // news, so the flag lives on the wizard rather than the widget.
-            CountUpFromZero(
+            //
+            // The gate holds the count until the before→after sentence reaches
+            // its "after" word, so number and MasteryBar below run as one
+            // measurement arriving twice (SP-04أ).
+            _DelayedCountUp(
               value: _resultPercentage,
               already: _resultCounted,
               onDone: () => _resultCounted = true,
@@ -693,6 +709,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
                 percentage: _resultPercentage,
                 hasData: true,
               ),
+              animateOnEnter: true,
               // The bar is a fill, so a mid-range result is the accent even
               // though the number above it is plain text. See
               // MasteryPalette.fill.
@@ -777,28 +794,44 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
       // Two derived sentences close it -- what happened, and exactly what the
       // next paper must do. Both stay quiet once mastery has crossed 70:
       // nothing to report, nothing to ask.
+      //
+      // They are also the answer to a question the number asks, so they wait
+      // for the count to have landed (SP-04أ). RiseIn's delay runs from step
+      // mount, so it must cover the before→after sentence's own 120ms lead
+      // AND the value's 600ms count -- visible start t≈720ms, fade landing at
+      // t=900ms as the number settles rather than while it travels. The delay
+      // is an Interval on one controller -- no timers, pumpAndSettle returns.
       if (verdict != null || (after < 70 && neededScore != null)) ...<Widget>[
         const SizedBox(height: AppSpacing.md),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.cardPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              if (verdict != null)
-                Text(
-                  verdict,
-                  style: AppTypography.statusLine.copyWith(color: verdictColor),
-                ),
-              if (verdict != null && neededScore != null && after < 70)
-                const SizedBox(height: AppSpacing.textGap),
-              if (after < 70 && neededScore != null)
-                Text(
-                  l.examNeedToCross(iso('$neededScore%')),
-                  style: AppTypography.statusLine.copyWith(
-                    color: context.colors.textSecondary,
+        RiseIn(
+          rise: 0,
+          delay: AppMotion.beforeAfterValueDelay + AppMotion.value,
+          duration: AppMotion.micro,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.cardPadding,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (verdict != null)
+                  Text(
+                    verdict,
+                    style: AppTypography.statusLine.copyWith(
+                      color: verdictColor,
+                    ),
                   ),
-                ),
-            ],
+                if (verdict != null && neededScore != null && after < 70)
+                  const SizedBox(height: AppSpacing.textGap),
+                if (after < 70 && neededScore != null)
+                  Text(
+                    l.examNeedToCross(iso('$neededScore%')),
+                    style: AppTypography.statusLine.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ],
@@ -1060,6 +1093,104 @@ class _BeforeAfter extends StatelessWidget {
         const SizedBox(height: AppSpacing.xxs),
         Text(value, style: AppTypography.sectionTitle.copyWith(color: color)),
       ],
+    );
+  }
+}
+
+/// The step-4 result number, held back to the sentence's "after" beat.
+///
+/// SP-04أ pins the count to t=120ms -- the moment the before→after card
+/// reaches its value -- so the number and the [MasteryBar] beneath it
+/// (`animateOnEnter: true`) run the same 600ms over the same window and land
+/// together. `CountUpFromZero` starts on mount and takes no delay, so this
+/// gate simply decides *when* it mounts.
+///
+/// Until then the finished number stands in its place at opacity 0: same
+/// style, same metrics, so the column does not jump when the live counter
+/// replaces it. An already-counted result or reduced motion skips the hold --
+/// a fact shown again is not news, and reduce-motion lands final states on
+/// the first frame.
+class _DelayedCountUp extends StatefulWidget {
+  const _DelayedCountUp({
+    required this.value,
+    required this.already,
+    required this.onDone,
+    required this.color,
+    required this.style,
+  });
+
+  final double value;
+  final bool already;
+  final VoidCallback onDone;
+  final Color color;
+  final TextStyle style;
+
+  @override
+  State<_DelayedCountUp> createState() => _DelayedCountUpState();
+}
+
+class _DelayedCountUpState extends State<_DelayedCountUp>
+    with SingleTickerProviderStateMixin {
+  /// One-shot clock of the hold; nothing loops, so pumpAndSettle returns once
+  /// it and the count it releases have both finished.
+  late final AnimationController _hold = AnimationController(
+    vsync: this,
+    duration: AppMotion.beforeAfterValueDelay,
+  )..addStatusListener((status) {
+    if (status == AnimationStatus.completed) {
+      setState(() => _released = true);
+    }
+  });
+
+  bool _released = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Decided once, here rather than initState, because the reduced-motion
+    // check reads an inherited widget. The immediate path never forwards the
+    // controller, so its listener can never fire a setState mid-build.
+    if (_decided) return;
+    _decided = true;
+    if (!widget.already && !prefersReducedMotion(context)) {
+      _hold.forward();
+    } else {
+      _released = true;
+    }
+  }
+
+  bool _decided = false;
+
+  @override
+  void dispose() {
+    _hold.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_released) {
+      // The reserved space must be the real string, or the points line below
+      // shifts when the counter arrives. It is also invisible, so it is kept
+      // out of semantics (Finding 9): a figure announced before it reveals is
+      // noise, not information.
+      return ExcludeSemantics(
+        child: Opacity(
+          opacity: 0,
+          child: Text(
+            percent(widget.value),
+            style: widget.style.copyWith(color: widget.color),
+          ),
+        ),
+      );
+    }
+
+    return CountUpFromZero(
+      value: widget.value,
+      already: widget.already,
+      onDone: widget.onDone,
+      color: widget.color,
+      style: widget.style,
     );
   }
 }

@@ -18,6 +18,7 @@ class MasteryBar extends StatelessWidget {
     required this.color,
     this.height = AppSizes.barTrack,
     this.trackColor,
+    this.animateOnEnter = false,
   });
 
   /// 0..1. Callers pass `MasteryPalette.barFraction` so an unexamined item is
@@ -28,6 +29,37 @@ class MasteryBar extends StatelessWidget {
 
   /// Null means the theme's track colour.
   final Color? trackColor;
+
+  /// Fill from zero on first appearance instead of standing there pre-filled.
+  ///
+  /// False -- the default, and every caller before the wizard's step 4 --
+  /// keeps the old contract: a bar on a summary card or a report is a *fact*,
+  /// and facts do not perform. True is for the one position where a bar enters
+  /// beside a number still counting it (SP-04أ): starting filled there
+  /// contradicts the count above it, and the column and the number measure the
+  /// same thing, so they must begin, run, and end together.
+  ///
+  /// The enter timeline therefore holds [AppMotion.beforeAfterValueDelay] --
+  /// the beat on which the wizard's before→after sentence reaches its "after"
+  /// and the count starts -- then fills over [AppMotion.value] with
+  /// [AppMotion.valueCurve]. Only the first build animates; a later fraction
+  /// change tweens from wherever the bar already is, exactly as before. That
+  /// asymmetry is why this is opt-in for reveal positions whose value is
+  /// settled for the widget's lifetime, not for live-updating bars.
+  final bool animateOnEnter;
+
+  /// The synced-enter timeline: the before→after lead-in, then the fill.
+  static final Duration _enterTotal =
+      AppMotion.beforeAfterValueDelay + AppMotion.value;
+
+  /// The lead-in expressed as an [Interval], so the delay costs no timer and
+  /// `pumpAndSettle` settles the whole thing.
+  static final Curve _enterCurve = Interval(
+    AppMotion.beforeAfterValueDelay.inMicroseconds /
+        _enterTotal.inMicroseconds,
+    1,
+    curve: AppMotion.valueCurve,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +75,20 @@ class MasteryBar extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: fraction, end: fraction.clamp(0, 1)),
-              duration: reduced ? Duration.zero : AppMotion.value,
-              curve: AppMotion.valueCurve,
+              // `begin == end` is the deliberate default: on rebuild the
+              // builder tweens from the previous end, so the widget stays
+              // stateless and a first build has nothing to animate. Opting in
+              // breaks the tie only on that first build, from zero.
+              tween: Tween<double>(
+                begin: animateOnEnter ? 0.0 : fraction,
+                end: fraction.clamp(0, 1),
+              ),
+              duration: reduced
+                  ? Duration.zero
+                  : (animateOnEnter ? _enterTotal : AppMotion.value),
+              curve: animateOnEnter && !reduced
+                  ? _enterCurve
+                  : AppMotion.valueCurve,
               builder: (context, value, _) => FractionallySizedBox(
                 widthFactor: value,
                 child: Container(

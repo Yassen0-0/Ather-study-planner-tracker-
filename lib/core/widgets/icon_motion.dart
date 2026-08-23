@@ -216,6 +216,7 @@ class CompletionDisc extends StatefulWidget {
     required this.tickSize,
     required this.tickColor,
     this.tickStroke = 3,
+    this.celebrateRing,
   });
 
   final bool done;
@@ -231,6 +232,19 @@ class CompletionDisc extends StatefulWidget {
   final double tickSize;
   final Color tickColor;
   final double tickStroke;
+
+  /// An optional celebratory ring flooded once around a disc born complete.
+  ///
+  /// Null -- the default -- paints nothing extra, so every existing caller
+  /// keeps byte-identical output. When set, a stroke starts on the rim and
+  /// expands outward while fading, over [AppMotion.flood], on the disc's first
+  /// frame only. It reads as energy leaving the disc rather than as a second
+  /// object, which is why it expands *and* dies in one gesture instead of
+  /// holding. Built for the mastered-chapter celebration (SP-04ب): the one
+  /// place a disc arrives already complete *and* newly on screen, where the
+  /// pop above it needs an opening echo. Reduced motion skips it entirely --
+  /// the end state of a halo is no halo.
+  final Color? celebrateRing;
 
   @override
   State<CompletionDisc> createState() => _CompletionDiscState();
@@ -284,31 +298,45 @@ class _CompletionDiscState extends State<CompletionDisc>
             ((v - _split) / (1 - _split)).clamp(0.0, 1.0),
           );
 
-          return CustomPaint(
-            painter: _FloodPainter(
-              flood: flood,
-              fill: widget.fill,
-              ring: widget.ring,
-              ringWidth: widget.ringWidth,
-            ),
-            // The tick is a real glyph scaled about its centre, not a second
-            // path: it is the same check the rest of the app draws.
-            child: tick == 0
-                ? null
-                : Center(
-                    child: Opacity(
-                      opacity: tick,
-                      child: Transform.scale(
-                        scale: 0.6 + 0.4 * tick,
-                        child: AtherIcon(
-                          AtherGlyph.check,
-                          size: widget.tickSize,
-                          color: widget.tickColor,
-                          strokeWidth: widget.tickStroke,
+          // The celebration's one-shot echo, tweened by its own mount-time
+          // builder: an unchanged tween never replays, so this is exactly once
+          // per disc, and Duration.zero under reduced motion lands on the
+          // finished (invisible) end state on the first frame.
+          return TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0, end: 1),
+            duration:
+                widget.celebrateRing == null || prefersReducedMotion(context)
+                ? Duration.zero
+                : AppMotion.flood,
+            curve: AppMotion.standard,
+            builder: (context, halo, _) => CustomPaint(
+              painter: _FloodPainter(
+                flood: flood,
+                fill: widget.fill,
+                ring: widget.ring,
+                ringWidth: widget.ringWidth,
+                halo: widget.celebrateRing == null ? null : halo,
+                haloColor: widget.celebrateRing,
+              ),
+              // The tick is a real glyph scaled about its centre, not a second
+              // path: it is the same check the rest of the app draws.
+              child: tick == 0
+                  ? null
+                  : Center(
+                      child: Opacity(
+                        opacity: tick,
+                        child: Transform.scale(
+                          scale: 0.6 + 0.4 * tick,
+                          child: AtherIcon(
+                            AtherGlyph.check,
+                            size: widget.tickSize,
+                            color: widget.tickColor,
+                            strokeWidth: widget.tickStroke,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+            ),
           );
         },
       ),
@@ -322,12 +350,19 @@ class _FloodPainter extends CustomPainter {
     required this.fill,
     required this.ring,
     required this.ringWidth,
+    this.halo,
+    this.haloColor,
   });
 
   final double flood;
   final Color fill;
   final Color ring;
   final double ringWidth;
+
+  /// Progress of the optional celebratory ring; null means none is requested
+  /// and nothing below may draw it. At 1 it has fully faded -- also "none".
+  final double? halo;
+  final Color? haloColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -359,6 +394,21 @@ class _FloodPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = outer * flood,
     );
+
+    // The celebratory echo, drawn last and strictly outside the disc so it can
+    // never read as part of the fill: 18% growth is enough to detach from the
+    // rim, no more -- past that it stops being an echo of *this* disc.
+    final h = halo;
+    if (h != null && h < 1) {
+      canvas.drawCircle(
+        centre,
+        outer * (1 + 0.18 * h),
+        Paint()
+          ..color = haloColor!.withValues(alpha: haloColor!.a * (1 - h))
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3 - 2 * h,
+      );
+    }
   }
 
   @override
@@ -366,7 +416,9 @@ class _FloodPainter extends CustomPainter {
       old.flood != flood ||
       old.fill != fill ||
       old.ring != ring ||
-      old.ringWidth != ringWidth;
+      old.ringWidth != ringWidth ||
+      old.halo != halo ||
+      old.haloColor != haloColor;
 }
 
 /// The overdue mark completing: a dashed ring floods to a disc and its dashes
