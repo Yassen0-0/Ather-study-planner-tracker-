@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ather/app/app.dart';
 import 'package:ather/core/clock/clock.dart';
+import 'package:ather/core/haptics/app_haptics.dart';
 import 'package:ather/core/l10n/generated/app_localizations.dart';
 import 'package:ather/core/widgets/ather_icons.dart';
+import 'package:ather/core/widgets/pop_in.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/data/repositories/drift_task_repository.dart';
 import 'package:ather/domain/entities/daily_task.dart';
@@ -51,7 +53,17 @@ void main() {
   /// test asserting on a cell that is deliberately not rendered.
   final DateTime yesterday = DateTime(2026, 8, 4);
 
-  setUp(() => db = AppDatabase(NativeDatabase.memory()));
+  /// Haptic cues recorded through the class's own dispatch seam (the
+  /// `app_haptics_test.dart` recorder pattern). Statics outlive tests, so the
+  /// seam is reinstalled and the gate forced open for every test here.
+  final List<AppHapticCue> haptics = <AppHapticCue>[];
+
+  setUp(() {
+    db = AppDatabase(NativeDatabase.memory());
+    haptics.clear();
+    AppHaptics.send = haptics.add;
+    AppHaptics.configure!(true);
+  });
 
   /// Tears the tree down **inside** the test body, then pumps twice.
   ///
@@ -262,7 +274,91 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(await tasksOn(tester, now), isEmpty);
-    expect(find.text('لا مهام لهذا اليوم'), findsOneWidget);
+    // The last row left this day, so what replaced the list is the SP-10
+    // celebration rather than the plain empty state -- and pumpAndSettle
+    // above has already carried it past exit and spring to a standstill.
+    expect(find.text(l.tasksQueueClearedTitle), findsOneWidget);
+    // PH-04: the heavy weight belongs to the deletion commit. The affirmative
+    // confirm fired exactly once -- not for opening the edit sheet, and not
+    // for the dialog merely appearing. (The queue-clearing success cue may
+    // also be in the recording; only the heavy count is asserted here.)
+    expect(
+      haptics.where((cue) => cue == AppHapticCue.heavy),
+      hasLength(1),
+    );
+
+    await closeApp(tester);
+  });
+
+  testWidgets('deleting the last row lands the cleared-queue celebration', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    await openTasks(tester);
+    await addTask(tester, 'آخر مهمة');
+
+    await tester.tap(pencil());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('حذف المهمة'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('حذف').hitTestable());
+
+    // The whole sequence -- row fading out at AppMotion.exit, then
+    // EmptyState.success springing in on Springs.celebrate -- runs on finite
+    // animations only, so this returning is itself the assertion.
+    await tester.pumpAndSettle();
+
+    expect(find.text(l.tasksQueueClearedTitle), findsOneWidget);
+    expect(find.byType(SpringPopIn), findsOneWidget);
+
+    // Settled at exactly where the spring was aimed: the overshoot (~1.04)
+    // happened in flight; nothing is left mid-bounce. The first Transform is
+    // SpringPopIn's own scale (the disc inside carries its own micro pop).
+    final transform = tester.widget<Transform>(
+      find
+          .descendant(
+            of: find.byType(SpringPopIn),
+            matching: find.byType(Transform),
+          )
+          .first,
+    );
+    // Transform.scale stores its uniform factor in storage[0].
+    expect(transform.transform.storage[0], closeTo(1.0, 0.01));
+
+    await closeApp(tester);
+  });
+
+  testWidgets('under reduced motion the cleared state is settled instantly', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    await openTasks(tester, reduced: true);
+    await addTask(tester, 'آخر مهمة');
+
+    // The sheet and confirm dialog are navigation chrome, not the motion
+    // under test -- they get settles like any other test.
+    await tester.tap(pencil());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('حذف المهمة'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('حذف').hitTestable());
+    // From here, one frame plus the tick that lets the database notification
+    // land: under reduced motion nothing animates, so no settle is wanted.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 10));
+
+    // Visible now, on this frame -- not after a settle.
+    expect(find.text(l.tasksQueueClearedTitle), findsOneWidget);
+
+    // Reduced motion returned the final state outright: no scale, no fade
+    // layer exists between SpringPopIn and its child.
+    expect(
+      find.descendant(
+        of: find.byType(SpringPopIn),
+        matching: find.byType(Transform),
+      ),
+      findsNothing,
+    );
 
     await closeApp(tester);
   });

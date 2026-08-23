@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/haptics/app_haptics.dart';
 import '../../core/l10n/formatting.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_spacing.dart';
@@ -11,6 +12,7 @@ import '../../core/widgets/day_header.dart';
 import '../../core/widgets/day_picker.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/list_entrance.dart';
+import '../../core/widgets/pop_in.dart';
 import '../../core/widgets/reduced_motion.dart';
 import '../../domain/entities/daily_task.dart';
 import '../common/prompts.dart';
@@ -151,43 +153,149 @@ class TasksScreen extends ConsumerWidget {
         ),
       ),
       children: <Widget>[
-        if (tasks.isEmpty)
-          EmptyState(
+        _TaskQueueArea(
+          day: selected,
+          hasTasks: tasks.isNotEmpty,
+          listContent: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 2,
+                  right: 2,
+                  bottom: AppSpacing.md,
+                ),
+                child: Text(
+                  allDone
+                      ? l.tasksDayDone(iso(done), iso(tasks.length))
+                      : l.tasksDoneOf(iso(done), iso(tasks.length)),
+                  style: context.text.secondaryStrong,
+                ),
+              ),
+              _TaskList(
+                tasks: tasks,
+                onToggle: (task) => runWrite(
+                  context,
+                  () => ref
+                      .read(taskRepositoryProvider)
+                      .setTaskDone(taskId: task.id, done: !task.done),
+                ),
+                onEdit: (task) => _edit(context, ref, task),
+                onReorder: (oldIndex, newIndex) =>
+                    _reorder(context, ref, tasks, oldIndex, newIndex),
+              ),
+              DashedAddButton(
+                label: l.addTask,
+                onTap: () => _add(context, ref),
+              ),
+            ],
+          ),
+          clearedTitle: l.tasksQueueClearedTitle,
+          clearedBody: l.tasksQueueClearedBody,
+          plainEmpty: EmptyState(
             title: l.noTasksYet,
             action: DashedAddButton(
               label: l.addTask,
               onTap: () => _add(context, ref),
             ),
-          )
-        else ...<Widget>[
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 2,
-              right: 2,
-              bottom: AppSpacing.md,
-            ),
-            child: Text(
-              allDone
-                  ? l.tasksDayDone(iso(done), iso(tasks.length))
-                  : l.tasksDoneOf(iso(done), iso(tasks.length)),
-              style: context.text.secondaryStrong,
-            ),
           ),
-          _TaskList(
-            tasks: tasks,
-            onToggle: (task) => runWrite(
-              context,
-              () => ref
-                  .read(taskRepositoryProvider)
-                  .setTaskDone(taskId: task.id, done: !task.done),
-            ),
-            onEdit: (task) => _edit(context, ref, task),
-            onReorder: (oldIndex, newIndex) =>
-                _reorder(context, ref, tasks, oldIndex, newIndex),
-          ),
-          DashedAddButton(label: l.addTask, onTap: () => _add(context, ref)),
-        ],
+        ),
       ],
+    );
+  }
+}
+
+/// The queue's body: the rows, or whatever replacing them looks like.
+///
+/// One keyed [AnimatedSwitcher] owns the whole flip between "rows" and
+/// "nothing", which is what makes SP-10 a sequence rather than a cut: when the
+/// last row leaves, the outgoing subtree runs [AppMotion.exit] as its fade-out
+/// while the incoming one carries its own entrance -- for the just-cleared day
+/// that entrance is [SpringPopIn], the register's biggest pop. Only the
+/// *leaving* side gets the switcher's fade; the arriving side is passed
+/// through untouched so it is never faded by two clocks at once. Every part
+/// terminates, so `pumpAndSettle` returns.
+///
+/// The celebration is earned, not shown: it plays only when this day's own
+/// rows cross to zero under the student's hand. Landing on an already-empty
+/// day from the picker is not a victory and stays the plain [EmptyState] --
+/// something is missing there and the add button fixes it, which is exactly
+/// the difference `empty_state.dart` documents between its two shapes.
+class _TaskQueueArea extends StatefulWidget {
+  const _TaskQueueArea({
+    required this.day,
+    required this.hasTasks,
+    required this.listContent,
+    required this.clearedTitle,
+    required this.clearedBody,
+    required this.plainEmpty,
+  });
+
+  final DateTime day;
+  final bool hasTasks;
+  final Widget listContent;
+  final String clearedTitle;
+  final String clearedBody;
+  final Widget plainEmpty;
+
+  @override
+  State<_TaskQueueArea> createState() => _TaskQueueAreaState();
+}
+
+class _TaskQueueAreaState extends State<_TaskQueueArea> {
+  /// Whether the just-cleared state was reached by the last row leaving.
+  bool _clearedByFinishing = false;
+
+  @override
+  void didUpdateWidget(_TaskQueueArea old) {
+    super.didUpdateWidget(old);
+    if (widget.day != old.day) {
+      // Another day is on screen; whatever happened to the old one, the new
+      // one starts quiet even if it too is empty.
+      _clearedByFinishing = false;
+    } else if (old.hasTasks && !widget.hasTasks) {
+      // The last row just left THIS day: SP-10's moment.
+      _clearedByFinishing = true;
+      // Fired once per crossing, at entry start. Vibration is not visual
+      // motion, so reduce-motion does not suppress it (PH-04 appendix) -- and
+      // among the app's list screens, only this moment earns success().
+      AppHaptics.success();
+    } else if (widget.hasTasks) {
+      _clearedByFinishing = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget content;
+    final Key contentKey;
+
+    if (widget.hasTasks) {
+      contentKey = const ValueKey<String>('queue');
+      content = widget.listContent;
+    } else if (_clearedByFinishing) {
+      contentKey = const ValueKey<String>('cleared');
+      content = SpringPopIn(
+        child: EmptyState.success(
+          title: widget.clearedTitle,
+          body: widget.clearedBody,
+        ),
+      );
+    } else {
+      contentKey = const ValueKey<String>('empty');
+      content = widget.plainEmpty;
+    }
+
+    return AnimatedSwitcher(
+      // Reduced motion swaps in place: the arrival is already settled, so a
+      // 200ms curtain over it would be motion for its own sake.
+      duration:
+          prefersReducedMotion(context) ? Duration.zero : AppMotion.exit,
+      child: KeyedSubtree(key: contentKey, child: content),
+      transitionBuilder: (child, animation) => child.key == contentKey
+          ? child
+          : FadeTransition(opacity: animation, child: child),
     );
   }
 }
