@@ -152,26 +152,26 @@ class AppColors extends ThemeExtension<AppColors> {
   /// The one wash red is allowed: behind an error message, an overdue status
   /// chip, a review badge.
   ///
-    /// There used to be a second at 12% called `wrongChip`, for the overdue chip
-    /// specifically. Two reds two percent apart, on the same screen and often in
-    /// the same card, is not a distinction — it is a decision nobody made twice
-    /// on purpose. One wash, one name.
-    final Color wrongTint;
+  /// There used to be a second at 12% called `wrongChip`, for the overdue chip
+  /// specifically. Two reds two percent apart, on the same screen and often in
+  /// the same card, is not a distinction — it is a decision nobody made twice
+  /// on purpose. One wash, one name.
+  final Color wrongTint;
 
-    /// [wrong], darkened enough to be read as small text on light surfaces.
-    ///
-    /// `#FF3B30` measures **3.55 : 1** on the white card and less on the tint
-    /// washes red sits on — fine for the big mastery figures, which clear the
-    /// 3 : 1 large-text bar, but every *small* red sentence fails the 4.5 : 1
-    /// that body text owes WCAG AA: the error banner, the overdue chip, the
-    /// chart labels. This is the red pen's own text grade, on exactly the
-    /// precedent of [rightText]: the fill stays the brand red, only the pen
-    /// darkens.
-    ///
-    /// In dark the fill already measures 5.9 : 1 on black, so as with
-    /// [rightText] the two themes differ on purpose: dark keeps the brand red
-    /// exactly, and only light darkens it.
-    final Color wrongText;
+  /// [wrong], darkened enough to be read as small text on light surfaces.
+  ///
+  /// `#FF3B30` measures **3.55 : 1** on the white card and less on the tint
+  /// washes red sits on — fine for the big mastery figures, which clear the
+  /// 3 : 1 large-text bar, but every *small* red sentence fails the 4.5 : 1
+  /// that body text owes WCAG AA: the error banner, the overdue chip, the
+  /// chart labels. This is the red pen's own text grade, on exactly the
+  /// precedent of [rightText]: the fill stays the brand red, only the pen
+  /// darkens.
+  ///
+  /// In dark the fill already measures 5.9 : 1 on black, so as with
+  /// [rightText] the two themes differ on purpose: dark keeps the brand red
+  /// exactly, and only light darkens it.
+  final Color wrongText;
 
   /// Right, mastered (>= 90%), mastered chapter, switch on.
   ///
