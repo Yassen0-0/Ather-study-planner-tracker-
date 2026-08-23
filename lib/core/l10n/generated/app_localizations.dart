@@ -2051,6 +2051,18 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'الأقرب سقوطًا'**
   String get examEveTierNearestDue;
+
+  /// No description provided for @reviewBodyDeclining.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر امتحان في {lesson} نازل — راجعه قبل ما يوقع.'**
+  String reviewBodyDeclining(String lesson);
+
+  /// No description provided for @reviewBodyWeak.
+  ///
+  /// In ar, this message translates to:
+  /// **'{lesson} لسه ضعيف — ثبّته بامتحان.'**
+  String reviewBodyWeak(String lesson);
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

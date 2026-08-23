@@ -1166,4 +1166,14 @@ class LAr extends L {
 
   @override
   String get examEveTierNearestDue => 'الأقرب سقوطًا';
+
+  @override
+  String reviewBodyDeclining(String lesson) {
+    return 'آخر امتحان في $lesson نازل — راجعه قبل ما يوقع.';
+  }
+
+  @override
+  String reviewBodyWeak(String lesson) {
+    return '$lesson لسه ضعيف — ثبّته بامتحان.';
+  }
 }
