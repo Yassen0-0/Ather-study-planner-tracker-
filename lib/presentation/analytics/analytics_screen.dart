@@ -71,25 +71,17 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             if (lesson.hasExam) (lesson: lesson, subject: subject),
     ]..sort((a, b) => a.lesson.mastery.compareTo(b.lesson.mastery));
 
-    // Discipline counts only lessons that have been examined: a lesson never
-    // sat is not "late", it simply has no clock running yet.
-    //
-    // Counted over `filtered`, not `subjects`. The filter used to reach the
-    // chapter bars and the weakest list and nothing else, so picking a subject
-    // left this card and the bar chart above it showing figures for all four --
-    // two cards silently answering a question the student had not asked.
-    var examined = 0;
-    var overdue = 0;
-    for (final subject in filtered) {
-      for (final chapter in subject.chapters) {
-        for (final lesson in chapter.lessons) {
-          if (!lesson.hasExam) continue;
-          examined++;
-          if (lesson.needsReview) overdue++;
-        }
-      }
-    }
-    final onTime = examined - overdue;
+    // Discipline figures come straight from the same counters the insights
+    // generator certifies against, so the bar here and any certificate above
+    // can never disagree about the same student. Scoped to `visibleIds` like
+    // everything else below -- the filter must still reach this card -- while
+    // the insight itself always counts every active subject; see
+    // [InsightsGenerator.disciplineCounts] for the rule both read.
+    final (:examined, :onTime) = InsightsGenerator.disciplineCounts(
+      ref.watch(snapshotValueProvider),
+      ref.watch(nowValueProvider),
+      subjectIds: visibleIds,
+    );
     final disciplineRate = examined == 0 ? 0.0 : onTime / examined * 100;
 
     return AtherScreen(
@@ -188,6 +180,12 @@ class _InsightsCard extends ConsumerWidget {
       LessonNotReviewedInsight(:final lessonName, :final days) => (
         l.insightLessonNotReviewed(lessonName, iso(days)),
         colors.wrong,
+      ),
+      DisciplineInsight(:final onTimeCount, :final examinedCount) => (
+        l.insightDiscipline(iso(onTimeCount), iso(examinedCount)),
+        // `rightText`, the text-safe green: this dot sits beside body copy, and
+        // the fill-grade [AppColors.right] is for surfaces, not sentences.
+        colors.rightText,
       ),
     };
   }

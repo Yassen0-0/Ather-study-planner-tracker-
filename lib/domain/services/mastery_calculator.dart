@@ -161,6 +161,45 @@ abstract final class MasteryCalculator {
     return percentages.reduce((a, b) => a + b) / percentages.length;
   }
 
+  /// The percentage the *next* paper must reach for the lesson to cross
+  /// [threshold], or null when there is nothing to cross.
+  ///
+  /// Answers the student's one real question after a bad paper: "how much do I
+  /// need next time?". The formula is [lessonMastery] inverted around the paper
+  /// that would arrive next: that paper becomes the newest, so what stands as
+  /// its history is every exam the lesson already has --
+  ///
+  ///     mastery' = x·kRecentWeight + meanOfExisting·kHistoryWeight >= threshold
+  ///     =>       x = (threshold - kHistoryWeight·meanOfExisting) / kRecentWeight
+  ///
+  /// [meanOfExisting] is the plain mean of **all** the percentages the lesson's
+  /// exams already hold, read from the records themselves -- never derived from
+  /// a displayed mastery figure. The displayed figure collapses {0,100} and
+  /// {100,0} to different numbers depending on order; the records do not, and
+  /// only the records know the history weight will actually pull on.
+  ///
+  /// null when [meanOfExisting] already sits at or above [threshold]: there is
+  /// no line to cross, and inventing one would nag a student who has crossed.
+  ///
+  /// Rounds **up**: a promised score must clear the threshold once sat, and a
+  /// rounded-down 61% against mean 90 lands at 69.7 -- a promise that breaks.
+  /// Clamped into [0, 100] so floating-point overshoot at the exact-100 end
+  /// cannot advertise more than a perfect paper.
+  static int? scoreNeededToCross({
+    required double meanOfExisting,
+    double threshold = kChapterMasteryThreshold,
+  }) {
+    // No early return for a high mean: the question is "what does the NEXT
+    // paper need for the lesson to sit at or above the threshold", and that
+    // has an answer for every mean in [0, 100] -- a strong past pulls the
+    // requirement down, it does not exempt the next paper. Whether the line
+    // is worth SHOWING is the caller's call (it appears only when today's
+    // mastery sits below the threshold).
+    final double needed =
+        (threshold - kHistoryWeight * meanOfExisting) / kRecentWeight;
+    return needed.ceil().clamp(0, 100);
+  }
+
   /// Most recent homework percentage for a lesson, or null if none logged.
   static double? latestHomeworkPercentage(List<HomeworkEntry> entries) {
     if (entries.isEmpty) return null;

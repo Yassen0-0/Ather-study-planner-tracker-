@@ -67,6 +67,30 @@ final class StrongestSubjectInsight extends Insight {
   final double mastery;
 }
 
+/// The student's review-discipline record across every examined lesson.
+///
+/// The positive insight that does not depend on scores: it says nothing about
+/// mastery at all -- "التزمت 9 من 11 مراجعة في معادها" -- so it stays tellable
+/// in a week when every number on the screen is red, which is exactly the week
+/// that needs something true and kind to read.
+///
+/// Independent of [SubjectImprovedInsight] by design: one measures where the
+/// scores went, the other whether the habit held. Neither gates the other; the
+/// [_maxInsights] cap is the only thing that can push either out.
+final class DisciplineInsight extends Insight {
+  const DisciplineInsight({
+    required this.onTimeCount,
+    required this.examinedCount,
+  });
+
+  /// Examined lessons whose proof is still inside the review cycle.
+  final int onTimeCount;
+
+  /// Examined lessons under active subjects -- the denominator [onTimeCount]
+  /// is read against, never a count of lessons created.
+  final int examinedCount;
+}
+
 /// Rule-based insight generation over real calculated deltas.
 ///
 /// No machine learning and no invented categories: every insight below is
@@ -82,6 +106,12 @@ abstract final class InsightsGenerator {
 
   /// Days unreviewed before a lesson is worth mentioning by name.
   static const int _stalenessDays = 45;
+
+  /// Examined lessons below which a discipline certificate would be noise.
+  ///
+  /// A habit cannot be read off three papers; certifying one would be the
+  /// same flattery [_minimumImprovement] refuses at the other end.
+  static const int _minimumDisciplineSample = 5;
 
   static const int _maxInsights = 4;
 
@@ -103,6 +133,7 @@ abstract final class InsightsGenerator {
     _addWeakestChapter(snapshot, masteries, insights);
     _addStalestLesson(snapshot, now, insights);
     _addStrongestSubject(snapshot, masteries, insights);
+    _addDiscipline(snapshot, now, insights);
 
     return insights.take(_maxInsights).toList();
   }
@@ -296,6 +327,50 @@ abstract final class InsightsGenerator {
     // would be technically true and actively misleading.
     if (best != null && bestMastery >= kChapterMasteryThreshold) {
       out.add(StrongestSubjectInsight(subjectId: best, mastery: bestMastery));
+    }
+  }
+
+  /// The review-discipline counters behind both the analytics screen's card
+  /// and the certificate insight -- one rule, two readers.
+  ///
+  /// [examined] counts every lesson under an active subject carrying at least
+  /// one exam; [onTime] counts those whose proof has not yet decayed past the
+  /// review cycle ([ReviewCycleService.needsReview]). A lesson never sat enters
+  /// neither count: it is not late, it simply has no clock running yet.
+  ///
+  /// [subjectIds] narrows the walk for the screen's subject filter; null means
+  /// every active subject. The insight itself always counts unfiltered -- a
+  /// certificate scoped to whichever chip happens to be selected would change
+  /// its sentence on every tap.
+  static ({int examined, int onTime}) disciplineCounts(
+    StudySnapshot snapshot,
+    DateTime now, {
+    Set<int>? subjectIds,
+  }) {
+    var examined = 0;
+    var overdue = 0;
+    for (final subject in snapshot.activeSubjects) {
+      if (subjectIds != null && !subjectIds.contains(subject.id)) continue;
+      for (final lesson in snapshot.lessonsInSubject(subject.id)) {
+        if (snapshot.examsFor(lesson.id).isEmpty) continue;
+        examined++;
+        if (ReviewCycleService.needsReview(lesson, now)) overdue++;
+      }
+    }
+    return (examined: examined, onTime: examined - overdue);
+  }
+
+  static void _addDiscipline(
+    StudySnapshot snapshot,
+    DateTime now,
+    List<Insight> out,
+  ) {
+    final (:examined, :onTime) = disciplineCounts(snapshot, now);
+    // Two guards against lying by praise: a habit cannot be certified off a
+    // handful of papers, and zero on-time reviews is a story this insight must
+    // not soften -- the red counters elsewhere already tell it plainly.
+    if (examined >= _minimumDisciplineSample && onTime >= 1) {
+      out.add(DisciplineInsight(onTimeCount: onTime, examinedCount: examined));
     }
   }
 

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -89,12 +92,121 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
   bool _resultCounted = false;
 
   @override
+  void initState() {
+    super.initState();
+    _restoreDraft();
+  }
+
+  @override
   void dispose() {
     _total.dispose();
     for (final group in _groups) {
       group.dispose();
     }
     super.dispose();
+  }
+
+  // --- The draft that survives process death ---------------------------------
+  //
+  // The wizard is the one screen holding data that exists nowhere else yet: a
+  // student halfway through describing a paper can lose it to Android killing
+  // the app for memory. The confirmation dialog guards deliberate exits; these
+  // four methods guard the involuntary ones. Raw field text under a per-lesson
+  // key -- numbers only, no dates, no step position -- written on every change
+  // and read back quietly on open.
+
+  static String _draftKeyFor(int lessonId) => 'exam_draft_$lessonId';
+
+  String get _draftKey => _draftKeyFor(widget.lessonId);
+
+  /// Refills the fields from a previous session's draft, silently.
+  ///
+  /// No toast and no error state: from the student's side nothing happened --
+  /// the numbers are simply still there, as if the wizard had never closed.
+  /// Anything unreadable (a shape an older build wrote, truncated JSON) is
+  /// ignored wholesale rather than half-applied.
+  void _restoreDraft() {
+    final String? raw = ref
+        .read(sharedPreferencesProvider)
+        .getString(_draftKey);
+    if (raw == null) return;
+
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException {
+      return;
+    }
+    if (decoded is! Map) return;
+    final Object? total = decoded['total'];
+    final Object? groups = decoded['groups'];
+    if (total is! String || groups is! List) return;
+
+    final drafts = <_GroupDraft>[];
+    for (final entry in groups) {
+      if (entry is! List || entry.length != 3) continue;
+      final Object? count = entry[0];
+      final Object? points = entry[1];
+      final Object? correct = entry[2];
+      if (count is! String || points is! String || correct is! String) continue;
+      drafts.add(
+        _GroupDraft()
+          ..count.text = count
+          ..points.text = points
+          ..correct.text = correct,
+      );
+    }
+    // A draft whose groups all failed to read back has nothing worth showing;
+    // leave the wizard's own empty first group rather than an empty paper.
+    if (drafts.isEmpty) return;
+
+    _total.text = total;
+    for (final group in _groups) {
+      group.dispose();
+    }
+    _groups
+      ..clear()
+      ..addAll(drafts);
+  }
+
+  /// Writes the current raw field text to [SharedPreferences].
+  ///
+  /// Fired from every numeric-field change, so it runs once per keystroke --
+  /// deliberately. The write is an in-memory set plus an async flush, and the
+  /// one event it must not miss is the keystroke right before the process
+  /// dies. Same persistence pattern as the language toggle.
+  void _persistDraft() {
+    unawaited(
+      ref
+          .read(sharedPreferencesProvider)
+          .setString(
+            _draftKey,
+            jsonEncode(<String, Object?>{
+              'total': _total.text,
+              'groups': <Object?>[
+                for (final group in _groups)
+                  <String>[
+                    group.count.text,
+                    group.points.text,
+                    group.correct.text,
+                  ],
+              ],
+            }),
+          ),
+    );
+  }
+
+  /// The draft has become either a saved exam or a confirmed discard; either
+  /// way its job is done.
+  void _clearDraft() {
+    unawaited(ref.read(sharedPreferencesProvider).remove(_draftKey));
+  }
+
+  /// Every numeric-field change funnels through here: clear any standing
+  /// validation error and keep the draft current.
+  void _fieldChanged() {
+    _persistDraft();
+    setState(() => _error = null);
   }
 
   int get _totalValue => int.tryParse(_total.text) ?? 0;
@@ -137,6 +249,11 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
   /// lost the lot to a stray swipe — and the wizard is the one screen in the app
   /// holding data that exists nowhere else yet.
   Future<void> _back() async {
+    // The save is in flight: stepping back would decrement the step out from
+    // under it, landing the student on an earlier question while the write
+    // lands -- or does not. The on-screen button is already disabled while
+    // busy; this closes the same hole for the system gesture.
+    if (_saving) return;
     if (_step > 1) {
       setState(() {
         _step--;
@@ -166,7 +283,11 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
       confirmLabel: l.examDiscardLeave,
       cancelLabel: l.examDiscardStay,
     );
-    if (confirmed) router.pop();
+    if (confirmed) {
+      // An explicit discard is the one voluntary way a draft may die.
+      _clearDraft();
+      router.pop();
+    }
   }
 
   void _next() {
@@ -261,6 +382,9 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
       });
       return;
     }
+
+    // The paper is now a real exam; the draft has nothing left to hold.
+    _clearDraft();
 
     // The first recorded exam is the moment the first 30-day clock starts, and
     // therefore the first moment a reminder means anything. Asking here rather
@@ -402,7 +526,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
       fill: context.colors.card,
       textStyle: AppTypography.inputLarge,
       hint: '0',
-      onChanged: (_) => setState(() => _error = null),
+      onChanged: (_) => _fieldChanged(),
     ),
   ];
 
@@ -431,10 +555,11 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
           pointsLabel: l.examGroupPoints,
           removeLabel: l.examRemoveGroup,
           canRemove: _groups.length > 1,
-          onChanged: () => setState(() => _error = null),
+          onChanged: _fieldChanged,
           onRemove: () => setState(() {
             _groups.removeAt(i).dispose();
             _error = null;
+            _persistDraft();
           }),
         ),
         const SizedBox(height: AppSpacing.listGap),
@@ -446,6 +571,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
         onTap: () => setState(() {
           _groups.add(_GroupDraft());
           _error = null;
+          _persistDraft();
         }),
       ),
     ];
@@ -472,7 +598,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
                 controller: group.correct,
                 height: 48,
                 textStyle: AppTypography.rowNumberSmall,
-                onChanged: (_) => setState(() => _error = null),
+                onChanged: (_) => _fieldChanged(),
               ),
             ),
           ],
@@ -502,6 +628,36 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
       context.colors,
       _resultPercentage,
     );
+
+    // The verdict and the "what do I need next" line are derived from the
+    // *resulting* mastery -- the state the lesson is actually in once this
+    // paper is counted -- not from the raw score alone.
+    final String? verdict = switch (after) {
+      < 50 => l.examVerdictWeak,
+      < 70 => l.examVerdictPassed,
+      _ => null,
+    };
+    final Color? verdictColor = switch (after) {
+      // Red, like the number it explains.
+      < 50 => context.colors.wrong,
+      // Deliberately not green: "passed" is not a success the product counts,
+      // only the absence of failure. Neutral grey keeps that honest.
+      < 70 => context.colors.textSecondary,
+      _ => null,
+    };
+
+    // The required score reads from the recorded exams' plain mean (never from
+    // the displayed figure: no inverse of it exists at n > 1), and only asks a
+    // question while the line still stands ahead.
+    var existingSum = 0.0;
+    for (final exam in existing) {
+      existingSum += exam.percentage;
+    }
+    final double meanExisting =
+        existing.isEmpty ? 0 : existingSum / existing.length;
+    final int? neededScore = after < 70
+        ? MasteryCalculator.scoreNeededToCross(meanOfExisting: meanExisting)
+        : null;
 
     return <Widget>[
       Padding(
@@ -613,6 +769,36 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
           ],
         ),
       ),
+      // The worst moment in the product's loop used to end in silence: a weak
+      // or mid-range paper vanished into the 30-day gap with not one word.
+      // Two derived sentences close it -- what happened, and exactly what the
+      // next paper must do. Both stay quiet once mastery has crossed 70:
+      // nothing to report, nothing to ask.
+      if (verdict != null || (after < 70 && neededScore != null)) ...<Widget>[
+        const SizedBox(height: AppSpacing.md),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.cardPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              if (verdict != null)
+                Text(
+                  verdict,
+                  style: AppTypography.statusLine.copyWith(color: verdictColor),
+                ),
+              if (verdict != null && neededScore != null && after < 70)
+                const SizedBox(height: AppSpacing.textGap),
+              if (after < 70 && neededScore != null)
+                Text(
+                  l.examNeedToCross(iso('$neededScore%')),
+                  style: AppTypography.statusLine.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     ];
   }
 }

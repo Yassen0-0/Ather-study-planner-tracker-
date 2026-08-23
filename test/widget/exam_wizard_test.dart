@@ -1,27 +1,53 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/instants.dart';
+import 'package:ather/core/clock/clock.dart';
+import 'package:ather/core/l10n/generated/app_localizations.dart';
+import 'package:ather/core/theme/app_theme.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/data/repositories/drift_study_repository.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
+import 'package:ather/domain/entities/study_snapshot.dart';
+import 'package:ather/domain/repositories/study_repository.dart';
 import 'package:ather/domain/services/mastery_calculator.dart';
 import 'package:ather/domain/services/review_cycle_service.dart';
 import 'package:ather/domain/services/summaries.dart';
+import 'package:ather/presentation/exam_entry/exam_entry_screen.dart';
+import 'package:ather/presentation/providers/app_providers.dart';
+
+/// Numbers are rendered wrapped in Unicode isolates so they read correctly
+/// inside Arabic sentences; a finder has to look for the same thing the user
+/// sees, isolates and all.
+String iso(String value) => '\u2066$value\u2069';
 
 /// Exercises the rules the exam wizard and the "أتقنت الباب" button enforce,
 /// against a real database rather than a mocked one.
 void main() {
   late AppDatabase db;
   late DriftStudyRepository repo;
+  // Set by the widget tests, which drain drift's timers themselves by closing
+  // inside the test body -- the binding checks for pending timers before
+  // tearDown runs.
+  var dbClosedByTest = false;
   final now = DateTime(2026, 6, 1);
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
     repo = DriftStudyRepository(db);
+    dbClosedByTest = false;
   });
 
-  tearDown(() async => db.close());
+  tearDown(() async {
+    if (!dbClosedByTest) await db.close();
+  });
 
   group('exam arithmetic as the wizard computes it', () {
     test('mixed point groups produce the right percentage', () {
@@ -417,4 +443,198 @@ void main() {
       },
     );
   });
+
+  // P3-04: the wizard is the one screen holding data that exists nowhere
+  // else yet. These exercise the two guards around it: the draft that
+  // survives process death, and the back press arriving while a save is in
+  // flight.
+  group('wizard draft and back guard', () {
+    const lessonId = 7;
+    const draftKey = 'exam_draft_$lessonId';
+
+    /// Pumps a minimal host with the wizard pushed on top of it.
+    ///
+    /// The host page exists so the wizard has somewhere to pop back to when a
+    /// save completes; [repository] lets a test park the write in flight.
+    Future<void> pumpWizard(
+      WidgetTester tester,
+      SharedPreferences preferences, {
+      StudyRepository? repository,
+    }) async {
+      final router = GoRouter(
+        initialLocation: '/',
+        routes: <RouteBase>[
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const Scaffold(body: SizedBox.shrink()),
+          ),
+          GoRoute(
+            path: '/wizard',
+            builder: (_, _) => const ExamEntryScreen(
+              lessonId: lessonId,
+              openedFromLesson: true,
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(preferences),
+            databaseProvider.overrideWithValue(db),
+            clockProvider.overrideWithValue(MutableClock(now)),
+            nowProvider.overrideWith((ref) => Stream<DateTime>.value(now)),
+            studyRepositoryProvider.overrideWithValue(
+              repository ?? DriftStudyRepository(db),
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.light,
+            locale: const Locale('ar'),
+            localizationsDelegates: L.localizationsDelegates,
+            supportedLocales: L.supportedLocales,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      router.push('/wizard');
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> fillToStep4(WidgetTester tester) async {
+      // Step 1: five questions.
+      await tester.enterText(find.byType(TextField).first, '5');
+      await tester.tap(find.text('التالي'));
+      await tester.pumpAndSettle();
+
+      // Step 2: five questions worth two marks each -- sums match.
+      final fields = find.byType(TextField);
+      expect(fields, findsNWidgets(2));
+      await tester.enterText(fields.at(0), '5');
+      await tester.enterText(fields.at(1), '2');
+      await tester.tap(find.text('التالي'));
+      await tester.pumpAndSettle();
+
+      // Step 3: three of them right -> 6 of 10 points -> 60%.
+      await tester.enterText(find.byType(TextField).first, '3');
+      await tester.tap(find.text('التالي'));
+      await tester.pumpAndSettle();
+
+      // Two legitimate bearers of the number on step 4: the big counted-up
+      // result and the "after" side of the before→after card.
+      expect(find.text(iso('60%')), findsExactly(2));
+    }
+
+    testWidgets(
+      'a killed process leaves the paper intact for the next open',
+      (tester) async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final preferences = await SharedPreferences.getInstance();
+
+        // Session one: describe the paper.
+        await pumpWizard(tester, preferences);
+        await fillToStep4(tester);
+
+        // Every keystroke landed in prefs under this lesson's key.
+        final String raw = preferences.getString(draftKey)!;
+        final Object? decoded = jsonDecode(raw);
+        expect(decoded, isA<Map<dynamic, dynamic>>());
+        expect(
+          (decoded! as Map<dynamic, dynamic>)['groups'],
+          isNotEmpty,
+        );
+
+        // Process death: tear everything down and reopen cold.
+        await tester.pumpWidget(const SizedBox());
+        await pumpWizard(tester, preferences);
+
+        // The numbers are simply still there -- silently, on step 1.
+        expect(find.text('5'), findsOneWidget);
+        await tester.tap(find.text('التالي'));
+        await tester.pumpAndSettle();
+        expect(find.text('5'), findsOneWidget);
+        expect(find.text('2'), findsOneWidget);
+        await tester.tap(find.text('التالي'));
+        await tester.pumpAndSettle();
+        expect(find.text('3'), findsOneWidget);
+
+        dbClosedByTest = true;
+        await db.close();
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+
+    testWidgets(
+      'system back during the save does not flip the step or lose the draft',
+      (tester) async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final preferences = await SharedPreferences.getInstance();
+
+        final gate = Completer<int>();
+        await pumpWizard(
+          tester,
+          preferences,
+          repository: _HangingExamRepository(repo, gate),
+        );
+        await fillToStep4(tester);
+
+        await tester.tap(find.text('احفظ النتيجة'));
+        await tester.pump(); // _saving flips on; the write is parked.
+
+        // The system back gesture arrives mid-write.
+        final NavigatorState navigator = tester.state(
+          find.byType(Navigator).first,
+        );
+        await navigator.maybePop();
+        await tester.pump();
+
+        // Nothing moved: still on step 4, write unfinished, draft intact.
+        expect(find.byType(ExamEntryScreen), findsOneWidget);
+        expect(preferences.getString(draftKey), isNotNull);
+
+        gate.complete(1);
+        await tester.pumpAndSettle();
+
+        // The write lands, the wizard pops home, and the draft's job is done.
+        expect(find.byType(ExamEntryScreen), findsNothing);
+        expect(preferences.getString(draftKey), isNull);
+
+        // Let the saved-toast retire itself; its timer outlives the test.
+        await tester.pump(const Duration(seconds: 3));
+
+        dbClosedByTest = true;
+        await db.close();
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+  });
+}
+
+/// A repository whose `recordExam` parks until a test releases it -- the
+/// widget-side stand-in for "the write is in flight". Everything else is
+/// forwarded to the real repository; anything unexpected fails loudly.
+class _HangingExamRepository implements StudyRepository {
+  _HangingExamRepository(this._inner, this._gate);
+
+  final StudyRepository _inner;
+  final Completer<int> _gate;
+
+  @override
+  Future<int> recordExam({
+    required int lessonId,
+    required List<DraftQuestionGroup> groups,
+    required bool isReviewExam,
+    required DateTime at,
+  }) =>
+      _gate.future;
+
+  @override
+  Stream<StudySnapshot> watchSnapshot() => _inner.watchSnapshot();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      super.noSuchMethod(invocation);
 }

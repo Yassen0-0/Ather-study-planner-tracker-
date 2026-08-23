@@ -60,10 +60,32 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final messenger = Overlay.of(context, rootOverlay: true);
     final direction = Directionality.of(context);
 
+    // The restore row only renders once the metadata is on screen, so this is
+    // usually already resolved. But the student can sit on this screen while a
+    // refresh is in flight; if confirmation time arrives without the metadata,
+    // it is read straight from the repository -- the same source
+    // [backupMetadataProvider] owns the button's existence to. A copy whose
+    // size cannot be known still restores, just without the counted line.
+    BackupMetadata? meta = ref.read(backupMetadataProvider).value;
+    if (meta == null) {
+      try {
+        meta = await ref.read(backupRepositoryProvider).readMetadata();
+      } on BackupException {
+        meta = null;
+      }
+    }
+    if (!mounted) return;
+
     final confirmed = await confirmDestructive(
       context,
       title: l.backupRestore,
-      message: l.backupRestoreConfirm,
+      // K1: the decision "is the cloud copy truer than my phone?" was asked
+      // with no numbers in sight, while the metadata sat there holding both.
+      // The line under the sentence names what is being trusted.
+      message: meta == null
+          ? l.backupRestoreConfirm
+          : '${l.backupRestoreConfirm}\n'
+              '${l.restoreCopyCounts(iso(meta.chapterCount), iso(meta.examCount))}',
       // Red, because it replaces the local record -- but the student is
       // agreeing to a restore, not a delete, and the button says so.
       confirmLabel: l.backupRestore,

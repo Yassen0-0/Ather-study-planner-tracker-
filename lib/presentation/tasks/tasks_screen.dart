@@ -27,7 +27,9 @@ import 'widgets/task_row.dart';
 /// [MasteryBar] anywhere here — a progress bar under a task list would say the
 /// app scores you on your to-do list, which is the opposite of what the product
 /// claims. The only figure is a plain count in the app's existing "X من Y"
-/// grammar.
+/// grammar — which becomes the closing sentence once every task on the
+/// selected day is ticked: 4/4 read in the same grey as 0/4 makes a finished
+/// day look exactly like an untouched one.
 ///
 /// The [DayPicker] on top is the only date control in the app: the dashboard's
 /// copy of the old seven-day strip is gone, and a dot under a day here means
@@ -130,6 +132,9 @@ class TasksScreen extends ConsumerWidget {
 
     final done = tasks.where((t) => t.done).length;
     final isToday = selected == dayOf(now);
+    // The else branch below guarantees the list is not empty, so 4/4 here
+    // really means "the day is finished" and may say so.
+    final allDone = done == tasks.length;
 
     return AtherScreen(
       header: DayHeader(
@@ -162,7 +167,9 @@ class TasksScreen extends ConsumerWidget {
               bottom: AppSpacing.md,
             ),
             child: Text(
-              l.tasksDoneOf(iso(done), iso(tasks.length)),
+              allDone
+                  ? l.tasksDayDone(iso(done), iso(tasks.length))
+                  : l.tasksDoneOf(iso(done), iso(tasks.length)),
               style: context.text.secondaryStrong,
             ),
           ),

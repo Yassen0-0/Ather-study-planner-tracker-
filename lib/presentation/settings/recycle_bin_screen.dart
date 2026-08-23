@@ -68,7 +68,7 @@ class RecycleBinScreen extends ConsumerWidget {
               label: l.binEmptyAll,
               destructive: true,
               trailing: SettingsRowTrailing.none,
-              onTap: () => _emptyAll(context, ref, deleted),
+              onTap: () => _emptyAll(context, ref, snapshot),
             ),
           ],
         ),
@@ -79,24 +79,62 @@ class RecycleBinScreen extends ConsumerWidget {
   Future<void> _emptyAll(
     BuildContext context,
     WidgetRef ref,
-    List<Subject> deleted,
+    StudySnapshot snapshot,
   ) async {
     final l = L.of(context);
+    // Counted at tap time from the snapshot this very build rendered from, so
+    // the numbers cannot drift from what is on screen.
+    final counts = _purgeCounts(snapshot, snapshot.deletedSubjects);
     final confirmed = await confirmDestructive(
       context,
       title: l.binEmptyAll,
-      message: l.binEmptyAllConfirm,
+      // "كل ما في السلة" named no sizes; a student confirming an empty-all
+      // deserves the same counted sentence the single purge always had.
+      message:
+          '${l.binEmptyAllConfirm}\n'
+          '${l.purgeCountsLine(iso(counts.subjects), iso(counts.chapters), iso(counts.lessons), iso(counts.exams))}',
       confirmLabel: l.binEmptyAll,
     );
     if (!confirmed || !context.mounted) return;
 
     final repository = ref.read(studyRepositoryProvider);
     await runWrite(context, () async {
-      for (final subject in deleted) {
+      for (final subject in snapshot.deletedSubjects) {
         await repository.purgeSubject(subject.id);
       }
     });
   }
+}
+
+/// What purging [subjects] takes with it, counted from [snapshot].
+///
+/// The purge confirmations are the last thing a student reads before the
+/// cascade fires, so they carry the whole size of the decision — chapters,
+/// lessons, exams — rather than gesturing at "everything underneath".
+({int subjects, int chapters, int lessons, int exams}) _purgeCounts(
+  StudySnapshot snapshot,
+  Iterable<Subject> subjects,
+) {
+  var chapters = 0;
+  var lessons = 0;
+  var exams = 0;
+  for (final subject in subjects) {
+    final subjectChapters = snapshot.chaptersIn(subject.id);
+    chapters += subjectChapters.length;
+    for (final chapter in subjectChapters) {
+      final chapterLessons = snapshot.lessonsIn(chapter.id);
+      lessons += chapterLessons.length;
+      for (final lesson in chapterLessons) {
+        exams += snapshot.examsFor(lesson.id).length;
+      }
+    }
+  }
+  return (
+    subjects: subjects.length,
+    chapters: chapters,
+    lessons: lessons,
+    exams: exams,
+  );
 }
 
 /// One deleted subject: what it is, when it went, and how much is inside it.
@@ -110,16 +148,8 @@ class _DeletedRow extends ConsumerWidget {
   final Subject subject;
   final StudySnapshot snapshot;
 
-  ({int chapters, int exams}) get _counts {
-    final chapters = snapshot.chaptersIn(subject.id);
-    var exams = 0;
-    for (final chapter in chapters) {
-      for (final lesson in snapshot.lessonsIn(chapter.id)) {
-        exams += snapshot.examsFor(lesson.id).length;
-      }
-    }
-    return (chapters: chapters.length, exams: exams);
-  }
+  ({int subjects, int chapters, int lessons, int exams}) get _counts =>
+      _purgeCounts(snapshot, <Subject>[subject]);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -167,7 +197,7 @@ class _DeletedRow extends ConsumerWidget {
   Future<void> _open(
     BuildContext context,
     WidgetRef ref,
-    ({int chapters, int exams}) counts,
+    ({int subjects, int chapters, int lessons, int exams}) counts,
   ) async {
     final l = L.of(context);
     final repository = ref.read(studyRepositoryProvider);
@@ -203,13 +233,13 @@ class _DeletedRow extends ConsumerWidget {
                   context,
                   title: l.binPurge,
                   // Counted, not gestured at. "This cannot be undone" is a
-                  // sentence a student has read a hundred times; "3 أبواب و 11
-                  // امتحان" is the thing they are actually deciding about.
-                  message: l.binPurgeConfirm(
-                    subject.label(l),
-                    l.chapterCount(counts.chapters),
-                    l.examCountLabel(counts.exams),
-                  ),
+                  // sentence a student has read a hundred times; the counts
+                  // are the thing they are actually deciding about. The
+                  // counted line carries all four sizes — including the
+                  // lessons and exams the row above only hints at.
+                  message:
+                      '${l.binPurgeConfirm(subject.label(l), l.chapterCount(counts.chapters), l.examCountLabel(counts.exams))}\n'
+                      '${l.purgeCountsLine(iso(counts.subjects), iso(counts.chapters), iso(counts.lessons), iso(counts.exams))}',
                   confirmLabel: l.binPurge,
                 );
                 if (!confirmed || !context.mounted) return;

@@ -101,6 +101,10 @@ void main() {
     required AppColors colors,
     required AtherBrandPalette brand,
     required TextDirection direction,
+    List<MasteryCardRow> rows = const <MasteryCardRow>[
+      MasteryCardRow(label: 'أحياء', mastery: 82, hasData: true),
+      MasteryCardRow(label: 'فيزياء', mastery: 41, hasData: true),
+    ],
   }) => Directionality(
     textDirection: direction,
     child: MediaQuery(
@@ -113,10 +117,7 @@ void main() {
             overallLabel: 'الإتقان العام',
             overall: 74,
             lessonsAboveLabel: 'درسان فوق حد الإتقان',
-            rows: const <MasteryCardRow>[
-              MasteryCardRow(label: 'أحياء', mastery: 82),
-              MasteryCardRow(label: 'فيزياء', mastery: 41),
-            ],
+            rows: rows,
             colors: colors,
             brand: brand,
           ),
@@ -250,6 +251,57 @@ void main() {
         expect((await pixelsOf(tester, image)).length, greaterThan(1));
         image.dispose();
       }
+    });
+  });
+
+  group('the unmeasured is not failed', () {
+    testWidgets('an untouched subject is a grey dash, never red 0%',
+        (tester) async {
+      // The card is the app's one image built to be posted, so it least of
+      // all may fail a subject the student never took an exam in: no exam
+      // under any lesson means "—", in the same no-data grey every screen
+      // uses (P3-12 / audit ح13).
+      await tester.pumpWidget(
+        framed(
+          colors: AppColors.light,
+          brand: AtherBrandPalette.light.withoutPlate,
+          direction: TextDirection.rtl,
+          rows: const <MasteryCardRow>[
+            MasteryCardRow(label: 'أحياء', mastery: 82, hasData: true),
+            MasteryCardRow(label: 'فيزياء', mastery: 0, hasData: false),
+          ],
+        ),
+      );
+
+      final drawn = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((t) => t.data)
+          .whereType<String>()
+          .toSet();
+
+      expect(drawn, contains('—'));
+      // The dash is not "0%" wearing a disguise: the bare zero-percent string
+      // must not be on the card at all. Measured rows keep their numbers.
+      expect(drawn, isNot(contains(percent(0))));
+      expect(drawn, contains(percent(82)));
+
+      final dashStyle = tester.widget<Text>(find.text('—')).style;
+      expect(dashStyle?.color, AppColors.light.textNoData);
+    });
+
+    testWidgets('a measured row keeps its live colour', (tester) async {
+      // hasData rides per row; passing it must not flatten the verdicts the
+      // palette already makes for rows that do have exams behind them.
+      await tester.pumpWidget(
+        framed(
+          colors: AppColors.light,
+          brand: AtherBrandPalette.light.withoutPlate,
+          direction: TextDirection.rtl,
+        ),
+      );
+
+      final weak = tester.widget<Text>(find.text(percent(41))).style;
+      expect(weak?.color, AppColors.light.wrong);
     });
   });
 

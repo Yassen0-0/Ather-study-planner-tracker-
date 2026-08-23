@@ -1944,6 +1944,77 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'اتعمل حسابك. رابط التأكيد ما اتبعتش — تقدر تبعته من صفحة ملفك.'**
   String get authVerificationNotSent;
+
+  /// No description provided for @examVerdictWeak.
+  ///
+  /// In ar, this message translates to:
+  /// **'درس ضعيف — دخل مراجعة الـ30 يوم، ذاكر تاني قبلها.'**
+  String get examVerdictWeak;
+
+  /// No description provided for @examVerdictPassed.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّيت، مش متقن — امتحان تاني هو اللي يرفعه.'**
+  String get examVerdictPassed;
+
+  /// No description provided for @examNeedToCross.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان تعدّي الحد: جيب {percentage} في اللي جاي.'**
+  String examNeedToCross(String percentage);
+
+  /// No description provided for @comebackLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجعت بعد {days} يوم — {count} درس عبر معاده.'**
+  String comebackLine(String days, String count);
+
+  /// No description provided for @lastHomeworkDated.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر واجب ({date})'**
+  String lastHomeworkDated(String date);
+
+  /// No description provided for @checklistAllDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذاكرتها كلها — فاضل إنك تثبتها بامتحان.'**
+  String get checklistAllDone;
+
+  /// No description provided for @tasksDayDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنجزت {done} من {total} — يومك خلص.'**
+  String tasksDayDone(String done, String total);
+
+  /// No description provided for @reviewWaitingHeader.
+  ///
+  /// In ar, this message translates to:
+  /// **'دروس المراجعة المستنياك: {count}'**
+  String reviewWaitingHeader(String count);
+
+  /// No description provided for @insightDiscipline.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزمت {onTime} من {examined} مراجعة في معادها.'**
+  String insightDiscipline(String onTime, String examined);
+
+  /// No description provided for @purgeCountsLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{subjects} مادة · {chapters} باب · {lessons} درس · {exams} امتحان'**
+  String purgeCountsLine(
+    String subjects,
+    String chapters,
+    String lessons,
+    String exams,
+  );
+
+  /// No description provided for @restoreCopyCounts.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخة السحابية: {chapters} باب، {exams} امتحان'**
+  String restoreCopyCounts(String chapters, String exams);
 }
 
 class _LDelegate extends LocalizationsDelegate<L> {

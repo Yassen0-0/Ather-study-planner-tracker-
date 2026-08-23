@@ -18,10 +18,21 @@ import 'widget_raster.dart';
 
 /// One subject's line on the card.
 final class MasteryCardRow {
-  const MasteryCardRow({required this.label, required this.mastery});
+  const MasteryCardRow({
+    required this.label,
+    required this.mastery,
+    required this.hasData,
+  });
 
   final String label;
   final double mastery;
+
+  /// Whether any exam stands behind [mastery]. False draws "—" in the
+  /// no-data grey rather than a red 0%: an untouched subject has not scored
+  /// zero, it has not been measured — and this card is the one image built to
+  /// leave the phone, so it least of all may fail a subject the student never
+  /// took an exam in (audit ح13/P3-12).
+  final bool hasData;
 }
 
 /// A picture of where a student is, made to leave the phone.
@@ -142,10 +153,13 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // hasData rides along from the row: the palette's first rule — no exam
+    // means grey and a dash, never red — applies here exactly as it does on
+    // the screens, so the shared picture cannot disagree with the app.
     final color = MasteryPalette.resolve(
       colors: colors,
       percentage: row.mastery,
-      hasData: true,
+      hasData: row.hasData,
       needsReview: false,
     );
 
@@ -165,7 +179,10 @@ class _Row extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(3),
             child: LinearProgressIndicator(
-              value: (row.mastery / 100).clamp(0, 1),
+              value: MasteryPalette.barFraction(
+                percentage: row.mastery,
+                hasData: row.hasData,
+              ),
               minHeight: 6,
               backgroundColor: colors.muted,
               valueColor: AlwaysStoppedAnimation<Color>(
@@ -176,7 +193,7 @@ class _Row extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.md),
         Text(
-          percent(row.mastery),
+          percentLabel(row.mastery, hasData: row.hasData),
           style: AppTypography.rowTitle.copyWith(color: color),
         ),
       ],
@@ -234,6 +251,7 @@ Future<void> shareMasteryCard({
                 MasteryCardRow(
                   label: subject.subject.label(l),
                   mastery: subject.mastery,
+                  hasData: subject.hasAnyExam,
                 ),
             ],
             colors: colors,

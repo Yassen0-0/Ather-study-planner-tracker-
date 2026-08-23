@@ -1,19 +1,15 @@
 {
   "@@locale": "ar",
-
   "appName": "أثر",
   "appTagline": "أنت لا تُنهي الدروس، بل تُتقنها",
-
   "navHome": "الرئيسية",
   "navReview": "مراجعة",
   "navProgress": "تقدمك",
   "navTasks": "مهامك",
-
   "subjectBiology": "أحياء",
   "subjectPhysics": "فيزياء",
   "subjectChemistry": "كيمياء",
   "subjectEnglish": "إنجليزي",
-
   "weekdaySaturday": "سبت",
   "@weekdaySaturday": {
     "description": "Short weekday name in the day picker, beside the date: 'سبت 14'. These were single letters (س ح ن ر خ ج) while the week strip showed all seven days at once and had ~41px per cell to do it in. The picker shows three to five days and gives each one a pill, so there is room for a name a student does not have to decode."
@@ -24,12 +20,10 @@
   "weekdayWednesday": "أربعاء",
   "weekdayThursday": "خميس",
   "weekdayFriday": "جمعة",
-
   "todayLabel": "اليوم",
   "@todayLabel": {
     "description": "What today's cell says in the day picker, in place of its weekday and date. Today always carries it, selected or not: it is the one fixed landmark in a row whose other cells change every time the student moves a day."
   },
-
   "dashboardTitle": "اليوم",
   "overallMastery": "الإتقان العام",
   "statLessonsRemaining": "دروس متبقّية",
@@ -49,45 +43,66 @@
   "actionExam": "امتحن",
   "notStartedYet": "لم تبدأ بعد",
   "subjectHasOverdueLesson": "تأخّرت مراجعة درس",
-
   "lessonCount": "{count, plural, =1{درس واحد} =2{درسان} few{{count} دروس} many{{count} درساً} other{{count} درس}}",
   "@lessonCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "chapterCount": "{count, plural, =1{باب واحد} =2{بابان} few{{count} أبواب} many{{count} باباً} other{{count} باب}}",
   "@chapterCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
   "chaptersMasteredOf": "أتقنت {mastered} من {total} باب",
   "@chaptersMasteredOf": {
     "placeholders": {
-      "mastered": { "type": "String" },
-      "total": { "type": "String" }
+      "mastered": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
     }
   },
   "chaptersOfShort": "{mastered} من {total} باب",
   "@chaptersOfShort": {
     "placeholders": {
-      "mastered": { "type": "String" },
-      "total": { "type": "String" }
+      "mastered": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
     }
   },
   "lessonsExaminedOf": "{examined} من {total} درس بامتحان",
   "@lessonsExaminedOf": {
     "placeholders": {
-      "examined": { "type": "String" },
-      "total": { "type": "String" }
+      "examined": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
     }
   },
   "lessonsOnTimeOf": "{onTime} من {total} درس في موعده",
   "@lessonsOnTimeOf": {
     "placeholders": {
-      "onTime": { "type": "String" },
-      "total": { "type": "String" }
+      "onTime": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
     }
   },
-
   "sectionChapters": "الأبواب",
   "sectionLessons": "الدروس",
   "addChapter": "+ إضافة باب",
@@ -104,17 +119,24 @@
   "deleteLesson": "حذف الدرس",
   "deleteChapterConfirm": "سيُحذف الباب وكل الدروس والامتحانات التي بداخله. لا يمكن التراجع.",
   "deleteLessonConfirm": "سيُحذف الدرس وكل امتحاناته. لا يمكن التراجع.",
-
   "averageExamScore": "متوسط الامتحانات",
   "chapterNeedsReview": "يحتاج مراجعة",
   "chapterMasteredAt": "أتقنته في {date}",
   "@chapterMasteredAt": {
-    "placeholders": { "date": { "type": "String" } },
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    },
     "description": "Shown in green only while the closure's evidence still stands (every lesson examined, chapter mean at or above 70 today)."
   },
   "chapterClosureDated": "أُغلِق {date}",
   "@chapterClosureDated": {
-    "placeholders": { "date": { "type": "String" } },
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    },
     "description": "Neutral line shown when the chapter carries a closure date whose evidence has since broken — the date stays, the green tick does not."
   },
   "masterChapter": "أتقنت الباب",
@@ -123,39 +145,56 @@
   "notReadyTitle": "لم يكتمل بعد",
   "notReadyBody": "لإتقان الباب يجب أن يكون لكل درس امتحان، وأن يبلغ الإتقان {threshold} على الأقل.",
   "@notReadyBody": {
-    "placeholders": { "threshold": { "type": "String" } }
+    "placeholders": {
+      "threshold": {
+        "type": "String"
+      }
+    }
   },
   "noExamShort": "لا امتحان",
-
   "lessonNoExamYet": "لا يوجد امتحان بعد",
   "dueInDays": "بقي {days} يوم",
   "@dueInDays": {
-    "placeholders": { "days": { "type": "String" } }
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
   },
   "dueInDaysLong": "بقي {days} يوم على المراجعة",
   "@dueInDaysLong": {
-    "placeholders": { "days": { "type": "String" } }
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
   },
   "overdueByDays": "متأخّر {days} يوم",
   "@overdueByDays": {
-    "placeholders": { "days": { "type": "String" } }
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
   },
   "masteryCaptionWithExams": "الإتقان محسوب من آخر امتحان {last} ومتوسط ما قبله {rest}",
   "@masteryCaptionWithExams": {
     "placeholders": {
-      "last": { "type": "String" },
-      "rest": { "type": "String" }
+      "last": {
+        "type": "String"
+      },
+      "rest": {
+        "type": "String"
+      }
     }
   },
   "masteryCaptionNoExams": "الإتقان يُحسب من الامتحانات وحدها — سجّل أول امتحان",
-
   "checklistTitle": "خطوات المذاكرة",
   "checklistWatched": "شاهدت الدرس",
   "checklistReadNotes": "قرأت الملازم",
   "checklistDidHomework": "حللت الواجب",
   "checklistDidExam": "حللت الامتحان",
   "checklistReviewedNotes": "راجعت الملازم",
-
   "homeworkTitle": "الواجب",
   "homeworkAdd": "سجّل درجة واجب",
   "homeworkScore": "الدرجة",
@@ -165,7 +204,6 @@
   "homeworkNone": "لا واجبات مسجّلة",
   "homeworkNote": "الواجب لا يدخل في حساب الإتقان — هو مؤشر استعداد فقط",
   "homeworkInvalid": "الدرجة بين صفر و«من»، و«من» أكبر من صفر",
-
   "examHistory": "الامتحانات السابقة",
   "examNoHistory": "لا امتحانات بعد",
   "examReviewBadge": "مراجعة",
@@ -175,7 +213,6 @@
   "examStart": "ابدأ الامتحان",
   "examRecordResult": "سجّل نتيجة امتحان",
   "examRecordReview": "سجّل امتحان المراجعة",
-
   "examStep1Title": "عدد الأسئلة الكلي",
   "examStep1Hint": "كم سؤالاً في الامتحان؟",
   "examStep2Title": "درجات الأسئلة",
@@ -190,13 +227,21 @@
   "examGroupLabel": "{count} أسئلة × {points} درجة",
   "@examGroupLabel": {
     "placeholders": {
-      "count": { "type": "String" },
-      "points": { "type": "String" }
+      "count": {
+        "type": "String"
+      },
+      "points": {
+        "type": "String"
+      }
     }
   },
   "examPointsLine": "{points} درجة",
   "@examPointsLine": {
-    "placeholders": { "points": { "type": "String" } }
+    "placeholders": {
+      "points": {
+        "type": "String"
+      }
+    }
   },
   "examMasteryBefore": "الإتقان قبل",
   "examMasteryAfter": "الإتقان بعد",
@@ -207,21 +252,22 @@
   "examDiscardBody": "ما كتبته سيضيع. لا يمكن التراجع.",
   "examDiscardLeave": "اترك",
   "examDiscardStay": "أكمل",
-
   "examErrorNeedAtLeastOneQuestion": "سؤال واحد على الأقل",
   "examErrorGroupInvalid": "كل مجموعة تحتاج عدد أسئلة ودرجة أكبر من صفر",
   "examErrorSumMismatch": "مجموع الأسئلة ({assigned}) يجب أن يساوي العدد الكلي ({total})",
   "@examErrorSumMismatch": {
     "placeholders": {
-      "assigned": { "type": "String" },
-      "total": { "type": "String" }
+      "assigned": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
     }
   },
   "examErrorCorrectExceeds": "عدد الإجابات الصحيحة لا يتجاوز عدد الأسئلة",
-
   "toastExamSaved": "حُفظ الامتحان — بدأ عدّاد المراجعة من جديد",
   "toastHomeworkSaved": "حُفظت درجة الواجب",
-
   "reviewTitle": "يحتاج مراجعة",
   "reviewEmptyTitle": "لا شيء يحتاج مراجعة",
   "reviewEmptyBody": "كل دروسك في موعدها.",
@@ -231,11 +277,14 @@
   "reviewNotificationBody": "حان وقت مراجعة درس {lesson} في {chapter}",
   "@reviewNotificationBody": {
     "placeholders": {
-      "lesson": { "type": "String" },
-      "chapter": { "type": "String" }
+      "lesson": {
+        "type": "String"
+      },
+      "chapter": {
+        "type": "String"
+      }
     }
   },
-
   "analyticsTitle": "تقدمك",
   "analyticsInsights": "ملاحظات",
   "analyticsAllSubjects": "كل المواد",
@@ -244,59 +293,79 @@
   "analyticsWeakestLessons": "أضعف الدروس",
   "analyticsReviewDiscipline": "الالتزام بالمراجعة",
   "analyticsNotEnoughData": "لا توجد بيانات كافية بعد",
-
   "insightStrongestSubject": "{subject} أقوى موادك الآن — {value}",
   "@insightStrongestSubject": {
     "placeholders": {
-      "subject": { "type": "String" },
-      "value": { "type": "String" }
+      "subject": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
     }
   },
   "insightChapterWeak": "«{chapter}» ما زال ضعيفاً — {value}",
   "@insightChapterWeak": {
     "placeholders": {
-      "chapter": { "type": "String" },
-      "value": { "type": "String" }
+      "chapter": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
     }
   },
   "insightLessonNotReviewed": "لم تراجع «{lesson}» منذ {days} يوم",
   "@insightLessonNotReviewed": {
     "placeholders": {
-      "lesson": { "type": "String" },
-      "days": { "type": "String" }
+      "lesson": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
     }
   },
   "insightSubjectImproved": "{subject} تحسّنت {delta} هذا الشهر",
   "@insightSubjectImproved": {
     "placeholders": {
-      "subject": { "type": "String" },
-      "delta": { "type": "String" }
+      "subject": {
+        "type": "String"
+      },
+      "delta": {
+        "type": "String"
+      }
     }
   },
-
   "chapterReportTitle": "تقرير الباب",
   "trendUp": "ارتفعت من {from} إلى {to}",
   "@trendUp": {
     "placeholders": {
-      "from": { "type": "String" },
-      "to": { "type": "String" }
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
     }
   },
   "trendDown": "انخفضت من {from} إلى {to}",
   "@trendDown": {
     "placeholders": {
-      "from": { "type": "String" },
-      "to": { "type": "String" }
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
     }
   },
   "trendFlat": "تحتاج امتحانات أكثر لقياس التقدّم",
   "trendSteady": "ثابتة — النصفان على المستوى نفسه",
   "chapterReportMasteryLabel": "الإتقان",
   "weakestLessonBadge": "أضعف درس",
-
   "celebrationTitle": "أتقنت الباب!",
   "celebrationBody": "عمل ممتاز. واصِل.",
-
   "authSignInTitle": "تسجيل الدخول",
   "authRegisterTitle": "حساب جديد",
   "authSubtitle": "تسجيل دخول واحد، ثم يعمل التطبيق دون اتصال",
@@ -330,7 +399,6 @@
   "accountSwitchWipeTitle": "حساب مختلف",
   "accountSwitchWipeMessage": "البيانات المحفوظة على هذا الجهاز تخص حسابًا آخر. للمتابعة بهذا الحساب ستُمسح كل بيانات الجهاز: المواد والأبواب والامتحانات والمهام. لا يمكن التراجع.",
   "accountSwitchWipeConfirm": "امسح بيانات الجهاز",
-
   "settingsPrivacy": "الخصوصية",
   "privacyTitle": "خصوصيتك",
   "privacyIntro": "هذا التطبيق يجمع أقل قدر ممكن من البيانات. ما يلي وصف لما يحدث فعلاً، لا وعود عامة.",
@@ -344,13 +412,11 @@
   "privacyDeleteBody": "في أسفل صفحة الإعدادات زر «حذف الحساب». عند الضغط عليه: تُمحى بياناتك على الهاتف، وتُمحى النسخة السحابية، ويُزال الحساب نفسه من Firebase. نهائياً.",
   "privacyNoCollectTitle": "ما لا نفعله",
   "privacyNoCollectBody": "لا إعلانات. لا تتبّع. لا بيع للبيانات. لا تحليلات ولا تقارير أخطاء لجهة خارجية.",
-
   "lockUnlock": "افتح",
   "lockReason": "افتح أثر",
   "lockRefused": "لم يُفتح. حاول مرة أخرى.",
   "lockLockedOut": "محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى، أو استخدم رمز قفل هاتفك.",
   "lockSetting": "قفل بالبصمة",
-
   "settingsTitle": "الإعدادات",
   "profileTitle": "ملفك",
   "profileName": "الاسم",
@@ -364,7 +430,11 @@
   "profileLocalNote": "هذه البيانات محفوظة على هذا الجهاز وحده، ولا تُرفع إلى أي خادم.",
   "profileGreeting": "أهلاً، {name}",
   "@profileGreeting": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "subjectsArchived": "مواد مؤرشفة",
   "subjectsArchivedNote": "المادة المؤرشفة لا تظهر ولا تدخل في حساب الإتقان ولا تُرسل تنبيهاتها، وأبوابها وامتحاناتها محفوظة كما هي.",
@@ -378,27 +448,43 @@
   "binDeletedAt": "حُذفت في {date}",
   "@binDeletedAt": {
     "placeholders": {
-      "date": { "type": "String" }
+      "date": {
+        "type": "String"
+      }
     }
   },
   "binNote": "المواد هنا محفوظة بالكامل بأبوابها وامتحاناتها، ولا تُحذف من نفسها أبداً. الحذف النهائي وحده هو الذي يمحوها.",
   "binPurgeConfirm": "سيُمحى «{subject}» ومعه {chapters} و{exams}. لا يمكن التراجع.",
   "@binPurgeConfirm": {
     "placeholders": {
-      "subject": { "type": "String" },
-      "chapters": { "type": "String" },
-      "exams": { "type": "String" }
+      "subject": {
+        "type": "String"
+      },
+      "chapters": {
+        "type": "String"
+      },
+      "exams": {
+        "type": "String"
+      }
     }
   },
   "binEmptyAllConfirm": "سيُمحى كل ما في السلة ومعه أبوابه وامتحاناته. لا يمكن التراجع.",
   "examCountLabel": "{count, plural, =1{امتحان واحد} =2{امتحانان} few{{count} امتحانات} many{{count} امتحاناً} other{{count} امتحان}}",
   "@examCountLabel": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "subjectsTitle": "المواد",
   "subjectCountLabel": "{count, plural, =1{مادة واحدة} =2{مادتان} few{{count} مواد} many{{count} مادة} other{{count} مادة}}",
   "@subjectCountLabel": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "subjectAdd": "+ إضافة مادة",
   "subjectNameHint": "مثال: رياضيات",
@@ -418,14 +504,21 @@
   "settingsAbout": "عن التطبيق",
   "settingsVersionFormat": "الإصدار {version}",
   "@settingsVersionFormat": {
-    "placeholders": { "version": { "type": "String" } }
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
   },
-
   "backupTitle": "النسخة السحابية",
   "backupNever": "لم تُحفظ بعد",
   "backupSavedAt": "آخر حفظ: {date}",
   "@backupSavedAt": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "backupSaving": "جارٍ الحفظ…",
   "backupSaveNow": "احفظ الآن",
@@ -438,7 +531,6 @@
   "backupErrorTooLarge": "بياناتك أكبر من أن تُحفظ دفعة واحدة",
   "backupErrorUnreadable": "النسخة السحابية غير مقروءة",
   "backupErrorUnknown": "لم ينجح الحفظ",
-
   "tasksTitle": "مهام اليوم",
   "@tasksTitle": {
     "description": "The tasks screen's title while today is the selected day. The day picker sitting under it says 'اليوم' for today's cell, so the title names what the list is rather than repeating the day."
@@ -446,8 +538,12 @@
   "tasksDoneOf": "أنجزت {done} من {total}",
   "@tasksDoneOf": {
     "placeholders": {
-      "done": { "type": "String" },
-      "total": { "type": "String" }
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
     }
   },
   "addTask": "+ إضافة مهمة",
@@ -457,7 +553,6 @@
   "deleteTask": "حذف المهمة",
   "deleteTaskConfirm": "ستُحذف من مهام هذا اليوم نهائياً.",
   "noTasksYet": "لا مهام لهذا اليوم",
-
   "commonSave": "حفظ",
   "commonSomethingWentWrong": "تعذّر إتمام العملية. حاول مرة أخرى.",
   "nameRequired": "اكتب اسماً أولاً",
@@ -469,7 +564,6 @@
   "commonBack": "رجوع",
   "commonEdit": "تعديل",
   "commonClose": "إغلاق",
-
   "exportTitle": "تصدير بياناتك",
   "@exportTitle": {
     "description": "=== Batch A1: data export, chapter report PDF, share card. Appended block, append-only, do not reorder. ==="
@@ -479,64 +573,159 @@
   "exportWhereNote": "الملف يتفتح في نافذة المشاركة، تختار منها تحفظه فين — درايف أو واتساب أو الملفات. أثر لا يحتفظ بنسخة.",
   "exportErrorFile": "تعذّر تجهيز الملف. راجع المساحة الفاضية على الجهاز.",
   "exportErrorShare": "تعذّر فتح نافذة المشاركة",
-
   "chapterReportExport": "صدّر التقرير PDF",
   "chapterReportExportDone": "اتجهّز التقرير",
   "chapterReportExportError": "تعذّر تجهيز ملف PDF",
-
   "shareCardAction": "شارك تقدّمك",
   "shareCardTitle": "إتقاني في أثر",
   "shareCardOverall": "الإتقان العام",
   "shareCardLessonsAbove": "{count,plural, =0{لا توجد دروس أثبتَها فوق حد الإتقان بعد} =1{درس واحد أثبتَه فوق حد الإتقان} =2{درسان أثبتَهما فوق حد الإتقان} few{{count} دروس أثبتَها فوق حد الإتقان} many{{count} درساً أثبتَها فوق حد الإتقان} other{{count} درساً أثبتَها فوق حد الإتقان}}",
   "shareCardError": "تعذّر تجهيز صورة التقدّم",
   "@shareCardLessonsAbove": {
-    "placeholders": { "count": { "type": "int" } },
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    },
     "description": "Counts «أثبت» lessons only: an exam behind the lesson, the evidence still fresh (not overdue), at or above 70. The old wording said «متقنة» and counted stale scores."
   },
-
   "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",
   "reviewNotificationEarlyBody": "اقترب موعد مراجعة درس {lesson} في {chapter}",
   "@reviewNotificationEarlyBody": {
     "placeholders": {
-      "lesson": { "type": "String" },
-      "chapter": { "type": "String" }
+      "lesson": {
+        "type": "String"
+      },
+      "chapter": {
+        "type": "String"
+      }
     }
   },
-
   "@@x_comment_B2": "=== Batch B2: analytics trends ===",
   "analyticsTrajectory": "مسار درجاتك",
   "analyticsVelocity": "{value} نقطة لكل دورة مراجعة",
   "@analyticsVelocity": {
     "placeholders": {
-      "value": { "type": "String" }
+      "value": {
+        "type": "String"
+      }
     }
   },
   "analyticsVelocityFlat": "ثابت، بلا تغيّر",
-
   "@@x_comment_B3": "=== Batch B3: email verification ===",
   "authVerificationSent": "بعتنالك رابط تأكيد على بريدك",
   "authEmailUnverified": "لم يتم تأكيده",
   "authResendVerification": "إعادة إرسال رابط التأكيد",
   "authVerificationTooSoon": "بعتنا رابط للتو. استنى شوية وحاول تاني.",
   "authVerificationNote": "تأكيد بريدك يخليك تقدر تسترجع حسابك لو نسيت كلمة السر. التطبيق شغال عادي من غيره.",
-
   "@@x_comment_B4": "=== Batch B4: curriculum templates ===",
   "subjectTemplateAdd": "أضف أبواب المنهج",
   "subjectTemplateCount": "{count, plural, =1{باباً واحداً} =2{بابين} few{{count} أبواب} other{{count} باباً}}",
   "@subjectTemplateCount": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "subjectTemplateAdded": "تمت إضافة {count}",
   "@subjectTemplateAdded": {
     "placeholders": {
-      "count": { "type": "String" }
+      "count": {
+        "type": "String"
+      }
     }
   },
   "subjectTemplateNothingNew": "كل أبواب المنهج موجودة عندك بالفعل",
   "subjectTemplateNote": "أبواب المنهج المعتادة، تقدر تعدّلها أو تحذفها زي أي باب كتبته بنفسك. مش هيتغيّر أو يتحذف أي باب عندك.",
-
   "@@x_comment_integration": "=== Integration review fixes ===",
-  "authVerificationNotSent": "اتعمل حسابك. رابط التأكيد ما اتبعتش — تقدر تبعته من صفحة ملفك."
+  "authVerificationNotSent": "اتعمل حسابك. رابط التأكيد ما اتبعتش — تقدر تبعته من صفحة ملفك.",
+  "examVerdictWeak": "درس ضعيف — دخل مراجعة الـ30 يوم، ذاكر تاني قبلها.",
+  "examVerdictPassed": "عدّيت، مش متقن — امتحان تاني هو اللي يرفعه.",
+  "examNeedToCross": "عشان تعدّي الحد: جيب {percentage} في اللي جاي.",
+  "@examNeedToCross": {
+    "placeholders": {
+      "percentage": {
+        "type": "String"
+      }
+    }
+  },
+  "comebackLine": "رجعت بعد {days} يوم — {count} درس عبر معاده.",
+  "@comebackLine": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lastHomeworkDated": "آخر واجب ({date})",
+  "@lastHomeworkDated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "checklistAllDone": "ذاكرتها كلها — فاضل إنك تثبتها بامتحان.",
+  "tasksDayDone": "أنجزت {done} من {total} — يومك خلص.",
+  "@tasksDayDone": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewWaitingHeader": "دروس المراجعة المستنياك: {count}",
+  "@reviewWaitingHeader": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "insightDiscipline": "التزمت {onTime} من {examined} مراجعة في معادها.",
+  "@insightDiscipline": {
+    "placeholders": {
+      "onTime": {
+        "type": "String"
+      },
+      "examined": {
+        "type": "String"
+      }
+    }
+  },
+  "purgeCountsLine": "{subjects} مادة · {chapters} باب · {lessons} درس · {exams} امتحان",
+  "@purgeCountsLine": {
+    "placeholders": {
+      "subjects": {
+        "type": "String"
+      },
+      "chapters": {
+        "type": "String"
+      },
+      "lessons": {
+        "type": "String"
+      },
+      "exams": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreCopyCounts": "النسخة السحابية: {chapters} باب، {exams} امتحان",
+  "@restoreCopyCounts": {
+    "placeholders": {
+      "chapters": {
+        "type": "String"
+      },
+      "exams": {
+        "type": "String"
+      }
+    }
+  }
 }

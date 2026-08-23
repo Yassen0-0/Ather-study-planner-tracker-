@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ather/app/app.dart';
 import 'package:ather/core/clock/clock.dart';
+import 'package:ather/core/l10n/generated/app_localizations.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/data/repositories/drift_study_repository.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
@@ -17,6 +18,11 @@ import 'package:ather/presentation/providers/backup_providers.dart';
 
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
+
+/// Numbers reach the screen wrapped in Unicode isolates so they read correctly
+/// inside an Arabic sentence. Written as escapes, not literals: pasted raw,
+/// the isolate characters silently reorder this source file in an editor.
+String iso(Object value) => '\u2066$value\u2069';
 
 /// Deleting a subject and getting it back, through the real app.
 ///
@@ -32,6 +38,12 @@ import '../support/fake_backup.dart';
 void main() {
   late AppDatabase db;
   final DateTime now = DateTime(2026, 8, 17);
+
+  /// The same strings the running app resolves to (Arabic is the app's
+  /// fallback locale). Newer keys are asserted through [lookupL] rather than
+  /// pasted literals so the test pins the wiring — the right key with the
+  /// right arguments — and stays honest wherever the copy itself is tuned.
+  final L l = lookupL(const Locale('ar'));
 
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
 
@@ -221,6 +233,15 @@ void main() {
     // the chapter count, and the modal barrier is what tells them apart.
     expect(find.textContaining('باب واحد').hitTestable(), findsOneWidget);
     expect(find.textContaining('امتحان واحد').hitTestable(), findsOneWidget);
+    // The counted line carries all four sizes — subjects, chapters, lessons
+    // and exams — so the decision is made with nothing held back. The seed is
+    // one of each, which keeps every argument of the key at 1.
+    expect(
+      find.textContaining(
+        l.purgeCountsLine(iso(1), iso(1), iso(1), iso(1)),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('حذف نهائي').hitTestable().last);
     await tester.pumpAndSettle();
@@ -228,6 +249,56 @@ void main() {
     final after = await DriftStudyRepository(db).readSnapshot();
     expect(after.subjects, hasLength(4), reason: 'only the seeded four remain');
     expect(after.chapters, isEmpty, reason: 'the cascade finally fired');
+    expect(after.exams, isEmpty);
+
+    await closeApp(tester);
+  });
+
+  testWidgets('emptying the bin counts what it is about to erase', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    await seed();
+    final repository = DriftStudyRepository(db);
+    final subject = (await repository.readSnapshot()).activeSubjects.last;
+    await repository.setSubjectDeleted(subjectId: subject.id, at: now);
+
+    await tester.pumpWidget(await boot());
+    await tester.pumpAndSettle();
+    await openSettings(tester);
+    await openRow(tester, 'سلة المحذوفات');
+
+    // "إفراغ السلة" used to confirm with a sentence that named no sizes —
+    // the loudest button in the app agreeing to nothing in particular.
+    await tester.ensureVisible(find.text('إفراغ السلة'));
+    await tester.tap(find.text('إفراغ السلة').hitTestable().first);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining(
+        l.purgeCountsLine(iso(1), iso(1), iso(1), iso(1)),
+      ),
+      findsOneWidget,
+    );
+
+    // Backing out changed nothing: everything the sheet counted is still here.
+    await tester.tap(find.text('إلغاء').hitTestable());
+    await tester.pumpAndSettle();
+    final before = await repository.readSnapshot();
+    expect(before.deletedSubjects, hasLength(1));
+    expect(before.chapters, hasLength(1));
+    expect(before.exams, hasLength(1));
+
+    // And confirming is what releases exactly what was counted: the sheet
+    // once more, then its red button (`.last` — with the sheet up, the modal
+    // barrier is what separates the button from the row underneath).
+    await tester.tap(find.text('إفراغ السلة').hitTestable().first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('إفراغ السلة').hitTestable().last);
+    await tester.pumpAndSettle();
+
+    final after = await repository.readSnapshot();
+    expect(after.deletedSubjects, isEmpty);
+    expect(after.chapters, isEmpty, reason: 'the whole bin went at once');
     expect(after.exams, isEmpty);
 
     await closeApp(tester);

@@ -295,12 +295,29 @@ class _ChecklistCard extends ConsumerWidget {
               Expanded(
                 child: Text(l.checklistTitle, style: AppTypography.cardTitle),
               ),
-              Text(
-                fraction(checklist.completedCount, LessonChecklist.totalCount),
-                style: AppTypography.controlLabel.copyWith(
-                  color: context.colors.textSecondary,
+              // Five of five on an unexamined lesson swaps the counter for the
+              // one sentence the moment earns, pointing at the exam CTA pinned
+              // below. With exam evidence the count stays a count.
+              if (checklist.isComplete && !summary.hasExam)
+                Flexible(
+                  child: Text(
+                    l.checklistAllDone,
+                    textAlign: TextAlign.end,
+                    style: AppTypography.controlLabel.copyWith(
+                      color: context.colors.textSecondary,
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  fraction(
+                    checklist.completedCount,
+                    LessonChecklist.totalCount,
+                  ),
+                  style: AppTypography.controlLabel.copyWith(
+                    color: context.colors.textSecondary,
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: AppSpacing.textGap),
@@ -346,17 +363,31 @@ class _HomeworkCard extends ConsumerWidget {
     final l = L.of(context);
     final homework = summary.latestHomeworkPercentage;
 
-    final String line;
-    final Color lineColor;
+    // The verdict is the domain's, not a raw threshold here: when the newest
+    // homework predates the lesson's first exam it has been outvoted by newer
+    // evidence and issues no verdict at all -- silence, not a green claim from
+    // the same stale document. The dated percentage in the header stays as the
+    // factual record either way.
+    Widget? verdict;
     if (homework == null) {
-      line = l.homeworkNone;
-      lineColor = context.colors.textSecondary;
-    } else if (homework < kHomeworkReadinessThreshold) {
-      line = l.homeworkNotReady;
-      lineColor = context.colors.wrong;
-    } else {
-      line = l.homeworkReady;
-      lineColor = context.colors.rightText;
+      verdict = Text(
+        l.homeworkNone,
+        style: AppTypography.statusLine.copyWith(
+          color: context.colors.textSecondary,
+        ),
+      );
+    } else if (summary.homeworkSuggestsMoreStudy) {
+      verdict = Text(
+        l.homeworkNotReady,
+        style: AppTypography.statusLine.copyWith(color: context.colors.wrong),
+      );
+    } else if (homework >= kHomeworkReadinessThreshold) {
+      verdict = Text(
+        l.homeworkReady,
+        style: AppTypography.statusLine.copyWith(
+          color: context.colors.rightText,
+        ),
+      );
     }
 
     return AtherCard.muted(
@@ -381,14 +412,24 @@ class _HomeworkCard extends ConsumerWidget {
                   color: context.colors.textSecondary,
                 ),
               ),
+              // The score's own date, so a month-old number reads as one.
+              if (summary.latestHomeworkAt != null) ...<Widget>[
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    l.lastHomeworkDated(dateLabel(summary.latestHomeworkAt!)),
+                    style: context.text.secondary,
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: AppSpacing.textGap),
-          Text(
-            line,
-            style: AppTypography.statusLine.copyWith(color: lineColor),
-          ),
-          const SizedBox(height: AppSpacing.xs),
+          if (verdict != null) ...<Widget>[
+            verdict,
+            const SizedBox(height: AppSpacing.xs),
+          ],
           Text(l.homeworkNote, style: context.text.micro),
           const SizedBox(height: AppSpacing.md),
           Align(

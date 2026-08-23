@@ -23,6 +23,8 @@ final class LessonSummary {
     required this.daysOverdue,
     required this.daysUntilDue,
     required this.latestHomeworkPercentage,
+    this.latestHomeworkAt,
+    this.firstExamAt,
   });
 
   final Lesson lesson;
@@ -32,6 +34,12 @@ final class LessonSummary {
   final int daysOverdue;
   final int? daysUntilDue;
   final double? latestHomeworkPercentage;
+
+  /// When [latestHomeworkPercentage] was logged; null with it.
+  final DateTime? latestHomeworkAt;
+
+  /// The earliest exam recorded on this lesson; null while it has none.
+  final DateTime? firstExamAt;
 
   bool get hasExam => examCount > 0;
   MasteryBand get band => MasteryBand.fromPercentage(mastery);
@@ -53,9 +61,25 @@ final class LessonSummary {
   bool get isExcellent => isProven && band == MasteryBand.excellent;
 
   /// True when the student has logged homework and it says "study more".
+  ///
+  /// One silence rule: a homework **older than the lesson's first exam never
+  /// speaks**. If [latestHomeworkAt] falls before [firstExamAt], the exam is
+  /// newer evidence that already answered the question the homework was
+  /// asked -- its score sits in mastery, where homework by design does not --
+  /// so repeating the homework's stale verdict would have it judging a time
+  /// that has already been superseded. The percentage and its date stay on
+  /// screen; only this present-tense warning goes quiet.
+  ///
+  /// Silence needs both timestamps: homework logged after (or on the same
+  /// instant as) the first exam is still the newest word, and with no exam at
+  /// all the homework always is.
   bool get homeworkSuggestsMoreStudy {
     final hw = latestHomeworkPercentage;
-    return hw != null && !MasteryCalculator.isReadyForExam(hw);
+    if (hw == null || MasteryCalculator.isReadyForExam(hw)) return false;
+    final hwAt = latestHomeworkAt;
+    final examAt = firstExamAt;
+    if (hwAt != null && examAt != null && hwAt.isBefore(examAt)) return false;
+    return true;
   }
 }
 
@@ -199,6 +223,26 @@ abstract final class Summaries {
     Map<int, double>? masteries,
   }) {
     final exams = snapshot.examsFor(lesson.id);
+    final homework = snapshot.homeworkFor(lesson.id);
+
+    // The oldest exam, by createdAt rather than list position: the snapshot's
+    // newest-first order is an invariant, but the meaning here is "first", so
+    // it is computed as first and stays correct even if that invariant ever
+    // changes.
+    final DateTime? firstExamAt = exams.isEmpty
+        ? null
+        : exams
+              .map((e) => e.createdAt)
+              .reduce((a, b) => a.isBefore(b) ? a : b);
+
+    // Same choice of entry as `latestHomeworkPercentage` (newest createdAt),
+    // so the date shown beside the percentage always belongs to it.
+    final DateTime? latestHomeworkAt = homework.isEmpty
+        ? null
+        : homework
+              .map((h) => h.createdAt)
+              .reduce((a, b) => b.isAfter(a) ? b : a);
+
     return LessonSummary(
       lesson: lesson,
       mastery: masteries?[lesson.id] ?? MasteryCalculator.lessonMastery(exams),
@@ -207,8 +251,10 @@ abstract final class Summaries {
       daysOverdue: ReviewCycleService.daysOverdue(lesson, now),
       daysUntilDue: ReviewCycleService.daysUntilDue(lesson, now),
       latestHomeworkPercentage: MasteryCalculator.latestHomeworkPercentage(
-        snapshot.homeworkFor(lesson.id),
+        homework,
       ),
+      latestHomeworkAt: latestHomeworkAt,
+      firstExamAt: firstExamAt,
     );
   }
 

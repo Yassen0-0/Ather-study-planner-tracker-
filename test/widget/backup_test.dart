@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/instants.dart';
 import 'package:ather/app/app.dart';
 import 'package:ather/core/clock/clock.dart';
+import 'package:ather/core/l10n/generated/app_localizations.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/data/repositories/drift_study_repository.dart';
 import 'package:ather/domain/entities/chapter.dart';
@@ -26,6 +27,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
 
+/// Numbers reach the screen wrapped in Unicode isolates so they read correctly
+/// inside an Arabic sentence. Written as escapes, not literals: pasted raw,
+/// the isolate characters silently reorder this source file in an editor.
+String iso(Object value) => '\u2066$value\u2069';
+
 /// Cloud sync, through the real app.
 ///
 /// The test that matters most here is the first one: **the whole app works when
@@ -35,6 +41,12 @@ import '../support/fake_backup.dart';
 void main() {
   late AppDatabase db;
   final DateTime now = DateTime(2026, 8, 5);
+
+  /// The same strings the running app resolves to (Arabic is the app's
+  /// fallback locale). Newer keys are asserted through [lookupL] rather than
+  /// pasted literals so the test pins the wiring — the right key with the
+  /// right arguments — and stays honest wherever the copy itself is tuned.
+  final L l = lookupL(const Locale('ar'));
 
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
 
@@ -364,6 +376,13 @@ void main() {
 
     // The destructive confirmation the rest of the app uses, saying what goes.
     expect(find.textContaining('ويحل محله'), findsOneWidget);
+
+    // K1: the copy also names what is being trusted — this cloud copy holds
+    // one chapter and no exams, straight from its metadata.
+    expect(
+      find.textContaining(l.restoreCopyCounts(iso(1), iso(0))),
+      findsOneWidget,
+    );
 
     // Red, but labelled with the act: a restore, not a delete.
     expect(find.text('حذف').hitTestable(), findsNothing);

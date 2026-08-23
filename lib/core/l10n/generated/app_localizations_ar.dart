@@ -1093,4 +1093,59 @@ class LAr extends L {
   @override
   String get authVerificationNotSent =>
       'اتعمل حسابك. رابط التأكيد ما اتبعتش — تقدر تبعته من صفحة ملفك.';
+
+  @override
+  String get examVerdictWeak =>
+      'درس ضعيف — دخل مراجعة الـ30 يوم، ذاكر تاني قبلها.';
+
+  @override
+  String get examVerdictPassed => 'عدّيت، مش متقن — امتحان تاني هو اللي يرفعه.';
+
+  @override
+  String examNeedToCross(String percentage) {
+    return 'عشان تعدّي الحد: جيب $percentage في اللي جاي.';
+  }
+
+  @override
+  String comebackLine(String days, String count) {
+    return 'رجعت بعد $days يوم — $count درس عبر معاده.';
+  }
+
+  @override
+  String lastHomeworkDated(String date) {
+    return 'آخر واجب ($date)';
+  }
+
+  @override
+  String get checklistAllDone => 'ذاكرتها كلها — فاضل إنك تثبتها بامتحان.';
+
+  @override
+  String tasksDayDone(String done, String total) {
+    return 'أنجزت $done من $total — يومك خلص.';
+  }
+
+  @override
+  String reviewWaitingHeader(String count) {
+    return 'دروس المراجعة المستنياك: $count';
+  }
+
+  @override
+  String insightDiscipline(String onTime, String examined) {
+    return 'التزمت $onTime من $examined مراجعة في معادها.';
+  }
+
+  @override
+  String purgeCountsLine(
+    String subjects,
+    String chapters,
+    String lessons,
+    String exams,
+  ) {
+    return '$subjects مادة · $chapters باب · $lessons درس · $exams امتحان';
+  }
+
+  @override
+  String restoreCopyCounts(String chapters, String exams) {
+    return 'النسخة السحابية: $chapters باب، $exams امتحان';
+  }
 }

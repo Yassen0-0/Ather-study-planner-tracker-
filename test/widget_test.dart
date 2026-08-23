@@ -240,13 +240,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('تركيب الخلية'), findsOneWidget);
-    expect(
-      find.text('امتحن'),
-      findsWidgets,
-      reason:
-          'there is one thing to do about an overdue lesson, so the row '
-          'offers it rather than routing through a detail screen',
-    );
+    // One action, one target (06-design #10): the card itself is the route
+    // into the exam, so there is no second "امتحن" control repeating it.
+    expect(find.text('امتحن'), findsNothing);
+
+    await tester.tap(find.text('تركيب الخلية'));
+    await tester.pumpAndSettle();
+    expect(find.text('عدد الأسئلة الكلي'), findsOneWidget);
   });
 
   // The wizard is the one screen holding data that exists nowhere else yet.
@@ -254,14 +254,15 @@ void main() {
   // system back gesture threw the whole entry away without asking, so a student
   // reaching for "go back one question" could lose a fully described paper.
   group('the exam wizard does not lose what has been typed', () {
-    Future<void> openWizard(WidgetTester tester) async {
-      await tester.pumpWidget(await bootApp(snapshot: overdueSnapshot()));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('مراجعة'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('امتحن').first);
-      await tester.pumpAndSettle();
-    }
+  Future<void> openWizard(WidgetTester tester) async {
+    await tester.pumpWidget(await bootApp(snapshot: overdueSnapshot()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('مراجعة'));
+    await tester.pumpAndSettle();
+    // The row is the exam route; there is no button inside it anymore.
+    await tester.tap(find.text('تركيب الخلية'));
+    await tester.pumpAndSettle();
+  }
 
     testWidgets('leaving with nothing typed just closes', (tester) async {
       await openWizard(tester);

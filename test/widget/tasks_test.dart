@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ather/app/app.dart';
 import 'package:ather/core/clock/clock.dart';
+import 'package:ather/core/l10n/generated/app_localizations.dart';
 import 'package:ather/core/widgets/ather_icons.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/data/repositories/drift_task_repository.dart';
@@ -33,6 +34,12 @@ String iso(Object value) => '\u2066$value\u2069';
 /// have passed the entire time a reorder was renumbering the wrong day's rows.
 void main() {
   late AppDatabase db;
+
+  /// The same strings the running app resolves to (Arabic is the app's
+  /// fallback locale). Newer keys are asserted through [lookupL] rather than
+  /// pasted literals so the test pins the wiring — the right key with the
+  /// right arguments — and stays honest wherever the copy itself is tuned.
+  final L l = lookupL(const Locale('ar'));
 
   /// A Wednesday, so the week it falls in has days on both sides of it.
   final DateTime now = DateTime(2026, 8, 5);
@@ -181,13 +188,52 @@ void main() {
     await tester.tap(find.text('أذاكر الباب الأول'));
     await tester.pumpAndSettle();
 
-    expect(find.text('أنجزت ${iso(1)} من ${iso(1)}'), findsOneWidget);
+    // One of one used to read in the same grey as zero of one; a finished
+    // day closes with the sentence instead of repeating its count.
+    expect(find.text(l.tasksDayDone(iso(1), iso(1))), findsOneWidget);
+    expect(find.text('أنجزت ${iso(1)} من ${iso(1)}'), findsNothing);
     expect((await tasksOn(tester, now)).single.done, isTrue);
 
-    // And it toggles back off, rather than being a one-way door.
+    // And it toggles back off, rather than being a one-way door: the line
+    // returns to being a plain count while anything is left.
     await tester.tap(find.text('أذاكر الباب الأول'));
     await tester.pumpAndSettle();
+    expect(find.text('أنجزت ${iso(0)} من ${iso(1)}'), findsOneWidget);
     expect((await tasksOn(tester, now)).single.done, isFalse);
+
+    await closeApp(tester);
+  });
+
+  testWidgets('a fully ticked day closes with a sentence', (tester) async {
+    phoneSized(tester);
+    await openTasks(tester);
+
+    await addTask(tester, 'الأولى');
+    await addTask(tester, 'التانية');
+
+    // Half done is still the plain count.
+    await tester.tap(find.text('الأولى'));
+    await tester.pumpAndSettle();
+    expect(find.text('أنجزت ${iso(1)} من ${iso(2)}'), findsOneWidget);
+    expect(find.text(l.tasksDayDone(iso(1), iso(2))), findsNothing);
+
+    // The last tick swaps the line for the closing sentence — same place,
+    // same style, nothing else on the screen moves.
+    await tester.tap(find.text('التانية'));
+    await tester.pumpAndSettle();
+    expect(find.text(l.tasksDayDone(iso(2), iso(2))), findsOneWidget);
+    expect(find.text('أنجزت ${iso(2)} من ${iso(2)}'), findsNothing);
+
+    // The closure belongs to the picked day, not to today: yesterday's list
+    // earns it on its own once every task there is ticked.
+    await tester.tap(day(tester, 'ثلاثاء ${iso(4)}'));
+    await tester.pumpAndSettle();
+    expect(find.text(l.tasksDayDone(iso(2), iso(2))), findsNothing);
+
+    await addTask(tester, 'مهمة امبارح');
+    await tester.tap(find.text('مهمة امبارح'));
+    await tester.pumpAndSettle();
+    expect(find.text(l.tasksDayDone(iso(1), iso(1))), findsOneWidget);
 
     await closeApp(tester);
   });

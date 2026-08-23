@@ -12,10 +12,11 @@ import '../../core/theme/mastery_palette.dart';
 import '../../core/widgets/animated_percentage.dart';
 import '../../core/widgets/ather_card.dart';
 import '../../core/widgets/ather_scaffold.dart';
-import '../../core/widgets/buttons.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/list_entrance.dart';
+import '../../core/widgets/status_chip.dart';
 import '../../domain/entities/study_snapshot.dart';
+import '../../domain/entities/subject.dart';
 import '../../domain/services/review_cycle_service.dart';
 import '../common/settings_button.dart';
 import '../common/subject_presentation.dart';
@@ -28,14 +29,37 @@ import '../providers/app_providers.dart';
 /// There is only one thing to do about a lesson in this list, and making the
 /// student pass through a detail screen to reach it is a step that exists for
 /// the app's benefit, not theirs.
-class ReviewCenterScreen extends ConsumerWidget {
+///
+/// One action, one target: because the whole card is that route, no row also
+/// carries an "امتحن" button repeating it (06-design #10) -- the dashboard's
+/// silent "التالي" card is this same rule honoured from the other side.
+class ReviewCenterScreen extends ConsumerStatefulWidget {
   const ReviewCenterScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ReviewCenterScreen> createState() =>
+      _ReviewCenterScreenState();
+}
+
+class _ReviewCenterScreenState extends ConsumerState<ReviewCenterScreen> {
+  /// Null means "كل المواد", read exactly as the analytics filter reads it.
+  int? _subjectFilter;
+
+  @override
+  Widget build(BuildContext context) {
     final l = L.of(context);
     final queue = ref.watch(reviewQueueProvider);
     final snapshot = ref.watch(snapshotValueProvider);
+
+    // Narrowing happens here, not in the provider: the tab badge, the
+    // notifications and every other reader of the queue must keep seeing all
+    // of it. A filter the student chose for one evening is not data.
+    final visible = _subjectFilter == null
+        ? queue
+        : <ReviewItem>[
+            for (final item in queue)
+              if (item.subjectId == _subjectFilter) item,
+          ];
 
     return AtherScreen(
       // A root screen: no back arrow, because there is nothing above it.
@@ -46,13 +70,31 @@ class ReviewCenterScreen extends ConsumerWidget {
       children: <Widget>[
         if (queue.isEmpty)
           // The success shape: green disc, congratulation, and deliberately no
-          // button. An empty review queue is a result, not a task.
+          // button. An empty review queue is a result, not a task -- and a
+          // "0 درس" counter above it would be counting a victory.
           EmptyState.success(title: l.reviewEmptyTitle, body: l.reviewEmptyBody)
-        else
+        else ...<Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.opticalInset,
+            ),
+            child: Text(
+              l.reviewWaitingHeader(iso(queue.length)),
+              style: context.text.groupHeading,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SubjectChips(
+            queue: queue,
+            snapshot: snapshot,
+            selected: _subjectFilter,
+            onSelect: (id) => setState(() => _subjectFilter = id),
+          ),
+          const SizedBox(height: AppSpacing.xl),
           // The same entrance as every other list, and nothing extra. It is
           // tempting to make an overdue row pulse or flash red; it is also the
           // fastest way to teach a student to stop looking at this screen.
-          for (final (i, item) in queue.indexed) ...<Widget>[
+          for (final (i, item) in visible.indexed) ...<Widget>[
             ListEntrance(
               index: i,
               id: item.lesson.id,
@@ -60,6 +102,7 @@ class ReviewCenterScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.listGap),
           ],
+        ],
       ],
     );
   }
@@ -74,6 +117,62 @@ String _crumb(L l, StudySnapshot snapshot, ReviewItem item) {
     if (subject != null) subject.label(l),
     if (chapter != null) chapter.name,
   ].join(' · ');
+}
+
+/// The analytics screen's filter row, given one job here: on the night before
+/// a subject's exam, cut twelve red rows down to that subject.
+///
+/// A chip exists only for a subject that actually has something waiting --
+/// names come from the snapshot via the `subjectId` each [ReviewItem] carries
+/// -- so picking one can never leave an empty list behind, and a subject with
+/// nothing to review never advertises itself.
+class _SubjectChips extends StatelessWidget {
+  const _SubjectChips({
+    required this.queue,
+    required this.snapshot,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final List<ReviewItem> queue;
+  final StudySnapshot snapshot;
+  final int? selected;
+  final ValueChanged<int?> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.of(context);
+
+    final waitingIds = <int>{for (final item in queue) item.subjectId};
+    final subjects = <Subject>[
+      // Dashboard order, not queue order: the chips should not reshuffle as
+      // lessons clear, for the same reason the tabs never do.
+      for (final subject in snapshot.activeSubjects)
+        if (waitingIds.contains(subject.id)) subject,
+    ];
+
+    return SizedBox(
+      height: 38,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: <Widget>[
+          AtherFilterChip(
+            label: l.analyticsAllSubjects,
+            selected: selected == null,
+            onTap: () => onSelect(null),
+          ),
+          for (final subject in subjects) ...<Widget>[
+            const SizedBox(width: AppSpacing.xs),
+            AtherFilterChip(
+              label: subject.label(l),
+              selected: selected == subject.id,
+              onTap: () => onSelect(subject.id),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _ReviewRow extends StatelessWidget {
@@ -149,12 +248,6 @@ class _ReviewRow extends StatelessWidget {
             hasData: true,
             color: color,
             style: AppTypography.rowNumberSmall,
-          ),
-          const SizedBox(width: AppSpacing.md),
-          PillButton(
-            label: l.actionExam,
-            onTap: () =>
-                context.push(Routes.exam(item.lesson.id, fromLesson: false)),
           ),
         ],
       ),

@@ -465,6 +465,88 @@ void main() {
     });
   });
 
+  group('discipline certificate', () {
+    // 10 days ago is safely inside the 30-day review cycle; 40 days ago is
+    // safely outside it yet still under the 45-day staleness threshold, so
+    // the overdue fixtures never double as stale-lesson scenery.
+    Future<StudySnapshot> disciplined(
+      int onTimeLessons,
+      int overdueLessons, {
+      int untouched = 0,
+    }) {
+      return buildSnapshot((repo) async {
+        final chapter = await repo.createChapter(
+          subjectId: 1,
+          name: 'باب',
+          at: kSeedInstant,
+        );
+        for (var i = 0; i < onTimeLessons; i++) {
+          final id = await repo.createLesson(
+            chapterId: chapter,
+            name: 'في معادها $i',
+            at: kSeedInstant,
+          );
+          await recordPercentage(repo, id, 80, daysBefore(kNow, 10));
+        }
+        for (var i = 0; i < overdueLessons; i++) {
+          final id = await repo.createLesson(
+            chapterId: chapter,
+            name: 'متأخر $i',
+            at: kSeedInstant,
+          );
+          await recordPercentage(repo, id, 70, daysBefore(kNow, 40));
+        }
+        for (var i = 0; i < untouched; i++) {
+          await repo.createLesson(
+            chapterId: chapter,
+            name: 'لم يُمتحن $i',
+            at: kSeedInstant,
+          );
+        }
+      });
+    }
+
+    test('certifies nine of eleven', () async {
+      final snap = await disciplined(9, 2);
+      final insight =
+          InsightsGenerator.generate(snap, kNow).whereType<DisciplineInsight>().single;
+
+      expect(insight.onTimeCount, 9);
+      expect(insight.examinedCount, 11);
+    });
+
+    test('stays quiet under five examined lessons', () async {
+      final snap = await disciplined(4, 0);
+
+      expect(
+        InsightsGenerator.generate(snap, kNow).whereType<DisciplineInsight>(),
+        isEmpty,
+        reason: 'a habit cannot be read off four papers',
+      );
+    });
+
+    test('never certifies a zero-discipline record', () async {
+      final snap = await disciplined(0, 8);
+
+      expect(
+        InsightsGenerator.generate(snap, kNow).whereType<DisciplineInsight>(),
+        isEmpty,
+        reason:
+            'praising zero on-time reviews would be a comforting lie -- '
+            'silence is the honest shape here',
+      );
+    });
+
+    test('unexamined lessons enter neither count', () async {
+      final snap = await disciplined(9, 2, untouched: 3);
+      final insight =
+          InsightsGenerator.generate(snap, kNow).whereType<DisciplineInsight>().single;
+
+      expect(insight.examinedCount, 11);
+      expect(insight.onTimeCount, 9);
+    });
+  });
+
   test('caps the number of insights shown', () async {
     final snap = await buildSnapshot((repo) async {
       for (var subject = 1; subject <= 4; subject++) {

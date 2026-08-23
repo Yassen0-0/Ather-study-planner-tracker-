@@ -1085,4 +1085,60 @@ class LEn extends L {
   @override
   String get authVerificationNotSent =>
       'Your account is ready. The confirmation link did not go out — you can send it from your profile.';
+
+  @override
+  String get examVerdictWeak =>
+      'Weak lesson -- it entered the 30-day review. Study again before then.';
+
+  @override
+  String get examVerdictPassed =>
+      'You passed, not mastered -- another exam is what raises it.';
+
+  @override
+  String examNeedToCross(String percentage) {
+    return 'To cross the line: score $percentage on the next one.';
+  }
+
+  @override
+  String comebackLine(String days, String count) {
+    return 'Back after $days days -- $count lessons came due meanwhile.';
+  }
+
+  @override
+  String lastHomeworkDated(String date) {
+    return 'Last homework ($date)';
+  }
+
+  @override
+  String get checklistAllDone => 'Studied end to end -- prove it with an exam.';
+
+  @override
+  String tasksDayDone(String done, String total) {
+    return '$done of $total done -- your day is complete.';
+  }
+
+  @override
+  String reviewWaitingHeader(String count) {
+    return 'Review lessons waiting for you: $count';
+  }
+
+  @override
+  String insightDiscipline(String onTime, String examined) {
+    return 'You made $onTime of $examined reviews on time.';
+  }
+
+  @override
+  String purgeCountsLine(
+    String subjects,
+    String chapters,
+    String lessons,
+    String exams,
+  ) {
+    return '$subjects subjects . $chapters chapters . $lessons lessons . $exams exams';
+  }
+
+  @override
+  String restoreCopyCounts(String chapters, String exams) {
+    return 'Cloud copy: $chapters chapters, $exams exams';
+  }
 }

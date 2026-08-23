@@ -328,6 +328,95 @@ void main() {
     });
   });
 
+  // P3-01: "how much do I need next time?" -- the mastery formula inverted.
+  // The answer must be read from the recorded exams' plain mean, never from a
+  // displayed mastery figure: at n > 1 the displayed figure is order-dependent
+  // and no inverse of it exists.
+  group('scoreNeededToCross', () {
+    test('all-zero history demands a perfect paper and says exactly that', () {
+      expect(MasteryCalculator.scoreNeededToCross(meanOfExisting: 0), 100);
+    });
+
+    test('mean 90 -> 62: rounding down would promise a crossing that fails', () {
+      // (70 - 0.3*90)/0.7 = 61.428... -> 62.
+      final needed = MasteryCalculator.scoreNeededToCross(meanOfExisting: 90);
+      expect(needed, 62);
+
+      // Why up, not nearest: 61 is nearer, but sat against this history it
+      // lands at 69.7 -- under the line. The promised score must cross once
+      // sat; 62 does.
+      expect(61 * kRecentWeight + 90 * kHistoryWeight, lessThan(70));
+      expect(
+        needed! * kRecentWeight + 90 * kHistoryWeight,
+        greaterThanOrEqualTo(kChapterMasteryThreshold),
+      );
+    });
+
+    test('audit example: mean 60 -> 75 (74.28 rounds up)', () {
+      expect(MasteryCalculator.scoreNeededToCross(meanOfExisting: 60), 75);
+    });
+
+    test('a strong history lowers the ask but never waives the next paper', () {
+      // The inverse always answers for every mean in [0, 100] -- a strong past
+      // pulls the requirement down toward zero, it does not exempt the paper.
+      // Sitting exactly on the line: (70 - 0.3*70)/0.7 = 49/0.7 = 70.
+      expect(MasteryCalculator.scoreNeededToCross(meanOfExisting: 70), 70);
+      // A perfect history still names ceil(40/.7): (70 - 0.3*100)/0.7 =
+      // 57.14 -> 58 -- and 58*0.7 + 100*0.3 holds the line at 70.6.
+      expect(MasteryCalculator.scoreNeededToCross(meanOfExisting: 100), 58);
+      expect(58 * kRecentWeight + 100 * kHistoryWeight,
+          greaterThanOrEqualTo(kChapterMasteryThreshold));
+    });
+
+    test(
+      'same displayed mastery from different records asks different scores',
+      () {
+        // {0 then 100}: displayed 70 (newest 100, previous mean 0). The plain
+        // mean of the records is 50, so the next paper needs 79.
+        final zeroThenHundred = <ExamEntry>[
+          exam(id: 1, percentage: 0, day: 1),
+          exam(id: 2, percentage: 100, day: 10),
+        ];
+        // {100 then 0}: also displays 70 by the formula's symmetry in the pair,
+        // but the records average 50 either way here; use an asymmetric trio to
+        // prove the point harder: {0, 40, 100} displays differently per order
+        // while its mean stays fixed.
+        double meanOf(List<ExamEntry> exams) =>
+            exams.fold<double>(0, (s, e) => s + e.percentage) / exams.length;
+
+        final needed =
+            MasteryCalculator.scoreNeededToCross(meanOfExisting: meanOf(zeroThenHundred));
+        expect(meanOf(zeroThenHundred), 50);
+        // 0.7x + 0.3*50 = 70 -> x = 78.57 -> 79.
+        expect(needed, 79);
+      },
+    );
+
+    test('the promised score crosses for every history below the line', () {
+      for (var m = 0.0; m < 70; m += 3.5) {
+        final needed = MasteryCalculator.scoreNeededToCross(meanOfExisting: m);
+        expect(needed, isNotNull, reason: 'mean $m');
+        final achieved = needed! * kRecentWeight + m * kHistoryWeight;
+        expect(
+          achieved,
+          greaterThanOrEqualTo(kChapterMasteryThreshold),
+          reason: 'mean $m: promising $needed% only reaches $achieved',
+        );
+        expect(needed, lessThanOrEqualTo(100), reason: 'mean $m');
+      }
+    });
+
+    test('defaults to the chapter mastery threshold', () {
+      expect(
+        MasteryCalculator.scoreNeededToCross(meanOfExisting: 0),
+        MasteryCalculator.scoreNeededToCross(
+          meanOfExisting: 0,
+          threshold: kChapterMasteryThreshold,
+        ),
+      );
+    });
+  });
+
   group('averageExamScore', () {
     test('is an unweighted mean, unlike mastery', () async {
       final snap = await buildSnapshot((repo) async {

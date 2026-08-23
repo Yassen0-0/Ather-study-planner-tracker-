@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/router.dart';
 import '../../core/l10n/formatting.dart';
@@ -20,6 +23,9 @@ import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/mastery_bar.dart';
 import '../../core/widgets/ather_toast.dart';
 import '../../core/widgets/pressable.dart';
+import '../../domain/entities/mastery.dart';
+import '../../domain/entities/study_snapshot.dart';
+import '../../domain/services/review_cycle_service.dart';
 import '../../domain/services/summaries.dart';
 import '../common/prompts.dart';
 import '../common/settings_button.dart';
@@ -37,11 +43,93 @@ import '../providers/summary_providers.dart';
 /// three counts, then the four subjects, then a single suggested action. The
 /// student should be able to answer "where am I and what do I do now" without
 /// scrolling.
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  static const String _kLastOpenDayKey = 'last_open_day';
+
+  ProviderSubscription<AsyncValue<StudySnapshot>>? _snapshotSub;
+  late final SharedPreferences _preferences;
+
+  /// The stored day is read once here; the decision waits for the snapshot,
+  /// which may still be loading when the first frame builds.
+  String? _storedOpenDay;
+  bool _comebackResolved = false;
+  int? _comebackDays;
+  int? _comebackCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _preferences = ref.read(sharedPreferencesProvider);
+    _storedOpenDay = _preferences.getString(_kLastOpenDayKey);
+    // The snapshot may still be loading on this first frame; the decision
+    // waits for real data rather than counting against an empty curriculum.
+    _snapshotSub = ref.listenManual(
+      snapshotProvider,
+      (AsyncValue<StudySnapshot>? _, AsyncValue<StudySnapshot> next) {
+        if (next.isLoading || _comebackResolved) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _resolveComeback(next.value);
+        });
+      },
+      fireImmediately: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    // Idempotent in riverpod 3.4.2 (`if (_closed) return`), and the element
+    // closes whatever remains on unmount.
+    _snapshotSub?.close();
+    super.dispose();
+  }
+
+  void _resolveComeback(StudySnapshot? snapshot) {
+    if (_comebackResolved || !mounted) return;
+    _comebackResolved = true;
+
+    final now = ref.read(nowValueProvider);
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Rewritten on every open, shown or not: the next gap is measured from
+    // the day before this one.
+    unawaited(_preferences.setString(_kLastOpenDayKey, today.toIso8601String()));
+
+    final storedDay = DateTime.tryParse(_storedOpenDay ?? '');
+    if (snapshot == null || storedDay == null) return;
+
+    final gap = ReviewCycleService.calendarDaysBetween(storedDay, today);
+    if (gap < 2) return;
+
+    var cameDue = 0;
+    for (final lesson in snapshot.lessons) {
+      final last = lesson.lastReviewedAt;
+      if (last == null) continue;
+      // Overdue now, but still inside its cycle on the day the app was last
+      // opened -- so the proof expired during the absence itself, and the
+      // red the student is looking at accumulated while they were away.
+      if (!ReviewCycleService.needsReview(lesson, now)) continue;
+      if (ReviewCycleService.calendarDaysBetween(last, storedDay) >=
+          kReviewCycleDays) {
+        continue;
+      }
+      cameDue++;
+    }
+
+    setState(() {
+      _comebackDays = gap;
+      _comebackCount = cameDue;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l = L.of(context);
     final dashboard = ref.watch(dashboardProvider);
     final stats = ref.watch(homeStatsProvider);
@@ -72,6 +160,16 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       children: <Widget>[
+        // One line of fact under the title, once per absence. It explains the
+        // red the student is about to scroll into rather than greeting or
+        // scolding them, and it is gone the next time the app opens.
+        if (_comebackDays != null && !dashboard.isEmpty) ...<Widget>[
+          Text(
+            l.comebackLine(iso(_comebackDays!), iso(_comebackCount ?? 0)),
+            style: context.text.secondary,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         // A brand-new student used to land on "—", three zeroes and four
         // subject rows, with the actual first step -- open a subject, add a
         // chapter, add a lesson, sit an exam -- written down nowhere. It is the
@@ -444,10 +542,15 @@ class _AddSubjectButton extends ConsumerWidget {
       hint: l.subjectNameHint,
     );
     if (name == null || !context.mounted) return;
-    await runWrite(
-      context,
-      () => ref.read(studyRepositoryProvider).createSubject(name: name),
-    );
+    var newId = 0;
+    final ok = await runWrite(context, () async {
+      newId = await ref
+          .read(studyRepositoryProvider)
+          .createSubject(name: name);
+    });
+    if (ok && context.mounted) {
+      context.push(Routes.subject(newId));
+    }
   }
 }
 
@@ -538,14 +641,24 @@ class _SubjectRow extends StatelessWidget {
   }
 }
 
-class _NextCard extends StatelessWidget {
+class _NextCard extends ConsumerWidget {
   const _NextCard({required this.target});
 
   final NextTarget target;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = L.of(context);
+    final snapshot = ref.watch(snapshotValueProvider);
+    // "{subject} · {chapter}" -- a name like "الوحدة الأولى" exists in more
+    // than one subject, so the card names where this lesson lives before it
+    // asks for an exam. Same words the review centre puts under its rows.
+    final subject = snapshot.subjectById(target.subjectId);
+    final chapter = snapshot.chapterById(target.chapterId);
+    final crumb = <String>[
+      if (subject != null) subject.label(l),
+      if (chapter != null) chapter.name,
+    ].join(' · ');
 
     return AtherCard(
       child: Row(
@@ -570,6 +683,13 @@ class _NextCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.rowTitle,
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  crumb,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.text.small,
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(

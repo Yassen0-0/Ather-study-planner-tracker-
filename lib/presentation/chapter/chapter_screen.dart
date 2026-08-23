@@ -35,12 +35,25 @@ import '../providers/summary_providers.dart';
 /// in all three of its states -- a grey button that does nothing when pressed
 /// teaches the student nothing, so the un-earned state opens a sheet naming
 /// exactly which lessons are holding the chapter back.
-class ChapterScreen extends ConsumerWidget {
+class ChapterScreen extends ConsumerStatefulWidget {
   const ChapterScreen({super.key, required this.chapterId});
 
   final int chapterId;
 
-  Future<void> _addLesson(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<ChapterScreen> createState() => _ChapterScreenState();
+}
+
+class _ChapterScreenState extends ConsumerState<ChapterScreen> {
+  /// True while the mastery write is in flight: the gate button shows its
+  /// ring and stops taking taps. The write, the celebration and the report it
+  /// earns are one event per tap -- a second tap landing inside the await used
+  /// to stack a second celebration over the same closure (audit C2).
+  bool _closing = false;
+
+  int get chapterId => widget.chapterId;
+
+  Future<void> _addLesson(BuildContext context) async {
     final l = L.of(context);
     final name = await showNamePrompt(
       context,
@@ -60,11 +73,7 @@ class ChapterScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _edit(
-    BuildContext context,
-    WidgetRef ref,
-    ChapterSummary summary,
-  ) async {
+  Future<void> _edit(BuildContext context, ChapterSummary summary) async {
     final l = L.of(context);
     await showEditSheet(
       context,
@@ -104,16 +113,20 @@ class ChapterScreen extends ConsumerWidget {
 
   Future<void> _onGateTap(
     BuildContext context,
-    WidgetRef ref,
     ChapterSummary summary,
   ) async {
+    // Belt for the suspenders of PrimaryButton.busy: any activation that
+    // slips past the disabled tap -- a queued gesture, an accessibility
+    // action -- arrives while the write is still the one thing happening.
+    if (_closing) return;
+
     if (summary.isMastered) {
       context.push(Routes.chapterReport(chapterId));
       return;
     }
 
     if (!summary.canMaster) {
-      await _showNotReadySheet(context, ref);
+      await _showNotReadySheet(context);
       return;
     }
 
@@ -121,6 +134,7 @@ class ChapterScreen extends ConsumerWidget {
     // the overlay is up, the student still mastered the chapter. And if the
     // write fails there is nothing to celebrate -- a green screen over a chapter
     // the database never closed out is the worst possible lie to tell here.
+    setState(() => _closing = true);
     final ok = await runWrite(
       context,
       () => ref
@@ -130,10 +144,16 @@ class ChapterScreen extends ConsumerWidget {
             at: ref.read(clockProvider).now(),
           ),
     );
-    if (!ok || !context.mounted) return;
-    await _celebrate(context, summary.mastery);
-    if (!context.mounted) return;
-    context.push(Routes.chapterReport(chapterId));
+    if (!ok) {
+      // The tap did not land; give the student their button back to try again.
+      if (mounted) setState(() => _closing = false);
+      return;
+    }
+    if (!mounted) return;
+    await _celebrate(this.context, summary.mastery);
+    if (!mounted) return;
+    setState(() => _closing = false);
+    this.context.push(Routes.chapterReport(chapterId));
   }
 
   Future<void> _celebrate(BuildContext context, double percentage) {
@@ -151,7 +171,7 @@ class ChapterScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showNotReadySheet(BuildContext context, WidgetRef ref) {
+  Future<void> _showNotReadySheet(BuildContext context) {
     final l = L.of(context);
     final blockers = ReviewCycleService.chapterBlockers(
       ref.read(snapshotValueProvider),
@@ -235,7 +255,7 @@ class ChapterScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = L.of(context);
     final summary = ref.watch(chapterSummaryProvider(chapterId));
 
@@ -256,7 +276,7 @@ class ChapterScreen extends ConsumerWidget {
         onBack: () => context.pop(),
         actions: <Widget>[
           CircleHeaderButton(
-            onTap: () => _edit(context, ref, summary),
+            onTap: () => _edit(context, summary),
             semanticLabel: l.commonEdit,
             child: const AtherIcon(AtherGlyph.edit, size: 17),
           ),
@@ -267,7 +287,8 @@ class ChapterScreen extends ConsumerWidget {
         const SizedBox(height: AppSpacing.md),
         _GateButton(
           summary: summary,
-          onTap: () => _onGateTap(context, ref, summary),
+          busy: _closing,
+          onTap: () => _onGateTap(context, summary),
         ),
         const SizedBox(height: AppSpacing.xxl),
         if (summary.lessons.isEmpty)
@@ -275,7 +296,7 @@ class ChapterScreen extends ConsumerWidget {
             title: l.noLessonsYet,
             action: DashedAddButton(
               label: l.addLesson,
-              onTap: () => _addLesson(context, ref),
+              onTap: () => _addLesson(context),
             ),
           )
         else ...<Widget>[
@@ -288,7 +309,7 @@ class ChapterScreen extends ConsumerWidget {
           ),
           DashedAddButton(
             label: l.addLesson,
-            onTap: () => _addLesson(context, ref),
+            onTap: () => _addLesson(context),
           ),
         ],
       ],
@@ -406,9 +427,18 @@ class _ChapterSummaryCard extends StatelessWidget {
 }
 
 class _GateButton extends StatelessWidget {
-  const _GateButton({required this.summary, required this.onTap});
+  const _GateButton({
+    required this.summary,
+    required this.busy,
+    required this.onTap,
+  });
 
   final ChapterSummary summary;
+
+  /// A mastery write in flight: ring instead of label, taps off. Two taps
+  /// during the write are still one closure, so they must be one celebration.
+  final bool busy;
+
   final VoidCallback onTap;
 
   @override
@@ -424,7 +454,12 @@ class _GateButton extends StatelessWidget {
       _ => (l.notReadyGate, PrimaryButtonTone.unearned),
     };
 
-    return PrimaryButton(label: label, tone: tone, onTap: onTap);
+    return PrimaryButton(
+      label: label,
+      tone: tone,
+      onTap: onTap,
+      busy: busy,
+    );
   }
 }
 
