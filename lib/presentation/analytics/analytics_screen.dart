@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+import 'dart:ui' show PathMetric;
+
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +16,9 @@ import '../../core/theme/mastery_palette.dart';
 import '../../core/widgets/ather_card.dart';
 import '../../core/widgets/ather_scaffold.dart';
 import '../../core/widgets/mastery_bar.dart';
+import '../../core/widgets/pop_in.dart';
 import '../../core/widgets/pressable.dart';
+import '../../core/widgets/reduced_motion.dart';
 import '../../core/widgets/status_chip.dart';
 import '../../domain/services/insights_generator.dart';
 import '../../domain/services/summaries.dart';
@@ -103,13 +108,25 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         // The one card that deliberately ignores the filter: it exists to
         // compare the subjects against each other, and a comparison of one
         // subject with itself is not a chart.
-        _SubjectBarsCard(subjects: subjects),
+        //
+        // The KEY still carries the filter: SP-05 (AN-01) pins the column
+        // growth to "first draw + every filter change", so a new filter value
+        // remounts the card and its animator restarts cleanly from zero. The
+        // data inside is unchanged by design — only the clock replays.
+        _SubjectBarsCard(key: ValueKey(_subjectFilter), subjects: subjects),
         const SizedBox(height: AppSpacing.xl),
         // Only when at least one subject on screen has a line to draw. A card
         // of empty axes is worse than no card: it reads as a measurement that
         // came back flat rather than one not taken yet.
+        //
+        // Same keying rule as the bars card above, per SP-06 (AN-02): the
+        // trajectory draws on screen entry and filter change only — never on
+        // scroll, never on unrelated rebuilds. A data-only change re-measures
+        // the cached geometry without replaying the draw (see
+        // [_TrajectoryChart.didUpdateWidget]).
         if (visibleTrajectories.any((t) => t.hasTrend)) ...<Widget>[
           _TrajectoryCard(
+            key: ValueKey(_subjectFilter),
             trajectories: visibleTrajectories,
             subjects: filtered,
           ),
@@ -288,14 +305,140 @@ class _FilterRow extends StatelessWidget {
   }
 }
 
-class _SubjectBarsCard extends StatelessWidget {
-  const _SubjectBarsCard({required this.subjects});
+/// "اتقانك حسب المادة" — the four vertical columns, grown in (AN-01).
+///
+/// **DOCUMENTED LAYOUT EXCEPTION** (animation/06_motion_specs.md SP-05, against
+/// the standing "no layout animation" rule): the growth animates
+/// `heightFactor`, which is layout. It is allowed here exactly where the spec
+/// allows it — the columns grow inside ONE fixed-size card (the 150px-tall box
+/// below never changes height), outside any synchronized scroll (this screen is
+/// a plain column of cards; nothing scrolls in lockstep with this one), and no
+/// row is added, removed or re-measured: the fill grows into space already
+/// reserved by its `Expanded`. The cost of every frame is confined to a relayout
+/// of this subtree. Same class of exception as the collapse-row page.
+class _SubjectBarsCard extends StatefulWidget {
+  const _SubjectBarsCard({super.key, required this.subjects});
 
   final List<SubjectSummary> subjects;
 
   @override
+  State<_SubjectBarsCard> createState() => _SubjectBarsCardState();
+}
+
+class _SubjectBarsCardState extends State<_SubjectBarsCard>
+    with SingleTickerProviderStateMixin {
+  // -- SP-05 numbers, pinned for THIS screen ---------------------------------
+  //
+  // A spec-pinned override of the motion tokens, declared here as documented
+  // local constants rather than added to [AppMotion]: the register's stagger
+  // token is 40ms capped at 6 rows and its value tween is 600ms, but SP-05
+  // pins this chart to a tighter choreography — 450ms easeOutCubic growth,
+  // stagger 30ms capped at the first 4 columns (columns past the cap start
+  // settled), and each column's percentage counting over the same 450ms span,
+  // starting 60ms after its own column begins.
+  static const double _growMs = 450;
+  static const double _staggerMs = 30;
+  static const int _staggerCap = 4;
+  static const double _countDelayMs = 60;
+
+  late final AnimationController _controller;
+
+  /// Whether the clock has been started. Held back until there is at least one
+  /// column to draw: an empty dashboard snapshot must not burn the timeline
+  /// before the real data lands (the chart's first draw is the trigger).
+  bool _launched = false;
+
+  /// Columns that actually animate: at most [_staggerCap]; anything past the
+  /// cap starts settled, per the spec.
+  static int _animCount(int n) => math.min(n, _staggerCap);
+
+  /// Total timeline for [n] columns: last stagger slot + one growth window +
+  /// the count's 60ms tail past its own column.
+  static double _totalMs(int n) {
+    final k = _animCount(n);
+    if (k == 0) return 0;
+    return _growMs + _staggerMs * (k - 1) + _countDelayMs;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: _totalMs(subjects.length).round()),
+    );
+  }
+
+  List<SubjectSummary> get subjects => widget.subjects;
+
+  @override
+  void didUpdateWidget(_SubjectBarsCard old) {
+    super.didUpdateWidget(old);
+    // The card always receives ALL subjects regardless of filter (that is its
+    // point), so a length change means the underlying data changed. Re-time the
+    // controller; replaying remains the parent key's job (entry + filter only).
+    _controller.duration = Duration(milliseconds: _totalMs(subjects.length).round());
+  }
+
+  void _launchOnce() {
+    if (_launched || subjects.isEmpty) return;
+    _launched = true;
+    // Reduce-motion ⇒ final frames instantly; nothing ever runs.
+    if (prefersReducedMotion(context)) {
+      _controller.value = 1;
+      return;
+    }
+    _controller.forward();
+  }
+
+  /// Growth and count progress `(grow, count)` for column [i] at the current
+  /// controller position, or null when the column is settled (before its
+  /// stagger slot it has not started but renders settled-at-zero anyway via
+  /// pulse 0 — null means *fully settled*: past-cap columns, reduce-motion,
+  /// finished timeline).
+  ///
+  /// Windows are mapped by hand off the one controller instead of per-column
+  /// `CurvedAnimation`s: one clock guarantees the number cannot drift from its
+  /// bar, and `pumpAndSettle` settles the whole card together.
+  (double, double)? _pulsesAt(int i, bool reduced) {
+    if (reduced || i >= _staggerCap) return null;
+    if (_controller.status == AnimationStatus.completed) return null;
+    final totalMs = _totalMs(subjects.length);
+    final tMs = _controller.value * totalMs;
+
+    double window(double beginMs, double endMs) {
+      if (tMs <= beginMs) return 0;
+      if (tMs >= endMs) return 1;
+      return Curves.easeOutCubic.transform((tMs - beginMs) / (endMs - beginMs));
+    }
+
+    final begin = i * _staggerMs;
+    return (
+      window(begin, begin + _growMs),
+      window(begin + _countDelayMs, begin + _countDelayMs + _growMs),
+    );
+  }
+
+  /// One column of the row: its data plus its own windows on the card clock.
+  Widget _column(L l, int i, SubjectSummary subject, bool reduced) {
+    final pulses = _pulsesAt(i, reduced);
+    return Expanded(
+      child: _VerticalBar(
+        label: subject.subject.label(l),
+        mastery: subject.mastery,
+        hasData: subject.hasAnyExam,
+        needsReview: subject.needsReview,
+        growPulse: pulses?.$1,
+        countPulse: pulses?.$2,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    _launchOnce();
     final l = L.of(context);
+    final reduced = prefersReducedMotion(context);
 
     return AtherCard(
       padding: AppSpacing.cardPadding,
@@ -304,29 +447,27 @@ class _SubjectBarsCard extends StatelessWidget {
         children: <Widget>[
           Text(l.analyticsMasteryBySubject, style: AppTypography.cardTitle),
           const SizedBox(height: AppSpacing.xl),
-          // Forced LTR so the four subjects keep the same left-to-right order
-          // as every other chart, and a comparison never silently mirrors.
-          Ltr(
-            child: SizedBox(
-              height: 150,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
-                  for (final subject in subjects) ...<Widget>[
-                    Expanded(
-                      child: _VerticalBar(
-                        label: subject.subject.label(l),
-                        mastery: subject.mastery,
-                        hasData: subject.hasAnyExam,
-                        needsReview: subject.needsReview,
-                      ),
-                    ),
-                    if (subject != subjects.last)
-                      const SizedBox(width: AppSpacing.xl),
-                  ],
-                ],
-              ),
-            ),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              // Forced LTR so the four subjects keep the same left-to-right order
+              // as every other chart, and a comparison never silently mirrors.
+              return Ltr(
+                child: SizedBox(
+                  height: 150,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      for (final (i, subject) in subjects.indexed) ...<Widget>[
+                        _column(l, i, subject, reduced),
+                        if (i != subjects.length - 1)
+                          const SizedBox(width: AppSpacing.xl),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -334,18 +475,28 @@ class _SubjectBarsCard extends StatelessWidget {
   }
 }
 
+/// One column of [_SubjectBarsCard].
+///
+/// [growPulse]/[countPulse] are that column's own windows on the card's single
+/// clock (SP-05), 0..1; null means settled — the fraction stands exactly where
+/// it stood before this animation existed, so the end state is unchanged.
 class _VerticalBar extends StatelessWidget {
   const _VerticalBar({
     required this.label,
     required this.mastery,
     required this.hasData,
     required this.needsReview,
+    this.growPulse,
+    this.countPulse,
   });
 
   final String label;
   final double mastery;
   final bool hasData;
   final bool needsReview;
+
+  final double? growPulse;
+  final double? countPulse;
 
   @override
   Widget build(BuildContext context) {
@@ -359,11 +510,29 @@ class _VerticalBar extends StatelessWidget {
     // printed above it stays plain text. See MasteryPalette.fill.
     final fill = MasteryPalette.fill(context.colors, color);
 
+    final fraction =
+        MasteryPalette.barFraction(percentage: mastery, hasData: hasData) *
+        (growPulse ?? 1);
+
+    // The number counts up inside its own column's window (+60ms, same 450ms
+    // span — SP-05), reusing `percentLabel` so the settled string is
+    // byte-identical to the raw Text this replaces. Colour is applied, never
+    // tweened (the AnimatedPercentage rule); "—" is not a number and is never
+    // counted to or from.
+    final String percentText;
+    if (!hasData) {
+      percentText = percentLabel(mastery, hasData: false);
+    } else if (countPulse != null && countPulse! < 1) {
+      percentText = percentLabel(mastery * countPulse!, hasData: true);
+    } else {
+      percentText = percentLabel(mastery, hasData: true);
+    }
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: <Widget>[
         Text(
-          percentLabel(mastery, hasData: hasData),
+          percentText,
           style: AppTypography.chartValue.copyWith(color: _verdictText(context.colors, color)),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -379,12 +548,11 @@ class _VerticalBar extends StatelessWidget {
               child: Align(
                 alignment: Alignment.bottomCenter,
                 // One minimum-visibility rule for every bar in the app, not a
-                // private clamp: see [MasteryPalette.barFraction].
+                // private clamp: see [MasteryPalette.barFraction]. Multiplied
+                // here by the growth pulse only — at settle the product is the
+                // exact fraction every other screen shows.
                 child: FractionallySizedBox(
-                  heightFactor: MasteryPalette.barFraction(
-                    percentage: mastery,
-                    hasData: hasData,
-                  ),
+                  heightFactor: fraction,
                   child: Container(
                     decoration: BoxDecoration(
                       color: fill,
@@ -606,7 +774,11 @@ class _DisciplineCard extends StatelessWidget {
 /// the days the student sat exams -- so the right-hand end of a line and that
 /// subject bar are the same number, and a student who checks finds they agree.
 class _TrajectoryCard extends StatelessWidget {
-  const _TrajectoryCard({required this.trajectories, required this.subjects});
+  const _TrajectoryCard({
+    super.key,
+    required this.trajectories,
+    required this.subjects,
+  });
 
   final List<SubjectTrajectory> trajectories;
   final List<SubjectSummary> subjects;
@@ -687,22 +859,12 @@ class _TrajectoryRow extends StatelessWidget {
         ),
         if (trajectory.hasTrend) ...<Widget>[
           const SizedBox(height: AppSpacing.md),
-          // Forced LTR: time runs left to right in both languages, and a
-          // mirrored trajectory would show a rising student falling.
-          Ltr(
-            child: SizedBox(
-              height: 56,
-              width: double.infinity,
-              child: CustomPaint(
-                painter: _TrajectoryPainter(
-                  points: <double>[
-                    for (final p in trajectory.points) p.mastery,
-                  ],
-                  line: colors.accent,
-                  track: colors.fill,
-                ),
-              ),
-            ),
+          _TrajectoryChart(
+            points: <double>[
+              for (final p in trajectory.points) p.mastery,
+            ],
+            line: colors.accent,
+            track: colors.fill,
           ),
         ],
       ],
@@ -710,14 +872,18 @@ class _TrajectoryRow extends StatelessWidget {
   }
 }
 
-/// Draws the line over a fixed 0..100 range.
+/// One trajectory line, drawn on (SP-06 / AN-02).
 ///
-/// **Fixed, not fitted to the data.** An axis scaled to the values makes a
-/// wobble between 74% and 76% look like a cliff, which is the commonest way a
-/// chart lies. On a 0..100 axis those two readings look like what they are:
-/// almost no change at all.
-class _TrajectoryPainter extends CustomPainter {
-  const _TrajectoryPainter({
+/// **Documented scope of movement:** the line draws on screen entry and on
+/// filter change only — the whole trajectory card is keyed by the filter
+/// upstream, and nothing here is scroll-linked. A data-only change re-measures
+/// the cached geometry so the shape stays true, but does not replay the draw.
+///
+/// The LTR pin and the fixed 0..100 axis live with [_geometryFor]; the reveal
+/// timeline lives in the state: 400ms easeOutCubic `PathMetric.extractPath`,
+/// then the endpoint dot enters with [PopIn] once its line exists.
+class _TrajectoryChart extends StatefulWidget {
+  const _TrajectoryChart({
     required this.points,
     required this.line,
     required this.track,
@@ -728,8 +894,97 @@ class _TrajectoryPainter extends CustomPainter {
   final Color track;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    if (points.length < 2) return;
+  State<_TrajectoryChart> createState() => _TrajectoryChartState();
+}
+
+class _TrajectoryChartState extends State<_TrajectoryChart>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  // -- SP-06 numbers, pinned for THIS chart ----------------------------------
+  //
+  // A spec-pinned override declared as a documented local constant: the draw-on
+  // runs 400ms easeOutCubic — between [AppMotion.segment] (250ms) and
+  // [AppMotion.value] (600ms), deliberately its own beat — then the endpoint
+  // dot pops for the standard [AppMotion.pop] through [PopIn].
+  static const Duration _draw = Duration(milliseconds: 400);
+
+  /// Test handle for the endpoint dot: its presence is what proves the
+  /// sequence (line first, dot after) completed in either direction.
+  static const ValueKey<String> _endpointKey = ValueKey('trajectory-endpoint');
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _draw,
+  )
+    ..addStatusListener((status) {
+      // The dot mounts only once its line is fully drawn: it enters, it does
+      // not ride the line's tail. One-shot — `completed` fires exactly once.
+      if (status == AnimationStatus.completed && mounted) {
+        setState(() => _dotShown = true);
+      }
+    });
+
+  bool _launched = false;
+  bool _dotShown = false;
+
+  /// The measured path and its contour length — computed outside paint and
+  /// cached (SP-06). Invalidated by [didChangeMetrics], a data change, or a
+  /// size change; rebuilt lazily at layout time.
+  _TrajectoryGeometry? _geometry;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    // Rotation, split-screen, window resize: the cached geometry was measured
+    // against the old canvas. Drop it and re-measure on the next layout (SP-06:
+    // metrics recomputed on didChangeMetrics).
+    setState(() => _geometry = null);
+  }
+
+  @override
+  void didUpdateWidget(_TrajectoryChart old) {
+    super.didUpdateWidget(old);
+    // Data change: re-measure so the shape stays honest — but do NOT restart
+    // the clock. The draw belongs to entry and filter change only; if the line
+    // had already finished, the new shape appears fully drawn.
+    if (!listEquals(old.points, widget.points)) _geometry = null;
+  }
+
+  void _launchOnce() {
+    if (_launched || widget.points.length < 2) return;
+    _launched = true;
+    // Reduce-motion ⇒ final frames instantly: full line, dot standing.
+    if (prefersReducedMotion(context)) {
+      _controller.value = 1;
+      _dotShown = true;
+      return;
+    }
+    _controller.forward();
+  }
+
+  /// Builds the line over a fixed 0..100 range, measuring once per canvas.
+  ///
+  /// **Fixed, not fitted to the data.** An axis scaled to the values makes a
+  /// wobble between 74% and 76% look like a cliff, which is the commonest way a
+  /// chart lies. On a 0..100 axis those two readings look like what they are:
+  /// almost no change at all.
+  _TrajectoryGeometry? _geometryFor(Size size) {
+    final cached = _geometry;
+    if (cached != null && cached.size == size) return cached;
+    if (widget.points.length < 2 || size.width <= 0 || size.height <= 0) {
+      return null;
+    }
 
     const strokeWidth = 2.0;
     // Inset by half the stroke, so a reading of 0 or 100 is not sliced in half
@@ -740,20 +995,147 @@ class _TrajectoryPainter extends CustomPainter {
     double y(double mastery) =>
         top + (1 - mastery.clamp(0, 100) / 100) * usableHeight;
 
+    final step = size.width / (widget.points.length - 1);
+    final path = Path()..moveTo(0, y(widget.points.first));
+    for (var i = 1; i < widget.points.length; i++) {
+      path.lineTo(i * step, y(widget.points[i]));
+    }
+
+    final metric = path.computeMetrics().single;
+    return _geometry = _TrajectoryGeometry(
+      size: size,
+      metric: metric,
+      // Same endpoint the old painter circled: centre at
+      // `(size.width - strokeWidth, y(points.last))`, radius 3 — pixel-identical.
+      lastPoint: Offset(size.width - strokeWidth, y(widget.points.last)),
+      dotRadius: 3,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _launchOnce();
+    final reduced = prefersReducedMotion(context);
+
+    // Forced LTR: time runs left to right in both languages, and a mirrored
+    // trajectory would show a rising student falling. The surrounding text
+    // above stays RTL-correct; only this canvas is pinned.
+    return Ltr(
+      child: SizedBox(
+        height: 56,
+        width: double.infinity,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final geometry = _geometryFor(
+                  Size(constraints.maxWidth, constraints.maxHeight),
+                );
+                final showDot =
+                    geometry != null && (reduced || _dotShown);
+
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: <Widget>[
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _TrajectoryRevealPainter(
+                          geometry: geometry,
+                          t: reduced
+                              ? 1.0
+                              : Curves.easeOutCubic.transform(_controller.value),
+                          line: widget.line,
+                          track: widget.track,
+                        ),
+                      ),
+                    ),
+                    // The newest reading, marked: it is the one the subject bar
+                    // above agrees with, and the one the student is actually
+                    // being told about. It enters with [PopIn]'s standard
+                    // scale+fade once the line has finished drawing (or
+                    // instantly under reduced motion); positioned so the
+                    // settled pixels match the painted circle this replaced
+                    // exactly.
+                    if (showDot)
+                      Positioned(
+                        left: geometry.lastPoint.dx - geometry.dotRadius,
+                        top: geometry.lastPoint.dy - geometry.dotRadius,
+                        width: geometry.dotRadius * 2,
+                        height: geometry.dotRadius * 2,
+                        child: PopIn(
+                          child: Container(
+                            key: _endpointKey,
+                            decoration: BoxDecoration(
+                              color: widget.line,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// The measured line, cached outside paint (SP-06): the [PathMetric] is taken
+/// once per canvas size and data change; paint only extracts the visible span.
+class _TrajectoryGeometry {
+  const _TrajectoryGeometry({
+    required this.size,
+    required this.metric,
+    required this.lastPoint,
+    required this.dotRadius,
+  });
+
+  final Size size;
+  final PathMetric metric;
+
+  /// Where the newest reading lands — the pop-in dot's centre, in chart space.
+  final Offset lastPoint;
+  final double dotRadius;
+}
+
+/// Draws the baseline track plus the revealed fraction of the line:
+/// `metric.extractPath(0, length · t)` over the controller's eased progress.
+///
+/// At `t == 1` the extracted sub-path is the whole contour, stroked with the
+/// same cap/join/width as before — the settled frame is golden-equivalent to
+/// the always-drawn painter this replaced.
+class _TrajectoryRevealPainter extends CustomPainter {
+  const _TrajectoryRevealPainter({
+    required this.geometry,
+    required this.t,
+    required this.line,
+    required this.track,
+  });
+
+  final _TrajectoryGeometry? geometry;
+  final double t;
+  final Color line;
+  final Color track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final geo = geometry;
+    if (geo == null) return;
+
+    const strokeWidth = 2.0;
+
     // The baseline the eye reads the line against.
     canvas.drawRect(
       Rect.fromLTWH(0, size.height - 1, size.width, 1),
       Paint()..color = track,
     );
 
-    final step = size.width / (points.length - 1);
-    final path = Path()..moveTo(0, y(points.first));
-    for (var i = 1; i < points.length; i++) {
-      path.lineTo(i * step, y(points[i]));
-    }
-
     canvas.drawPath(
-      path,
+      geo.metric.extractPath(0, geo.metric.length * t.clamp(0.0, 1.0)),
       Paint()
         ..color = line
         ..style = PaintingStyle.stroke
@@ -761,17 +1143,12 @@ class _TrajectoryPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
     );
-
-    // The newest reading, marked: it is the one the subject bar above agrees
-    // with, and the one the student is actually being told about.
-    canvas.drawCircle(
-      Offset(size.width - strokeWidth, y(points.last)),
-      3,
-      Paint()..color = line,
-    );
   }
 
   @override
-  bool shouldRepaint(_TrajectoryPainter old) =>
-      old.line != line || old.track != track || !listEquals(old.points, points);
+  bool shouldRepaint(_TrajectoryRevealPainter old) =>
+      old.geometry != geometry ||
+      old.t != t ||
+      old.line != line ||
+      old.track != track;
 }
