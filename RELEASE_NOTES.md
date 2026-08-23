@@ -1,3 +1,73 @@
+# Ather — release build, 2026-08-23 · 1.8.0+15
+
+**The release where the app starts moving like something physical.** Tabs, buttons, drags and
+slides are no longer timed animations — they run on spring physics. They follow your finger,
+overshoot by a hair, and settle where they belong. Change your mind halfway through a movement
+and it re-aims from where it actually is, carrying the speed your finger left it with, instead
+of ignoring you until a timer runs out.
+
+Installs straight over `1.8.0+14`. Same upload key, `versionCode` 14 → 15, every exam kept.
+This build also carries the database's step to schema 4 — the migration and its test rode in
+with the same care as everything else, so upgrading in place is exactly what it looks like.
+
+## What changed since 1.8.0+14
+
+### Movement you can interrupt
+
+This runs underneath everything below. Press a button and it dips under your touch; let go and
+a spring brings it back. Drag something and release it mid-motion — it keeps going with your
+finger's speed and settles naturally rather than stopping dead. Tabs, buttons, the day-picker
+drag and the panels of numbers all behave this way. If your phone is set to reduce motion,
+everything simply appears in its final place, as before.
+
+### Tabs bounce; days flick
+
+Pick a tab and its icon gives a small dip and a clean bounce on the way in — the same accent
+colour and heavier stroke arriving together, as before, now with weight behind them.
+
+On the tasks screen, the row of days now behaves like an object: drag it and it follows your
+finger, pull it past either end and it resists like a rubber band. A quick flick hands you the
+next or previous day; a slow drag that doesn't commit springs back home.
+
+### The exam result lands as one beat
+
+At the final step of recording an exam, the percentage and its mastery bar used to disagree —
+the number counted up while the bar sat already full. They now fill together over the same
+half-second, ending as one beat, because they measure the same thing. The readiness sentence
+arrives just after, once the two have settled.
+
+Mastering a chapter gained pacing to match: the green disc still pulses, but a ring echoes
+around it, the percentage counts up alongside, and the explanatory sentence waits a moment
+before appearing.
+
+### Analytics draws itself
+
+Open the statistics screen and the subject columns grow out of zero, one after another, their
+percentages counting up beside them. Your trajectory line traces itself across the chart before
+its end point appears. None of this replays while you scroll — it plays when the screen opens
+or when you change the filter, then stands still.
+
+### The mark signs itself in
+
+On the lock screen and the sign-in screen, the Ather mark now draws itself — the ring traced
+once, the accent arc swept after it — and then holds completely still. Once per appearance,
+never looping.
+
+### An empty queue earns its moment
+
+Finish every task for today and the list marks it properly: the last row leaves and the success
+card pops in, noticeably bigger than the small nudge an ordinary daily point gets. Two sizes of
+moment for two sizes of occasion.
+
+### Vibration, in four weights
+
+The phone now answers your hand: light when you touch a control down, a small tick for choosing
+a tab or a day, a firmer one when an exam is saved or a chapter is mastered, and the heaviest
+one reserved for confirming a deletion — where it buzzes exactly once, at the moment you commit.
+
+There is a switch, «الاهتزاز», in Settings. It is on by default; turn it off and all of this
+goes quiet. It works independently of reduce-motion — vibration is feedback, not animation.
+
 # Ather — release build, 2026-08-17 · 1.7.0+12
 
 **The release where the app stops being built for one student.** Subjects are yours to add,
