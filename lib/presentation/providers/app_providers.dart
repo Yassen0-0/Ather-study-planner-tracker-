@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/clock/clock.dart';
+import '../../core/haptics/app_haptics.dart';
 import '../../data/db/app_database.dart';
 import '../../data/repositories/drift_study_repository.dart';
 import '../../domain/entities/study_snapshot.dart';
@@ -311,6 +312,42 @@ final notificationsEnabledProvider =
     NotifierProvider<NotificationsEnabledNotifier, bool>(
       NotificationsEnabledNotifier.new,
     );
+
+/// Public because `main()` reads it too: the gate behind [AppHaptics] has to
+/// know the persisted answer before the first frame, not just after Settings
+/// is first opened. Same snake_case style as every other key in this file.
+const String kHapticsEnabledKey = 'haptics_enabled';
+
+/// Whether the phone vibrates on touches and confirmations. On by default.
+///
+/// [AppHaptics] is a static API — its callers sit in gesture handlers with no
+/// BuildContext to watch a provider with — so this notifier is its wiring:
+/// every build and every [set] pushes the current value through
+/// `AppHaptics.configure`. Before this provider is ever read, `main()` has
+/// already seeded the gate from the same key, which is why the push here can
+/// look redundant: it is what keeps the two honest after that.
+class HapticsEnabledNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    final enabled =
+        ref.watch(sharedPreferencesProvider).getBool(kHapticsEnabledKey) ??
+        true;
+    AppHaptics.configure?.call(enabled);
+    return enabled;
+  }
+
+  Future<void> set(bool enabled) async {
+    state = enabled;
+    AppHaptics.configure?.call(enabled);
+    await ref
+        .read(sharedPreferencesProvider)
+        .setBool(kHapticsEnabledKey, enabled);
+  }
+}
+
+final hapticsEnabledProvider = NotifierProvider<HapticsEnabledNotifier, bool>(
+  HapticsEnabledNotifier.new,
+);
 
 /// Light, dark, or whatever the phone is set to. Persisted.
 ///

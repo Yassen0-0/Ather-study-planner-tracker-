@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/haptics/app_haptics.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -192,12 +193,20 @@ Future<void> showEditSheet(
 /// that is what almost every caller means. The exam wizard's discard prompt is
 /// the exception: nothing is being deleted there, so calling the red button
 /// "حذف" would describe the wrong act.
+///
+/// PH-04 appendix: an affirmative answer here **is** the destructive commit,
+/// so it fires [AppHaptics.heavy] once — after the sheet resolves, before any
+/// write runs, never on dismiss or cancel. Wiring every confirm through this
+/// one seam (rather than at each call site) guarantees exactly one heavy per
+/// committed action and covers flows whose screens are owned elsewhere; a
+/// caller whose confirmed act deletes nothing passes `heavyOnConfirm: false`.
 Future<bool> confirmDestructive(
   BuildContext context, {
   required String title,
   required String message,
   String? confirmLabel,
   String? cancelLabel,
+  bool heavyOnConfirm = true,
 }) async {
   final l = L.of(context);
   final result = await showAtherSheet<bool>(
@@ -224,5 +233,7 @@ Future<bool> confirmDestructive(
       ),
     ),
   );
-  return result ?? false;
+  final bool confirmed = result ?? false;
+  if (confirmed && heavyOnConfirm) AppHaptics.heavy();
+  return confirmed;
 }

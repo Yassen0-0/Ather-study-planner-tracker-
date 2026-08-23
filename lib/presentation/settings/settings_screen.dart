@@ -58,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
   /// `tool/check_invariants.sh`, which looks for it on this class — which is
   /// why it stays declared here even though the About screen is what displays
   /// it now.
-  static const String appVersion = '1.8.0+14';
+  static const String appVersion = '1.8.0+15';
 
   /// The order the three theme options appear in, and the only place that
   /// order is written down.
@@ -149,6 +149,14 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => _pickTheme(context, ref, themeMode),
             ),
             const _NotificationsRow(),
+            // Vibration stays available under reduce-motion on purpose: it is
+            // not visual motion. Documented in the motion spec, ملحق PH-04.
+            SettingsRow.toggle(
+              label: l.hapticsSetting,
+              toggle: ref.watch(hapticsEnabledProvider),
+              onToggle: (value) =>
+                  ref.read(hapticsEnabledProvider.notifier).set(value),
+            ),
             if (biometricsAvailable)
               SettingsRow.toggle(
                 label: l.lockSetting,
@@ -452,6 +460,9 @@ class _AccountActionsState extends ConsumerState<_AccountActions> {
       // contradicts its own dialog teaches a student that Ather's warnings
       // cannot be read literally.
       confirmLabel: l.authSignOut,
+      // Signing out deletes nothing -- the sentence above the button says so
+      // -- so it is not a destructive commitment and earns no heavy haptic.
+      heavyOnConfirm: false,
     );
     if (!confirmed || !mounted) return;
 

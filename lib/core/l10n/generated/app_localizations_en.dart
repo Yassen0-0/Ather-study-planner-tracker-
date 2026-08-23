@@ -696,6 +696,9 @@ class LEn extends L {
   String get lockSetting => 'Fingerprint lock';
 
   @override
+  String get hapticsSetting => 'Haptics';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -933,6 +936,12 @@ class LEn extends L {
 
   @override
   String get noTasksYet => 'No tasks for this day';
+
+  @override
+  String get tasksQueueClearedTitle => 'Queue cleared';
+
+  @override
+  String get tasksQueueClearedBody => 'Nothing left planned for this day.';
 
   @override
   String get commonSave => 'Save';

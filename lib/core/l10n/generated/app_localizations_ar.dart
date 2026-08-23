@@ -696,6 +696,9 @@ class LAr extends L {
   String get lockSetting => 'قفل بالبصمة';
 
   @override
+  String get hapticsSetting => 'الاهتزاز';
+
+  @override
   String get settingsTitle => 'الإعدادات';
 
   @override
@@ -938,6 +941,12 @@ class LAr extends L {
 
   @override
   String get noTasksYet => 'لا مهام لهذا اليوم';
+
+  @override
+  String get tasksQueueClearedTitle => 'خلص الطابور';
+
+  @override
+  String get tasksQueueClearedBody => 'ما بقي شيء مخطط لهذا اليوم.';
 
   @override
   String get commonSave => 'حفظ';

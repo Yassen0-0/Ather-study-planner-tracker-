@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ather/app/app.dart';
 import 'package:ather/core/clock/clock.dart';
+import 'package:ather/core/haptics/app_haptics.dart';
 import 'package:ather/core/l10n/generated/app_localizations.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/data/repositories/drift_study_repository.dart';
@@ -45,7 +46,17 @@ void main() {
   /// right arguments — and stays honest wherever the copy itself is tuned.
   final L l = lookupL(const Locale('ar'));
 
-  setUp(() => db = AppDatabase(NativeDatabase.memory()));
+  /// Haptic cues recorded through the class's own dispatch seam (the
+  /// `app_haptics_test.dart` recorder pattern). Statics outlive tests, so the
+  /// seam is reinstalled and the gate forced open for every test here.
+  final List<AppHapticCue> haptics = <AppHapticCue>[];
+
+  setUp(() {
+    db = AppDatabase(NativeDatabase.memory());
+    haptics.clear();
+    AppHaptics.send = haptics.add;
+    AppHaptics.configure!(true);
+  });
 
   Future<void> closeApp(WidgetTester tester) async {
     await tester.pump(const Duration(seconds: 3));
@@ -250,6 +261,11 @@ void main() {
     expect(after.subjects, hasLength(4), reason: 'only the seeded four remain');
     expect(after.chapters, isEmpty, reason: 'the cascade finally fired');
     expect(after.exams, isEmpty);
+    // PH-04: the confirmed purge is a deletion commit -- exactly one heavy.
+    expect(
+      haptics.where((cue) => cue == AppHapticCue.heavy),
+      hasLength(1),
+    );
 
     await closeApp(tester);
   });
@@ -287,6 +303,9 @@ void main() {
     expect(before.deletedSubjects, hasLength(1));
     expect(before.chapters, hasLength(1));
     expect(before.exams, hasLength(1));
+    // Backing out committed nothing: no heavy may have fired for a cancelled
+    // purge (other cue weights from plain taps are irrelevant here).
+    expect(haptics.where((cue) => cue == AppHapticCue.heavy), isEmpty);
 
     // And confirming is what releases exactly what was counted: the sheet
     // once more, then its red button (`.last` — with the sheet up, the modal
@@ -300,6 +319,11 @@ void main() {
     expect(after.deletedSubjects, isEmpty);
     expect(after.chapters, isEmpty, reason: 'the whole bin went at once');
     expect(after.exams, isEmpty);
+    // The one confirmed commitment, one heavy: PH-04.
+    expect(
+      haptics.where((cue) => cue == AppHapticCue.heavy),
+      hasLength(1),
+    );
 
     await closeApp(tester);
   });

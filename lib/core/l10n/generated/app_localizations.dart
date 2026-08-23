@@ -1297,6 +1297,12 @@ abstract class L {
   /// **'قفل بالبصمة'**
   String get lockSetting;
 
+  /// No description provided for @hapticsSetting.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاهتزاز'**
+  String get hapticsSetting;
+
   /// No description provided for @settingsTitle.
   ///
   /// In ar, this message translates to:
@@ -1704,6 +1710,18 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'لا مهام لهذا اليوم'**
   String get noTasksYet;
+
+  /// No description provided for @tasksQueueClearedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلص الطابور'**
+  String get tasksQueueClearedTitle;
+
+  /// No description provided for @tasksQueueClearedBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما بقي شيء مخطط لهذا اليوم.'**
+  String get tasksQueueClearedBody;
 
   /// No description provided for @commonSave.
   ///

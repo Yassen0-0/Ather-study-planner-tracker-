@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'core/haptics/app_haptics.dart';
 import 'firebase_options.dart';
 import 'presentation/providers/app_providers.dart';
 
@@ -20,6 +21,13 @@ Future<void> main() async {
   // language synchronously -- otherwise the app flashes Arabic before switching
   // to English for a student who chose English.
   final preferences = await SharedPreferences.getInstance();
+
+  // Seed the haptics gate from disk before the first frame. AppHaptics is a
+  // static API that cannot watch a provider, and its provider is built lazily,
+  // so without this a student who turned vibration off would get it back on
+  // every cold start until they happened to open Settings. Same reasoning as
+  // the persisted locale above: read here because the first frame reads it.
+  AppHaptics.configure?.call(preferences.getBool(kHapticsEnabledKey) ?? true);
 
   // Firebase reads its cached session from disk here, with no network call, so
   // by the first frame the router already knows whether this student is signed
