@@ -1,5 +1,6 @@
 import 'package:ather/data/notifications/review_notification_service.dart';
 import 'package:ather/domain/entities/chapter.dart';
+import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/mastery.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
@@ -188,6 +189,184 @@ void main() {
       final snapshot = snapshotOf([lessonWith(id: 7, lastReviewedAt: kAnchor)]);
 
       expect(plan(snapshot, kAnchor, enabled: false), isEmpty);
+    });
+  });
+
+  group('stateful wording', () {
+    String declining(String lesson) => 'danger:$lesson';
+    String weak(String lesson) => 'weak:$lesson';
+
+    ExamEntry exam({
+      required int id,
+      required double percentage,
+      required DateTime at,
+    }) {
+      return ExamEntry(
+        id: id,
+        lessonId: 7,
+        isReviewExam: false,
+        totalPossiblePoints: 100,
+        correctPoints: percentage.round(),
+        percentage: percentage,
+        createdAt: at,
+      );
+    }
+
+    /// A single-lesson snapshot carrying exam history -- the history is what
+    /// the stateful wording hangs the lesson's state on.
+    StudySnapshot snapshotWithExams({
+      required Lesson lesson,
+      required List<ExamEntry> exams,
+    }) {
+      return StudySnapshot(
+        subjects: const [],
+        chapters: [
+          Chapter(
+            id: 1,
+            subjectId: 1,
+            name: 'باب',
+            createdAt: DateTime(2026, 1, 1),
+          ),
+        ],
+        lessons: [lesson],
+        exams: exams,
+        homework: const [],
+      );
+    }
+
+    List<ScheduledReminder> planStateful(
+      StudySnapshot snapshot, {
+      String Function(String lesson)? buildDecliningBody,
+      String Function(String lesson)? buildWeakBody,
+    }) {
+      return ReviewNotificationService.planReminders(
+        snapshot: snapshot,
+        now: kAnchor,
+        enabled: true,
+        buildBody: (lesson, chapter) => 'due:$lesson/$chapter',
+        buildEarlyBody: (lesson, chapter) => 'early:$lesson/$chapter',
+        buildDecliningBody: buildDecliningBody,
+        buildWeakBody: buildWeakBody,
+      );
+    }
+
+    test('a lesson whose last exam scored below the one before it gets the '
+        'danger line on its due reminder', () {
+      final snapshot = snapshotWithExams(
+        lesson: lessonWith(id: 7, lastReviewedAt: DateTime(2026, 5, 20)),
+        exams: [
+          exam(id: 1, percentage: 80, at: DateTime(2026, 4, 20)),
+          exam(id: 2, percentage: 60, at: DateTime(2026, 5, 20)),
+        ],
+      );
+
+      final reminders = planStateful(
+        snapshot,
+        buildDecliningBody: declining,
+        buildWeakBody: weak,
+      );
+
+      expect(reminders.where((r) => r.isEarly).single.body, 'early:درس/باب');
+      expect(reminders.where((r) => !r.isEarly).single.body, 'danger:درس');
+    });
+
+    test('a freshly examined but weak lesson gets the weak line', () {
+      // One exam at 40%: no trend to decline on, mastery under the flag
+      // threshold. Only the weak callback is passed, which doubles as proof
+      // the two are independent.
+      final snapshot = snapshotWithExams(
+        lesson: lessonWith(id: 7, lastReviewedAt: kAnchor),
+        exams: [exam(id: 1, percentage: 40, at: kAnchor)],
+      );
+
+      final reminders = planStateful(snapshot, buildWeakBody: weak);
+
+      expect(reminders.singleWhere((r) => !r.isEarly).body, 'weak:درس');
+    });
+
+    test('a healthy lesson keeps the plain sentence', () {
+      final snapshot = snapshotWithExams(
+        lesson: lessonWith(id: 7, lastReviewedAt: kAnchor),
+        exams: [exam(id: 1, percentage: 85, at: kAnchor)],
+      );
+
+      final reminders = planStateful(
+        snapshot,
+        buildDecliningBody: declining,
+        buildWeakBody: weak,
+      );
+
+      final due = reminders.singleWhere((r) => !r.isEarly);
+      expect(due.body, 'due:درس/باب');
+      expect(due.body, isNot('danger:درس'));
+      expect(due.body, isNot('weak:درس'));
+    });
+
+    test('a lesson that is weak and declining at once gets the danger line -- '
+        'declining wins', () {
+      // 55% then 30%: declining, and mastery sits at 37.5 -- below the
+      // threshold too, so the precedence is what is actually under test.
+      final snapshot = snapshotWithExams(
+        lesson: lessonWith(id: 7, lastReviewedAt: DateTime(2026, 5, 25)),
+        exams: [
+          exam(id: 1, percentage: 55, at: DateTime(2026, 4, 25)),
+          exam(id: 2, percentage: 30, at: DateTime(2026, 5, 25)),
+        ],
+      );
+
+      final reminders = planStateful(
+        snapshot,
+        buildDecliningBody: declining,
+        buildWeakBody: weak,
+      );
+
+      expect(reminders.singleWhere((r) => !r.isEarly).body, 'danger:درس');
+    });
+
+    test('a lesson with a review clock but no recorded exam is not called '
+        'weak', () {
+      // Mastery of an unexamined lesson computes to 0; without the guard a
+      // clock without evidence would read as weakness. The Review Center's
+      // reason logic carries the same guard.
+      final snapshot = snapshotOf([lessonWith(id: 7, lastReviewedAt: kAnchor)]);
+
+      final reminders = planStateful(snapshot, buildWeakBody: weak);
+
+      expect(reminders.singleWhere((r) => !r.isEarly).body, 'due:درس/باب');
+    });
+
+    test('a dropped score that flips the wording moves the fingerprint, so '
+        'the rebuild cannot be deduped away', () {
+      // Ids, moments, title and enabled flag identical throughout; the only
+      // thing that moved is what the due-day body says. This is the case that
+      // would silently strand yesterday's sentence on the device if bodies
+      // were left out of the fingerprint.
+      StudySnapshot snapshotWith({required double newest}) => snapshotWithExams(
+        lesson: lessonWith(id: 7, lastReviewedAt: DateTime(2026, 5, 20)),
+        exams:
+            newest == 90
+                ? [exam(id: 1, percentage: 90, at: DateTime(2026, 5, 20))]
+                : [
+                  exam(id: 1, percentage: 95, at: DateTime(2026, 4, 20)),
+                  exam(id: 2, percentage: 60, at: DateTime(2026, 5, 20)),
+                ],
+      );
+
+      String fingerprintOfPlan(StudySnapshot snapshot) =>
+          ReviewNotificationService.fingerprintOf(
+            reminders: planStateful(
+              snapshot,
+              buildDecliningBody: declining,
+              buildWeakBody: weak,
+            ),
+            enabled: true,
+            title: 'title',
+          );
+
+      expect(
+        fingerprintOfPlan(snapshotWith(newest: 90)),
+        isNot(fingerprintOfPlan(snapshotWith(newest: 60))),
+      );
     });
   });
 
