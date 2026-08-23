@@ -338,8 +338,10 @@ void main() {
     await tester.tap(find.text('كلمة سر فقط'));
     await tester.pumpAndSettle();
 
-    // A password already stands -- no setup sheet stands in the way.
-    expect(find.text('تعيين كلمة السر'), findsNothing);
+    // A password already stands -- no setup sheet stands in the way. The
+    // words "تعيين كلمة السر" do appear once, as the NEW settings row's
+    // label; what must not exist is the sheet's input field.
+    expect(find.byType(TextField), findsNothing);
     expect(prefs.getString('lock_methods'), 'password');
   });
 
