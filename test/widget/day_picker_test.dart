@@ -44,11 +44,15 @@ void main() {
 
   /// Pumps the picker at [width] logical pixels of *content*, the way the tasks
   /// header hands it a box: the page margin has already been taken off.
+  ///
+  /// [reduceMotion] stands in for the platform's "disable animations" switch,
+  /// which is what `prefersReducedMotion` reads.
   Future<void> pump(
     WidgetTester tester, {
     double width = 390 - 2 * AppSpacing.pageMargin,
     TextDirection direction = TextDirection.rtl,
     Set<DateTime> completeDays = const <DateTime>{},
+    bool reduceMotion = false,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -60,14 +64,24 @@ void main() {
         theme: AppTheme.light,
         home: Scaffold(
           body: Center(
-            child: SizedBox(
-              width: width,
-              child: DayPicker(
-                today: today,
-                selectedDay: selected,
-                completeDays: completeDays,
-                onSelect: picked.add,
-              ),
+            child: Builder(
+              builder: (context) {
+                final mq = MediaQuery.of(context);
+                return MediaQuery(
+                  data: reduceMotion
+                      ? mq.copyWith(disableAnimations: true)
+                      : mq,
+                  child: SizedBox(
+                    width: width,
+                    child: DayPicker(
+                      today: today,
+                      selectedDay: selected,
+                      completeDays: completeDays,
+                      onSelect: picked.add,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -300,6 +314,126 @@ void main() {
       await swipe(tester, 120);
 
       expect(picked.single, DateTime(2026, 8, 4));
+    });
+  });
+
+  group('SP-08 drag physics', () {
+    // The drag preview is paint-only: one Transform.translate driven by an
+    // animation controller, found here by its key. Its offset is what the
+    // student sees moving; nothing about layout ever changes.
+    Offset dragOffset(WidgetTester tester) {
+      final transform = tester
+          .widget<Transform>(find.byKey(DayPicker.dragOffsetKey))
+          .transform;
+      return Offset(transform.storage[12], transform.storage[13]);
+    }
+
+    Future<TestGesture> grab(WidgetTester tester) => tester.startGesture(
+      tester.getCenter(find.byType(DayPicker)),
+    );
+
+    /// Moves the finger [dx] physical pixels in equal steps, pumping [gap] of
+    /// fake clock between them so the gesture spans real (simulated) time and
+    /// the release carries a genuine velocity.
+
+    testWidgets('a long pull translates less than the finger travelled', (
+      tester,
+    ) async {
+      await pump(tester);
+
+      final gesture = await grab(tester);
+      await gesture.moveBy(const Offset(-400, 0));
+      await tester.pump();
+
+      final off = dragOffset(tester);
+      expect(off.dy, 0);
+      expect(off.dx, isNegative, reason: 'the row follows the finger');
+      expect(
+        off.dx.abs(),
+        lessThan(400 * DayPicker.dragResistance),
+        reason: 'past the first cell the square-law buys less and less',
+      );
+
+      // Releasing still decides on raw travel: far past the band, it commits.
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(picked.single, DateTime(2026, 8, 4));
+    });
+
+    testWidgets('a fast short flick commits though it never crossed 45px', (
+      tester,
+    ) async {
+      await pump(tester);
+
+      // `timedDrag` is the one harness that stamps its move events across the
+      // fake clock, so the recognizer's VelocityTracker receives real spacing.
+      // Raw moveBy/pump sequences stamp every event at one instant, which
+      // reads as zero velocity no matter how the finger actually moved.
+      //
+      // Two budget lines decide the numbers below. The recognizer feeds its
+      // tracker only AFTER winning the arena, and winning costs kTouchSlop
+      // (~18px of the raw travel); and the end callback carries a nonzero
+      // velocity only when the *tracked* path classifies as a fling — ≥18px
+      // inside the estimate window at more than the minimum fling speed. So:
+      // 42px raw keeps the Kowalski distance half quiet (45px), leaves ~24px
+      // tracked after the slop, and 170ms puts those pixels through the last
+      // window at ~280px/s — past both the fling bar and the 110px/s (0.11
+      // px/ms) velocity half of the rule.
+      await tester.timedDrag(
+        find.byType(DayPicker),
+        const Offset(-42, 0),
+        const Duration(milliseconds: 170),
+      );
+      await tester.pumpAndSettle();
+
+      expect(picked.single, DateTime(2026, 8, 4));
+    });
+
+    testWidgets('a slow short swipe springs home and picks nothing', (
+      tester,
+    ) async {
+      await pump(tester);
+
+      final gesture = await grab(tester);
+      for (var i = 0; i < 3; i++) {
+        await gesture.moveBy(const Offset(-10, 0));
+        await tester.pump(const Duration(milliseconds: 150));
+      }
+      expect(
+        dragOffset(tester).dx,
+        isNegative,
+        reason: 'while held, the row visibly follows the finger',
+      );
+
+      // 30px at about 66px/s clears neither half of the rule.
+      await gesture.up();
+      expect(picked, isEmpty);
+      await tester.pumpAndSettle();
+
+      // The settle spring terminates -- pumpAndSettle returned -- and lands
+      // exactly home.
+      expect(dragOffset(tester).dx.abs(), lessThan(0.01));
+    });
+
+    testWidgets('reduce-motion skips the preview but keeps the commitment', (
+      tester,
+    ) async {
+      await pump(tester, reduceMotion: true);
+
+      final gesture = await grab(tester);
+      await gesture.moveBy(const Offset(-60, 0));
+      await tester.pump();
+      expect(
+        dragOffset(tester),
+        Offset.zero,
+        reason: 'no translation preview for vestibular safety',
+      );
+
+      // The decision machinery is untouched: same thresholds, instant commit.
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(picked.single, DateTime(2026, 8, 4));
+      expect(dragOffset(tester), Offset.zero);
     });
   });
 
