@@ -55,6 +55,8 @@ final class FakeNotificationService extends ReviewNotificationService {
     required bool enabled,
     required String Function(String lesson, String chapter) buildBody,
     required String Function(String lesson, String chapter) buildEarlyBody,
+    String Function(String lesson)? buildDecliningBody,
+    String Function(String lesson)? buildWeakBody,
     required String title,
   }) async {
     rescheduleEnabled.add(enabled);
@@ -64,6 +66,8 @@ final class FakeNotificationService extends ReviewNotificationService {
       enabled: enabled,
       buildBody: buildBody,
       buildEarlyBody: buildEarlyBody,
+      buildDecliningBody: buildDecliningBody,
+      buildWeakBody: buildWeakBody,
     );
     if (!enabled) cancelAllCount++;
   }
