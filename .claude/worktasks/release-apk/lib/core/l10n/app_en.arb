@@ -1,0 +1,543 @@
+{
+  "@@locale": "en",
+  "appName": "Ather",
+  "appTagline": "You don't finish lessons… you master them",
+  "navHome": "Today",
+  "navReview": "Review",
+  "navProgress": "Progress",
+  "navTasks": "Tasks",
+  "subjectBiology": "Biology",
+  "subjectPhysics": "Physics",
+  "subjectChemistry": "Chemistry",
+  "subjectEnglish": "English",
+  "weekdaySaturday": "Sat",
+  "weekdaySunday": "Sun",
+  "weekdayMonday": "Mon",
+  "weekdayTuesday": "Tue",
+  "weekdayWednesday": "Wed",
+  "weekdayThursday": "Thu",
+  "weekdayFriday": "Fri",
+  "todayLabel": "Today",
+  "dashboardTitle": "Today",
+  "overallMastery": "Overall mastery",
+  "statLessonsRemaining": "Lessons left",
+  "statNeedsReview": "Needs review",
+  "statMastered": "Excellent",
+  "@statMastered": {
+    "description": "The third stat counts lessons that are excellent: examined, not overdue, and at or above 90. Ather names three states and never one word for all of them: proven (examined, fresh, at or above 70), excellent (examined, fresh, at or above 90), and a closed chapter (a dated closure event whose evidence still stands)."
+  },
+  "sectionSubjects": "Subjects",
+  "firstRunTitle": "Start here",
+  "firstRunBody": "Mastery comes from your exams alone, not from finishing a lesson.",
+  "firstRunAction": "Open your first subject",
+  "sectionNext": "Up next",
+  "actionExam": "Log exam",
+  "notStartedYet": "Not started yet",
+  "subjectHasOverdueLesson": "A lesson is past its review date",
+  "lessonCount": "{count, plural, =1{1 lesson} other{{count} lessons}}",
+  "@lessonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chapterCount": "{count, plural, =1{1 chapter} other{{count} chapters}}",
+  "@chapterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chaptersMasteredOf": "{mastered} of {total} chapters mastered",
+  "chaptersOfShort": "{mastered} of {total} chapters",
+  "lessonsExaminedOf": "{examined} of {total} lessons examined",
+  "lessonsOnTimeOf": "{onTime} of {total} lessons on time",
+  "sectionChapters": "Chapters",
+  "sectionLessons": "Lessons",
+  "addChapter": "+ Add chapter",
+  "addLesson": "+ Add lesson",
+  "noChaptersYet": "No chapters yet",
+  "noLessonsYet": "No lessons yet",
+  "chapterName": "Chapter name",
+  "lessonName": "Lesson name",
+  "chapterNameHint": "e.g. Chapter 1 — The Cell",
+  "lessonNameHint": "e.g. Plasma membrane structure",
+  "renameChapter": "Rename chapter",
+  "renameLesson": "Rename lesson",
+  "deleteChapter": "Delete chapter",
+  "deleteLesson": "Delete lesson",
+  "deleteChapterConfirm": "This deletes the chapter with every lesson and exam inside it. It cannot be undone.",
+  "deleteLessonConfirm": "This deletes the lesson and all of its exams. It cannot be undone.",
+  "averageExamScore": "Exam average",
+  "chapterNeedsReview": "Needs review",
+  "chapterMasteredAt": "Mastered on {date}",
+  "@chapterMasteredAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    },
+    "description": "Shown in green only while the closure's evidence still stands (every lesson examined, chapter mean at or above 70 today)."
+  },
+  "chapterClosureDated": "Closed {date}",
+  "@chapterClosureDated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    },
+    "description": "Neutral line shown when the chapter carries a closure date whose evidence has since broken — the date stays, the green tick does not."
+  },
+  "masterChapter": "I mastered this chapter",
+  "viewChapterReport": "See chapter report",
+  "notReadyGate": "Not ready yet — find out why",
+  "notReadyTitle": "Not ready yet",
+  "notReadyBody": "To master a chapter every lesson needs an exam and mastery has to reach at least {threshold}.",
+  "noExamShort": "No exam",
+  "lessonNoExamYet": "No exam yet",
+  "dueInDays": "{days} days left",
+  "dueInDaysLong": "{days} days until review",
+  "overdueByDays": "{days} days overdue",
+  "masteryCaptionWithExams": "Mastery is the last exam {last} plus the average of the earlier ones {rest}",
+  "masteryCaptionNoExams": "Mastery comes from exams only — log your first exam to start",
+  "checklistTitle": "Study steps",
+  "checklistWatched": "Watched the lesson",
+  "checklistReadNotes": "Read the notes",
+  "checklistDidHomework": "Did the homework",
+  "checklistDidExam": "Sat the exam",
+  "checklistReviewedNotes": "Reviewed the notes",
+  "homeworkTitle": "Homework",
+  "homeworkAdd": "Log a homework score",
+  "homeworkScore": "Score",
+  "homeworkMax": "out of",
+  "homeworkNotReady": "You need more study before sitting the exam",
+  "homeworkReady": "Good — you're ready for the exam",
+  "homeworkNone": "No homework logged",
+  "homeworkNote": "Homework never counts toward mastery — it is a readiness signal only",
+  "homeworkInvalid": "The score must be between zero and the total, and the total above zero",
+  "examHistory": "Past exams",
+  "examNoHistory": "No exams yet",
+  "examReviewBadge": "Review",
+  "examDelete": "Remove exam",
+  "examDeleteConfirm": "This exam will be removed from the record and the lesson's mastery recalculated without it. This can't be undone.",
+  "toastExamDeleted": "Exam removed — mastery recalculated",
+  "examStart": "Start the exam",
+  "examRecordResult": "Log an exam result",
+  "examRecordReview": "Log the review exam",
+  "examStep1Title": "Total questions",
+  "examStep1Hint": "How many questions were on the exam?",
+  "examStep2Title": "Question marks",
+  "examStep2Hint": "Split the questions: how many at how many marks",
+  "examStep3Title": "Your correct answers",
+  "examStep3Hint": "How many did you get right in each group",
+  "examStep4Title": "Result",
+  "examGroupQuestions": "Questions",
+  "examGroupPoints": "Marks each",
+  "examAddGroup": "+ Add group",
+  "examRemoveGroup": "Remove group",
+  "examGroupLabel": "{count} questions × {points} marks",
+  "examPointsLine": "{points} marks",
+  "examMasteryBefore": "Mastery before",
+  "examMasteryAfter": "Mastery after",
+  "examSave": "Save result",
+  "examSaveFailed": "We couldn't save this exam. Your numbers are still here — try again.",
+  "examDiscardTitle": "Leave this exam?",
+  "examDiscardBody": "What you've entered will be lost. This can't be undone.",
+  "examDiscardLeave": "Leave",
+  "examDiscardStay": "Keep going",
+  "examSaveReview": "Save review exam",
+  "examErrorNeedAtLeastOneQuestion": "At least one question is required",
+  "examErrorGroupInvalid": "Every group needs a question count and a mark above zero",
+  "examErrorSumMismatch": "The group total ({assigned}) must equal the overall total ({total})",
+  "examErrorCorrectExceeds": "Correct answers cannot exceed the number of questions",
+  "toastExamSaved": "Exam saved — the review clock restarts now",
+  "toastHomeworkSaved": "Homework score saved",
+  "reviewTitle": "Needs review",
+  "reviewEmptyTitle": "Nothing needs review",
+  "reviewEmptyBody": "Every lesson is on time. Keep going.",
+  "reviewReasonWeak": "Weak score",
+  "reviewReasonDeclining": "Your score is dropping",
+  "reviewNotificationTitle": "Time to review",
+  "reviewNotificationBody": "Time to review {lesson} in {chapter}",
+  "analyticsTitle": "Progress",
+  "analyticsInsights": "Notes",
+  "analyticsAllSubjects": "All subjects",
+  "analyticsMasteryBySubject": "Mastery by subject",
+  "analyticsMasteryByChapter": "Mastery by chapter",
+  "analyticsWeakestLessons": "Weakest lessons",
+  "analyticsReviewDiscipline": "Review discipline",
+  "analyticsNotEnoughData": "Not enough data yet",
+  "insightStrongestSubject": "{subject} is your strongest subject right now — {value}",
+  "insightChapterWeak": "\"{chapter}\" is still weak — {value}",
+  "insightLessonNotReviewed": "You haven't reviewed \"{lesson}\" in {days} days",
+  "insightSubjectImproved": "{subject} is up {delta} this month",
+  "chapterReportTitle": "Chapter report",
+  "trendUp": "Up from {from} to {to}",
+  "trendDown": "Down from {from} to {to}",
+  "trendFlat": "More exams are needed to measure progress",
+  "trendSteady": "Steady -- both halves sit at the same level",
+  "chapterReportMasteryLabel": "Mastery",
+  "weakestLessonBadge": "Weakest lesson",
+  "celebrationTitle": "Chapter mastered!",
+  "celebrationBody": "Solid work. Keep it up.",
+  "authSignInTitle": "Sign in",
+  "authRegisterTitle": "New account",
+  "authSubtitle": "Sign in once, then the app works with no connection",
+  "authEmail": "Email",
+  "authPassword": "Password",
+  "authEmailHint": "you@example.com",
+  "authSignIn": "Sign in",
+  "authRegister": "Create account",
+  "authGoogle": "Continue with Google",
+  "authToRegister": "No account yet? Create one",
+  "authToSignIn": "Already have an account? Sign in",
+  "authForgotPassword": "Forgot your password?",
+  "authResetSent": "We sent you a link to reset your password",
+  "authErrorEmailInvalid": "That email is not valid",
+  "authErrorPasswordShort": "The password needs at least 8 characters",
+  "authErrorWrongCredentials": "Wrong email or password",
+  "authErrorEmailInUse": "That email is already registered",
+  "authErrorNoNetwork": "No connection. Only the first sign-in needs the network — after that the app works offline.",
+  "authErrorTooManyAttempts": "Too many attempts. Wait a moment and try again",
+  "authErrorGeneric": "That did not go through. Try again",
+  "authSignOut": "Sign out",
+  "authSignOutConfirm": "You will need a connection to sign in again. Your data stays on this device and is not deleted.",
+  "authAccount": "Account",
+  "authDeleteAccount": "Delete account",
+  "authDeleteAccountConfirm": "Your account, your cloud copy and everything on this device will be permanently deleted. This cannot be undone.",
+  "authDeleteAccountOfflineWarning": "Anything that has not reached the cloud yet will be lost with the deletion.",
+  "authDeleteAccountReauthTitle": "Confirm it is your account",
+  "authDeleteAccountReauthBody": "Type your password to finish deleting the account.",
+  "authDeleteAccountReauthAction": "Delete account",
+  "authDeleteAccountFailed": "The account was not deleted. Try again.",
+  "accountSwitchWipeTitle": "A different account",
+  "accountSwitchWipeMessage": "The data on this device belongs to another account. Continuing with this account erases everything on the device: subjects, chapters, exams and tasks. This cannot be undone.",
+  "accountSwitchWipeConfirm": "Erase device data",
+  "settingsPrivacy": "Privacy",
+  "privacyTitle": "Your privacy",
+  "privacyIntro": "This app collects as little as possible. Everything below describes what actually happens — not generic promises.",
+  "privacyLocalTitle": "Your study data",
+  "privacyLocalBody": "Your subjects, chapters, lessons, exams and tasks are stored on your phone, in a local database. Mastery is computed on your device. Your name and school year from the profile are kept on this device only and are never uploaded.",
+  "privacyAccountTitle": "Account data",
+  "privacyAccountBody": "For the cloud backup we ask for an email and password (or a Google account). They are stored by Google Firebase Auth. Your email is everything we know about you on the server — no name, no age, no other personal data.",
+  "privacyCloudTitle": "The cloud backup",
+  "privacyCloudBody": "If you create an account, a copy of your study data, encrypted in transit, is stored on Google servers (Firebase Firestore) under your account. Nobody but you can reach it — including us.",
+  "privacyDeleteTitle": "Deleting your data",
+  "privacyDeleteBody": "At the very bottom of Settings there is a Delete account button. When you tap it: the data on your phone is erased, the cloud copy is erased, and the account itself is removed from Firebase. Permanently.",
+  "privacyNoCollectTitle": "What we never do",
+  "privacyNoCollectBody": "No ads. No tracking. No selling data. No third-party analytics or crash reporting. The app works offline most of the time anyway.",
+  "lockUnlock": "Unlock",
+  "lockReason": "Unlock Ather",
+  "lockRefused": "That didn't unlock — try again",
+  "lockLockedOut": "Too many attempts. Wait a moment and try again, or use your phone's passcode.",
+  "lockSetting": "Fingerprint lock",
+  "settingsTitle": "Settings",
+  "profileTitle": "Your profile",
+  "profileName": "Name",
+  "profileNameHint": "Type your name",
+  "profileNameUnset": "Not set",
+  "profileYear": "School year",
+  "profileYearUnset": "Not set",
+  "profileYearFirst": "Year 1",
+  "profileYearSecond": "Year 2",
+  "profileYearThird": "Year 3",
+  "profileLocalNote": "This is kept on this device only and is never uploaded to any server.",
+  "profileGreeting": "Hello, {name}",
+  "@profileGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subjectsArchived": "Archived subjects",
+  "subjectsArchivedNote": "An archived subject is not shown, does not count toward mastery, and sends no reminders. Its chapters and exams are kept exactly as they were.",
+  "subjectArchive": "Archive subject",
+  "subjectUnarchive": "Unarchive",
+  "binTitle": "Recycle bin",
+  "binEmpty": "The bin is empty",
+  "binRestore": "Restore",
+  "binPurge": "Delete permanently",
+  "binEmptyAll": "Empty the bin",
+  "binDeletedAt": "Deleted {date}",
+  "@binDeletedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "binNote": "Subjects here are kept whole, with their chapters and exams, and are never removed on their own. Only a permanent delete erases them.",
+  "binPurgeConfirm": "This erases \"{subject}\" along with {chapters} and {exams}. It cannot be undone.",
+  "@binPurgeConfirm": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      },
+      "chapters": {
+        "type": "String"
+      },
+      "exams": {
+        "type": "String"
+      }
+    }
+  },
+  "binEmptyAllConfirm": "This erases everything in the bin along with its chapters and exams. It cannot be undone.",
+  "examCountLabel": "{count, plural, =1{1 exam} other{{count} exams}}",
+  "@examCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subjectsTitle": "Subjects",
+  "subjectCountLabel": "{count, plural, =1{1 subject} other{{count} subjects}}",
+  "@subjectCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subjectAdd": "+ Add subject",
+  "subjectNameHint": "e.g. Maths",
+  "subjectRename": "Rename",
+  "subjectDelete": "Delete subject",
+  "settingsPreferences": "Preferences",
+  "settingsLanguage": "Language",
+  "settingsLanguageArabic": "العربية",
+  "settingsLanguageEnglish": "English",
+  "settingsTheme": "Theme",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "settingsThemeSystem": "System",
+  "settingsNotifications": "Review reminders",
+  "settingsNotificationsBlocked": "Notifications are turned off in your phone's settings. Turn them on there to get reminders.",
+  "settingsAboutSection": "About Ather",
+  "settingsAbout": "About",
+  "settingsVersionFormat": "Version {version}",
+  "@settingsVersionFormat": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "backupTitle": "Cloud backup",
+  "backupNever": "Not saved yet",
+  "backupSavedAt": "Last saved: {date}",
+  "@backupSavedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "backupSaving": "Saving…",
+  "backupSaveNow": "Save now",
+  "backupRestore": "Restore from cloud",
+  "backupRestoreConfirm": "Everything on this phone will be replaced by the cloud copy.",
+  "backupRestoreDone": "Your data is back",
+  "backupRestoreEmpty": "No cloud backup yet",
+  "backupErrorOffline": "No connection — it will save when you're back online",
+  "backupErrorPermission": "The server permissions aren't set up",
+  "backupErrorTooLarge": "Your data is too large to save in one go",
+  "backupErrorUnreadable": "The cloud copy can't be read",
+  "backupErrorUnknown": "Saving didn't work",
+  "tasksTitle": "Today's tasks",
+  "tasksDoneOf": "{done} of {total} done",
+  "@tasksDoneOf": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "addTask": "+ Add task",
+  "addTaskTitle": "New task",
+  "taskNameHint": "What are you doing today?",
+  "renameTask": "Edit task",
+  "deleteTask": "Delete task",
+  "deleteTaskConfirm": "It will be removed from this day for good.",
+  "noTasksYet": "No tasks for this day",
+  "commonSave": "Save",
+  "commonSomethingWentWrong": "Something didn't work. Try again.",
+  "nameRequired": "Type a name first",
+  "authShowPassword": "Show password",
+  "authHidePassword": "Hide password",
+  "commonCancel": "Cancel",
+  "commonDelete": "Delete",
+  "commonNext": "Next",
+  "commonBack": "Back",
+  "commonEdit": "Edit",
+  "commonClose": "Close",
+  "exportTitle": "Export your data",
+  "@exportTitle": {
+    "description": "=== Batch A1: data export, chapter report PDF, share card. Appended block, append-only, do not reorder. ==="
+  },
+  "exportBody": "Get a copy of everything you have recorded — subjects, chapters, lessons, exams and mastery scores — in one JSON file you can open and read yourself.",
+  "exportAction": "Export and share the file",
+  "exportWhereNote": "The file opens in the share sheet, so you choose where it goes — Drive, WhatsApp, Files. Ather keeps no copy.",
+  "exportErrorFile": "The file could not be prepared. Check the free space on your device.",
+  "exportErrorShare": "The share sheet would not open",
+  "chapterReportExport": "Export report as PDF",
+  "chapterReportExportDone": "Report ready",
+  "chapterReportExportError": "The PDF could not be prepared",
+  "shareCardAction": "Share your progress",
+  "shareCardTitle": "My mastery on Ather",
+  "shareCardOverall": "Overall mastery",
+  "shareCardLessonsAbove": "{count,plural, =0{No lessons proven above the mastery threshold yet} =1{1 lesson proven above the mastery threshold} other{{count} lessons proven above the mastery threshold}}",
+  "shareCardError": "The progress image could not be prepared",
+  "@shareCardLessonsAbove": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    },
+    "description": "Counts proven lessons only: an exam behind the lesson, the evidence still fresh (not overdue), at or above 70. The old wording counted stale scores as mastered."
+  },
+  "@@x_comment_B1": "=== Batch B1: predictive review reminders ===",
+  "reviewNotificationEarlyBody": "{lesson} in {chapter} is due for review soon",
+  "@@x_comment_B2": "=== Batch B2: analytics trends ===",
+  "analyticsTrajectory": "Score trajectory",
+  "analyticsVelocity": "{value} points per review cycle",
+  "analyticsVelocityFlat": "Holding steady",
+  "@@x_comment_B3": "=== Batch B3: email verification ===",
+  "authVerificationSent": "We sent a confirmation link to your email",
+  "authEmailUnverified": "Not confirmed",
+  "authResendVerification": "Resend confirmation link",
+  "authVerificationTooSoon": "A link just went out. Give it a moment, then try again.",
+  "authVerificationNote": "Confirming your email is what lets you recover your account if you forget your password. The app works either way.",
+  "@@x_comment_B4": "=== Batch B4: curriculum templates ===",
+  "subjectTemplateAdd": "Add the standard chapters",
+  "subjectTemplateCount": "{count, plural, =1{1 chapter} other{{count} chapters}}",
+  "@subjectTemplateCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subjectTemplateAdded": "Added {count}",
+  "subjectTemplateNothingNew": "You already have every standard chapter",
+  "subjectTemplateNote": "The usual chapters for this subject. Edit or delete them like any chapter you typed yourself. Nothing you already have is changed or removed.",
+  "@@x_comment_integration": "=== Integration review fixes ===",
+  "authVerificationNotSent": "Your account is ready. The confirmation link did not go out — you can send it from your profile.",
+  "examVerdictWeak": "Weak lesson -- it entered the 30-day review. Study again before then.",
+  "examVerdictPassed": "You passed, not mastered -- another exam is what raises it.",
+  "examNeedToCross": "To cross the line: score {percentage} on the next one.",
+  "@examNeedToCross": {
+    "placeholders": {
+      "percentage": {
+        "type": "String"
+      }
+    }
+  },
+  "comebackLine": "Back after {days} days -- {count} lessons came due meanwhile.",
+  "@comebackLine": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "lastHomeworkDated": "Last homework ({date})",
+  "@lastHomeworkDated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "checklistAllDone": "Studied end to end -- prove it with an exam.",
+  "tasksDayDone": "{done} of {total} done -- your day is complete.",
+  "@tasksDayDone": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewWaitingHeader": "Review lessons waiting for you: {count}",
+  "@reviewWaitingHeader": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "insightDiscipline": "You made {onTime} of {examined} reviews on time.",
+  "@insightDiscipline": {
+    "placeholders": {
+      "onTime": {
+        "type": "String"
+      },
+      "examined": {
+        "type": "String"
+      }
+    }
+  },
+  "purgeCountsLine": "{subjects} subjects . {chapters} chapters . {lessons} lessons . {exams} exams",
+  "@purgeCountsLine": {
+    "placeholders": {
+      "subjects": {
+        "type": "String"
+      },
+      "chapters": {
+        "type": "String"
+      },
+      "lessons": {
+        "type": "String"
+      },
+      "exams": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreCopyCounts": "Cloud copy: {chapters} chapters, {exams} exams",
+  "@restoreCopyCounts": {
+    "placeholders": {
+      "chapters": {
+        "type": "String"
+      },
+      "exams": {
+        "type": "String"
+      }
+    }
+  },
+  "@@x_comment_P5": "=== Batch P5: exam eve mode ===",
+  "examEveButton": "Exam eve",
+  "examEveTitle": "Exam eve",
+  "examEveBody": "The subject's lessons, ordered by what to prove tonight.",
+  "examEveTierUnsettled": "Not yet proven -- no exam",
+  "examEveTierWeakest": "Weakest first",
+  "examEveTierNearestDue": "Closest to falling due",
+  "reviewBodyDeclining": "The last exam in {lesson} dropped -- review it before it slips.",
+  "@reviewBodyDeclining": {
+    "placeholders": {
+      "lesson": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewBodyWeak": "{lesson} is still weak -- lock it in with an exam.",
+  "@reviewBodyWeak": {
+    "placeholders": {
+      "lesson": {
+        "type": "String"
+      }
+    }
+  }
+}

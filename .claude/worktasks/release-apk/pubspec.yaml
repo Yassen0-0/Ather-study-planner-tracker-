@@ -1,0 +1,112 @@
+name: ather
+description: "Ather - mastery measurement for Thanaweya Amma"
+publish_to: 'none'
+
+version: 1.8.0+15
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State
+  flutter_riverpod: 3.4.2
+
+  # Persistence (offline-first SQLite with reactive .watch() streams)
+  drift: 2.34.3
+  drift_flutter: 0.3.1
+
+  # Navigation
+  go_router: 17.3.0
+
+  # No chart package. The analytics screen draws its own bars and columns with
+  # CustomPaint -- see its doc comment for why. `fl_chart` was declared here and
+  # imported by nothing, which is worse than an unused line: it tells the next
+  # reader that charts come from a library, so the hand-built ones look like
+  # something that should be migrated rather than something that was chosen.
+
+  # 30-day review reminders
+  flutter_local_notifications: 22.2.0
+  timezone: 0.11.1
+
+  # Localization / formatting
+  intl: 0.20.2
+
+  # Locale + notification preferences
+  shared_preferences: 2.5.5
+
+  # Export: a JSON file of the student's own record, a chapter report PDF, and a
+  # shareable progress card. All three write to the app's temporary directory
+  # and hand the file to the system share sheet -- deliberately not to a
+  # "Downloads" folder. On Android `getDownloadsDirectory()` resolves to
+  # `Android/data/com.ather.app/files/Download`, which is app-private and is
+  # deleted with the app: a button labelled "save to Downloads" would put the
+  # student's export somewhere they cannot find it and cannot keep.
+  path_provider: 2.1.6
+  share_plus: 10.1.4
+  pdf: 3.13.0
+
+  # SHA-256 for the cloud backup's integrity field. Already in the tree as a
+  # transitive dependency of firebase_core; declared here because this app
+  # imports it directly, and an undeclared import breaks the day the package
+  # that pulled it in stops needing it.
+  crypto: 3.0.7
+  firebase_core: ^4.12.1
+  firebase_auth: ^6.5.6
+  google_sign_in: ^7.2.0
+  local_auth: ^3.0.2
+  cloud_firestore: ^6.8.0
+
+  # Attests that a request came from a genuine install of this app, so the API
+  # key that ships inside every APK stops being enough on its own. Added
+  # 2026-08-15 after the audit created three accounts on the live project with
+  # nothing but that key. See main.dart for why it is shipped *before* it is
+  # enforced.
+  firebase_app_check: ^0.4.2
+
+  # Crash reporting and analytics
+  firebase_crashlytics: ^5.2.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.15.1
+  drift_dev: ^2.34.0
+  local_auth_platform_interface: ^1.1.0
+
+  # In-memory stand-ins for the two Firebase services `FirestoreBackupRepository`
+  # talks to, so the cloud backup's integrity check can be tested against real
+  # documents -- including a version 2 document with no checksum, which students
+  # have in the cloud right now and which must keep restoring.
+  fake_cloud_firestore: 4.2.0
+  firebase_auth_mocks: 0.15.2
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/fonts/
+    # `assets/branding/` is deliberately NOT listed.
+    #
+    # The three SVGs there are the authored identity and they stay in the
+    # repository as the source of truth (PROJECT.md §7a) -- but nothing loads
+    # them at runtime. The app draws the mark with a CustomPainter transcribed
+    # from their geometry (lib/core/branding/ather_brand.dart), and the Android
+    # bitmaps are exported from that same painter by
+    # tool/branding/export_branding_test.dart. Listing them here only packed
+    # three files into every APK for no reader.
+
+  fonts:
+    # Readex Pro variable font (weight axis 200-700).
+    # Declared once; weights are applied at runtime via TextStyle.fontVariations
+    # in core/theme/app_typography.dart. A variable font cannot be split into
+    # per-weight pubspec entries -- doing so makes every weight render identically.
+    - family: ReadexPro
+      fonts:
+        - asset: assets/fonts/ReadexPro.ttf

@@ -1,0 +1,127 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Review reminders. POST_NOTIFICATIONS is runtime-requested on Android 13+
+         (see ReviewNotificationService.requestPermission), deliberately at the
+         moment a review clock actually starts rather than on cold start.
+         RECEIVE_BOOT_COMPLETED lets pending reminders survive a reboot.
+         SCHEDULE_EXACT_ALARM is intentionally NOT declared: Play restricts it,
+         and a study reminder does not justify exact-alarm privileges. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <!-- Android Auto Backup is OFF, decided 2026-08-15 during the pre-Play
+         security audit. Both attributes are needed: `allowBackup` covers API 30
+         and below, `dataExtractionRules` covers 31+ (cloud backup *and*
+         device-to-device transfer, which is a separate channel).
+
+         `allowBackup` defaults to **true**, so this was on for the whole life of
+         the app without anyone deciding it. What it did: uploaded the SQLite
+         record (`app_flutter/sahm.sqlite`) and the preferences beside it to the
+         student's Google Drive, and restored them onto their next phone.
+
+         Why off. The first version of this reasoning kept it on, arguing that
+         Ather's own cloud backup is opt-in so this was the only thing standing
+         between a student who never enabled it and a lost phone. **That was
+         wrong, and it is worth recording why rather than just deleting it.**
+         `BackupSyncNotifier` uploads on a 20-second debounce after any write and
+         again on every backgrounding, for every signed-in student, with no
+         toggle anywhere — and the auth gate makes signing in mandatory. So every
+         student already has an automatic Firestore copy, and
+         `BackupSyncGate._restoreIfEmpty` pulls it onto a new phone unaided.
+
+         Once that is fixed the durability argument is nearly empty: Auto Backup
+         only runs on an **unmetered** network, so it never rescued the
+         offline-only student it was supposed to protect either. Both paths need
+         the same connection. What it did reliably provide was a second copy of a
+         minor's exam history, in a place this app does not control and cannot
+         delete — including on account deletion, where the best the deletion page
+         can do is tell the student to go clear it themselves.
+
+         The one real loss: a student whose compressed record passes
+         `_maxBlobBytes` fails with `BackupFailure.tooLarge` and now has no cloud
+         copy at all, where Auto Backup would have caught them. That is a reason
+         to page or raise the ceiling — tracked as a follow-up — not a reason to
+         keep an uncontrolled second copy.
+
+         **If this is ever turned back on: the database and `shared_prefs` are one
+         unit, and backing up one without the other is a data-mixing bug, not a
+         privacy tightening.** §3.30's one-account-per-device wipe compares an
+         incoming uid against `last_account_uid` in preferences. Restore the
+         database without that preference and `previous` reads null, the wipe
+         never fires, and the *second* student to sign in on a restored phone
+         opens the *first* student's curriculum — exactly the failure §3.30 was
+         written to fix. Verify any such change with a real backup → wipe →
+         restore cycle on a device you are free to erase; the include-domain for
+         `app_flutter/` is easy to get wrong and the mistake is silent. -->
+    <application
+        android:label="Ather"
+        android:name="${applicationName}"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- Load-bearing, and easy to miss: since flutter_local_notifications 16
+             the plugin's own manifest declares **permissions only** — verified
+             against the copy in the pub cache, which contains nothing but
+             POST_NOTIFICATIONS and VIBRATE. The two receivers below are what
+             actually turn a scheduled alarm into a notification, so without them
+             `zonedSchedule` succeeds, the alarm fires, and nothing is ever shown.
+             That is a silent failure with no error anywhere, which is exactly how
+             it went unnoticed.
+
+             ScheduledNotificationReceiver  -> shows a scheduled reminder.
+             ScheduledNotificationBootReceiver -> re-arms pending reminders after
+             a reboot or an app update, which is what RECEIVE_BOOT_COMPLETED above
+             is declared for. A 30-day cycle will cross at least one of those. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>

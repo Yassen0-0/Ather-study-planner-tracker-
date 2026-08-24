@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>أثر — معمل الحركة (بروتوتايب)</title>
+<style>
+  :root{
+    --bg:#000; --card:#1C1C1E; --page:#EFEFF2;
+    --text:#fff; --sub:#88888E; --accent:#4D9BFF; --green:#34C759;
+    --divider:rgba(255,255,255,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"Readex Pro",system-ui,"Segoe UI",sans-serif;
+    padding:28px 18px 60px; max-width:760px; margin:auto;
+  }
+  h1{font-size:20px;font-weight:600}
+  .lead{color:var(--sub);font-size:13px;margin-top:6px;line-height:1.9}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:22px}
+  .card{background:var(--card);border-radius:16px;padding:20px;border:1px solid var(--divider)}
+  .card h2{font-size:14px;font-weight:600;margin-bottom:4px}
+  .hint{color:var(--sub);font-size:11.5px;margin-bottom:16px;line-height:1.8}
+  .stage{display:flex;align-items:center;justify-content:center;min-height:96px}
+
+  /* slider */
+  .tuner{margin-top:22px;background:var(--card);border-radius:16px;padding:18px 20px;border:1px solid var(--divider)}
+  .tuner label{font-size:13px;display:flex;justify-content:space-between;margin-bottom:10px}
+  .tuner b{color:var(--accent);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .feel{color:var(--sub);font-size:12px;margin-top:8px}
+
+  /* tab bar */
+  .tabbar{
+    display:flex;background:rgba(28,28,30,.92);border:1px solid rgba(255,255,255,.12);
+    border-radius:999px;padding:6px;position:relative;width:min(340px,100%);
+  }
+  .tab{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:7px 0 5px;cursor:pointer;color:var(--sub);
+    -webkit-tap-highlight-color:transparent;user-select:none;
+  }
+  .tab svg{width:24px;height:24px;display:block}
+  .tab span{font-size:10px;font-family:inherit}
+  #indicator{
+    position:absolute;bottom:-1px;width:18px;height:3px;border-radius:2px;
+    background:var(--accent);left:0;will-change:transform;
+  }
+
+  /* press button */
+  .pressBtn{
+    background:var(--accent);color:#000;border:none;font-family:inherit;font-size:14px;
+    font-weight:600;padding:13px 34px;border-radius:12px;cursor:pointer;
+    will-change:transform;-webkit-tap-highlight-color:transparent;
+  }
+
+  /* disc */
+  .discWrap{position:relative;width:56px;height:56px;cursor:pointer}
+  .discWrap svg{position:absolute;inset:0}
+
+  /* number */
+  .num{font-size:44px;font-weight:700;color:var(--green);direction:ltr;font-variant-numeric:tabular-nums}
+  .numLabel{color:var(--sub);font-size:12px;text-align:center;margin-top:2px}
+</style>
+</head>
+<body>
+<h1>معمل حركة أثر — بروتوتايب النوابض</h1>
+<p class="lead">هذه ليست الشاشة الحقيقية؛ هذه تجربة إحساس لاقتراحات <b>animation/06_motion_specs.md</b>.
+كل شيء هنا يعمل بنابض فيزيائي واحد قابل للمقاطعة — نفس ما سيحدث في Flutter عبر
+<code>SpringSimulation</code>. جرّب الضغط السريع المتكرر: الحركة تكمل من مكانها ولا تعيد نفسها.</p>
+
+<div class="tuner">
+  <label>نسبة التخميد ζ (قليل = مرح · كثير = حاد) <b id="zetaVal">0.72</b></label>
+  <input type="range" id="zeta" min="35" max="100" value="72">
+  <div class="feel" id="feel">الإحساس: ارتداد اختيار نظيف بلمسة حياة (منطقة تليجرام)</div>
+</div>
+
+<div class="grid">
+
+  <div class="card">
+    <h2>① التاب بار — SP-02 + SP-03</h2>
+    <div class="hint">اضغط تبويبًا: الأيقونة تغوص ثم ترتد بنابض، وزن الخط يثخن، والنقطة الزرقاء تنزلق.
+      هذا هو «إحساس تليجرام» المطلوب.</div>
+    <div class="stage">
+      <div class="tabbar" id="tabbar">
+        <div class="tab" data-i="0"><svg viewBox="0 0 24 24" fill="none"><path id="g0" d="M4 11 L12 4 L20 11 V20 H14.5 V14.5 H9.5 V20 H4 Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg><span>الرئيسية</span></div>
+        <div class="tab" data-i="1"><svg viewBox="0 0 24 24" fill="none"><circle id="g1c" cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.9"/><path id="g1p" d="M12 7.5 V12 L15.5 14" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg><span>المراجعة</span></div>
+        <div class="tab" data-i="2"><svg viewBox="0 0 24 24" fill="none"><path id="g2" d="M5 20 V12 M12 20 V5 M19 20 V15" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg><span>التقدم</span></div>
+        <div class="tab" data-i="3"><svg viewBox="0 0 24 24" fill="none"><path id="g3" d="M4.5 6.5 L6.5 8.5 L10 4.5 M13 6.5 H19.5 M4.5 17.5 L6.5 19.5 L10 15.5 M13 17.5 H19.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><span>المهام</span></div>
+        <div id="indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>② زر الضغط الفيزيائي — SP-07</h2>
+    <div class="hint">النزول crisp (بلا ارتداد) والإفلات بنابض يستقبل سرعتك — اضغط وارفع بسرعات مختلفة.</div>
+    <div class="stage"><button class="pressBtn" id="pressBtn">سجّل الامتحان</button></div>
+  </div>
+
+  <div class="card">
+    <h2>③ القرص الغارق + علامة الصح — موجودة اليوم، أُعيد ضبطها</h2>
+    <div class="hint">الحلقة تغرق للداخل (120ms) ثم الصح يُرسَم ويستقر بنبضة نابض خفيفة. اضغط لإعادة العرض.</div>
+    <div class="stage">
+      <div class="discWrap" id="disc">
+        <svg viewBox="0 0 56 56">
+          <circle id="ring" cx="28" cy="28" r="24" fill="none" stroke="#3a3a3e" stroke-width="2"/>
+          <circle id="floodRing" cx="28" cy="28" r="24" fill="none" stroke="var(--green)" stroke-width="2"/>
+          <circle id="fillDisc" cx="28" cy="28" r="21" fill="var(--green)" opacity="0"/>
+          <path id="check" d="M18 29 L25 36 L39 21" fill="none" stroke="#fff"
+                stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>④ الرقم الذي يستقر — SP-04</h2>
+    <div class="hint">عدّ النتيجة مع استقرار نابض في النهاية (بدل التوقف الجاف). اضغط لإعادة العرض.</div>
+    <div class="stage" style="flex-direction:column">
+      <div class="num" id="numEl">0%</div>
+      <div class="numLabel">درجة إتقان الفصل — اضغط الرقم لإعادة العد</div>
+    </div>
+  </div>
+
+</div>
+
+<p class="lead" style="margin-top:26px">الملفات الكاملة والمناقشات والأكواد في فولدر
+<code>animation/</code>. لا شيء من هذا مطبَّق على تطبيق Flutter.</p>
+
+<script>
+/* ===== محرك نابض واحد (semi-implicit Euler) — نظير مبسط لـ SpringSimulation ===== */
+let ZETA = 0.72;
+const springs = [];
+function spring(x){ const s={x, v:0, target:x, done:true}; springs.push(s); return s; }
+// stiffness من "المدة": ω=2π/T ; c=2ζω (mass=1) — نفس دلالات withDurationAndBounce
+function retune(s, durMs){ s.w = 2*Math.PI/(durMs/1000); return s; }
+function step(springs, dt){
+  for(const s of springs){
+    if(s.done) continue;
+    const k=(s.w||2*Math.PI/0.3)**2, c=2*ZETA*(s.w||2*Math.PI/0.3);
+    s.v += (-k*(s.x-s.target)-c*s.v)*dt; s.x += s.v*dt;
+    if(Math.abs(s.x-s.target)<0.0004 && Math.abs(s.v)<0.004){ s.x=s.target; s.v=0; s.done=true; }
+  }
+}
+function go(s,val,dur=300){ s.target=val; s.done=false; retune(s,dur); }
+let last=performance.now();
+(function loop(now){
+  const dt=Math.min((now-last)/1000,1/40); last=now;
+  step(springs,dt); requestAnimationFrame(loop);
+})(last);
+
+/* ===== ① التاب بار ===== */
+const tabs=[...document.querySelectorAll('.tab')];
+const indicator=document.getElementById('indicator');
+const glyphIds=['g0','g1c','g1p','g2','g3'];
+const weights={0:[1.9,3],1:[1.9,3],2:[2.1,3.4],3:[1.9,2.9]};
+let active=-1;
+tabs.forEach((tab,i)=>{
+  tab._scale=spring(1); tab._weight=spring(0);
+  tab.addEventListener('pointerdown',()=>{
+    if(active===i) return;
+    active=i;
+    tabs.forEach((t,j)=>{
+      const on=j===i;
+      t.style.color=on?'var(--accent)':'';
+      go(t._scale,on?1:1,200);
+      if(on){ t._scale.x=.88; t._scale.v=0; t._scale.done=false; go(t._scale,1,320); }
+      go(t._weight,on?1:0,150);
+    });
+    // المؤشر ينزلق بموضعه الحالي (مقاطعة مجانية)
+    const bar=document.getElementById('tabbar').getBoundingClientRect();
+    const r=tab.getBoundingClientRect();
+    const target=r.left-bar.left+(r.width-18)/2;
+    if(!indicator._s) indicator._s=spring(r.left-bar.left-((bar.width)/tabs.length-18)/2);
+    go(indicator._s,target,260);
+  });
+});
+(function(){const br=document.getElementById('tabbar').getBoundingClientRect();const r0=tabs[0].getBoundingClientRect();indicator._s=spring(r0.left-br.left+(r0.width-18)/2);indicator.style.transform='translateX('+indicator._s.x+'px)';tabs[0].style.color='var(--accent)'})();
+setInterval(()=>{ // رسم حالة التابات
+  tabs.forEach((t,i)=>{
+    const w=t._weight.x, base=i in weights?weights[i][0]:1.9;
+    document.querySelectorAll(`[data-i="${i}"] svg path, [data-i="${i}"] svg circle`).forEach(p=>{
+      p.setAttribute('stroke-width',(base+(((weights[i]||[0,0])[1])-base)*w).toFixed(2));
+      p.setAttribute('stroke','currentColor');
+      p.style.color=t.style.color||'var(--sub)';
+    });
+    t.querySelector('svg').style.transform=`scale(${(0.88+0.12*t._scale.x).toFixed(4)})`;
+  });
+  if(indicator._s) indicator.style.transform=`translateX(${indicator._s.x}px)`;
+},16);
+
+/* ===== ② زر الضغط ===== */
+const btn=document.getElementById('pressBtn'); const bs=spring(1);
+btn.addEventListener('pointerdown',()=>go(bs,.95,160));
+['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev,()=>go(bs,1,320)));
+(function drawBtn(){ btn.style.transform=`scale(${bs.x.toFixed(4)})`; requestAnimationFrame(drawBtn); })();
+
+/* ===== ③ القرص الغارق ===== */
+const ring=document.getElementById('floodRing'), disc=document.getElementById('fillDisc'),
+      check=document.getElementById('check'), C=2*Math.PI*24;
+check.style.strokeDasharray=C; check.style.strokeDashoffset=C;
+function playDisc(){
+  const t0=performance.now(), D=340;
+  check.style.transition='none';
+  (function f(now){
+    let p=Math.min((now-t0)/D,1);
+    const flood=Math.min(p/0.35,1), tick=Math.max((p-0.35)/0.65,0);
+    ring.setAttribute('r',24-(24-21)*flood);
+    ring.setAttribute('stroke-width',2+7*flood);
+    ring.setAttribute('opacity',1-flood);
+    disc.setAttribute('opacity',tick);
+    check.style.strokeDashoffset=C*(1-tick);
+    if(p<1) requestAnimationFrame(f);
+  })(t0);
+}
+document.getElementById('disc').addEventListener('click',playDisc); playDisc();
+
+/* ===== ④ العدّاد ===== */
+const numEl=document.getElementById('numEl');
+function playNum(){
+  const t0=performance.now(), D=700, target=87;
+  (function f(now){
+    let t=Math.min((now-t0)/D,1), e=1-Math.pow(1-t,3); // easeOutCubic
+    numEl.textContent=Math.round(target*e)+'%';
+    if(t<1) requestAnimationFrame(f);
+  })(t0);
+}
+numEl.addEventListener('click',playNum); numEl.style.cursor='pointer'; playNum();
+
+/* ===== شريط ζ ===== */
+const feels=[
+  [0.50,'الإحساس: مرح ومبالغ — احتفالات فقط'],
+  [0.65,'الإحساس: حي ودافئ — لمسات بهجة'],
+  [0.72,'الإحساس: ارتداد اختيار نظيف بلمسة حياة (منطقة تليجرام)'],
+  [0.85,'الإحساس: واثق وهادئ — كروم يومي'],
+  [1.01,'الإحساس: حاد تمامًا بلا ارتداد — ضغط وأدوات'],
+];
+document.getElementById('zeta').addEventListener('input',e=>{
+  ZETA=e.target.value/100;
+  document.getElementById('zetaVal').textContent=ZETA.toFixed(2);
+  document.getElementById('feel').textContent='الإحساس: '+feels.find(f=>ZETA<f[0])[1];
+});
+document.getElementById('feel').textContent=feels.find(f=>0.72<f[0])[1];
+</script>
+</body>
+</html>

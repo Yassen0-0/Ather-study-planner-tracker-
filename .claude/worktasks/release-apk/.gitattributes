@@ -1,0 +1,55 @@
+# Line endings, settled once.
+#
+# This repository is worked on from Windows, where `core.autocrlf=true` rewrites
+# checked-out text to CRLF. Anything a tool *regenerates* comes back with LF —
+# `flutter gen-l10n`, `build_runner`, `dart format` — so after every regeneration
+# git reported the l10n and drift output as modified when not one character had
+# changed. Phantom diffs on generated files are worse than untidy: they train
+# whoever reads `git status` to skip past those paths, which is exactly where a
+# real regeneration difference would hide.
+#
+# `text=auto` normalises to LF in the repository and lets each checkout use
+# whatever the platform wants, so the working tree can be CRLF and the stored
+# blob stable.
+* text=auto
+
+# Dart, and the config that travels with it, are always text.
+*.dart   text
+*.arb    text eol=lf
+*.yaml   text
+*.yml    text
+*.json   text
+*.md     text
+*.gradle text
+*.kts    text
+*.xml    text
+*.svg    text
+
+# The Windows desktop runner. `flutter` regenerates these with LF, and without
+# an entry here they sit permanently "modified" in `git status` with an empty
+# `git diff` -- the exact phantom diff this file was written to stop, missed the
+# first time because the list only covered Dart and its config. It matters more
+# than tidiness: Rule 2's worktree sweep is read off `git status`, and a worktree
+# that always shows three modified files teaches you to skip past the one line
+# that would have been real.
+*.cc     text
+*.h      text
+*.cmake  text
+*.txt    text
+
+# Shell scripts are LF everywhere, including on Windows checkouts. A `.sh` with
+# CRLF is not merely untidy: bash reads the carriage return as part of the
+# shebang and of every line, so the script dies with `$'\r': command not found`
+# under Git Bash and `bad interpreter` on a Linux runner.
+# tool/check_invariants.sh has to run in both.
+*.sh     text eol=lf
+
+# Binary, so git never tries to normalise or diff them as lines. The golden
+# renders are ignored rather than tracked (see .gitignore), but the branding
+# bitmaps and the bundled font are here and must survive byte-for-byte.
+*.png    binary
+*.ico    binary
+*.jpg    binary
+*.ttf    binary
+*.jks    binary
+*.keystore binary

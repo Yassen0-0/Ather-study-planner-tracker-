@@ -1,0 +1,103 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/coverage/
+
+# Build output. Not just the root one: Gradle writes android/build/ and
+# android/app/build/, and the Windows desktop build writes windows/build/.
+build/
+.gradle/
+
+# A release APK copied out of build/ to be renamed and uploaded.
+#
+# `build/` above does not cover it: the publishing step copies the artifact to
+# the repository root under its release name, which is outside every ignored
+# directory. Two of those were already sitting untracked in two worktrees when
+# this rule was written, and one `git add -A` — a command this repository's own
+# workflow runs — would have put 23 MB of binary into the history permanently,
+# where it cannot be removed without rewriting every commit after it.
+*.apk
+*.aab
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Everything tool/render writes: the light and dark screen renders, the motion
+# filmstrips, and the diff images a failed golden leaves behind. All generated,
+# all regenerable, none of it reviewable in a diff.
+tool/render/render/
+tool/render/render-dark/
+tool/render/motion/
+tool/render/failures/
+dist/
+
+# Release signing. NEVER commit either of these.
+#
+# key.properties holds the keystore passwords in plain text, and a .jks/.keystore
+# is the upload key itself: whoever has it can publish an update to this app.
+# Losing it is worse -- Play will not accept a build signed with anything else,
+# so keep a backup somewhere that is not this repository.
+android/key.properties
+*.jks
+*.keystore
+
+# The APK served from the site. Firebase Hosting deploys whatever is in
+# `public/`, so the file has to be there at deploy time -- but a 24MB binary
+# committed once per release makes the repository grow by a quarter of a
+# gigabyte a year, and git keeps every copy forever. `public/README.md` has the
+# one-line copy step that puts it there.
+public/*.apk
+.commandcode/
+
+# Auto Claude data directory
+.auto-claude/
+
+# Auto Claude generated files
+.auto-claude-security.json
+.auto-claude-status
+.claude_settings.json
+.worktrees/
+.security-key
+logs/security/
+
+# Session worktree roots at the repository root: gitlinks for them were
+# committed by mistake, which made git treat real worktrees as submodules.
+wt-session-a/
+wt-session-b/

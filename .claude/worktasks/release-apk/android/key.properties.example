@@ -1,0 +1,28 @@
+# Copy this file to `android/key.properties` and fill in your own values.
+#
+# Full procedure, including registering the key's SHA-1 with Firebase:
+#   RELEASING.md (in the repository root)
+#
+# `key.properties` is git-ignored and must stay that way: it holds the keystore
+# passwords in plain text. The keystore file itself belongs OUTSIDE this
+# repository -- keep it, and a backup of it, somewhere you will still have in a
+# year. If it is lost, Google Play will not accept an update signed with
+# anything else, and the app can never be updated again.
+#
+# Generate the keystore yourself (never paste a password into a chat or a file
+# that gets committed):
+#
+#   keytool -genkey -v -keystore C:\Users\<you>\keys\ather-upload.jks \
+#     -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias ather
+#
+# Then verify a build with:
+#
+#   flutter build apk --release
+#   apksigner verify --print-certs build\app\outputs\flutter-apk\app-release.apk
+#
+# The certificate DN must be your own details, NOT "CN=Android Debug".
+
+storeFile=C:\\Users\\<you>\\keys\\ather-upload.jks
+storePassword=<the store password you chose>
+keyAlias=ather
+keyPassword=<the key password you chose>

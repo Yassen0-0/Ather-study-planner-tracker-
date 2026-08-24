@@ -1,0 +1,79 @@
+import 'dart:async';
+
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/material.dart';
+
+import '../../core/l10n/generated/app_localizations.dart';
+import '../../core/widgets/ather_toast.dart';
+
+/// Runs a write and tells the student if it did not happen.
+///
+/// **Why this exists.** Almost every write in the app was fire-and-forget:
+/// ticking a checklist step, saving a homework score, mastering a chapter,
+/// adding a chapter or a lesson or a task, reordering a day. A failure on any of
+/// them produced no exception anyone caught, no message, and no change on
+/// screen — the tap simply did nothing, and the student's only reading of that
+/// is that the app is broken. In an offline-first app the database is the one
+/// thing that is *supposed* to be reliable, which is exactly why its rare
+/// failures need saying out loud rather than assuming away.
+///
+/// The context is resolved **before** the await, so nothing reaches into a tree
+/// that may have been torn down while the write was in flight — the same rule
+/// the exam wizard and the backup card already follow by hand.
+///
+/// Returns whether the write succeeded, so a caller that has follow-up work
+/// (pop the screen, show its own toast) can skip it.
+Future<bool> runWrite(
+  BuildContext context,
+  Future<void> Function() action, {
+
+  /// Shown on success. Most writes are their own confirmation — the row appears,
+  /// the tick fills — so this is usually null and the toast stays reserved for
+  /// recording evidence.
+  String? successMessage,
+}) async {
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  final direction = Directionality.of(context);
+  final failureMessage = L.of(context).commonSomethingWentWrong;
+
+  try {
+    await action();
+  } on Object catch (error, stack) {
+    debugPrint('Ather: write failed -- $error\n$stack');
+    // Reported as a non-fatal beside the toast, never instead of it. The toast
+    // is what the student needs ("this tap did not land"); the report is what
+    // the developer needs: every write in the app funnels through here, so one
+    // line makes all of them countable in Crashlytics the way exam saves and
+    // backup transfers already were. Without it, a failing disk -- the commonest
+    // real failure on the cheap phones this app runs on -- shows up as a
+    // student seeing "حصل خطأ ما" over and over and zero traces on the console.
+    //
+    // Release only, matching main.dart's policy: debugPrint already covers
+    // local visibility, and a development device reporting non-fatals would
+    // pollute the production console with crashes its own build caused.
+    // Unawaited with an swallowed error: sending a crash report must never
+    // become the failure the student is told about.
+    if (!kDebugMode) {
+      unawaited(
+        FirebaseCrashlytics.instance
+            .recordError(error, stack, fatal: false)
+            .catchError((Object _) {}),
+      );
+    }
+    if (overlay != null) {
+      showAtherToastOn(
+        overlay,
+        direction,
+        failureMessage,
+        tone: ToastTone.failed,
+      );
+    }
+    return false;
+  }
+
+  if (successMessage != null && overlay != null) {
+    showAtherToastOn(overlay, direction, successMessage);
+  }
+  return true;
+}

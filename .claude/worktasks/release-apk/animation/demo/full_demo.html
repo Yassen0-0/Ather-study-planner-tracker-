@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>أثر — العرض التفاعلي الكامل لكل الإضافات المقترحة</title>
+<style>
+:root{
+  --bg:#000;--card:#1C1C1E;--card2:#2C2C2E;--deep:#141416;--ink:#0B0B0D;
+  --text:#fff;--sub:#88888E;--accent:#4D9BFF;--green:#34C759;--red:#FF3B30;
+  --line:rgba(255,255,255,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:"Readex Pro",system-ui,"Segoe UI",sans-serif;padding:26px 16px 70px;max-width:800px;margin:auto}
+body.rm *{transition-duration:0s!important;animation-duration:0s!important;transition-delay:0s!important;animation-delay:0s!important}
+h1{font-size:21px}
+.lead{color:var(--sub);font-size:12.5px;line-height:1.95;margin-top:8px}
+code{background:var(--card2);padding:1px 6px;border-radius:5px;font-size:11px}
+
+/* ===== controls ===== */
+.ctrl{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.ctrl label{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:7px;cursor:pointer}
+.ctrl b{color:var(--accent);font-weight:700}
+input[type=range]{accent-color:var(--accent);min-width:170px}
+.feel{width:100%;color:var(--sub);font-size:11.5px}
+input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+
+/* ===== nav ===== */
+#chips{position:sticky;top:0;z-index:60;background:rgba(0,0,0,.86);backdrop-filter:blur(10px);display:flex;gap:6px;overflow-x:auto;padding:10px 2px;margin-top:14px;scrollbar-width:none}
+.nchip{flex:none;color:var(--sub);text-decoration:none;font-size:11px;padding:6px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);white-space:nowrap}
+.nchip:hover{color:var(--accent)}
+
+/* ===== sections ===== */
+section.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:16px;scroll-margin-top:56px}
+h2{font-size:15px;font-weight:700}
+.ref{color:var(--sub);font-size:10.5px;font-weight:400;margin-inline-start:8px;direction:ltr;display:inline-block}
+.hint{color:var(--sub);font-size:12px;line-height:1.95;margin:7px 0 16px}
+.stage{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* ===== buttons ===== */
+.btn{border:0;font-family:inherit;border-radius:11px;padding:12px 22px;font-size:13.5px;font-weight:700;cursor:pointer;background:var(--card2);color:var(--text);transition:background-color .22s,color .22s,opacity .18s,border-color .22s;-webkit-tap-highlight-color:transparent;user-select:none}
+.btn.primary{background:var(--accent);color:#000}
+.btn.green{background:var(--green);color:#fff}
+.btn.white{background:#fff;color:#000}
+.btn.ghost{background:transparent;color:var(--sub);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.small{padding:8px 14px;font-size:12px;border-radius:9px}
+.btn.disabled{opacity:.45;pointer-events:none}
+#saveBtn{position:relative}
+#saveLbl{transition:opacity .13s}
+#saveLbl.fading{opacity:0}
+#saveRing{position:absolute;top:50%;right:50%;width:16px;height:16px;margin:-8px -8px 0 0;border:2px solid rgba(0,0,0,.25);border-top-color:#000;border-radius:50%;opacity:0;transition:opacity .12s;animation:spin .7s linear infinite;pointer-events:none}
+#saveRing.on{opacity:1}
+@keyframes spin{to{transform:rotate(360deg)}}
+body.rm #saveRing.on{animation:none}
+#saveDone{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0;pointer-events:none}
+#saveDone.pop{animation:discPop .34s cubic-bezier(.34,1.56,.64,1) both}
+body.rm #saveDone.pop{animation:none;opacity:1}
+.press{will-change:transform;transition:transform .32s cubic-bezier(.34,1.56,.64,1),background-color .22s,color .22s,opacity .18s,box-shadow .22s}
+.press.dn{transform:scale(.95);transition-duration:.15s;transition-timing-function:cubic-bezier(.3,.7,.4,1)}
+.mini{color:var(--sub);font-size:11px}
+
+/* ===== tab bar ===== */
+.tabbar{position:relative;display:flex;direction:ltr;background:#131315;border:1px solid var(--line);border-radius:999px;padding:8px 6px 11px}
+.tab{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;color:var(--sub);cursor:pointer;padding:6px 0;transition:color .15s;font-family:inherit}
+.tab.sel{color:var(--accent)}
+.tab svg{width:24px;height:24px;will-change:transform}
+.tab span{font-size:10px}
+#ind{position:absolute;bottom:3px;width:18px;height:3px;border-radius:2px;background:var(--accent);left:0;will-change:transform}
+.badge{position:absolute;top:-3px;left:50%;background:var(--red);color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;will-change:transform}
+.badge.hide{display:none}
+
+/* ===== odometer ===== */
+.odo{display:inline-flex;direction:ltr;vertical-align:bottom}
+.ocol{height:1em;overflow:hidden}
+.ostrip{display:flex;flex-direction:column}
+.ostrip b{height:1em;line-height:1;font-weight:inherit;text-align:center;display:block}
+.numrow{font-size:30px;font-weight:700;display:flex;align-items:center;gap:10px;direction:rtl}
+.numrow .lab{font-size:13px;color:var(--sub);font-weight:400}
+.statval{transition:color .001s}
+.bad{color:var(--red)!important}
+.good{color:var(--green)!important}
+
+/* ===== exam moment ===== */
+.xm{background:var(--deep);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:360px;width:100%}
+#xmNum{font-size:46px;font-weight:700;color:var(--green);direction:ltr;text-align:left;line-height:1.1}
+.xmbar{height:8px;background:#2A2A2E;border-radius:4px;overflow:hidden;direction:ltr;margin-top:12px}
+#xmFill{height:100%;width:100%;background:var(--green);transform:scaleX(0);transform-origin:left;border-radius:4px}
+#xmCap{color:var(--sub);font-size:11.5px;margin-top:9px;opacity:0;transition:opacity .2s}
+
+/* ===== celebration ===== */
+.celwrap{position:relative;min-height:340px;border-radius:14px;overflow:hidden;background:#101013}
+.celov{position:absolute;inset:0;background:#fff;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;opacity:0;pointer-events:none;transition:opacity .18s;cursor:pointer}
+.celov.show{opacity:1;pointer-events:auto}
+.cel-title{font-size:17px;font-weight:700}
+.cel-body{font-size:12px;color:#555}
+#celP{font-size:40px;font-weight:700;color:#1B7F3B;direction:ltr;margin:4px 0}
+.discw{position:relative;width:112px;height:112px;display:flex;align-items:center;justify-content:center;margin:8px 0}
+.discg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+@keyframes discPop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.celov.play .discg{animation:discPop .5s cubic-bezier(.34,1.56,.64,1) both}
+body.rm .celov.play .discg{animation:none}
+
+/* ===== analytics ===== */
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:0;background:var(--card2);color:var(--text);padding:8px 16px;border-radius:999px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;transition:background-color .18s,color .18s}
+.chip.sel{background:var(--accent);color:#000}
+.bars{display:flex;direction:ltr;gap:16px;align-items:stretch;height:170px;margin-top:18px;padding-top:6px}
+.acol{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.apct{font-size:11px;color:var(--sub);direction:ltr}
+.atrack{flex:1;width:28px;background:#232327;border-radius:8px;display:flex;align-items:flex-end;overflow:hidden}
+.afill{width:100%;height:0;border-radius:8px 8px 0 0;transition:height .45s cubic-bezier(.215,.61,.355,1)}
+.aname{font-size:10px;color:var(--sub)}
+.trajbox{margin-top:18px;background:var(--deep);border:1px solid var(--line);border-radius:12px;padding:12px}
+.trajmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:6px}
+.tup{color:var(--green)}
+@keyframes dotIn{from{transform:scale(0)}to{transform:scale(1)}}
+#trajDot{transform-box:fill-box;transform-origin:center;opacity:0}
+#trajDot.pop{animation:dotIn .25s cubic-bezier(.34,1.56,.64,1) both}
+body.rm #trajDot.pop{animation:none;opacity:1;transform:none}
+
+/* ===== day picker ===== */
+.dpwrap{direction:ltr}
+#dpTitle{font-size:14px;font-weight:700;margin-bottom:4px;transition:opacity .12s}
+.dp{position:relative;direction:ltr;overflow:hidden;background:var(--deep);border-radius:14px;padding:14px 0;touch-action:pan-y;user-select:none}
+.dp.dragging{cursor:grabbing}
+.dtrack{display:flex;will-change:transform}
+.cell{flex:0 0 84px;margin:0 4px;display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 0;border-radius:12px;background:none;border:0;color:var(--sub);font-family:inherit;cursor:pointer;transition:background-color .18s,color .18s}
+.cell .dd{font-size:15px;font-weight:700;direction:ltr}
+.cell .dw{font-size:10px}
+.cell.sel{background:var(--accent);color:#000}
+.cell .dot{width:5px;height:5px;border-radius:50%;background:var(--green);transform:scale(0);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.cell.done .dot{transform:scale(1)}
+.glow{position:absolute;top:0;bottom:0;width:22px;pointer-events:none;opacity:0;transition:opacity .18s}
+.glow.r{right:0;background:linear-gradient(to left,rgba(52,199,89,.35),transparent)}
+.glow.show{opacity:1}
+.dpnote{font-size:11px;color:var(--sub)}
+
+/* ===== lists ===== */
+.lrow{background:var(--card2);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;overflow:hidden;transition:height .24s cubic-bezier(.23,1,.32,1),opacity .18s,margin-bottom .18s,padding .18s}
+.lrow.gone{opacity:0;height:0!important;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0}
+.lrow .rr{color:var(--red);font-size:11px}
+.lrow .tt{font-size:13.5px;font-weight:600}
+.xb{margin-inline-start:auto;background:none;border:0;color:var(--sub);cursor:pointer;font-size:15px;padding:6px}
+.succ{display:none;text-align:center;padding:22px 10px}
+.succ .sdisc{width:64px;height:64px;border-radius:50%;background:var(--green);margin:0 auto 12px;display:flex;align-items:center;justify-content:center}
+.succ.show{display:block;animation:popBig .34s cubic-bezier(.34,1.56,.64,1) both}
+body.rm .succ.show{animation:none}
+@keyframes popBig{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+
+/* ===== first-run ===== */
+.frstage{position:relative;min-height:200px}
+.frlayer{transition:opacity .2s,transform .2s}
+.frlayer.fade{opacity:0;transform:translateY(-6px);pointer-events:none}
+.frlayer.pre{opacity:0;transform:translateY(8px);pointer-events:none}
+.frcard{background:var(--card2);border-radius:12px;padding:16px}
+.frpair{display:flex;gap:10px}
+.frpair .frcard{flex:1}
+
+/* ===== fields & banner ===== */
+.field{background:var(--card2);border:1px solid transparent;border-radius:10px;padding:12px 14px;color:var(--text);font-family:inherit;font-size:13.5px;width:100%;transition:border-color .18s,box-shadow .15s}
+.field:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(77,155,255,.22)}
+.field.flash{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(255,59,48,.2)}
+.banner{background:rgba(255,59,48,.14);color:var(--red);border-radius:10px;padding:10px 14px;font-size:12px;opacity:0;transform:translateY(6px);transition:.18s}
+.banner.in{opacity:1;transform:none}
+.banner.hidden{display:none}
+
+/* ===== sheet ===== */
+.phone{position:relative;height:380px;border-radius:18px;overflow:hidden;background:var(--ink);border:1px solid var(--line)}
+.pcontent{padding:16px;display:grid;gap:10px}
+.skel{height:46px;border-radius:10px;background:#17171a}
+.fab{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:5}
+.scrim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.on{opacity:.55;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:18px 18px 0 0;transform:translateY(103%);transition:transform .28s cubic-bezier(.22,1,.36,1);padding:8px 16px 24px;touch-action:none}
+.sheet.open{transform:none}
+.sheet.dragging{transition:none}
+.grabzone{padding:6px 0 8px;cursor:grab;touch-action:none;user-select:none}
+.handle{width:36px;height:5px;border-radius:3px;background:#3a3a3e;margin:0 auto;transition:transform .2s,background-color .2s}
+.sh-title{margin-top:10px;font-size:14px;font-weight:700}
+.sh-line{color:var(--sub);font-size:11.5px;margin-top:6px}
+
+/* ===== toast ===== */
+.tframe{position:relative;height:150px;background:var(--ink);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.tfakeline{position:absolute;inset:16px 16px auto;display:grid;gap:8px}
+.toast{position:absolute;bottom:14px;left:50%;transform:translate(-50%,12px);background:#fff;color:#000;font-size:12px;font-weight:700;padding:10px 16px;border-radius:999px;display:flex;align-items:center;gap:8px;opacity:0;transition:opacity .18s,transform .18s;white-space:nowrap}
+.toast.in{opacity:1;transform:translate(-50%,0)}
+.toast.out{opacity:0;transform:translate(-50%,6px);transition:opacity .15s,transform .15s}
+
+/* ===== auth ===== */
+.authwrap{display:grid;gap:12px}
+.ablk{grid-area:1/1;display:grid;gap:12px;transition:opacity .2s,transform .2s}
+.ablk.off{opacity:0;transform:translateY(-6px);pointer-events:none}
+.ablk.pre{opacity:0;transform:translateY(6px);pointer-events:none}
+.ahead{font-size:16px;font-weight:700}
+.eye{position:absolute;top:50%;left:10px;transform:translateY(-50%);background:none;border:0;color:var(--sub);cursor:pointer;padding:6px}
+.eye svg{display:block}
+.eye.closed .pupil{opacity:0;transform:translateY(2px)}
+.eye .pupil{transition:opacity .18s,transform .18s}
+.eyeline{stroke-dasharray:100;stroke-dashoffset:100;transition:stroke-dashoffset .22s}
+.eye.closed .eyeline{stroke-dashoffset:0}
+.pwwrap{position:relative}
+
+/* ===== brand / lock ===== */
+.brandwrap{position:relative;min-height:330px;border-radius:14px;overflow:hidden;background:var(--ink);display:flex;align-items:center;justify-content:center}
+.dashfake{padding:20px;display:grid;gap:10px;width:100%}
+#lockLayer{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .2s;z-index:4}
+#lockLayer.open{opacity:0;pointer-events:none}
+#brWord{opacity:0;font-size:20px;font-weight:700;letter-spacing:1px}
+
+/* ===== segmented ===== */
+.segc{position:relative;display:flex;background:var(--card2);border-radius:12px;padding:4px;max-width:340px}
+#spill{position:absolute;top:4px;bottom:4px;left:0;background:var(--accent);border-radius:9px;will-change:transform;width:104px}
+.segopt{position:relative;z-index:1;flex:1;border:0;background:none;color:var(--sub);padding:10px 0;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:color .18s}
+.segopt.sel{color:#000}
+
+footer{margin-top:26px;color:var(--sub);font-size:11.5px;line-height:2}
+</style>
+</head>
+<body>
+
+<h1>أثر — العرض التفاعلي الكامل لكل الإضافات المقترحة</h1>
+<p class="lead">ده ملخص حي لكل اللي في فولدر <code>animation/</code>: كل قسم يمثّل مقترحًا موثقًا برقمه (SP/KIT/TK/AU/WZ…).
+جرّب كل عنصر بإيدك، وغيّر <b>نسبة التخميد ζ</b> تحت لتغيّر إحساس كل النوابض دفعة واحدة،
+وشغّل <b>تقليل الحركة</b> لتشوف كيف كل شيء يقفز للحالة النهائية فورًا (سياسة التطبيق).</p>
+
+<div class="ctrl">
+  <label>نسبة التخميد ζ <b id="zetaVal">0.72</b></label>
+  <input type="range" id="zeta" min="35" max="100" value="72">
+  <label><input type="checkbox" id="rmChk"> تقليل الحركة (Reduce Motion)</label>
+  <label><input type="checkbox" id="hapChk"> اهتزاز الجهاز إن دعم</label>
+  <div class="feel" id="feel"></div>
+</div>
+
+<nav id="chips">
+  <a class="nchip" href="#s-tabs">التاب بار</a><a class="nchip" href="#s-btn">الأزرار</a>
+  <a class="nchip" href="#s-num">الأرقام الحية</a><a class="nchip" href="#s-exam">لحظة النتيجة</a>
+  <a class="nchip" href="#s-cel">الاحتفال</a><a class="nchip" href="#s-ana">التحليلات</a>
+  <a class="nchip" href="#s-days">منتقي الأيام</a><a class="nchip" href="#s-lists">القوائم والحذف</a>
+  <a class="nchip" href="#s-first">أول تشغيل + الخطأ</a><a class="nchip" href="#s-sheet">الشيت</a>
+  <a class="nchip" href="#s-toast">التوست</a><a class="nchip" href="#s-auth">الدخول</a>
+  <a class="nchip" href="#s-brand">علامة أثر</a><a class="nchip" href="#s-seg">المقاطع</a>
+</nav>
+
+<!-- 1 TAB BAR -->
+<section class="card" id="s-tabs">
+  <h2>① التاب بار الحي <span class="ref">SH-01 · SP-02 · SP-03 · SH-02</span></h2>
+  <p class="hint">اضغط تبويبًا: الأيقونة تغوص وترتد بنابض، وزن الخط يثخن، اللون يتحول للأزرق،
+  والنقطة تنزلق تحت التاب المختار. زرّا العدد يحرّكان شارة «متأخر» بنبضة PopIn متزامنة.</p>
+  <div class="stage">
+    <div class="tabbar" id="tb">
+      <button class="tab sel"><svg viewBox="0 0 24 24" fill="none"><path d="M4 11.2 L12 4.2 L20 11.2 V20 H14.4 V14.4 H9.6 V20 H4 Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg><span>الرئيسية</span></button>
+      <button class="tab"><span class="badge" id="badge">2</span><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.4" stroke="currentColor" stroke-width="1.9"/><path d="M12 7.6 V12 L15.4 13.8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg><span>المراجعة</span></button>
+      <button class="tab"><svg viewBox="0 0 24 24" fill="none"><path d="M5 20 V12.4 M12 20 V5 M19 20 V15" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg><span>التقدم</span></button>
+      <button class="tab"><svg viewBox="0 0 24 24" fill="none"><path d="M4.6 6.4 L6.6 8.4 L10 5 M13.4 6.4 H19.4 M4.6 17.6 L6.6 19.6 L10 16.2 M13.4 17.6 H19.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg><span>المهام</span></button>
+      <div id="ind"></div>
+    </div>
+    <div class="row">
+      <button class="btn small" id="bAdd">+ درس بقى متأخر</button>
+      <button class="btn small" id="bSub">− تمت مراجعة درس</button>
+    </div>
+    <div class="mini">الشارة تدخل بنبضة نابضة عند تغيّر العدد وتختفي عند الصفر — ومزامنة طورها مع توين اللون مقترحة (SH-02).</div>
+  </div>
+</section>
+
+<!-- 2 BUTTONS -->
+<section class="card" id="s-btn">
+  <h2>② عائلة الأزرار <span class="ref">KIT-01 · KIT-02 · KIT-03 · SP-07 · CH-01 · WZ-12</span></h2>
+  <p class="hint">
+   • <b>زر البوابة:</b> اضغطه ليقلب بين نغماته الثلاث — الخلفية والنص ينتقالان بأنيميشن Container
+   بدل القفزة الحالية.<br>
+   • <b>احفظ الامتحان:</b> النص يتلاشى أولًا ثم حلقة الدوران تدخل (بدل التبديل الخام)، وبعدها صحّ
+   ينبض. لاحظ زر «رجوع» بجانبه يبهت وهو المعطَّل أثناء الحفظ.<br>
+   • <b>معطّل يدويًا:</b> شغّل الصندوق لتشوف الهيئة المعطلة المقترحة لأي زر.</p>
+  <div class="stage">
+    <div class="row">
+      <button class="btn press primary" id="gateBtn"><span id="gateLbl">الباب لسه مكتملش</span></button>
+      <span class="mini">← ثلاث نغمات على زر واحد</span>
+    </div>
+    <div class="row">
+      <button class="btn press ghost" id="backBtn">رجوع</button>
+      <button class="btn press primary" id="saveBtn" style="position:relative;min-width:172px">
+        <span id="saveLbl">احفظ الامتحان</span>
+        <span id="saveRing"></span>
+        <span id="saveDone">✓</span>
+      </button>
+      <label class="mini"><input type="checkbox" id="disChk"> معطّل</label>
+    </div>
+  </div>
+</section>
+
+<!-- 3 NUMBERS -->
+<section class="card" id="s-num">
+  <h2>③ الأرقام الحية — عدّاد دوّار <span class="ref">KIT-04 · DB-08 · LE-02</span></h2>
+  <p class="hint">الأرقام تتدحرج عموديًا كعدّاد مسافة مسافة بدل التبديل الخام — أعلى بهجة لكل سطر كود.
+  جرّب أزرار الزيادة والنقصان ولاحظ انقلاب اللون لحظة عبور العتبة (فوري بقاعدة «الحكم اللوني»).</p>
+  <div class="stage">
+    <div class="numrow"><span class="statval good" id="lateRow"><span id="lateR"></span></span><span class="lab">درس متأخر — اللون أحمر فوق الصفر فورًا</span>
+      <button class="btn small" id="lateP">+</button><button class="btn small" id="lateM">−</button></div>
+    <div class="numrow"><span class="statval" id="chkRow"><span id="chkR"></span></span><span class="lab">/ 5 خطوط دراسة اتقنتها</span>
+      <button class="btn small" id="chkP">+</button><button class="btn small" id="chkM">−</button></div>
+  </div>
+</section>
+
+<!-- 4 EXAM MOMENT -->
+<section class="card" id="s-exam">
+  <h2>④ لحظة الخطوة ٤ المتزامنة <span class="ref">WZ-01 · SP-04أ</span></h2>
+  <p class="hint">إصلاح التناقض الحالي: اليوم العمود ممتلئ قبل الرقم. هنا الرقم يعدّ والعمود يمتلئ
+  <b>بنفس النافلة الزمنية ونفس المنحنى</b>، ثم سطر الجاهزية يظهر بعدهما.</p>
+  <div class="stage">
+    <div class="xm">
+      <div id="xmNum">0%</div>
+      <div class="xmbar"><div id="xmFill"></div></div>
+      <div id="xmCap">تمام، جاهز تدخل الامتحان</div>
+    </div>
+    <div><button class="btn press small" id="xmBtn">أعد العرض ↺</button></div>
+  </div>
+</section>
+
+<!-- 5 CELEBRATION -->
+<section class="card" id="s-cel">
+  <h2>⑤ الاحتفال بتتبيينة كاملة <span class="ref">CH-03 · SP-04ب</span></h2>
+  <p class="hint">العنوان أولًا → القرص الأخضر ينبض بتجاوز → حلقة حوله تغرق للداخل → النسبة تعدّ →
+  سطر السياق يظهر. لا جزيئات ولا إضافات — تتبيينة للموجود فقط. اضغط الشاشة البيضاء للإغلاق.</p>
+  <div class="stage">
+    <div class="celwrap">
+      <div class="celov" id="celOv">
+        <div class="cel-title" id="celT">أتقنت الباب!</div>
+        <div class="discw">
+          <svg width="112" height="112" viewBox="0 0 112 112" style="position:absolute;inset:0">
+            <circle id="celRing" cx="56" cy="56" r="46" fill="none" stroke="#34C759" stroke-width="2"/>
+          </svg>
+          <div class="discg"><div style="width:96px;height:96px;border-radius:50%;background:#34C759;display:flex;align-items:center;justify-content:center">
+            <svg width="44" height="44" viewBox="0 0 24 24"><path d="M6 12.4 L10.4 16.8 L18 8" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div></div>
+        </div>
+        <div id="celP">0%</div>
+        <div class="cel-body" id="celB">إنت أثبت إتقان الفصل ده بامتحان حقيقي</div>
+        <div class="mini" style="color:#999">اضغط في أي مكان للإغلاق</div>
+      </div>
+      <div style="padding:18px"><button class="btn press green" id="celBtn">▶ شغّل الاحتفال</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 ANALYTICS -->
+<section class="card" id="s-ana">
+  <h2>⑥ التحليلات الحية <span class="ref">AN-01..09 · SP-05 · SP-06</span></h2>
+  <p class="hint">الشاشة الأكثر ميوتًا حاليًا. هنا: الأعمدة تكبر بتدرّج عند الدخول وعند تغيير الفلتر،
+  النسب تعدّ مع عمودها، والشرائح تنتقل خلفيتها. خط المسار يُرسَم ثم نقطة آخر قراءة تنبض.</p>
+  <div class="stage">
+    <div class="chips" id="achips">
+      <button class="chip sel" data-k="all">كل المواد</button>
+      <button class="chip" data-k="bio">أحياء</button>
+      <button class="chip" data-k="phy">فيزياء</button>
+      <button class="chip" data-k="chem">كيمياء</button>
+      <button class="chip" data-k="eng">إنجليزي</button>
+    </div>
+    <div class="bars" id="bars"></div>
+    <div class="trajbox">
+      <svg viewBox="0 0 300 70" width="100%" height="70" style="direction:ltr">
+        <line x1="4" y1="62" x2="296" y2="62" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+        <path id="trajPath" d="M10 46 C 60 40, 90 34, 130 38 S 220 20, 290 14" fill="none" stroke="#4D9BFF" stroke-width="2" stroke-linecap="round"/>
+        <circle id="trajDot" cx="290" cy="14" r="4.5" fill="#4D9BFF"/>
+      </svg>
+      <div class="trajmeta"><span>مسار الإتقان خلال آخر دورات</span><span class="tup">+9% كل دورة ↗</span></div>
+    </div>
+    <div><button class="btn press small" id="trajBtn">أعد رسم المسار ↺</button></div>
+  </div>
+</section>
+
+<!-- 7 DAY PICKER -->
+<section class="card" id="s-days">
+  <h2>⑦ منتقي الأيام الفيزيائي <span class="ref">TK-01..06 · SP-08</span></h2>
+  <p class="hint">اسحب الصف بإصبعك/الماوس: المحتوى يتبعك جزئيًا مع مقاومة مطاطية عند الحد،
+  والإفلات بعد العتبة أو برمية سريعة يلتزم يومًا ويعيد التمركز بنابض يستقبل سرعة إصبعك.
+  النقاط الخضراء تنبض تحت الأيام المكتملة، والتوهج الأخضر يظهر بهدوء من جهة «اليوم».</p>
+  <div class="stage dpwrap">
+    <div id="dpTitle">المهام</div>
+    <div class="dp" id="dp">
+      <div class="dtrack" id="dtrack"></div>
+      <div class="glow r" id="dglow"></div>
+    </div>
+    <div class="row">
+      <label class="mini"><input type="checkbox" id="doneChk"> مهام اليوم مكتملة</label>
+      <span class="dpnote">(الشريط معروض بترتيب يسار→يمين لتبسيط البروتوتايب؛ التطبيق يحسب الاتجاه من RTL)</span>
+    </div>
+  </div>
+</section>
+
+<!-- 8 LISTS -->
+<section class="card" id="s-lists">
+  <h2>⑧ القوائم: المكافأة والحذف <span class="ref">RV-01 · SP-10 · LE-06</span></h2>
+  <p class="hint"><b>يسار:</b> «خلص طابور المراجعة» — الصفوف تخرج بالانهيار واحدًا وراء الآخر ثم
+  قرص النجاح يدخل بأكبر سجل pop (وزن يليق باللحظة).<br>
+  <b>يمين:</b> حذف امتحان من السجل — الصف ينهار بدل الاختفاء، والرقم فوقه يعيد العدّ فورًا.</p>
+  <div class="stage">
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:250px">
+        <div id="qList">
+          <div class="lrow"><span class="tt">الخلية</span><span class="rr">متأخر 12 يوم</span></div>
+          <div class="lrow"><span class="tt">الوراثة</span><span class="rr">ضعيف 44%</span></div>
+          <div class="lrow"><span class="tt">التنفس</span><span class="rr">متأخر 3 أيام</span></div>
+        </div>
+        <div class="succ" id="qSucc">
+          <div class="sdisc"><svg width="30" height="30" viewBox="0 0 24 24"><path d="M6 12.4 L10.4 16.8 L18 8" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div style="font-weight:700">طابور المراجعة فاضي 🎉</div>
+          <div class="mini">رجعت متقدم على كل المواد</div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn press small green" id="qGo">سجّل آخر امتحان</button>
+          <button class="btn small" id="qReset">إعادة</button>
+        </div>
+      </div>
+      <div style="flex:1;min-width:250px">
+        <div class="row" style="justify-content:space-between;margin-bottom:8px">
+          <span class="mini">إتقان الدرس</span>
+          <span class="statval good" id="histM" style="font-size:22px;font-weight:700;direction:ltr"></span>
+        </div>
+        <div id="hList">
+          <div class="lrow"><span class="tt">امتحان ١ — 87%</span><button class="xb">✕</button></div>
+          <div class="lrow"><span class="tt">مراجعة — 74%</span><button class="xb">✕</button></div>
+          <div class="lrow"><span class="tt">امتحان ٢ — 61%</span><button class="xb">✕</button></div>
+        </div>
+        <div class="mini" id="hEmpty" style="display:none">مفيش امتحانات مسجلة</div>
+        <div class="row" style="margin-top:8px"><button class="btn small" id="hReset">إعادة</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 FIRST RUN + ERROR -->
+<section class="card" id="s-first">
+  <h2>⑨ أول تشغيل + دورة حياة الخطأ <span class="ref">DB-05 · WZ-07/08</span></h2>
+  <p class="hint"><b>التبديل:</b> بطاقة الترحيب تخرج للأعلى وبطاقتا الملخص تدخلان من الأسفل (fadeThrough)
+  — لحظة ظهور أول رقم في حياة الطالب.<br>
+  <b>البنر:</b> إرسال فاضي → يدخل صاعدًا + الحقل يومض أحمر؛ اكتب اسمًا وأرسل → يخرج بهدوء (الخروج كان ميتًا).</p>
+  <div class="stage">
+    <div class="frstage">
+      <div class="frlayer" id="frEmpty"><div class="frcard" style="text-align:center">
+        <div style="font-weight:700;margin-bottom:6px">ابدأ أول باب</div>
+        <div class="mini" style="margin-bottom:12px">سُجّل أول امتحان وهتلاقي أرقامك هنا</div>
+        <button class="btn press small primary" id="frBtn">أنشئ أول باب</button>
+      </div></div>
+      <div class="frlayer" id="frFull" style="display:none"><div class="frpair">
+        <div class="frcard"><div class="mini">إتقانك الكلي</div><div style="font-size:26px;font-weight:700;color:var(--green)">63%</div></div>
+        <div class="frcard"><div class="mini">متأخر</div><div style="font-size:26px;font-weight:700;color:var(--red)">2</div></div>
+      </div></div>
+    </div>
+    <button class="btn small" id="frBack">↩ ارجع لحالة أول تشغيل</button>
+    <div style="max-width:360px">
+      <input class="field" id="errIn" placeholder="اسم الدرس الجديد">
+      <div class="banner hidden" id="errBan" style="margin-top:10px">اكتب اسم الدرس الأول</div>
+      <div style="margin-top:10px"><button class="btn press small primary" id="errGo">احفظ الدرس</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 SHEET -->
+<section class="card" id="s-sheet">
+  <h2>⑩ الشيت القابل للسحب <span class="ref">KIT-06 · KIT-07 · PH-03</span></h2>
+  <p class="hint">افتح الشيت ثم اسحب مقبضه لأسفل: يتبع إصبعك حيًّا، المقبض يقصر ويبهت مع التقدم،
+  والطبقة خلفه تشف. أفلت بعد 28٪ من الارتفاع أو برمية → يُغلق؛ وإلا يرجع بنابض.
+  (توكنز 280ms كانت مكتوبة بالمشروع وغير موصولة — ده شكلها وهي موصولة.)</p>
+  <div class="stage">
+    <div class="phone" id="phone">
+      <div class="pcontent">
+        <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel" style="height:80px"></div>
+      </div>
+      <div class="scrim" id="pscrim"></div>
+      <button class="fab btn press small primary" id="pfab">＋ إضافة</button>
+      <div class="sheet" id="psheet">
+        <div class="grabzone" id="grab">
+          <div class="handle" id="handle"></div>
+          <div class="sh-title">تعديل المهمة</div>
+          <div class="sh-line">اسحبني لأسفل وأفلت — أو برمة سريعة</div>
+        </div>
+        <div class="skel" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 TOAST -->
+<section class="card" id="s-toast">
+  <h2>⑪ التوست المتبادل <span class="ref">KIT-08</span></h2>
+  <p class="hint">اضغط الزر مرتين بسرعة: القديم يبدأ خروجًا والجديد يدخل بعده بـ60ms —
+  بدل الذوبان المتزامن الحالي. الخروج بدون انزلاق (العين سبته) كما هو مقرر.</p>
+  <div class="stage">
+    <div class="tframe">
+      <div class="tfakeline"><div class="skel"></div><div class="skel"></div></div>
+      <div id="toasts"></div>
+    </div>
+    <div><button class="btn press small" id="toastBtn">أظهر توست نجاح</button></div>
+  </div>
+</section>
+
+<!-- 12 AUTH -->
+<section class="card" id="s-auth">
+  <h2>⑫ الدخول والحقول <span class="ref">AU-02 · AU-04 · AU-05 · AU-06</span></h2>
+  <p class="hint">بدّل بين «دخول» و«تسجيل»: الكتلة تخرج للأعلى والداخلة تصعد من أسفل.
+  الحقل له هالة تركيز زرقاء وcaret بلون العلامة. أيقونة العين تُشطَب بخط يُرسَم (morph مبسط).</p>
+  <div class="stage">
+    <div class="authwrap" style="max-width:360px">
+      <div class="ablk" id="blkL">
+        <div class="ahead">تسجيل الدخول</div>
+        <input class="field" placeholder="البريد الإلكتروني">
+        <div class="pwwrap"><input class="field" id="pwField" type="password" placeholder="كلمة المرور" style="padding-left:44px">
+          <button class="eye" id="eyeBtn" type="button"><svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M2.5 12 C5.5 6.8 18.5 6.8 21.5 12 C18.5 17.2 5.5 17.2 2.5 12 Z" stroke="currentColor" stroke-width="1.8"/>
+            <circle class="pupil" cx="12" cy="12" r="3" fill="currentColor"/>
+            <line class="eyeline" x1="4.5" y1="19.5" x2="19.5" y2="4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" pathLength="100"/>
+          </svg></button>
+        </div>
+        <button class="btn press primary">دخول</button>
+      </div>
+      <div class="ablk pre" id="blkR" style="display:none">
+        <div class="ahead">إنشاء حساب جديد</div>
+        <input class="field" placeholder="الاسم">
+        <input class="field" placeholder="البريد الإلكتروني">
+        <button class="btn press primary">إنشاء الحساب</button>
+      </div>
+      <button class="btn small ghost" id="authTgl" style="align-self:start">إنشاء حساب جديد</button>
+    </div>
+  </div>
+</section>
+
+<!-- 13 BRAND -->
+<section class="card" id="s-brand">
+  <h2>⑬ علامة أثر تُرسَم <span class="ref">SP-09 · AU-01</span></h2>
+  <p class="hint">لحظة افتتاح شاشة القفل/الدخول: الحلقة تُرسَم 350ms ثم قوس الـ27٪ الأزرق يكتسح
+  250ms ثم الاسم يظهر — ثم سكون تام. «فتح» يوضح انتقال القفل (fade فقط بقاعدة موجودة).</p>
+  <div class="stage">
+    <div class="brandwrap">
+      <div class="dashfake">
+        <div class="skel"></div><div class="skel"></div><div class="skel" style="height:70px"></div>
+      </div>
+      <div id="lockLayer">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle id="brBase" cx="70" cy="70" r="54" fill="none" stroke="#ECECEF" stroke-width="6" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+          <circle id="brArc" cx="70" cy="70" r="54" fill="none" stroke="#4D9BFF" stroke-width="6" stroke-linecap="round" pathLength="100" stroke-dasharray="27 73" stroke-dashoffset="27" transform="rotate(-90 70 70)"/>
+        </svg>
+        <div id="brWord">أثر</div>
+        <button class="btn press primary" id="unlock">فتح التطبيق</button>
+        <div class="mini" style="color:#666">— داخل الطبقة السوداء —</div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn press small" id="brBtn">أعد الرسم ↺</button>
+      <button class="btn small" id="relock">أعد القفل</button>
+    </div>
+  </div>
+</section>
+
+<!-- 14 SEGMENTED -->
+<section class="card" id="s-seg">
+  <h2>⑭ المقاطع المنزلقة <span class="ref">KIT-05 · ST-08</span></h2>
+  <p class="hint">حبة الأزرق تنزلق بين الخيارات بنابض — المرشح أن يكون جسر تبديل اللغة/الثيم
+  بدل القفزة العالمية الحالية.</p>
+  <div class="stage">
+    <div class="segc" id="segc">
+      <div id="spill"></div>
+      <button class="segopt sel">فاتح</button>
+      <button class="segopt">داكن</button>
+      <button class="segopt">النظام</button>
+    </div>
+  </div>
+</section>
+
+<footer>كل ما سبق <b>اقتراحات</b> موثقة في <code>animation/*.md</code> — لم يُعدَّل أي ملف داخل المشروع.
+عند اعتماد أي فكرة تبدأ دورة العمل الرسمية (فرع → اختبارات → PROJECT.md work-log).</footer>
+
+<script>
+'use strict';
+function el(id){return document.getElementById(id)}
+
+/* ================= محرك النوابض ================= */
+let ZETA=.72,HAP=false;
+function REDUCED(){return document.body.classList.contains('rm')}
+function vib(ms){if(HAP&&navigator.vibrate)try{navigator.vibrate(ms)}catch(e){}}
+const springs=[];
+function mkSpring(x){const s={x:x,v:0,t:x,w:2*Math.PI/.3,done:true};springs.push(s);return s}
+function go(s,t,dur){dur=dur||300;s.t=t;
+  if(REDUCED()){s.x=t;s.v=0;s.done=true;return}
+  s.w=2*Math.PI/(dur/1000);s.done=false}
+function snapAll(){for(let i=0;i<springs.length;i++){const s=springs[i];s.x=s.t;s.v=0;s.done=true}}
+const renderers=[];
+function onFrame(f){renderers.push(f)}
+let lastN=performance.now();
+(function loop(now){const dt=Math.min((now-lastN)/1000,1/40);lastN=now;
+  for(let i=0;i<springs.length;i++){const s=springs[i];if(s.done)continue;
+    const k=s.w*s.w,c=2*ZETA*s.w;
+    s.v+=(-k*(s.x-s.t)-c*s.v)*dt;s.x+=s.v*dt;
+    if(Math.abs(s.x-s.t)<.0006&&Math.abs(s.v)<.006){s.x=s.t;s.v=0;s.done=true}}
+  for(let i=0;i<renderers.length;i++)renderers[i]();
+  requestAnimationFrame(loop)})(performance.now());
+const EOC=function(t){return 1-Math.pow(1-t,3)};
+function tween(dur,fn,delay,done){
+  if(REDUCED()){fn(1);if(done)done();return{cancel:function(){}}}
+  delay=delay||0;let raf,t0=performance.now()+delay;
+  const f=function(now){if(now<t0){raf=requestAnimationFrame(f);return}
+    const p=Math.min((now-t0)/dur,1);fn(EOC(p));
+    if(p<1)raf=requestAnimationFrame(f);else if(done)done()};
+  raf=requestAnimationFrame(f);
+  return{cancel:function(){cancelAnimationFrame(raf)}}}
+function dip(node,apply){
+  if(REDUCED()){apply();return}
+  node.style.opacity='0';
+  setTimeout(function(){apply();node.style.opacity='1'},120)}
+function collapse(r,delay){
+  r.style.height=r.offsetHeight+'px';
+  setTimeout(function(){r.classList.add('gone');r.style.height='0px'},delay)}
+
+/* ضبط عام */
+el('zeta').addEventListener('input',function(e){ZETA=e.target.value/100;
+  el('zetaVal').textContent=ZETA.toFixed(2);updFeel()});
+function updFeel(){var F=[[.5,'مرح مبالغ — للاحتفالات فقط'],[.65,'حي ودافئ'],
+  [.72,'ارتداد اختيار نظيف — منطقة تليجرام'],[.85,'واثق وهادئ'],[2,'حاد تمامًا بلا ارتداد']];
+  el('feel').textContent='الإحساس العام: '+F.find(function(f){return ZETA<f[0]})[1]}
+updFeel();
+el('rmChk').addEventListener('change',function(e){
+  document.body.classList.toggle('rm',e.target.checked);
+  if(e.target.checked)snapAll()});
+el('hapChk').addEventListener('change',function(e){HAP=e.target.checked});
+
+/* ضغط عام لكل .press */
+Array.prototype.forEach.call(document.querySelectorAll('.press'),function(b){
+  b.addEventListener('pointerdown',function(){b.classList.add('dn')});
+  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){
+    b.addEventListener(ev,function(){b.classList.remove('dn')})})});
+
+/* ================= 1) التاب بار ================= */
+(function(){
+  const bar=el('tb'),tabs=Array.prototype.slice.call(bar.querySelectorAll('.tab')),
+        ind=el('ind'),badge=el('badge');
+  const W=[[1.9,3],[1.9,3],[2.1,3.2],[1.9,2.9]];
+  const st=tabs.map(function(b,i){return{b:b,t:mkSpring(i===0?1:0),sc:mkSpring(1),
+    paths:Array.prototype.slice.call(b.querySelectorAll('path,circle')),svg:b.querySelector('svg')}});
+  let sel=0,count=2;
+  const indSp=mkSpring(0),bSc=mkSpring(1);
+  function place(instant){const b=tabs[sel],x=b.offsetLeft+b.offsetWidth/2-9;
+    if(instant){indSp.x=x;indSp.t=x}else go(indSp,x,280)}
+  function select(i,instant){sel=i;
+    tabs.forEach(function(b,j){b.classList.toggle('sel',j===i);go(st[j].t,j===i?1:0,150)});
+    place(instant)}
+  tabs.forEach(function(b,i){b.addEventListener('click',function(){
+    if(i===sel)return;select(i,false);
+    const s=st[i].sc;s.x=.86;s.v=0;go(s,1,330);vib(8)})});
+  function setBadge(n){count=n;
+    if(n<=0){badge.classList.add('hide');return}
+    badge.classList.remove('hide');badge.textContent=n;
+    bSc.x=.5;bSc.v=0;go(bSc,1,240)}
+  el('bAdd').addEventListener('click',function(){setBadge(count+1)});
+  el('bSub').addEventListener('click',function(){setBadge(count-1)});
+  onFrame(function(){
+    for(let j=0;j<st.length;j++){const t=st[j].t.x,a=W[j][0],z=W[j][1],w=a+(z-a)*t;
+      st[j].paths.forEach(function(p){p.setAttribute('stroke-width',w.toFixed(2))});
+      st[j].svg.style.transform='scale('+(0.86+0.14*st[j].sc.x).toFixed(4)+')'}
+    ind.style.transform='translateX('+indSp.x.toFixed(2)+'px)';
+    badge.style.transform='translate(-50%,0) scale('+bSc.x.toFixed(3)+')'});
+  select(0,true);
+  window.addEventListener('resize',function(){place(true)});
+})();
+
+/* ================= 2) الأزرار ================= */
+(function(){
+  const b=el('gateBtn'),l=el('gateLbl');
+  const S=[{c:'primary',t:'الباب لسه مكتملش'},{c:'green',t:'أتقنت الباب'},{c:'white',t:'شاهد تقرير الباب'}];
+  let i=0;
+  b.addEventListener('click',function(){i=(i+1)%3;
+    b.classList.remove('primary','green','white');b.classList.add(S[i].c);
+    dip(l,function(){l.textContent=S[i].t});vib(10)});
+  /* busy */
+  const btn=el('saveBtn'),lbl=el('saveLbl'),ring=el('saveRing'),ok=el('saveDone'),back=el('backBtn');
+  let busy=false;
+  function syncDis(){back.classList.toggle('disabled',busy||el('disChk').checked)}
+  el('disChk').addEventListener('change',syncDis);
+  btn.addEventListener('click',function(){
+    if(busy)return;busy=true;syncDis();
+    lbl.classList.add('fading');
+    setTimeout(function(){ring.classList.add('on')},130);
+    setTimeout(function(){ring.classList.remove('on');ok.classList.add('pop');vib(15)},1500);
+    setTimeout(function(){ok.classList.remove('pop');lbl.classList.remove('fading');busy=false;syncDis()},2700)});
+})();
+
+/* ================= 3) الأرقام الحية ================= */
+function makeRoller(host,value){
+  host.classList.add('odo');host.innerHTML='';
+  const st={cols:[],fs:(function(){return parseFloat(getComputedStyle(host).fontSize)||20})(),
+    build:function(v){host.innerHTML='';this.cols.length=0;
+      const fs=this.fs,self=this;
+      String(v).split('').forEach(function(ch){
+        const c=document.createElement('span');c.className='ocol';
+        const s=document.createElement('span');s.className='ostrip';
+        for(let d=0;d<=9;d++){const b=document.createElement('b');b.textContent=d;s.appendChild(b)}
+        c.appendChild(s);host.appendChild(c);
+        const col={strip:s,d:+ch,h:fs,sp:null};
+        self.cols.push(col);
+        requestAnimationFrame(function(){col.sp=mkSpring(col.d*col.h);
+          col.strip.style.transform='translateY('+(-col.sp.x)+'px)';
+          onFrame(function(){if(col.sp)col.strip.style.transform='translateY('+(-col.sp.x)+'px)'})})})},
+    set:function(v){const str=String(v),self=this;
+      if(str.length!==this.cols.length){this.build(str);return}
+      this.cols.forEach(function(c,i){c.d=+str[i];if(c.sp)go(c.sp,c.d*c.h,330)})}};
+  st.build(value);return st}
+(function(){
+  let late=0,n=0;
+  const lateR=makeRoller(el('lateR'),'0'),chkR=makeRoller(el('chkR'),'0');
+  function updLate(){el('lateRow').classList.toggle('bad',late>0)}
+  el('lateP').addEventListener('click',function(){late=Math.min(9,late+1);lateR.set(late);updLate()});
+  el('lateM').addEventListener('click',function(){late=Math.max(0,late-1);lateR.set(late);updLate()});
+  el('chkP').addEventListener('click',function(){n=Math.min(5,n+1);chkR.set(n)});
+  el('chkM').addEventListener('click',function(){n=Math.max(0,n-1);chkR.set(n)});
+})();
+
+/* ================= 4) لحظة الخطوة 4 ================= */
+(function(){
+  const num=el('xmNum'),bar=el('xmFill'),cap=el('xmCap');
+  function run(){
+    cap.style.opacity='0';bar.style.transform='scaleX(0)';
+    if(REDUCED()){num.textContent='87%';bar.style.transform='scaleX(1)';cap.style.opacity='1';return}
+    tween(600,function(p){num.textContent=Math.round(87*p)+'%';
+      bar.style.transform='scaleX('+(0.87*p).toFixed(4)+')'},120);
+    tween(220,function(p){cap.style.opacity=p},800)}
+  el('xmBtn').addEventListener('click',run);run();
+})();
+
+/* ================= 5) الاحتفال ================= */
+(function(){
+  const ov=el('celOv'),ti=el('celT'),bo=el('celB'),pc=el('celP'),ring=el('celRing');
+  function play(){
+    ti.style.opacity='0';bo.style.opacity='0';pc.textContent='0%';
+    ring.setAttribute('r','46');ring.setAttribute('stroke-width','2');ring.setAttribute('opacity','1');
+    ov.classList.remove('play');void ov.offsetWidth;ov.classList.add('show','play');
+    tween(220,function(p){ti.style.opacity=p},40);
+    tween(120,function(p){ring.setAttribute('r',(46-(46-38)*p).toFixed(1));
+      ring.setAttribute('stroke-width',(2+9*p).toFixed(1));ring.setAttribute('opacity',String(1-p))},190);
+    tween(600,function(p){pc.textContent=Math.round(90*p)+'%'},250);
+    tween(240,function(p){bo.style.opacity=p},520)}
+  el('celBtn').addEventListener('click',function(){play();vib([8,40,8])});
+  ov.addEventListener('click',function(){ov.classList.remove('show','play')});
+})();
+
+/* ================= 6) التحليلات ================= */
+(function(){
+  const DATA={all:[90,62,78,41],bio:[88],phy:[55,71],chem:[92,64],eng:[41,58,77]};
+  const NAMES={all:['أحياء','فيزياء','كيمياء','إنجليزي'],bio:['وراثة'],phy:['ميكانيكا','كهرباء'],
+    chem:['عضوية','غير عضوية'],eng:['قواعد','مفردات','قراءة']};
+  const wrap=el('bars'),chips=Array.prototype.slice.call(document.querySelectorAll('#achips .chip'));
+  function colOf(v){return v>=90?'var(--green)':v<50?'var(--red)':'var(--accent)'}
+  function render(k){wrap.innerHTML='';
+    DATA[k].forEach(function(v,i){
+      const c=document.createElement('div');c.className='acol';
+      c.innerHTML='<div class="apct">0%</div><div class="atrack"><div class="afill"></div></div><div class="aname">'+NAMES[k][i]+'</div>';
+      wrap.appendChild(c);
+      const f=c.querySelector('.afill'),pct=c.querySelector('.apct');
+      f.style.background=colOf(v);f.style.transitionDelay=(REDUCED()?0:i*60)+'ms';
+      setTimeout(function(){f.style.height=v+'%'},REDUCED()?40:40+i*60);
+      tween(450,function(p){pct.textContent=Math.round(v*p)+'%'},40+i*60)})}
+  chips.forEach(function(ch){ch.addEventListener('click',function(){
+    chips.forEach(function(o){o.classList.remove('sel')});ch.classList.add('sel');
+    render(ch.dataset.k);vib(5)})});
+  render('all');
+  /* trajectory */
+  const tp=el('trajPath'),dot=el('trajDot'),L=tp.getTotalLength();
+  tp.style.strokeDasharray=L;
+  function drawT(){tp.style.transition='none';tp.style.strokeDashoffset=L;
+    dot.classList.remove('pop');void tp.getBoundingClientRect();
+    tp.style.transition='stroke-dashoffset .42s cubic-bezier(.215,.61,.355,1)';
+    tp.style.strokeDashoffset='0';
+    setTimeout(function(){dot.classList.add('pop');vib(5)},440)}
+  el('trajBtn').addEventListener('click',drawT);drawT();
+})();
+
+/* ================= 7) منتقي الأيام ================= */
+(function(){
+  const vp=el('dp'),track=el('dtrack'),title=el('dpTitle'),glow=el('dglow');
+  const names=['سبت','جمعة','خميس','أربعاء','ثلاثاء','إتنين','اليوم'],TODAY=6;
+  let sel=TODAY,cellW=92,centerX=0,movedMax=0,justMoved=false,lastVel=0;
+  const cells=names.map(function(n,i){
+    const b=document.createElement('button');b.type='button';b.className='cell';
+    b.innerHTML='<span class="dd">'+(21+i)+'</span><span class="dw">'+n+'</span><span class="dot"></span>';
+    if(i===TODAY)b.classList.add('sel');
+    track.appendChild(b);return b});
+  const base=mkSpring(0),vis=mkSpring(0);
+  function apply(){track.style.transform='translateX('+(base.x+vis.x).toFixed(2)+'px)'}
+  onFrame(apply);
+  function recalc(){centerX=(vp.clientWidth-cellW)/2;
+    base.t=centerX-sel*cellW;if(base.done)base.x=base.t}
+  function select(i,instant){sel=i;
+    cells.forEach(function(c,j){c.classList.toggle('sel',j===i)});
+    const target=centerX-sel*cellW;
+    if(instant){base.x=target;base.t=target}else go(base,target,300);
+    dip(title,function(){title.textContent=sel===TODAY?'المهام':'مهام '+names[sel]});
+    glow.classList.toggle('show',sel!==TODAY)}
+  let sx=0,px=0,lt=0,dx=0,act=false;
+  vp.addEventListener('pointerdown',function(e){act=true;sx=e.clientX;px=sx;dx=0;
+    lastVel=0;movedMax=0;justMoved=false;lt=performance.now();
+    vp.classList.add('dragging')});
+  window.addEventListener('pointermove',function(e){if(!act)return;
+    dx=e.clientX-sx;const m=30,a=Math.abs(dx);
+    vis.x=a<=m?dx:Math.sign(dx)*(m+(a-m)*.16);vis.v=0;vis.done=true;
+    movedMax=Math.max(movedMax,Math.abs(dx));
+    const n=performance.now(),dt=n-lt;
+    if(dt>0){lastVel=(e.clientX-px)/dt;px=e.clientX}
+    lt=n});
+  function endDrag(){if(!act)return;act=false;vp.classList.remove('dragging');
+    justMoved=movedMax>6;
+    if(Math.abs(dx)>48||Math.abs(lastVel)>.55){
+      const dir=dx<0?1:-1;
+      select(Math.max(0,Math.min(TODAY,sel+dir)),false);vib(6)}
+    go(vis,0,300);dx=0}
+  window.addEventListener('pointerup',endDrag);
+  window.addEventListener('pointercancel',endDrag);
+  vp.addEventListener('click',function(e){
+    if(justMoved){justMoved=false;return}
+    const hit=document.elementFromPoint(e.clientX,e.clientY);
+    const cell=hit&&hit.closest?hit.closest('.cell'):null;
+    if(cell){const i=cells.indexOf(cell);
+      if(i!==-1&&i!==sel){select(i,false);vib(5)}}});
+  el('doneChk').addEventListener('change',function(e){
+    cells[TODAY].classList.toggle('done',e.target.checked);vib(6)});
+  [0,2,4].forEach(function(i){cells[i].classList.add('done')});
+  recalc();select(TODAY,true);
+  window.addEventListener('resize',function(){recalc();place()});
+  function place(){apply()}
+})();
+
+/* ================= 8) القوائم والحذف ================= */
+(function(){
+  const rows=Array.prototype.slice.call(document.querySelectorAll('#qList .lrow')),succ=el('qSucc');
+  el('qGo').addEventListener('click',function(){
+    rows.forEach(function(r,i){collapse(r,120*i)});
+    setTimeout(function(){succ.classList.add('show');vib(12)},rows.length*120+260)});
+  el('qReset').addEventListener('click',function(){
+    succ.classList.remove('show');
+    rows.forEach(function(r){r.classList.remove('gone');r.style.height=''})});
+})();
+(function(){
+  const roll=makeRoller(el('histM'),'87');
+  const rows=Array.prototype.slice.call(document.querySelectorAll('#hList .lrow'));
+  const nexts=['74','61','48'];
+  rows.forEach(function(r,i){r.querySelector('.xb').addEventListener('click',function(){
+    collapse(r,0);vib(8);
+    setTimeout(function(){roll.set(nexts[i]);
+      if(i===rows.length-1)el('hEmpty').style.display='block'},260)})});
+  el('hReset').addEventListener('click',function(){
+    rows.forEach(function(r){r.classList.remove('gone');r.style.height=''});
+    el('hEmpty').style.display='none';roll.set('87')});
+})();
+
+/* ================= 9) أول تشغيل + الخطأ ================= */
+(function(){
+  const A=el('frEmpty'),B=el('frFull');
+  function swapTo(showB){
+    const from=showB?A:B,to=showB?B:A;
+    from.classList.add('fade');
+    setTimeout(function(){from.style.display='none';from.classList.remove('fade');
+      to.style.display='block';to.classList.add('pre');
+      requestAnimationFrame(function(){requestAnimationFrame(function(){to.classList.remove('pre')})})},180)}
+  el('frBtn').addEventListener('click',function(){swapTo(true);vib(6)});
+  el('frBack').addEventListener('click',function(){swapTo(false)});
+})();
+(function(){
+  const inp=el('errIn'),bn=el('errBan');
+  el('errGo').addEventListener('click',function(){
+    if(!inp.value.trim()){
+      if(bn.classList.contains('hidden')){bn.classList.remove('hidden');void bn.offsetWidth}
+      bn.classList.add('in');
+      inp.classList.add('flash');vib(10);
+      setTimeout(function(){inp.classList.remove('flash')},480)}
+    else{bn.classList.remove('in');
+      setTimeout(function(){bn.classList.add('hidden')},200)}});
+})();
+/* ================= 10) الشيت ================= */
+(function(){
+  const ph=el('phone'),scrim=el('pscrim'),sh=el('psheet'),grab=el('grab'),hb=el('handle');
+  function open(){sh.classList.add('open');scrim.classList.add('on')}
+  function close(){sh.classList.remove('open');scrim.classList.remove('on')}
+  el('pfab').addEventListener('click',open);
+  scrim.addEventListener('click',close);
+  let sy=0,ly=0,lt=0,vy=0,dy=0,act=false,H=0;
+  grab.addEventListener('pointerdown',function(e){
+    act=true;H=ph.clientHeight;sy=e.clientY;ly=sy;lt=performance.now();vy=0;dy=0;
+    sh.classList.add('dragging');grab.setPointerCapture(e.pointerId)});
+  grab.addEventListener('pointermove',function(e){if(!act)return;
+    dy=Math.max(0,e.clientY-sy);
+    sh.style.transform='translateY('+dy+'px)';
+    const p=Math.min(dy/H,1);
+    scrim.style.opacity=String(.55*(1-p));
+    hb.style.transform='scaleX('+(1-.35*p).toFixed(3)+')';
+    hb.style.backgroundColor='rgba(136,136,142,'+(1-.4*p).toFixed(3)+')';
+    const n=performance.now(),dt=n-lt;
+    if(dt>0)vy=(e.clientY-ly)/dt;ly=e.clientY;lt=n});
+  function fin(){if(!act)return;act=false;
+    sh.classList.remove('dragging');sh.style.transform='';scrim.style.opacity='';
+    hb.style.transform='';hb.style.backgroundColor='';
+    if(dy>H*.28||vy>.55){close();vib(6)}}
+  grab.addEventListener('pointerup',fin);
+  grab.addEventListener('pointercancel',fin);
+})();
+
+/* ================= 11) التوست ================= */
+(function(){
+  const z=el('toasts');
+  el('toastBtn').addEventListener('click',function(){vib(6);
+    const cur=z.querySelector('.toast:not(.out)');
+    function make(){
+      if(z.querySelector('.toast:not(.out)'))return;
+      const t=document.createElement('div');t.className='toast';
+      t.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#34C759"/><path d="M7.5 12.5 L10.5 15.5 L16.5 9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg> تم حفظ الامتحان';
+      z.appendChild(t);
+      requestAnimationFrame(function(){t.classList.add('in')});
+      setTimeout(function(){t.classList.remove('in');t.classList.add('out');
+        setTimeout(function(){t.remove()},160)},2200)}
+    if(cur){cur.classList.remove('in');cur.classList.add('out');
+      const dead=cur;setTimeout(function(){dead.remove()},150);
+      setTimeout(make,60)}
+    else make()})})();
+
+/* ================= 12) الدخول ================= */
+(function(){
+  const L=el('blkL'),R=el('blkR'),tgl=el('authTgl');let reg=false;
+  tgl.addEventListener('click',function(){reg=!reg;
+    tgl.textContent=reg?'عندي حساب بالفعل':'إنشاء حساب جديد';
+    const from=reg?L:R,to=reg?R:L;
+    from.classList.add('off');
+    to.classList.remove('off');to.classList.add('pre');to.style.display='grid';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){to.classList.remove('pre')})});
+    vib(6)});
+  const eye=el('eyeBtn'),pw=el('pwField');let closed=false;
+  eye.addEventListener('click',function(){closed=!closed;
+    eye.classList.toggle('closed',closed);
+    pw.type=closed?'text':'password'})})();
+
+/* ================= 13) علامة أثر ================= */
+(function(){
+  const base=el('brBase'),arc=el('brArc'),wm=el('brWord'),lock=el('lockLayer');
+  function play(){
+    [base,arc].forEach(function(c){c.style.transition='none'});
+    wm.style.transition='none';
+    base.style.strokeDashoffset='100';arc.style.strokeDashoffset='27';wm.style.opacity='0';
+    void base.getBoundingClientRect();
+    base.style.transition='stroke-dashoffset .35s ease-out';
+    arc.style.transition='stroke-dashoffset .25s ease-out .4s';
+    wm.style.transition='opacity .3s ease .68s';
+    base.style.strokeDashoffset='0';arc.style.strokeDashoffset='0';wm.style.opacity='1'}
+  el('brBtn').addEventListener('click',play);
+  el('unlock').addEventListener('click',function(){lock.classList.add('open');vib(8)});
+  el('relock').addEventListener('click',function(){lock.classList.remove('open');play()});
+  play();
+})();
+
+/* ================= 14) المقاطع ================= */
+(function(){
+  const c=el('segc'),pill=el('spill'),opts=Array.prototype.slice.call(c.querySelectorAll('.segopt'));
+  const sp=mkSpring(0);let cur=0;
+  function place(i,instant){cur=i;
+    const o=opts[i],x=o.offsetLeft,w=o.offsetWidth;
+    pill.style.width=w+'px';
+    if(instant){sp.x=x;sp.t=x}else go(sp,x,240)}
+  opts.forEach(function(o,i){o.addEventListener('click',function(){
+    opts.forEach(function(q){q.classList.remove('sel')});o.classList.add('sel');
+    place(i,false);vib(5)})});
+  place(0,true);
+  setTimeout(function(){place(cur,true)},80);
+  window.addEventListener('resize',function(){place(cur,true)});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+import '../entities/account.dart';
+
+/// Why a sign-in attempt failed, in the app's own vocabulary.
+///
+/// Structured rather than a message string, for the same reason insights are:
+/// the data layer has no access to localisation, so it returns a variant and
+/// the presentation layer renders it through the ARB files. A failure that
+/// arrived as English text could never be shown to an Arabic student.
+enum AuthFailure {
+  invalidEmail,
+  weakPassword,
+
+  /// Wrong password, unknown account, or a disabled one. Deliberately one
+  /// case: telling an attacker which emails are registered is a gift, and the
+  /// student's next action is identical either way.
+  wrongCredentials,
+
+  emailInUse,
+
+  /// No network. The only failure the copy has to explain at length, because
+  /// it is the one moment this offline-first app genuinely needs a connection.
+  network,
+
+  tooManyRequests,
+
+  /// The student backed out of the Google sheet. Not an error — the UI shows
+  /// nothing at all for this.
+  cancelled,
+
+  /// The account exists but Firebase will not delete it until the student
+  /// proves they are its owner again. Surfaces a re-authentication step, never
+  /// a dead button: Google Play requires in-app account deletion, and a delete
+  /// that fails silently is worse than none.
+  requiresRecentLogin,
+
+  unknown,
+}
+
+final class AuthException implements Exception {
+  const AuthException(this.failure);
+
+  final AuthFailure failure;
+
+  @override
+  String toString() => 'AuthException(${failure.name})';
+}
+
+/// Accounts. Everything here throws [AuthException] and nothing else.
+abstract interface class AuthRepository {
+  /// Emits the current account, or null when signed out. Emits immediately on
+  /// listen with the restored session, so the router can decide without a
+  /// round trip.
+  Stream<Account?> watchAccount();
+
+  /// The session restored from disk, available synchronously after
+  /// `Firebase.initializeApp`. This is what makes the app openable with no
+  /// network: the gate reads a cached answer, it does not ask a server.
+  Account? get currentAccount;
+
+  Future<void> signIn({required String email, required String password});
+
+  /// Returns whether the verification mail was actually sent.
+  ///
+  /// **Not `void`, and the return value is not decoration.** The send is
+  /// best-effort -- the account exists whether or not the mail goes out, so a
+  /// failure to send must not fail the registration. But the screen used to
+  /// say "we sent you a confirmation link" on every successful `register`,
+  /// which is a statement about something it had no way to know. Several
+  /// students registering from one school's IP is enough for Firebase to
+  /// rate-limit the send; the account is created, the mail is not, and the
+  /// student is told to go and look for it.
+  Future<bool> register({required String email, required String password});
+
+  Future<void> signInWithGoogle();
+
+  Future<void> sendPasswordReset(String email);
+
+  /// Sends (or re-sends) the address-verification link to the current account.
+  ///
+  /// Separate from [register], which already sends one, because the first mail
+  /// gets lost, filtered, or opened on a phone the student no longer has. A
+  /// verification a student cannot re-trigger is a dead end.
+  ///
+  /// Throws [AuthFailure.tooManyRequests] when Firebase rate-limits the resend.
+  /// That is a "wait a moment", not a failure of the account, and the caller
+  /// must say so rather than reporting a generic error.
+  Future<void> sendEmailVerification();
+
+  /// Re-reads the account from the server.
+  ///
+  /// Verification happens *outside* the app -- the student opens their inbox
+  /// and taps a link -- so nothing in the running app would otherwise notice.
+  /// Called when a screen that shows the verified state opens, so returning
+  /// from the inbox shows the truth rather than a stale prompt to do something
+  /// already done.
+  Future<void> reloadAccount();
+
+  Future<void> signOut();
+
+  /// Deletes the account **and the credentials Firebase holds for it**.
+  ///
+  /// Throws [AuthException] with [AuthFailure.requiresRecentLogin] when the
+  /// sign-in is too old; the caller must re-authenticate and retry — never
+  /// swallow it, because Google Play requires in-app account deletion and a
+  /// delete that quietly does nothing is a dead button.
+  Future<void> deleteAccount();
+
+  /// [deleteAccount] after re-proving ownership with a password — the second
+  /// attempt, offered when the first reported [AuthFailure.requiresRecentLogin].
+  Future<void> deleteAccountWithPassword(String password);
+}
