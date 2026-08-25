@@ -1286,9 +1286,9 @@ class _BottomBar extends StatelessWidget {
             Expanded(
               flex: 2,
               child: ListenableBuilder(
-                listenable: nextEnabledWhen!,
+                listenable: nextEnabledWhen,
                 builder: (context, _) {
-                  final allowed = nextEnabled!.call();
+                  final allowed = nextEnabled();
                   return PrimaryButton(
                     label: nextLabel,
                     tone: nextTone,
