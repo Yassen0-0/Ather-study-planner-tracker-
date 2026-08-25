@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 
+import '../../domain/entities/subject.dart';
+
 /// The student's subjects: four seeded on a fresh install, plus any they add.
 ///
 /// Display names for the seeded four are in the ARB files (so the ar/en toggle
@@ -21,7 +23,8 @@ class Subjects extends Table {
 
   /// The student's own name for a subject they created. Null for the seeded
   /// four, whose names are translated rather than stored.
-  TextColumn get name => text().withLength(min: 1, max: 60).nullable()();
+  TextColumn get name =>
+      text().withLength(min: 1, max: kSubjectNameMaxLength).nullable()();
 
   /// Set when the student **archives** a subject: puts it away deliberately,
   /// because they are done with it. Nothing under it is touched.

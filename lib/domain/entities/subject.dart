@@ -35,6 +35,25 @@ enum SubjectCode {
 /// has to be stable, not meaningful.
 const String kCustomSubjectCode = 'custom';
 
+/// The longest name the `subjects.name` column accepts.
+///
+/// Declared here rather than as a literal in `tables.dart` because two places
+/// have to agree on it: the column's own `withLength`, and the cap on the text
+/// field that feeds it. They did not agree. `showNamePrompt` allowed 80
+/// characters for every name in the app, so a subject name between 61 and 80
+/// characters passed the field, reached drift, and threw `InvalidDataException`
+/// inside `createSubject` -- which `runWrite` turned into the generic "something
+/// went wrong" toast. The student retyped the same name and got the same
+/// nothing, with no way to learn that the length was the problem.
+///
+/// Chapters (120), lessons (160) and task titles (200) all sit above the
+/// prompt's default, which is why subjects were the only ones that broke.
+///
+/// Changing this number is not enough on its own: drift bakes the limit into
+/// `app_database.g.dart`, so `build_runner` has to run for the column to agree
+/// with it.
+const int kSubjectNameMaxLength = 60;
+
 /// A subject.
 ///
 /// Carries **no icon or colour**, exactly as before: those are presentation

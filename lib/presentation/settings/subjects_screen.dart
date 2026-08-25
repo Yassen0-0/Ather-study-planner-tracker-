@@ -101,6 +101,7 @@ class SubjectsScreen extends ConsumerWidget {
       context,
       title: l.subjectAdd,
       hint: l.subjectNameHint,
+      maxLength: kSubjectNameMaxLength,
     );
     if (name == null || !context.mounted) return;
     await runWrite(
@@ -267,6 +268,7 @@ class _SubjectRow extends ConsumerWidget {
       title: l.subjectRename,
       hint: l.subjectNameHint,
       initialValue: subject.name,
+      maxLength: kSubjectNameMaxLength,
     );
     if (name == null || !context.mounted) return;
     await runWrite(

@@ -26,6 +26,7 @@ import '../../core/widgets/pressable.dart';
 import '../../domain/entities/mastery.dart';
 import '../../domain/entities/study_snapshot.dart';
 import '../../domain/services/review_cycle_service.dart';
+import '../../domain/entities/subject.dart';
 import '../../domain/services/summaries.dart';
 import '../common/prompts.dart';
 import '../common/settings_button.dart';
@@ -558,6 +559,7 @@ class _AddSubjectButton extends ConsumerWidget {
       context,
       title: l.subjectAdd,
       hint: l.subjectNameHint,
+      maxLength: kSubjectNameMaxLength,
     );
     if (name == null || !context.mounted) return;
     var newId = 0;

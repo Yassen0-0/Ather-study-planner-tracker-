@@ -20,11 +20,26 @@ Future<String?> showNamePrompt(
   required String title,
   required String hint,
   String? initialValue,
+
+  /// The longest name this prompt will accept.
+  ///
+  /// **It must not exceed the column the value is written to.** The default of
+  /// 80 suits chapters (120), lessons (160) and task titles (200), all of which
+  /// sit above it. `subjects.name` is 60, and for the life of this prompt the
+  /// three subject call sites used the default -- so a name of 61 to 80
+  /// characters was accepted here, refused by drift, and surfaced to the student
+  /// as the generic write-failure toast with nothing naming the length. Callers
+  /// writing to a shorter column pass its limit; see [kSubjectNameMaxLength].
+  int maxLength = 80,
 }) {
   return showAtherSheet<String>(
     context: context,
-    builder: (context) =>
-        _NamePromptSheet(title: title, hint: hint, initialValue: initialValue),
+    builder: (context) => _NamePromptSheet(
+      title: title,
+      hint: hint,
+      initialValue: initialValue,
+      maxLength: maxLength,
+    ),
   );
 }
 
@@ -32,11 +47,13 @@ class _NamePromptSheet extends StatefulWidget {
   const _NamePromptSheet({
     required this.title,
     required this.hint,
+    required this.maxLength,
     this.initialValue,
   });
 
   final String title;
   final String hint;
+  final int maxLength;
   final String? initialValue;
 
   @override
@@ -99,7 +116,7 @@ class _NamePromptSheetState extends State<_NamePromptSheet> {
               },
               style: AppTypography.body,
               cursorColor: context.colors.textPrimary,
-              maxLength: 80,
+              maxLength: widget.maxLength,
               decoration: InputDecoration(
                 isDense: true,
                 filled: false,
