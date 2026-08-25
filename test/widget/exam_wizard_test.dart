@@ -507,6 +507,18 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    /// Drives the wizard to step 3 with the paper described (5 × 2 marks).
+    Future<void> fillToStep3(WidgetTester tester) async {
+      await tester.enterText(find.byType(TextField).first, '5');
+      await tester.tap(find.text('التالي'));
+      await tester.pumpAndSettle();
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), '5');
+      await tester.enterText(fields.at(1), '2');
+      await tester.tap(find.text('التالي'));
+      await tester.pumpAndSettle();
+    }
+
     Future<void> fillToStep4(WidgetTester tester) async {
       // Step 1: five questions.
       await tester.enterText(find.byType(TextField).first, '5');
@@ -561,6 +573,32 @@ void main() {
         expect(find.text('5'), findsNothing);
         final field = tester.widget<TextField>(find.byType(TextField));
         expect(field.controller!.text, isEmpty);
+
+        dbClosedByTest = true;
+        await db.close();
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+
+    testWidgets(
+      'a typed count that exceeds the group still explains itself (N9 parity)',
+      (tester) async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final preferences = await SharedPreferences.getInstance();
+
+        await pumpWizard(tester, preferences);
+        await fillToStep3(tester);
+
+        // Nine right of five asked: the blank gate passes -- a number WAS
+        // typed -- and the exceeds banner says what is wrong instead of the
+        // button going quietly inert.
+        await tester.enterText(find.byType(TextField).first, '9');
+        await tester.tap(find.text('التالي'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('عدد الإجابات الصحيحة لا يتجاوز عدد الأسئلة'),
+          findsOneWidget,
+        );
 
         dbClosedByTest = true;
         await db.close();
@@ -664,16 +702,7 @@ void main() {
         final preferences = await SharedPreferences.getInstance();
 
         await pumpWizard(tester, preferences);
-
-        // Describe the paper: five questions worth two marks each.
-        await tester.enterText(find.byType(TextField).first, '5');
-        await tester.tap(find.text('التالي'));
-        await tester.pumpAndSettle();
-        final fields = find.byType(TextField);
-        await tester.enterText(fields.at(0), '5');
-        await tester.enterText(fields.at(1), '2');
-        await tester.tap(find.text('التالي'));
-        await tester.pumpAndSettle();
+        await fillToStep3(tester);
 
         // Step 3 arrives with the correct-count field still blank. Tapping
         // Next must go nowhere: a blank used to parse as 0 and an unfinished
