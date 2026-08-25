@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +23,7 @@ import '../../core/widgets/list_entrance.dart';
 import '../../core/widgets/mastery_bar.dart';
 import '../../core/widgets/pressable.dart';
 import '../../core/widgets/reduced_motion.dart';
+import '../../data/exam_draft_store.dart';
 import '../../domain/entities/exam_entry.dart';
 import '../../domain/entities/mastery.dart';
 import '../../domain/services/mastery_calculator.dart';
@@ -78,7 +78,8 @@ class _GroupDraft {
   }
 }
 
-class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
+class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen>
+    with WidgetsBindingObserver {
   static const int _stepCount = 4;
 
   final TextEditingController _total = TextEditingController();
@@ -93,14 +94,23 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
   /// stepping back to 3 must not re-arm it.
   bool _resultCounted = false;
 
+  late final ExamDraftStore _draftStore = ExamDraftStore(
+    ref.read(sharedPreferencesProvider),
+  );
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _restoreDraft();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // The tree is going away with no further keystroke to trigger a write:
+    // flush whatever the debounce is still holding.
+    unawaited(_draftStore.flush());
     _total.dispose();
     for (final group in _groups) {
       group.dispose();
@@ -108,108 +118,79 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The process may die out here without another keystroke ever arriving;
+    // the debounce's remaining wait is exactly what must not be lost.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_draftStore.flush());
+    }
+  }
+
   // --- The draft that survives process death ---------------------------------
   //
   // The wizard is the one screen holding data that exists nowhere else yet: a
   // student halfway through describing a paper can lose it to Android killing
-  // the app for memory. The confirmation dialog guards deliberate exits; these
-  // four methods guard the involuntary ones. Raw field text under a per-lesson
-  // key -- numbers only, no dates, no step position -- written on every change
-  // and read back quietly on open.
+  // the app for memory. The confirmation dialog guards deliberate exits; the
+  // store (and the lifecycle hooks above) guard the involuntary ones. Raw
+  // field text under a per-lesson key -- numbers only, no dates, no step
+  // position -- written through a trailing debounce (PF2) and flushed at every
+  // boundary the debounce cannot see coming; read back quietly on open. The
+  // protocol itself lives in [ExamDraftStore] (M11).
 
-  static String _draftKeyFor(int lessonId) => 'exam_draft_$lessonId';
-
-  String get _draftKey => _draftKeyFor(widget.lessonId);
-
-  /// Refills the fields from a previous session's draft, silently.
-  ///
-  /// No toast and no error state: from the student's side nothing happened --
-  /// the numbers are simply still there, as if the wizard had never closed.
-  /// Anything unreadable (a shape an older build wrote, truncated JSON) is
-  /// ignored wholesale rather than half-applied.
-  void _restoreDraft() {
-    final String? raw = ref
-        .read(sharedPreferencesProvider)
-        .getString(_draftKey);
-    if (raw == null) return;
-
-    final Object? decoded;
-    try {
-      decoded = jsonDecode(raw);
-    } on FormatException {
-      return;
-    }
-    if (decoded is! Map) return;
-    final Object? total = decoded['total'];
-    final Object? groups = decoded['groups'];
-    if (total is! String || groups is! List) return;
-
-    final drafts = <_GroupDraft>[];
-    for (final entry in groups) {
-      // Any entry failing its shape check kills the whole draft (C2): a
-      // partially restored paper is a paper the student cannot finish, since
-      // the fields that would complete it were the ones lost.
-      if (entry is! List || entry.length != 3) return;
-      final Object? count = entry[0];
-      final Object? points = entry[1];
-      final Object? correct = entry[2];
-      if (count is! String || points is! String || correct is! String) return;
-      drafts.add(
-        _GroupDraft()
-          ..count.text = count
-          ..points.text = points
-          ..correct.text = correct,
-      );
-    }
-    // A draft whose groups all failed to read back has nothing worth showing;
-    // leave the wizard's own empty first group rather than an empty paper.
-    if (drafts.isEmpty) return;
-
-    _total.text = total;
-    for (final group in _groups) {
-      group.dispose();
-    }
-    _groups
-      ..clear()
-      ..addAll(drafts);
-  }
-
-  /// Writes the current raw field text to [SharedPreferences].
-  ///
-  /// Fired from every numeric-field change, so it runs once per keystroke --
-  /// deliberately. The write is an in-memory set plus an async flush, and the
-  /// one event it must not miss is the keystroke right before the process
-  /// dies. Same persistence pattern as the language toggle.
+  /// Hands the current raw field text to the store.
   ///
   /// Silent while the save is in flight: the fields stay live until the pop,
   /// and a keystroke landing after [_clearDraft] would otherwise resurrect a
   /// finished paper as a pending draft.
   void _persistDraft() {
     if (_saving) return;
-    unawaited(
-      ref
-          .read(sharedPreferencesProvider)
-          .setString(
-            _draftKey,
-            jsonEncode(<String, Object?>{
-              'total': _total.text,
-              'groups': <Object?>[
-                for (final group in _groups)
-                  <String>[
-                    group.count.text,
-                    group.points.text,
-                    group.correct.text,
-                  ],
-              ],
-            }),
-          ),
+    _draftStore.scheduleSave(
+      widget.lessonId,
+      ExamDraft(
+        total: _total.text,
+        groups: <ExamDraftGroup>[
+          for (final group in _groups)
+            ExamDraftGroup(
+              count: group.count.text,
+              points: group.points.text,
+              correct: group.correct.text,
+            ),
+        ],
+      ),
     );
   }
 
   /// The draft has become either a saved exam or a confirmed discard; either
   /// way its job is done.
   void _clearDraft() {
-    unawaited(ref.read(sharedPreferencesProvider).remove(_draftKey));
+    unawaited(_draftStore.clear(widget.lessonId));
+  }
+
+  /// Refills the fields from a previous session's draft, silently.
+  ///
+  /// No toast and no error state: from the student's side nothing happened --
+  /// the numbers are simply still there, as if the wizard had never closed.
+  /// Anything unreadable is discarded wholesale by the store, never
+  /// half-applied.
+  void _restoreDraft() {
+    final draft = _draftStore.load(widget.lessonId);
+    if (draft == null) return;
+
+    _total.text = draft.total;
+    for (final group in _groups) {
+      group.dispose();
+    }
+    _groups
+      ..clear()
+      ..addAll(<_GroupDraft>[
+        for (final group in draft.groups)
+          _GroupDraft()
+            ..count.text = group.count
+            ..points.text = group.points
+            ..correct.text = group.correct,
+      ]);
   }
 
   /// Every numeric-field change funnels through here: clear any standing
@@ -281,6 +262,8 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
     // busy; this closes the same hole for the system gesture.
     if (_saving) return;
     if (_step > 1) {
+      // A step boundary is a loss boundary the debounce cannot anticipate.
+      unawaited(_draftStore.flush());
       setState(() {
         _step--;
         _error = null;
@@ -349,6 +332,8 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
         return;
     }
 
+    // Advancing is a loss boundary too: the paper just became complete.
+    unawaited(_draftStore.flush());
     setState(() {
       _step++;
       _error = null;

@@ -13,6 +13,7 @@ import 'package:ather/core/clock/clock.dart';
 import 'package:ather/core/l10n/generated/app_localizations.dart';
 import 'package:ather/core/theme/app_theme.dart';
 import 'package:ather/data/db/app_database.dart';
+import 'package:ather/data/exam_draft_store.dart';
 import 'package:ather/data/repositories/drift_study_repository.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
@@ -530,6 +531,10 @@ void main() {
       // Two legitimate bearers of the number on step 4: the big counted-up
       // result and the "after" side of the before→after card.
       expect(find.text(iso('60%')), findsExactly(2));
+
+      // Drafts are written on a trailing debounce (PF2); move past it so the
+      // store's pending write has landed in prefs.
+      await tester.pump(kExamDraftWriteDelay);
     }
 
     testWidgets(
@@ -556,6 +561,56 @@ void main() {
         expect(find.text('5'), findsNothing);
         final field = tester.widget<TextField>(find.byType(TextField));
         expect(field.controller!.text, isEmpty);
+
+        dbClosedByTest = true;
+        await db.close();
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+
+    testWidgets(
+      'pausing the app flushes the draft without waiting for the debounce',
+      (tester) async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final preferences = await SharedPreferences.getInstance();
+
+        await pumpWizard(tester, preferences);
+        await tester.enterText(find.byType(TextField).first, '5');
+        await tester.pump();
+
+        // Not one debounce window has passed -- the trailing write is still
+        // pending. Pausing is a loss boundary, so the store must flush now.
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump();
+
+        expect(preferences.getString(draftKey), isNotNull);
+        final decoded =
+            jsonDecode(preferences.getString(draftKey)!)
+                as Map<dynamic, dynamic>;
+        expect(decoded['total'], '5');
+
+        dbClosedByTest = true;
+        await db.close();
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+
+    testWidgets(
+      'tearing the wizard down flushes its pending draft',
+      (tester) async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final preferences = await SharedPreferences.getInstance();
+
+        await pumpWizard(tester, preferences);
+        await tester.enterText(find.byType(TextField).first, '7');
+        await tester.pump();
+
+        // Dispose with the debounce still armed; only a blink of fake time
+        // passes afterwards -- far less than kExamDraftWriteDelay.
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(milliseconds: 10));
+
+        expect(preferences.getString(draftKey), isNotNull);
 
         dbClosedByTest = true;
         await db.close();
