@@ -145,11 +145,14 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
 
     final drafts = <_GroupDraft>[];
     for (final entry in groups) {
-      if (entry is! List || entry.length != 3) continue;
+      // Any entry failing its shape check kills the whole draft (C2): a
+      // partially restored paper is a paper the student cannot finish, since
+      // the fields that would complete it were the ones lost.
+      if (entry is! List || entry.length != 3) return;
       final Object? count = entry[0];
       final Object? points = entry[1];
       final Object? correct = entry[2];
-      if (count is! String || points is! String || correct is! String) continue;
+      if (count is! String || points is! String || correct is! String) return;
       drafts.add(
         _GroupDraft()
           ..count.text = count

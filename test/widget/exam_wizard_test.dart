@@ -533,6 +533,37 @@ void main() {
     }
 
     testWidgets(
+      'a draft that lost part of a group is discarded, not half-applied',
+      (tester) async {
+        // A truncation that keeps the JSON parseable: the second group entry
+        // is one field short. Restoring the surviving half would show a paper
+        // the student cannot complete -- the numbers they typed are gone.
+        SharedPreferences.setMockInitialValues(<String, Object>{
+          draftKey: jsonEncode(<String, Object?>{
+            'total': '20',
+            'groups': <Object?>[
+              <String>['5', '2', '3'],
+              <String>['6', '2'],
+            ],
+          }),
+        });
+        final preferences = await SharedPreferences.getInstance();
+
+        await pumpWizard(tester, preferences);
+
+        // The whole draft went: an empty wizard is honest about what survived.
+        expect(find.text('20'), findsNothing);
+        expect(find.text('5'), findsNothing);
+        final field = tester.widget<TextField>(find.byType(TextField));
+        expect(field.controller!.text, isEmpty);
+
+        dbClosedByTest = true;
+        await db.close();
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+
+    testWidgets(
       'a killed process leaves the paper intact for the next open',
       (tester) async {
         SharedPreferences.setMockInitialValues(<String, Object>{});
