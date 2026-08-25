@@ -292,6 +292,31 @@ The delete check is the one worth understanding rather than just running. On a d
 document undeletable. `tool/check_invariants.sh` now refuses to let that shape back into the file;
 this script is what confirms the same is true of what is actually running.
 
+---
+
+## 4b. The ARB files are UTF-8, and a PowerShell pipe once proved it
+
+Everything the student reads lives in two plain-text dictionaries:
+[`app_en.arb`](lib/core/l10n/app_en.arb) and [`app_ar.arb`](lib/core/l10n/app_ar.arb).
+They are UTF-8 JSON, and that encoding is load-bearing. The P3 string batch was
+written through a PowerShell pipe whose console encoding mangled **every
+non-ASCII character into `?`** — the keys survived; all eleven Arabic values did
+not — and the strings had to be restored verbatim afterwards.
+
+So when a script edits an `.arb` file:
+
+- read and write **strict UTF-8** explicitly, and never route the contents
+  through a console pipe — its encoding follows the terminal codepage, not the
+  file's;
+- after writing, open the result and read a value before committing. `?` where
+  Arabic should be is the signature of the wrong encoding; redo the write from a
+  source that still holds the real text.
+
+The one-shot repair script for that batch is retired with its work done; this
+note is the lesson it carried.
+
+---
+
 ## 5. Before the first public release
 
 Open items recorded in PROJECT.md §9, all of which block Play rather than
