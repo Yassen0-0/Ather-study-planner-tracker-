@@ -1078,7 +1078,7 @@ abstract class L {
   /// No description provided for @authErrorPasswordShort.
   ///
   /// In ar, this message translates to:
-  /// **'كلمة السر ٨ أحرف على الأقل'**
+  /// **'كلمة السر 8 أحرف على الأقل.'**
   String get authErrorPasswordShort;
 
   /// No description provided for @authErrorWrongCredentials.
@@ -1102,13 +1102,13 @@ abstract class L {
   /// No description provided for @authErrorTooManyAttempts.
   ///
   /// In ar, this message translates to:
-  /// **'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى'**
+  /// **'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى.'**
   String get authErrorTooManyAttempts;
 
   /// No description provided for @authErrorGeneric.
   ///
   /// In ar, this message translates to:
-  /// **'تعذّر إتمام العملية. حاول مرة أخرى'**
+  /// **'تعذّر إتمام العملية. حاول مرة أخرى.'**
   String get authErrorGeneric;
 
   /// No description provided for @authSignOut.
@@ -1180,7 +1180,7 @@ abstract class L {
   /// No description provided for @accountSwitchWipeMessage.
   ///
   /// In ar, this message translates to:
-  /// **'البيانات المحفوظة على هذا الجهاز تخص حسابًا آخر. للمتابعة بهذا الحساب ستُمسح كل بيانات الجهاز: المواد والأبواب والامتحانات والمهام. لا يمكن التراجع.'**
+  /// **'البيانات المحفوظة على هذا الجهاز تخص حساباً آخر. للمتابعة بهذا الحساب ستُمسح كل بيانات الجهاز: المواد والأبواب والامتحانات والمهام. لا يمكن التراجع.'**
   String get accountSwitchWipeMessage;
 
   /// No description provided for @accountSwitchWipeConfirm.
@@ -1318,7 +1318,7 @@ abstract class L {
   /// No description provided for @lockMethodBoth.
   ///
   /// In ar, this message translates to:
-  /// **'الاثنين معًا'**
+  /// **'الاثنين معاً'**
   String get lockMethodBoth;
 
   /// No description provided for @setPasswordTitle.
@@ -1354,7 +1354,7 @@ abstract class L {
   /// No description provided for @passwordTooShort.
   ///
   /// In ar, this message translates to:
-  /// **'كلمة السر ٤ أحرف على الأقل.'**
+  /// **'كلمة السر 4 أحرف على الأقل.'**
   String get passwordTooShort;
 
   /// No description provided for @wrongPassword.
@@ -2128,13 +2128,13 @@ abstract class L {
   /// No description provided for @examEveTierWeakest.
   ///
   /// In ar, this message translates to:
-  /// **'الأضعف إتقانًا'**
+  /// **'الأضعف إتقاناً'**
   String get examEveTierWeakest;
 
   /// No description provided for @examEveTierNearestDue.
   ///
   /// In ar, this message translates to:
-  /// **'الأقرب سقوطًا'**
+  /// **'الأقرب معاداً'**
   String get examEveTierNearestDue;
 
   /// No description provided for @reviewBodyDeclining.

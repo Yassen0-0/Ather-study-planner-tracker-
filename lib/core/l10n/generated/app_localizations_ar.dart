@@ -648,7 +648,7 @@ class LAr extends L {
   String get authErrorEmailInvalid => 'البريد الإلكتروني غير صحيح';
 
   @override
-  String get authErrorPasswordShort => 'كلمة السر ٨ أحرف على الأقل';
+  String get authErrorPasswordShort => 'كلمة السر 8 أحرف على الأقل.';
 
   @override
   String get authErrorWrongCredentials =>
@@ -663,10 +663,10 @@ class LAr extends L {
 
   @override
   String get authErrorTooManyAttempts =>
-      'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى';
+      'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى.';
 
   @override
-  String get authErrorGeneric => 'تعذّر إتمام العملية. حاول مرة أخرى';
+  String get authErrorGeneric => 'تعذّر إتمام العملية. حاول مرة أخرى.';
 
   @override
   String get authSignOut => 'تسجيل الخروج';
@@ -706,7 +706,7 @@ class LAr extends L {
 
   @override
   String get accountSwitchWipeMessage =>
-      'البيانات المحفوظة على هذا الجهاز تخص حسابًا آخر. للمتابعة بهذا الحساب ستُمسح كل بيانات الجهاز: المواد والأبواب والامتحانات والمهام. لا يمكن التراجع.';
+      'البيانات المحفوظة على هذا الجهاز تخص حساباً آخر. للمتابعة بهذا الحساب ستُمسح كل بيانات الجهاز: المواد والأبواب والامتحانات والمهام. لا يمكن التراجع.';
 
   @override
   String get accountSwitchWipeConfirm => 'امسح بيانات الجهاز';
@@ -782,7 +782,7 @@ class LAr extends L {
   String get lockMethodPassword => 'كلمة سر فقط';
 
   @override
-  String get lockMethodBoth => 'الاثنين معًا';
+  String get lockMethodBoth => 'الاثنين معاً';
 
   @override
   String get setPasswordTitle => 'تعيين كلمة السر';
@@ -800,7 +800,7 @@ class LAr extends L {
   String get passwordMismatch => 'كلمتا السر غير متطابقتين.';
 
   @override
-  String get passwordTooShort => 'كلمة السر ٤ أحرف على الأقل.';
+  String get passwordTooShort => 'كلمة السر 4 أحرف على الأقل.';
 
   @override
   String get wrongPassword => 'كلمة السر غير صحيحة.';
@@ -1369,10 +1369,10 @@ class LAr extends L {
   String get examEveTierUnsettled => 'غير مُثبت — بلا امتحان';
 
   @override
-  String get examEveTierWeakest => 'الأضعف إتقانًا';
+  String get examEveTierWeakest => 'الأضعف إتقاناً';
 
   @override
-  String get examEveTierNearestDue => 'الأقرب سقوطًا';
+  String get examEveTierNearestDue => 'الأقرب معاداً';
 
   @override
   String reviewBodyDeclining(String lesson) {

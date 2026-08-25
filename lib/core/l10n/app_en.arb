@@ -175,8 +175,17 @@
   "examNoHistory": "No exams yet",
   "examReviewBadge": "Review",
   "examDelete": "Remove exam",
-  "examDeleteConfirm": "This exam will be removed from the record and the lesson's mastery recalculated without it. This can't be undone.",
+  "@examDelete": {
+    "description": "Exam family deliberately says Remove, not Delete: an exam is taken off the record and the lesson's mastery is recalculated, while the lesson itself stays. Cross-family contrast with chapter/lesson Delete is intentional."
+  },
+  "examDeleteConfirm": "This exam will be removed from the record and the lesson's mastery recalculated without it. This cannot be undone.",
+  "@examDeleteConfirm": {
+    "description": "Remove framing documented at examDelete applies here too; 'removed' in this confirm is deliberate, not a slip."
+  },
   "toastExamDeleted": "Exam removed — mastery recalculated",
+  "@toastExamDeleted": {
+    "description": "Same deliberate Remove framing as examDelete."
+  },
   "examStart": "Start the exam",
   "examRecordResult": "Log an exam result",
   "examRecordReview": "Log the review exam",
@@ -191,6 +200,9 @@
   "examGroupPoints": "Marks each",
   "examAddGroup": "+ Add group",
   "examRemoveGroup": "Remove group",
+  "@examRemoveGroup": {
+    "description": "Exam-entry wizard: drops a not-yet-saved question group from the draft. Remove, because nothing recorded is touched."
+  },
   "examGroupLabel": "{count, plural, =1{1 question} other{{count} questions}} × {points, plural, =1{1 mark} other{{points} marks}}",
   "@examGroupLabel": {
     "placeholders": {
@@ -208,7 +220,7 @@
   "examSave": "Save result",
   "examSaveFailed": "We couldn't save this exam. Your numbers are still here — try again.",
   "examDiscardTitle": "Leave this exam?",
-  "examDiscardBody": "What you've entered will be lost. This can't be undone.",
+  "examDiscardBody": "What you've entered will be lost. This cannot be undone.",
   "examDiscardLeave": "Leave",
   "examDiscardStay": "Keep going",
   "examSaveReview": "Save review exam",
@@ -241,7 +253,7 @@
   "trendUp": "Up from {from} to {to}",
   "trendDown": "Down from {from} to {to}",
   "trendFlat": "More exams are needed to measure progress",
-  "trendSteady": "Steady -- both halves sit at the same level",
+  "trendSteady": "Steady — both halves sit at the same level",
   "chapterReportMasteryLabel": "Mastery",
   "weakestLessonBadge": "Weakest lesson",
   "celebrationTitle": "Chapter mastered!",
@@ -515,8 +527,8 @@
   "subjectTemplateNote": "The usual chapters for this subject. Edit or delete them like any chapter you typed yourself. Nothing you already have is changed or removed.",
   "@@x_comment_integration": "=== Integration review fixes ===",
   "authVerificationNotSent": "Your account is ready. The confirmation link did not go out — you can send it from your profile.",
-  "examVerdictWeak": "Weak lesson -- it entered the 30-day review. Study again before then.",
-  "examVerdictPassed": "You passed, not mastered -- another exam is what raises it.",
+  "examVerdictWeak": "Weak lesson — it entered the 30-day review. Study again before then.",
+  "examVerdictPassed": "You passed, not mastered — another exam is what raises it.",
   "examNeedToCross": "To cross the line: score {percentage} on the next one.",
   "@examNeedToCross": {
     "placeholders": {
@@ -544,8 +556,8 @@
       }
     }
   },
-  "checklistAllDone": "Studied end to end -- prove it with an exam.",
-  "tasksDayDone": "{done} of {total} done -- your day is complete.",
+  "checklistAllDone": "Studied end to end — prove it with an exam.",
+  "tasksDayDone": "{done} of {total} done — your day is complete.",
   "@tasksDayDone": {
     "placeholders": {
       "done": {
@@ -607,10 +619,10 @@
   "examEveButton": "Exam eve",
   "examEveTitle": "Exam eve",
   "examEveBody": "The subject's lessons, ordered by what to prove tonight.",
-  "examEveTierUnsettled": "Not yet proven -- no exam",
+  "examEveTierUnsettled": "Not yet proven — no exam",
   "examEveTierWeakest": "Weakest first",
-  "examEveTierNearestDue": "Closest to falling due",
-  "reviewBodyDeclining": "The last exam in {lesson} dropped -- review it before it slips.",
+  "examEveTierNearestDue": "Closest to due",
+  "reviewBodyDeclining": "The last exam in {lesson} dropped — review it before it slips.",
   "@reviewBodyDeclining": {
     "placeholders": {
       "lesson": {
@@ -618,7 +630,7 @@
       }
     }
   },
-  "reviewBodyWeak": "{lesson} is still weak -- lock it in with an exam.",
+  "reviewBodyWeak": "{lesson} is still weak — lock it in with an exam.",
   "@reviewBodyWeak": {
     "placeholders": {
       "lesson": {

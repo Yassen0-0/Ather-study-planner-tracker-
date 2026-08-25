@@ -354,7 +354,7 @@ class LEn extends L {
 
   @override
   String get examDeleteConfirm =>
-      'This exam will be removed from the record and the lesson\'s mastery recalculated without it. This can\'t be undone.';
+      'This exam will be removed from the record and the lesson\'s mastery recalculated without it. This cannot be undone.';
 
   @override
   String get toastExamDeleted => 'Exam removed — mastery recalculated';
@@ -444,7 +444,7 @@ class LEn extends L {
 
   @override
   String get examDiscardBody =>
-      'What you\'ve entered will be lost. This can\'t be undone.';
+      'What you\'ve entered will be lost. This cannot be undone.';
 
   @override
   String get examDiscardLeave => 'Leave';
@@ -559,7 +559,7 @@ class LEn extends L {
   String get trendFlat => 'More exams are needed to measure progress';
 
   @override
-  String get trendSteady => 'Steady -- both halves sit at the same level';
+  String get trendSteady => 'Steady — both halves sit at the same level';
 
   @override
   String get chapterReportMasteryLabel => 'Mastery';
@@ -1187,11 +1187,11 @@ class LEn extends L {
 
   @override
   String get examVerdictWeak =>
-      'Weak lesson -- it entered the 30-day review. Study again before then.';
+      'Weak lesson — it entered the 30-day review. Study again before then.';
 
   @override
   String get examVerdictPassed =>
-      'You passed, not mastered -- another exam is what raises it.';
+      'You passed, not mastered — another exam is what raises it.';
 
   @override
   String examNeedToCross(String percentage) {
@@ -1221,11 +1221,11 @@ class LEn extends L {
   }
 
   @override
-  String get checklistAllDone => 'Studied end to end -- prove it with an exam.';
+  String get checklistAllDone => 'Studied end to end — prove it with an exam.';
 
   @override
   String tasksDayDone(String done, String total) {
-    return '$done of $total done -- your day is complete.';
+    return '$done of $total done — your day is complete.';
   }
 
   @override
@@ -1295,22 +1295,22 @@ class LEn extends L {
       'The subject\'s lessons, ordered by what to prove tonight.';
 
   @override
-  String get examEveTierUnsettled => 'Not yet proven -- no exam';
+  String get examEveTierUnsettled => 'Not yet proven — no exam';
 
   @override
   String get examEveTierWeakest => 'Weakest first';
 
   @override
-  String get examEveTierNearestDue => 'Closest to falling due';
+  String get examEveTierNearestDue => 'Closest to due';
 
   @override
   String reviewBodyDeclining(String lesson) {
-    return 'The last exam in $lesson dropped -- review it before it slips.';
+    return 'The last exam in $lesson dropped — review it before it slips.';
   }
 
   @override
   String reviewBodyWeak(String lesson) {
-    return '$lesson is still weak -- lock it in with an exam.';
+    return '$lesson is still weak — lock it in with an exam.';
   }
 
   @override
