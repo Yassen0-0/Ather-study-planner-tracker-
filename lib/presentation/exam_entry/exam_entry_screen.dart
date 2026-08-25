@@ -210,9 +210,13 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
 
   /// Every numeric-field change funnels through here: clear any standing
   /// validation error and keep the draft current.
+  ///
+  /// The rebuild only matters when an error banner is actually standing -- a
+  /// keystroke that clears nothing would otherwise rebuild the whole route
+  /// (PF1) for a state change of zero widgets.
   void _fieldChanged() {
     _persistDraft();
-    setState(() => _error = null);
+    if (_error != null) setState(() => _error = null);
   }
 
   int get _totalValue => int.tryParse(_total.text) ?? 0;
