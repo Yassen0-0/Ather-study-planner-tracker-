@@ -29,6 +29,7 @@ import 'package:ather/presentation/providers/task_providers.dart';
 import 'package:ather/presentation/subject/subject_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/established_install.dart';
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
 
@@ -143,7 +144,10 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
 
-    SharedPreferences.setMockInitialValues(preferences);
+    // Recorded uid matches the signed-in fake: an established install, not a
+    // legacy device -- the gate's wipe sheet would otherwise absorb the taps
+    // below.
+    SharedPreferences.setMockInitialValues(establishedInstallPrefs(preferences));
     final stored = await SharedPreferences.getInstance();
 
     await tester.pumpWidget(

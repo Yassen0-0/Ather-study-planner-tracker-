@@ -23,6 +23,7 @@ import 'package:ather/presentation/providers/backup_providers.dart';
 import 'package:ather/presentation/providers/task_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 
+import 'support/established_install.dart';
 import 'support/fake_backup.dart';
 import 'support/fake_auth.dart';
 
@@ -58,9 +59,12 @@ Future<Widget> bootApp({StudySnapshot? snapshot, Locale? locale}) async {
   // The locale is read from preferences rather than injected, so seeding the
   // stored code is how a test picks a language -- the same path the settings
   // toggle takes.
-  SharedPreferences.setMockInitialValues(<String, Object>{
+  // The device already belongs to the signed-in student: without a recorded
+  // uid under this seeded data the backup gate reads a legacy hand-over and
+  // posts its wipe sheet over the shell, absorbing every nav tap below.
+  SharedPreferences.setMockInitialValues(establishedInstallPrefs(<String, Object>{
     if (locale != null) 'locale_code': locale.languageCode,
-  });
+  }));
   final preferences = await SharedPreferences.getInstance();
 
   return ProviderScope(

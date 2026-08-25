@@ -20,6 +20,7 @@ import 'package:ather/presentation/providers/task_providers.dart';
 import 'package:ather/presentation/review_center/review_center_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/established_install.dart';
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
 
@@ -104,7 +105,9 @@ Future<void> bootReviewTab(WidgetTester tester, StudySnapshot snapshot) async {
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
 
-  SharedPreferences.setMockInitialValues(<String, Object>{});
+  // Established install: without the recorded uid the gate reads this seeded
+  // record as a legacy hand-over and sheets over the tab bar.
+  SharedPreferences.setMockInitialValues(establishedInstallPrefs());
   final preferences = await SharedPreferences.getInstance();
   // Keyed so a second boot in the same test inflates a fresh scope: reusing
   // the element keeps the old container's provider states alive, and the new

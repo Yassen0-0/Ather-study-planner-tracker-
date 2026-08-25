@@ -24,6 +24,7 @@ import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/established_install.dart';
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
 
@@ -179,7 +180,12 @@ void main() {
       db,
     ).createChapter(subjectId: 1, name: 'باب', at: kSeedInstant);
 
-    await tester.pumpWidget(await boot(backup));
+    // The local record belongs to the signed-in student; without the recorded
+    // uid the gate would read it as a legacy hand-over and sheet over the tab
+    // bar before Settings is reachable.
+    await tester.pumpWidget(
+      await boot(backup, preferences0: establishedInstallPrefs()),
+    );
     await tester.pumpAndSettle();
     await openBackup(tester);
 
@@ -367,7 +373,11 @@ void main() {
       db,
     ).createChapter(subjectId: 1, name: 'شغلي أنا', at: kSeedInstant);
 
-    await tester.pumpWidget(await boot(backup));
+    // Established install (recorded uid = the signed-in student): the seeded
+    // chapter is this student's work, not a legacy device awaiting hand-over.
+    await tester.pumpWidget(
+      await boot(backup, preferences0: establishedInstallPrefs()),
+    );
     await tester.pumpAndSettle();
     await openBackup(tester);
 
@@ -402,7 +412,11 @@ void main() {
       db,
     ).createChapter(subjectId: 1, name: 'شغلي أنا', at: kSeedInstant);
 
-    await tester.pumpWidget(await boot(backup));
+    // Established install, same reason as the restore above: the seeded
+    // chapter must not present as a legacy second student's record.
+    await tester.pumpWidget(
+      await boot(backup, preferences0: establishedInstallPrefs()),
+    );
     await tester.pumpAndSettle();
     await openBackup(tester);
 

@@ -17,6 +17,7 @@ import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_providers.dart';
 
+import '../support/established_install.dart';
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
 
@@ -66,7 +67,9 @@ void main() {
   }
 
   Future<Widget> boot() async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
+    // Established install: the seeded record plus a missing uid is the legacy
+    // hand-over state, whose wipe sheet would block every tap below.
+    SharedPreferences.setMockInitialValues(establishedInstallPrefs());
     final preferences = await SharedPreferences.getInstance();
 
     return ProviderScope(
