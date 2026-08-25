@@ -380,7 +380,7 @@ void main() {
     // K1: the copy also names what is being trusted — this cloud copy holds
     // one chapter and no exams, straight from its metadata.
     expect(
-      find.textContaining(l.restoreCopyCounts(iso(1), iso(0))),
+      find.textContaining(l.restoreCopyCounts(1, 0)),
       findsOneWidget,
     );
 

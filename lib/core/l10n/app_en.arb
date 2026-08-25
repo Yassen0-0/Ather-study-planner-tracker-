@@ -53,10 +53,40 @@
       }
     }
   },
-  "chaptersMasteredOf": "{mastered} of {total} chapters mastered",
-  "chaptersOfShort": "{mastered} of {total} chapters",
+  "chaptersMasteredOf": "{mastered} of {total, plural, =1{1 chapter} other{{total} chapters}} mastered",
+  "@chaptersMasteredOf": {
+    "placeholders": {
+      "mastered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "chaptersOfShort": "{mastered} of {total, plural, =1{1 chapter} other{{total} chapters}}",
+  "@chaptersOfShort": {
+    "placeholders": {
+      "mastered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "lessonsExaminedOf": "{examined} of {total} lessons examined",
-  "lessonsOnTimeOf": "{onTime} of {total} lessons on time",
+  "lessonsOnTimeOf": "{onTime} of {total, plural, =1{1 lesson} other{{total} lessons}} on time",
+  "@lessonsOnTimeOf": {
+    "placeholders": {
+      "onTime": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "sectionChapters": "Chapters",
   "sectionLessons": "Lessons",
   "addChapter": "+ Add chapter",
@@ -100,9 +130,30 @@
   "notReadyBody": "To master a chapter every lesson needs an exam and mastery has to reach at least {threshold}.",
   "noExamShort": "No exam",
   "lessonNoExamYet": "No exam yet",
-  "dueInDays": "{days} days left",
-  "dueInDaysLong": "{days} days until review",
-  "overdueByDays": "{days} days overdue",
+  "dueInDays": "{days, plural, =1{1 day left} other{{days} days left}}",
+  "@dueInDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dueInDaysLong": "{days, plural, =1{1 day until review} other{{days} days until review}}",
+  "@dueInDaysLong": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "overdueByDays": "{days, plural, =1{1 day overdue} other{{days} days overdue}}",
+  "@overdueByDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "masteryCaptionWithExams": "Mastery is the last exam {last} plus the average of the earlier ones {rest}",
   "masteryCaptionNoExams": "Mastery comes from exams only — log your first exam to start",
   "checklistTitle": "Study steps",
@@ -140,7 +191,17 @@
   "examGroupPoints": "Marks each",
   "examAddGroup": "+ Add group",
   "examRemoveGroup": "Remove group",
-  "examGroupLabel": "{count} questions × {points} marks",
+  "examGroupLabel": "{count, plural, =1{1 question} other{{count} questions}} × {points, plural, =1{1 mark} other{{points} marks}}",
+  "@examGroupLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "points": {
+        "type": "int"
+      }
+    }
+  },
   "examPointsLine": "{points} marks",
   "examMasteryBefore": "Mastery before",
   "examMasteryAfter": "Mastery after",
@@ -424,7 +485,14 @@
   "reviewNotificationEarlyBody": "{lesson} in {chapter} is due for review soon",
   "@@x_comment_B2": "=== Batch B2: analytics trends ===",
   "analyticsTrajectory": "Score trajectory",
-  "analyticsVelocity": "{value} points per review cycle",
+  "analyticsVelocity": "{value, plural, =1{1 point} other{{value} points}} per review cycle",
+  "@analyticsVelocity": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
   "analyticsVelocityFlat": "Holding steady",
   "@@x_comment_B3": "=== Batch B3: email verification ===",
   "authVerificationSent": "We sent a confirmation link to your email",
@@ -457,14 +525,14 @@
       }
     }
   },
-  "comebackLine": "Back after {days} days -- {count} lessons came due meanwhile.",
+  "comebackLine": "Back after {days, plural, =1{1 day} other{{days} days}} — {count, plural, =1{1 lesson came due} other{{count} lessons came due}} meanwhile.",
   "@comebackLine": {
     "placeholders": {
       "days": {
-        "type": "String"
+        "type": "int"
       },
       "count": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -507,31 +575,31 @@
       }
     }
   },
-  "purgeCountsLine": "{subjects} subjects . {chapters} chapters . {lessons} lessons . {exams} exams",
+  "purgeCountsLine": "{subjects, plural, =1{1 subject} other{{subjects} subjects}} · {chapters, plural, =1{1 chapter} other{{chapters} chapters}} · {lessons, plural, =1{1 lesson} other{{lessons} lessons}} · {exams, plural, =1{1 exam} other{{exams} exams}}",
   "@purgeCountsLine": {
     "placeholders": {
       "subjects": {
-        "type": "String"
+        "type": "int"
       },
       "chapters": {
-        "type": "String"
+        "type": "int"
       },
       "lessons": {
-        "type": "String"
+        "type": "int"
       },
       "exams": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
-  "restoreCopyCounts": "Cloud copy: {chapters} chapters, {exams} exams",
+  "restoreCopyCounts": "Cloud copy: {chapters, plural, =1{1 chapter} other{{chapters} chapters}}, {exams, plural, =1{1 exam} other{{exams} exams}}",
   "@restoreCopyCounts": {
     "placeholders": {
       "chapters": {
-        "type": "String"
+        "type": "int"
       },
       "exams": {
-        "type": "String"
+        "type": "int"
       }
     }
   },

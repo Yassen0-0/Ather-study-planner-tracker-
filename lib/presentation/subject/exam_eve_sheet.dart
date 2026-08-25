@@ -100,8 +100,8 @@ class ExamEveSheet extends StatelessWidget {
             ExamEveTier.unsettled => L.of(context).noExamShort,
             ExamEveTier.weakest => percent(entry.mastery),
             ExamEveTier.nearestDue => entry.daysUntilDue == null
-                ? L.of(context).overdueByDays(iso(entry.daysOverdue))
-                : L.of(context).dueInDays(iso(entry.daysUntilDue!)),
+                ? L.of(context).overdueByDays(entry.daysOverdue)
+                : L.of(context).dueInDays(entry.daysUntilDue!),
           },
           statusColor: switch (entry.tier) {
             ExamEveTier.unsettled => context.colors.textSecondary,

@@ -191,9 +191,9 @@ class _MasteryCard extends StatelessWidget {
     if (!summary.hasExam) {
       chip = l.noExamShort;
     } else if (summary.needsReview) {
-      chip = l.overdueByDays(iso(summary.daysOverdue));
+      chip = l.overdueByDays(summary.daysOverdue);
     } else {
-      chip = l.dueInDays(iso(summary.daysUntilDue ?? 0));
+      chip = l.dueInDays(summary.daysUntilDue ?? 0);
     }
 
     return AtherCard(

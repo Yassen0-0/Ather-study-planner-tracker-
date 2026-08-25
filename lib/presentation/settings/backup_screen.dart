@@ -85,7 +85,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       message: meta == null
           ? l.backupRestoreConfirm
           : '${l.backupRestoreConfirm}\n'
-              '${l.restoreCopyCounts(iso(meta.chapterCount), iso(meta.examCount))}',
+              '${l.restoreCopyCounts(meta.chapterCount, meta.examCount)}',
       // Red, because it replaces the local record -- but the student is
       // agreeing to a restore, not a delete, and the button says so.
       confirmLabel: l.backupRestore,

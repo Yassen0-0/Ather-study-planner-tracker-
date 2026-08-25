@@ -338,7 +338,7 @@ class _ReviewRow extends StatelessWidget {
     );
 
     final reason = switch (item.reason) {
-      ReviewReason.overdue => l.overdueByDays(iso(item.daysOverdue)),
+      ReviewReason.overdue => l.overdueByDays(item.daysOverdue),
       ReviewReason.lowMastery => l.reviewReasonWeak,
       ReviewReason.declining => l.reviewReasonDeclining,
     };

@@ -112,6 +112,7 @@ class LAr extends L {
       few: '$count دروس',
       two: 'درسان',
       one: 'درس واحد',
+      zero: 'لا دروس',
     );
     return '$_temp0';
   }
@@ -126,18 +127,37 @@ class LAr extends L {
       few: '$count أبواب',
       two: 'بابان',
       one: 'باب واحد',
+      zero: 'لا أبواب',
     );
     return '$_temp0';
   }
 
   @override
-  String chaptersMasteredOf(String mastered, String total) {
-    return 'أتقنت $mastered من $total باب';
+  String chaptersMasteredOf(int mastered, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total باب',
+      many: '$total باباً',
+      few: '$total أبواب',
+      two: 'بابين',
+      one: 'باب واحد',
+    );
+    return 'أتقنت $mastered من $_temp0';
   }
 
   @override
-  String chaptersOfShort(String mastered, String total) {
-    return '$mastered من $total باب';
+  String chaptersOfShort(int mastered, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total باب',
+      many: '$total باباً',
+      few: '$total أبواب',
+      two: 'بابين',
+      one: 'باب واحد',
+    );
+    return '$mastered من $_temp0';
   }
 
   @override
@@ -146,8 +166,17 @@ class LAr extends L {
   }
 
   @override
-  String lessonsOnTimeOf(String onTime, String total) {
-    return '$onTime من $total درس في موعده';
+  String lessonsOnTimeOf(int onTime, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total درس',
+      many: '$total درساً',
+      few: '$total دروس',
+      two: 'درسين',
+      one: 'درس واحد',
+    );
+    return '$onTime من $_temp0 في موعده';
   }
 
   @override
@@ -240,18 +269,48 @@ class LAr extends L {
   String get lessonNoExamYet => 'لا يوجد امتحان بعد';
 
   @override
-  String dueInDays(String days) {
-    return 'بقي $days يوم';
+  String dueInDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'بقي $days يوم',
+      many: 'بقي $days يوماً',
+      few: 'بقي $days أيام',
+      two: 'بقي يومان',
+      one: 'بقي يوم واحد',
+      zero: 'أقل من يوم',
+    );
+    return '$_temp0';
   }
 
   @override
-  String dueInDaysLong(String days) {
-    return 'بقي $days يوم على المراجعة';
+  String dueInDaysLong(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'بقي $days يوم على المراجعة',
+      many: 'بقي $days يوماً على المراجعة',
+      few: 'بقي $days أيام على المراجعة',
+      two: 'بقي يومان على المراجعة',
+      one: 'بقي يوم واحد على المراجعة',
+      zero: 'أقل من يوم على المراجعة',
+    );
+    return '$_temp0';
   }
 
   @override
-  String overdueByDays(String days) {
-    return 'متأخّر $days يوم';
+  String overdueByDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'متأخّر $days يوم',
+      many: 'متأخّر $days يوماً',
+      few: 'متأخّر $days أيام',
+      two: 'متأخّر يومين',
+      one: 'متأخّر يوم واحد',
+      zero: 'متأخّر أقل من يوم',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -371,8 +430,26 @@ class LAr extends L {
   String get examRemoveGroup => 'حذف المجموعة';
 
   @override
-  String examGroupLabel(String count, String points) {
-    return '$count أسئلة × $points درجة';
+  String examGroupLabel(int count, int points) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count سؤال',
+      many: '$count سؤالاً',
+      few: '$count أسئلة',
+      two: 'سؤالان',
+      one: 'سؤال واحد',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      points,
+      locale: localeName,
+      other: '$points درجة',
+      many: '$points درجة',
+      few: '$points درجات',
+      two: 'درجتان',
+      one: 'درجة واحدة',
+    );
+    return '$_temp0 × $_temp1';
   }
 
   @override
@@ -829,6 +906,7 @@ class LAr extends L {
       few: '$count امتحانات',
       two: 'امتحانان',
       one: 'امتحان واحد',
+      zero: 'لا امتحانات',
     );
     return '$_temp0';
   }
@@ -846,6 +924,7 @@ class LAr extends L {
       few: '$count مواد',
       two: 'مادتان',
       one: 'مادة واحدة',
+      zero: 'لا مواد',
     );
     return '$_temp0';
   }
@@ -1083,8 +1162,17 @@ class LAr extends L {
   String get analyticsTrajectory => 'مسار درجاتك';
 
   @override
-  String analyticsVelocity(String value) {
-    return '$value نقطة لكل دورة مراجعة';
+  String analyticsVelocity(int value) {
+    String _temp0 = intl.Intl.pluralLogic(
+      value,
+      locale: localeName,
+      other: '$value نقطة',
+      many: '$value نقطة',
+      few: '$value نقاط',
+      two: 'نقطتان',
+      one: 'نقطة واحدة',
+    );
+    return '$_temp0 لكل دورة مراجعة';
   }
 
   @override
@@ -1152,8 +1240,27 @@ class LAr extends L {
   }
 
   @override
-  String comebackLine(String days, String count) {
-    return 'رجعت بعد $days يوم — $count درس عبر معاده.';
+  String comebackLine(int days, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days يوم',
+      many: '$days يوماً',
+      few: '$days أيام',
+      two: 'يومين',
+      one: 'يوم واحد',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count درس عبر معادها',
+      many: '$count درساً عبرت معادتها',
+      few: '$count دروس عبرت معادتها',
+      two: 'درسان عبرا معادهما',
+      one: 'درس واحد عبر معاده',
+      zero: 'ما حدش عبر معاده',
+    );
+    return 'رجعت بعد $_temp0 — $_temp1';
   }
 
   @override
@@ -1180,18 +1287,73 @@ class LAr extends L {
   }
 
   @override
-  String purgeCountsLine(
-    String subjects,
-    String chapters,
-    String lessons,
-    String exams,
-  ) {
-    return '$subjects مادة · $chapters باب · $lessons درس · $exams امتحان';
+  String purgeCountsLine(int subjects, int chapters, int lessons, int exams) {
+    String _temp0 = intl.Intl.pluralLogic(
+      subjects,
+      locale: localeName,
+      other: '$subjects مادة',
+      many: '$subjects مادة',
+      few: '$subjects مواد',
+      two: 'مادتان',
+      one: 'مادة واحدة',
+      zero: 'لا مواد',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      chapters,
+      locale: localeName,
+      other: '$chapters باب',
+      many: '$chapters باباً',
+      few: '$chapters أبواب',
+      two: 'بابان',
+      one: 'باب واحد',
+      zero: 'لا أبواب',
+    );
+    String _temp2 = intl.Intl.pluralLogic(
+      lessons,
+      locale: localeName,
+      other: '$lessons درس',
+      many: '$lessons درساً',
+      few: '$lessons دروس',
+      two: 'درسان',
+      one: 'درس واحد',
+      zero: 'لا دروس',
+    );
+    String _temp3 = intl.Intl.pluralLogic(
+      exams,
+      locale: localeName,
+      other: '$exams امتحان',
+      many: '$exams امتحاناً',
+      few: '$exams امتحانات',
+      two: 'امتحانان',
+      one: 'امتحان واحد',
+      zero: 'لا امتحانات',
+    );
+    return '$_temp0 · $_temp1 · $_temp2 · $_temp3';
   }
 
   @override
-  String restoreCopyCounts(String chapters, String exams) {
-    return 'النسخة السحابية: $chapters باب، $exams امتحان';
+  String restoreCopyCounts(int chapters, int exams) {
+    String _temp0 = intl.Intl.pluralLogic(
+      chapters,
+      locale: localeName,
+      other: '$chapters باب',
+      many: '$chapters باباً',
+      few: '$chapters أبواب',
+      two: 'بابان',
+      one: 'باب واحد',
+      zero: 'لا أبواب',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      exams,
+      locale: localeName,
+      other: '$exams امتحان',
+      many: '$exams امتحاناً',
+      few: '$exams امتحانات',
+      two: 'امتحانان',
+      one: 'امتحان واحد',
+      zero: 'لا امتحانات',
+    );
+    return 'النسخة السحابية: $_temp0، $_temp1';
   }
 
   @override

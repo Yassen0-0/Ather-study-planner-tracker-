@@ -182,7 +182,7 @@ void main() {
     // holds against the copy whatever it says.
     final ar = await L.delegate.load(const Locale('ar'));
     expect(
-      find.text(ar.comebackLine(iso('8'), iso('1'))),
+      find.text(ar.comebackLine(8, 1)),
       findsOneWidget,
       reason: 'one lesson crossed its due date inside the absence window; '
           'the lesson that was already red before leaving is not part of it',
@@ -244,7 +244,7 @@ void main() {
     // string's absence rather than scanning for any text.
     final ar = await L.delegate.load(const Locale('ar'));
     expect(
-      find.text(ar.comebackLine(iso('1'), iso('0'))),
+      find.text(ar.comebackLine(1, 0)),
       findsNothing,
     );
 

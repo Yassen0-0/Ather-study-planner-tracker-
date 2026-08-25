@@ -125,13 +125,25 @@ class LEn extends L {
   }
 
   @override
-  String chaptersMasteredOf(String mastered, String total) {
-    return '$mastered of $total chapters mastered';
+  String chaptersMasteredOf(int mastered, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total chapters',
+      one: '1 chapter',
+    );
+    return '$mastered of $_temp0 mastered';
   }
 
   @override
-  String chaptersOfShort(String mastered, String total) {
-    return '$mastered of $total chapters';
+  String chaptersOfShort(int mastered, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total chapters',
+      one: '1 chapter',
+    );
+    return '$mastered of $_temp0';
   }
 
   @override
@@ -140,8 +152,14 @@ class LEn extends L {
   }
 
   @override
-  String lessonsOnTimeOf(String onTime, String total) {
-    return '$onTime of $total lessons on time';
+  String lessonsOnTimeOf(int onTime, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total lessons',
+      one: '1 lesson',
+    );
+    return '$onTime of $_temp0 on time';
   }
 
   @override
@@ -234,18 +252,36 @@ class LEn extends L {
   String get lessonNoExamYet => 'No exam yet';
 
   @override
-  String dueInDays(String days) {
-    return '$days days left';
+  String dueInDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days left',
+      one: '1 day left',
+    );
+    return '$_temp0';
   }
 
   @override
-  String dueInDaysLong(String days) {
-    return '$days days until review';
+  String dueInDaysLong(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days until review',
+      one: '1 day until review',
+    );
+    return '$_temp0';
   }
 
   @override
-  String overdueByDays(String days) {
-    return '$days days overdue';
+  String overdueByDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days overdue',
+      one: '1 day overdue',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -366,8 +402,20 @@ class LEn extends L {
   String get examRemoveGroup => 'Remove group';
 
   @override
-  String examGroupLabel(String count, String points) {
-    return '$count questions × $points marks';
+  String examGroupLabel(int count, int points) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count questions',
+      one: '1 question',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      points,
+      locale: localeName,
+      other: '$points marks',
+      one: '1 mark',
+    );
+    return '$_temp0 × $_temp1';
   }
 
   @override
@@ -1075,8 +1123,14 @@ class LEn extends L {
   String get analyticsTrajectory => 'Score trajectory';
 
   @override
-  String analyticsVelocity(String value) {
-    return '$value points per review cycle';
+  String analyticsVelocity(int value) {
+    String _temp0 = intl.Intl.pluralLogic(
+      value,
+      locale: localeName,
+      other: '$value points',
+      one: '1 point',
+    );
+    return '$_temp0 per review cycle';
   }
 
   @override
@@ -1145,8 +1199,20 @@ class LEn extends L {
   }
 
   @override
-  String comebackLine(String days, String count) {
-    return 'Back after $days days -- $count lessons came due meanwhile.';
+  String comebackLine(int days, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lessons came due',
+      one: '1 lesson came due',
+    );
+    return 'Back after $_temp0 — $_temp1 meanwhile.';
   }
 
   @override
@@ -1173,18 +1239,49 @@ class LEn extends L {
   }
 
   @override
-  String purgeCountsLine(
-    String subjects,
-    String chapters,
-    String lessons,
-    String exams,
-  ) {
-    return '$subjects subjects . $chapters chapters . $lessons lessons . $exams exams';
+  String purgeCountsLine(int subjects, int chapters, int lessons, int exams) {
+    String _temp0 = intl.Intl.pluralLogic(
+      subjects,
+      locale: localeName,
+      other: '$subjects subjects',
+      one: '1 subject',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      chapters,
+      locale: localeName,
+      other: '$chapters chapters',
+      one: '1 chapter',
+    );
+    String _temp2 = intl.Intl.pluralLogic(
+      lessons,
+      locale: localeName,
+      other: '$lessons lessons',
+      one: '1 lesson',
+    );
+    String _temp3 = intl.Intl.pluralLogic(
+      exams,
+      locale: localeName,
+      other: '$exams exams',
+      one: '1 exam',
+    );
+    return '$_temp0 · $_temp1 · $_temp2 · $_temp3';
   }
 
   @override
-  String restoreCopyCounts(String chapters, String exams) {
-    return 'Cloud copy: $chapters chapters, $exams exams';
+  String restoreCopyCounts(int chapters, int exams) {
+    String _temp0 = intl.Intl.pluralLogic(
+      chapters,
+      locale: localeName,
+      other: '$chapters chapters',
+      one: '1 chapter',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      exams,
+      locale: localeName,
+      other: '$exams exams',
+      one: '1 exam',
+    );
+    return 'Cloud copy: $_temp0, $_temp1';
   }
 
   @override

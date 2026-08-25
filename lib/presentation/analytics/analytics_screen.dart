@@ -141,7 +141,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           const SizedBox(height: AppSpacing.xl),
         ],
         _DisciplineCard(
-          line: l.lessonsOnTimeOf(iso(onTime), iso(examined)),
+          line: l.lessonsOnTimeOf(onTime, examined),
           rate: disciplineRate,
           hasData: examined > 0,
         ),
@@ -847,9 +847,7 @@ class _TrajectoryRow extends StatelessWidget {
               trajectory.hasTrend
                   ? (isFlat
                         ? l.analyticsVelocityFlat
-                        : l.analyticsVelocity(
-                            iso('${rounded > 0 ? '+' : ''}$rounded'),
-                          ))
+                        : l.analyticsVelocity(rounded))
                   : l.analyticsNotEnoughData,
               style: AppTypography.chartValue.copyWith(
                 color: trajectory.hasTrend ? velocityColor : colors.textNoData,

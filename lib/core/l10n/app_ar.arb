@@ -46,7 +46,7 @@
   "actionExam": "امتحن",
   "notStartedYet": "لم تبدأ بعد",
   "subjectHasOverdueLesson": "تأخّرت مراجعة درس",
-  "lessonCount": "{count, plural, =1{درس واحد} =2{درسان} few{{count} دروس} many{{count} درساً} other{{count} درس}}",
+  "lessonCount": "{count, plural, =0{لا دروس} =1{درس واحد} =2{درسان} few{{count} دروس} many{{count} درساً} other{{count} درس}}",
   "@lessonCount": {
     "placeholders": {
       "count": {
@@ -54,7 +54,7 @@
       }
     }
   },
-  "chapterCount": "{count, plural, =1{باب واحد} =2{بابان} few{{count} أبواب} many{{count} باباً} other{{count} باب}}",
+  "chapterCount": "{count, plural, =0{لا أبواب} =1{باب واحد} =2{بابان} few{{count} أبواب} many{{count} باباً} other{{count} باب}}",
   "@chapterCount": {
     "placeholders": {
       "count": {
@@ -62,25 +62,25 @@
       }
     }
   },
-  "chaptersMasteredOf": "أتقنت {mastered} من {total} باب",
+  "chaptersMasteredOf": "أتقنت {mastered} من {total, plural, =1{باب واحد} =2{بابين} few{{total} أبواب} many{{total} باباً} other{{total} باب}}",
   "@chaptersMasteredOf": {
     "placeholders": {
       "mastered": {
-        "type": "String"
+        "type": "int"
       },
       "total": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
-  "chaptersOfShort": "{mastered} من {total} باب",
+  "chaptersOfShort": "{mastered} من {total, plural, =1{باب واحد} =2{بابين} few{{total} أبواب} many{{total} باباً} other{{total} باب}}",
   "@chaptersOfShort": {
     "placeholders": {
       "mastered": {
-        "type": "String"
+        "type": "int"
       },
       "total": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -95,14 +95,14 @@
       }
     }
   },
-  "lessonsOnTimeOf": "{onTime} من {total} درس في موعده",
+  "lessonsOnTimeOf": "{onTime} من {total, plural, =1{درس واحد} =2{درسين} few{{total} دروس} many{{total} درساً} other{{total} درس}} في موعده",
   "@lessonsOnTimeOf": {
     "placeholders": {
       "onTime": {
-        "type": "String"
+        "type": "int"
       },
       "total": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -156,27 +156,27 @@
   },
   "noExamShort": "لا امتحان",
   "lessonNoExamYet": "لا يوجد امتحان بعد",
-  "dueInDays": "بقي {days} يوم",
+  "dueInDays": "{days, plural, =0{أقل من يوم} =1{بقي يوم واحد} =2{بقي يومان} few{بقي {days} أيام} many{بقي {days} يوماً} other{بقي {days} يوم}}",
   "@dueInDays": {
     "placeholders": {
       "days": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
-  "dueInDaysLong": "بقي {days} يوم على المراجعة",
+  "dueInDaysLong": "{days, plural, =0{أقل من يوم على المراجعة} =1{بقي يوم واحد على المراجعة} =2{بقي يومان على المراجعة} few{بقي {days} أيام على المراجعة} many{بقي {days} يوماً على المراجعة} other{بقي {days} يوم على المراجعة}}",
   "@dueInDaysLong": {
     "placeholders": {
       "days": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
-  "overdueByDays": "متأخّر {days} يوم",
+  "overdueByDays": "{days, plural, =0{متأخّر أقل من يوم} =1{متأخّر يوم واحد} =2{متأخّر يومين} few{متأخّر {days} أيام} many{متأخّر {days} يوماً} other{متأخّر {days} يوم}}",
   "@overdueByDays": {
     "placeholders": {
       "days": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -227,14 +227,14 @@
   "examGroupPoints": "درجة السؤال",
   "examAddGroup": "+ إضافة مجموعة",
   "examRemoveGroup": "حذف المجموعة",
-  "examGroupLabel": "{count} أسئلة × {points} درجة",
+  "examGroupLabel": "{count, plural, =1{سؤال واحد} =2{سؤالان} few{{count} أسئلة} many{{count} سؤالاً} other{{count} سؤال}} × {points, plural, =1{درجة واحدة} =2{درجتان} few{{points} درجات} many{{points} درجة} other{{points} درجة}}",
   "@examGroupLabel": {
     "placeholders": {
       "count": {
-        "type": "String"
+        "type": "int"
       },
       "points": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -485,7 +485,7 @@
     }
   },
   "binEmptyAllConfirm": "سيُمحى كل ما في السلة ومعه أبوابه وامتحاناته. لا يمكن التراجع.",
-  "examCountLabel": "{count, plural, =1{امتحان واحد} =2{امتحانان} few{{count} امتحانات} many{{count} امتحاناً} other{{count} امتحان}}",
+  "examCountLabel": "{count, plural, =0{لا امتحانات} =1{امتحان واحد} =2{امتحانان} few{{count} امتحانات} many{{count} امتحاناً} other{{count} امتحان}}",
   "@examCountLabel": {
     "placeholders": {
       "count": {
@@ -494,7 +494,7 @@
     }
   },
   "subjectsTitle": "المواد",
-  "subjectCountLabel": "{count, plural, =1{مادة واحدة} =2{مادتان} few{{count} مواد} many{{count} مادة} other{{count} مادة}}",
+  "subjectCountLabel": "{count, plural, =0{لا مواد} =1{مادة واحدة} =2{مادتان} few{{count} مواد} many{{count} مادة} other{{count} مادة}}",
   "@subjectCountLabel": {
     "placeholders": {
       "count": {
@@ -621,11 +621,11 @@
   },
   "@@x_comment_B2": "=== Batch B2: analytics trends ===",
   "analyticsTrajectory": "مسار درجاتك",
-  "analyticsVelocity": "{value} نقطة لكل دورة مراجعة",
+  "analyticsVelocity": "{value, plural, =1{نقطة واحدة} =2{نقطتان} few{{value} نقاط} many{{value} نقطة} other{{value} نقطة}} لكل دورة مراجعة",
   "@analyticsVelocity": {
     "placeholders": {
       "value": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -668,14 +668,14 @@
       }
     }
   },
-  "comebackLine": "رجعت بعد {days} يوم — {count} درس عبر معاده.",
+  "comebackLine": "رجعت بعد {days, plural, =1{يوم واحد} =2{يومين} few{{days} أيام} many{{days} يوماً} other{{days} يوم}} — {count, plural, =0{ما حدش عبر معاده} =1{درس واحد عبر معاده} =2{درسان عبرا معادهما} few{{count} دروس عبرت معادتها} many{{count} درساً عبرت معادتها} other{{count} درس عبر معادها}}",
   "@comebackLine": {
     "placeholders": {
       "days": {
-        "type": "String"
+        "type": "int"
       },
       "count": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -718,31 +718,31 @@
       }
     }
   },
-  "purgeCountsLine": "{subjects} مادة · {chapters} باب · {lessons} درس · {exams} امتحان",
+  "purgeCountsLine": "{subjects, plural, =0{لا مواد} =1{مادة واحدة} =2{مادتان} few{{subjects} مواد} many{{subjects} مادة} other{{subjects} مادة}} · {chapters, plural, =0{لا أبواب} =1{باب واحد} =2{بابان} few{{chapters} أبواب} many{{chapters} باباً} other{{chapters} باب}} · {lessons, plural, =0{لا دروس} =1{درس واحد} =2{درسان} few{{lessons} دروس} many{{lessons} درساً} other{{lessons} درس}} · {exams, plural, =0{لا امتحانات} =1{امتحان واحد} =2{امتحانان} few{{exams} امتحانات} many{{exams} امتحاناً} other{{exams} امتحان}}",
   "@purgeCountsLine": {
     "placeholders": {
       "subjects": {
-        "type": "String"
+        "type": "int"
       },
       "chapters": {
-        "type": "String"
+        "type": "int"
       },
       "lessons": {
-        "type": "String"
+        "type": "int"
       },
       "exams": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
-  "restoreCopyCounts": "النسخة السحابية: {chapters} باب، {exams} امتحان",
+  "restoreCopyCounts": "النسخة السحابية: {chapters, plural, =0{لا أبواب} =1{باب واحد} =2{بابان} few{{chapters} أبواب} many{{chapters} باباً} other{{chapters} باب}}، {exams, plural, =0{لا امتحانات} =1{امتحان واحد} =2{امتحانان} few{{exams} امتحانات} many{{exams} امتحاناً} other{{exams} امتحان}}",
   "@restoreCopyCounts": {
     "placeholders": {
       "chapters": {
-        "type": "String"
+        "type": "int"
       },
       "exams": {
-        "type": "String"
+        "type": "int"
       }
     }
   },

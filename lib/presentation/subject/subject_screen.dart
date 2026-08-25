@@ -147,8 +147,8 @@ class _SubjectSummaryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   l.chaptersMasteredOf(
-                    iso(summary.masteredChapterCount),
-                    iso(summary.chapterCount),
+                    summary.masteredChapterCount,
+                    summary.chapterCount,
                   ),
                   textAlign: TextAlign.end,
                   maxLines: 2,

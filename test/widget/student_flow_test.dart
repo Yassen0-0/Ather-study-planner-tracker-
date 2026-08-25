@@ -136,7 +136,7 @@ void main() {
     );
     expect(find.text(iso('75%')), findsWidgets);
     expect(
-      find.text('بقي ${iso('30')} يوم'),
+      find.text('بقي 30 يوماً'),
       findsOneWidget,
       reason: 'recording an exam restarts the 30-day review clock',
     );

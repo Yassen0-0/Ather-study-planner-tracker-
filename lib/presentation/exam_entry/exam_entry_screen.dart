@@ -605,7 +605,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen>
           children: <Widget>[
             Expanded(
               child: Text(
-                l.examGroupLabel(iso(group.countValue), iso(group.pointsValue)),
+                l.examGroupLabel(group.countValue, group.pointsValue),
                 style: AppTypography.listTitle,
               ),
             ),

@@ -249,7 +249,7 @@ void main() {
     // one of each, which keeps every argument of the key at 1.
     expect(
       find.textContaining(
-        l.purgeCountsLine(iso(1), iso(1), iso(1), iso(1)),
+        l.purgeCountsLine(1, 1, 1, 1),
       ),
       findsOneWidget,
     );
@@ -291,7 +291,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.textContaining(
-        l.purgeCountsLine(iso(1), iso(1), iso(1), iso(1)),
+        l.purgeCountsLine(1, 1, 1, 1),
       ),
       findsOneWidget,
     );

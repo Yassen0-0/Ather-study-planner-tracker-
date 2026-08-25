@@ -169,7 +169,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         // scolding them, and it is gone the next time the app opens.
         if (_comebackDays != null && !dashboard.isEmpty) ...<Widget>[
           Text(
-            l.comebackLine(iso(_comebackDays!), iso(_comebackCount ?? 0)),
+            l.comebackLine(_comebackDays!, _comebackCount ?? 0),
             style: context.text.secondary,
           ),
           const SizedBox(height: AppSpacing.md),
@@ -390,8 +390,8 @@ class _OverallCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   l.chaptersMasteredOf(
-                    iso(dashboard.masteredChapters),
-                    iso(dashboard.totalChapters),
+                    dashboard.masteredChapters,
+                    dashboard.totalChapters,
                   ),
                   textAlign: TextAlign.end,
                   maxLines: 2,
@@ -633,7 +633,7 @@ class _SubjectRow extends StatelessWidget {
       subtitle = l.subjectHasOverdueLesson;
     } else {
       subtitle =
-          '${l.chaptersOfShort(iso(summary.masteredChapterCount), iso(summary.chapterCount))} · ${l.lessonCount(lessonTotal)}';
+          '${l.chaptersOfShort(summary.masteredChapterCount, summary.chapterCount)} · ${l.lessonCount(lessonTotal)}';
     }
 
     return AtherCard(
@@ -752,7 +752,7 @@ class _NextCard extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
                   target.isOverdue
-                      ? l.overdueByDays(iso(target.daysOverdue))
+                      ? l.overdueByDays(target.daysOverdue)
                       : l.lessonNoExamYet,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

@@ -286,26 +286,26 @@ abstract class L {
   /// No description provided for @lessonCount.
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{درس واحد} =2{درسان} few{{count} دروس} many{{count} درساً} other{{count} درس}}'**
+  /// **'{count, plural, =0{لا دروس} =1{درس واحد} =2{درسان} few{{count} دروس} many{{count} درساً} other{{count} درس}}'**
   String lessonCount(int count);
 
   /// No description provided for @chapterCount.
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{باب واحد} =2{بابان} few{{count} أبواب} many{{count} باباً} other{{count} باب}}'**
+  /// **'{count, plural, =0{لا أبواب} =1{باب واحد} =2{بابان} few{{count} أبواب} many{{count} باباً} other{{count} باب}}'**
   String chapterCount(int count);
 
   /// No description provided for @chaptersMasteredOf.
   ///
   /// In ar, this message translates to:
-  /// **'أتقنت {mastered} من {total} باب'**
-  String chaptersMasteredOf(String mastered, String total);
+  /// **'أتقنت {mastered} من {total, plural, =1{باب واحد} =2{بابين} few{{total} أبواب} many{{total} باباً} other{{total} باب}}'**
+  String chaptersMasteredOf(int mastered, int total);
 
   /// No description provided for @chaptersOfShort.
   ///
   /// In ar, this message translates to:
-  /// **'{mastered} من {total} باب'**
-  String chaptersOfShort(String mastered, String total);
+  /// **'{mastered} من {total, plural, =1{باب واحد} =2{بابين} few{{total} أبواب} many{{total} باباً} other{{total} باب}}'**
+  String chaptersOfShort(int mastered, int total);
 
   /// No description provided for @lessonsExaminedOf.
   ///
@@ -316,8 +316,8 @@ abstract class L {
   /// No description provided for @lessonsOnTimeOf.
   ///
   /// In ar, this message translates to:
-  /// **'{onTime} من {total} درس في موعده'**
-  String lessonsOnTimeOf(String onTime, String total);
+  /// **'{onTime} من {total, plural, =1{درس واحد} =2{درسين} few{{total} دروس} many{{total} درساً} other{{total} درس}} في موعده'**
+  String lessonsOnTimeOf(int onTime, int total);
 
   /// No description provided for @sectionChapters.
   ///
@@ -484,20 +484,20 @@ abstract class L {
   /// No description provided for @dueInDays.
   ///
   /// In ar, this message translates to:
-  /// **'بقي {days} يوم'**
-  String dueInDays(String days);
+  /// **'{days, plural, =0{أقل من يوم} =1{بقي يوم واحد} =2{بقي يومان} few{بقي {days} أيام} many{بقي {days} يوماً} other{بقي {days} يوم}}'**
+  String dueInDays(int days);
 
   /// No description provided for @dueInDaysLong.
   ///
   /// In ar, this message translates to:
-  /// **'بقي {days} يوم على المراجعة'**
-  String dueInDaysLong(String days);
+  /// **'{days, plural, =0{أقل من يوم على المراجعة} =1{بقي يوم واحد على المراجعة} =2{بقي يومان على المراجعة} few{بقي {days} أيام على المراجعة} many{بقي {days} يوماً على المراجعة} other{بقي {days} يوم على المراجعة}}'**
+  String dueInDaysLong(int days);
 
   /// No description provided for @overdueByDays.
   ///
   /// In ar, this message translates to:
-  /// **'متأخّر {days} يوم'**
-  String overdueByDays(String days);
+  /// **'{days, plural, =0{متأخّر أقل من يوم} =1{متأخّر يوم واحد} =2{متأخّر يومين} few{متأخّر {days} أيام} many{متأخّر {days} يوماً} other{متأخّر {days} يوم}}'**
+  String overdueByDays(int days);
 
   /// No description provided for @masteryCaptionWithExams.
   ///
@@ -724,8 +724,8 @@ abstract class L {
   /// No description provided for @examGroupLabel.
   ///
   /// In ar, this message translates to:
-  /// **'{count} أسئلة × {points} درجة'**
-  String examGroupLabel(String count, String points);
+  /// **'{count, plural, =1{سؤال واحد} =2{سؤالان} few{{count} أسئلة} many{{count} سؤالاً} other{{count} سؤال}} × {points, plural, =1{درجة واحدة} =2{درجتان} few{{points} درجات} many{{points} درجة} other{{points} درجة}}'**
+  String examGroupLabel(int count, int points);
 
   /// No description provided for @examPointsLine.
   ///
@@ -1528,7 +1528,7 @@ abstract class L {
   /// No description provided for @examCountLabel.
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{امتحان واحد} =2{امتحانان} few{{count} امتحانات} many{{count} امتحاناً} other{{count} امتحان}}'**
+  /// **'{count, plural, =0{لا امتحانات} =1{امتحان واحد} =2{امتحانان} few{{count} امتحانات} many{{count} امتحاناً} other{{count} امتحان}}'**
   String examCountLabel(int count);
 
   /// No description provided for @subjectsTitle.
@@ -1540,7 +1540,7 @@ abstract class L {
   /// No description provided for @subjectCountLabel.
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{مادة واحدة} =2{مادتان} few{{count} مواد} many{{count} مادة} other{{count} مادة}}'**
+  /// **'{count, plural, =0{لا مواد} =1{مادة واحدة} =2{مادتان} few{{count} مواد} many{{count} مادة} other{{count} مادة}}'**
   String subjectCountLabel(int count);
 
   /// No description provided for @subjectAdd.
@@ -1960,8 +1960,8 @@ abstract class L {
   /// No description provided for @analyticsVelocity.
   ///
   /// In ar, this message translates to:
-  /// **'{value} نقطة لكل دورة مراجعة'**
-  String analyticsVelocity(String value);
+  /// **'{value, plural, =1{نقطة واحدة} =2{نقطتان} few{{value} نقاط} many{{value} نقطة} other{{value} نقطة}} لكل دورة مراجعة'**
+  String analyticsVelocity(int value);
 
   /// No description provided for @analyticsVelocityFlat.
   ///
@@ -2056,8 +2056,8 @@ abstract class L {
   /// No description provided for @comebackLine.
   ///
   /// In ar, this message translates to:
-  /// **'رجعت بعد {days} يوم — {count} درس عبر معاده.'**
-  String comebackLine(String days, String count);
+  /// **'رجعت بعد {days, plural, =1{يوم واحد} =2{يومين} few{{days} أيام} many{{days} يوماً} other{{days} يوم}} — {count, plural, =0{ما حدش عبر معاده} =1{درس واحد عبر معاده} =2{درسان عبرا معادهما} few{{count} دروس عبرت معادتها} many{{count} درساً عبرت معادتها} other{{count} درس عبر معادها}}'**
+  String comebackLine(int days, int count);
 
   /// No description provided for @lastHomeworkDated.
   ///
@@ -2092,19 +2092,14 @@ abstract class L {
   /// No description provided for @purgeCountsLine.
   ///
   /// In ar, this message translates to:
-  /// **'{subjects} مادة · {chapters} باب · {lessons} درس · {exams} امتحان'**
-  String purgeCountsLine(
-    String subjects,
-    String chapters,
-    String lessons,
-    String exams,
-  );
+  /// **'{subjects, plural, =0{لا مواد} =1{مادة واحدة} =2{مادتان} few{{subjects} مواد} many{{subjects} مادة} other{{subjects} مادة}} · {chapters, plural, =0{لا أبواب} =1{باب واحد} =2{بابان} few{{chapters} أبواب} many{{chapters} باباً} other{{chapters} باب}} · {lessons, plural, =0{لا دروس} =1{درس واحد} =2{درسان} few{{lessons} دروس} many{{lessons} درساً} other{{lessons} درس}} · {exams, plural, =0{لا امتحانات} =1{امتحان واحد} =2{امتحانان} few{{exams} امتحانات} many{{exams} امتحاناً} other{{exams} امتحان}}'**
+  String purgeCountsLine(int subjects, int chapters, int lessons, int exams);
 
   /// No description provided for @restoreCopyCounts.
   ///
   /// In ar, this message translates to:
-  /// **'النسخة السحابية: {chapters} باب، {exams} امتحان'**
-  String restoreCopyCounts(String chapters, String exams);
+  /// **'النسخة السحابية: {chapters, plural, =0{لا أبواب} =1{باب واحد} =2{بابان} few{{chapters} أبواب} many{{chapters} باباً} other{{chapters} باب}}، {exams, plural, =0{لا امتحانات} =1{امتحان واحد} =2{امتحانان} few{{exams} امتحانات} many{{exams} امتحاناً} other{{exams} امتحان}}'**
+  String restoreCopyCounts(int chapters, int exams);
 
   /// No description provided for @examEveButton.
   ///

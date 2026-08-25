@@ -92,7 +92,7 @@ class RecycleBinScreen extends ConsumerWidget {
       // deserves the same counted sentence the single purge always had.
       message:
           '${l.binEmptyAllConfirm}\n'
-          '${l.purgeCountsLine(iso(counts.subjects), iso(counts.chapters), iso(counts.lessons), iso(counts.exams))}',
+          '${l.purgeCountsLine(counts.subjects, counts.chapters, counts.lessons, counts.exams)}',
       confirmLabel: l.binEmptyAll,
     );
     if (!confirmed || !context.mounted) return;
@@ -239,7 +239,7 @@ class _DeletedRow extends ConsumerWidget {
                   // lessons and exams the row above only hints at.
                   message:
                       '${l.binPurgeConfirm(subject.label(l), l.chapterCount(counts.chapters), l.examCountLabel(counts.exams))}\n'
-                      '${l.purgeCountsLine(iso(counts.subjects), iso(counts.chapters), iso(counts.lessons), iso(counts.exams))}',
+                      '${l.purgeCountsLine(counts.subjects, counts.chapters, counts.lessons, counts.exams)}',
                   confirmLabel: l.binPurge,
                 );
                 if (!confirmed || !context.mounted) return;

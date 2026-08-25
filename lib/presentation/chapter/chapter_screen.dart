@@ -536,9 +536,9 @@ class _LessonRow extends StatelessWidget {
     if (!summary.hasExam) {
       status = l.lessonNoExamYet;
     } else if (summary.needsReview) {
-      status = l.overdueByDays(iso(summary.daysOverdue));
+      status = l.overdueByDays(summary.daysOverdue);
     } else {
-      status = l.dueInDaysLong(iso(summary.daysUntilDue ?? 0));
+      status = l.dueInDaysLong(summary.daysUntilDue ?? 0);
     }
 
     return AtherCard(
