@@ -15,6 +15,7 @@ import '../../core/widgets/icon_motion.dart';
 import '../../core/widgets/pop_in.dart';
 import '../../core/widgets/pressable.dart';
 import '../../core/widgets/reduced_motion.dart';
+import '../../domain/services/review_cycle_service.dart';
 import '../providers/app_providers.dart';
 
 /// The four-slot tab bar.
@@ -44,13 +45,25 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = L.of(context);
     // The badge is exactly what tapping the tab opens: the length of the
-    // review queue, selected as an int so this widget -- which holds the app's
-    // one `BackdropFilter`, the most expensive thing in the tree to rebuild --
-    // does not rebuild when anything else in a summary moves. It used to read
-    // the dashboard's overdue count instead, a number that could disagree with
-    // the list rendered under the button.
-    final queueSize = ref.watch(
-      reviewQueueProvider.select((queue) => queue.length),
+    // review queue, selected as a record so this widget -- which holds the
+    // app's one `BackdropFilter`, the most expensive thing in the tree to
+    // rebuild -- does not rebuild when anything else in a summary moves. It
+    // used to read the dashboard's overdue count instead, a number that could
+    // disagree with the list rendered under the button.
+    //
+    // The second field drives the badge's colour, not its count (N22): red is
+    // the alarm tier and means *decay* -- an overdue lesson. A queue can also
+    // hold weak and declining lessons, which are attention, not emergency;
+    // those get accent, the palette's informational tier. The count itself
+    // stays the whole queue, because it must keep answering "how much is in
+    // the list I am about to open".
+    final (queueSize, overdueInQueue) = ref.watch(
+      reviewQueueProvider.select(
+        (queue) => (
+          queue.length,
+          queue.any((item) => item.reason == ReviewReason.overdue),
+        ),
+      ),
     );
 
     return Scaffold(
@@ -83,6 +96,9 @@ class AppShell extends ConsumerWidget {
                 label: l.navReview,
                 selected: navigationShell.currentIndex == 1,
                 badge: queueSize,
+                // Red only when something in the queue is actually overdue;
+                // a weak/declining-only queue wears accent instead.
+                badgeIsAlarm: overdueInQueue,
                 onTap: () => _goBranch(1),
               ),
             ),
@@ -271,6 +287,7 @@ class _Tab extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.badge = 0,
+    this.badgeIsAlarm = false,
   });
 
   final AtherGlyph glyph;
@@ -278,6 +295,10 @@ class _Tab extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final int badge;
+
+  /// Whether [badge] carries alarm news (an overdue lesson) or merely
+  /// attention news (weak, declining). Red is reserved for the former.
+  final bool badgeIsAlarm;
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +336,7 @@ class _Tab extends StatelessWidget {
                   PositionedDirectional(
                     top: -5,
                     end: -8,
-                    child: _QueueBadge(count: badge),
+                    child: _QueueBadge(count: badge, alarm: badgeIsAlarm),
                   ),
                 ],
               ),
@@ -446,13 +467,23 @@ class _TabGlyphBounceState extends State<_TabGlyphBounce>
 /// else. Always a number, never a bare dot: three rows of work and thirty are
 /// not the same news.
 ///
+/// The colour is part of that news. Red -- the palette's alarm tier -- is
+/// reserved for decay: at least one queued lesson is past its 30-day cycle.
+/// Weak and declining lessons are attention, not emergency, so a queue of
+/// only those wears accent, the same blue as everything else in the app that
+/// says "this is active" (N22). Inside the Review Center the two situations
+/// are already told apart per row; this keeps the tab from shouting over it.
+///
 /// It arrives with a pop keyed on the count -- keying it is what makes 3 -> 4
 /// replay instead of silently swapping a digit -- and leaves with a plain fade.
 /// An empty queue is not an event worth animating away from.
 class _QueueBadge extends StatefulWidget {
-  const _QueueBadge({required this.count});
+  const _QueueBadge({required this.count, required this.alarm});
 
   final int count;
+
+  /// True when any queued lesson is overdue: paint the alarm red.
+  final bool alarm;
 
   @override
   State<_QueueBadge> createState() => _QueueBadgeState();
@@ -490,23 +521,26 @@ class _QueueBadgeState extends State<_QueueBadge> {
           child: visible
               ? PopIn(
                   key: ValueKey<int>(_shown),
-                  child: _badge(context, _shown),
+                  child: _badge(context, _shown, alarm: widget.alarm),
                 )
-              : _badge(context, _shown),
+              : _badge(context, _shown, alarm: widget.alarm),
         ),
       ),
     );
   }
 }
 
-Widget _badge(BuildContext context, int count) {
+Widget _badge(BuildContext context, int count, {required bool alarm}) {
   return Container(
     constraints: const BoxConstraints(minWidth: 16),
     height: 16,
     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: context.colors.wrong,
+      // Alarm red for overdue decay; the brand blue -- attention without
+      // alarm -- for a queue that is only weak or declining. The palette has
+      // no amber tier, and greying the badge would read as "disabled".
+      color: alarm ? context.colors.wrong : context.colors.accent,
       borderRadius: BorderRadius.circular(8),
     ),
     child: Text(
