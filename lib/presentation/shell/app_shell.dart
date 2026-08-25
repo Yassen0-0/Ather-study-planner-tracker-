@@ -117,8 +117,6 @@ class AppShell extends ConsumerWidget {
     if (index != navigationShell.currentIndex) AppHaptics.select();
     navigationShell.goBranch(
       index,
-      // Tapping the already-selected tab returns to that branch's root, the
-      // behaviour a bottom bar is expected to have.
       initialLocation: index == navigationShell.currentIndex,
     );
   }
