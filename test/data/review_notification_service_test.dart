@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:ather/core/clock/clock.dart';
+import 'package:ather/core/l10n/generated/app_localizations.dart';
 import 'package:ather/data/notifications/review_notification_service.dart';
 import 'package:ather/domain/entities/chapter.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
@@ -5,7 +9,16 @@ import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/mastery.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/services/review_cycle_service.dart';
+import 'package:ather/presentation/providers/app_providers.dart';
+import 'package:ather/presentation/providers/auth_providers.dart';
+import 'package:ather/presentation/providers/notification_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../support/fake_auth.dart';
+import '../support/fake_notifications.dart';
 
 /// Fixed reference point. Every date below is relative to this.
 final DateTime kAnchor = DateTime(2026, 6, 1);
@@ -530,6 +543,84 @@ void main() {
     test('the cycle length the cap is reasoned about has not moved', () {
       expect(kReviewCycleDays, 30);
       expect(ReviewCycleService.kEarlyReminderDays, 3);
+    });
+  });
+
+  group('cold-start race', () {
+    /// The scheduler mounted the way the app mounts it, against a snapshot
+    /// stream that has **not** emitted yet -- the exact state of a cold start
+    /// for the few seconds drift needs to answer its first query.
+    Future<FakeNotificationService> pumpScheduler(
+      WidgetTester tester,
+      StreamController<StudySnapshot> snapshots,
+    ) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final preferences = await SharedPreferences.getInstance();
+      final auth = FakeAuthRepository.signedIn();
+      addTearDown(auth.dispose);
+      final notifications = FakeNotificationService();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            notificationServiceProvider.overrideWithValue(notifications),
+            snapshotProvider.overrideWith((ref) => snapshots.stream),
+            clockProvider.overrideWithValue(MutableClock(kAnchor)),
+            sharedPreferencesProvider.overrideWithValue(preferences),
+            authRepositoryProvider.overrideWithValue(auth),
+          ],
+          child: MaterialApp(
+            locale: const Locale('ar'),
+            localizationsDelegates: L.localizationsDelegates,
+            supportedLocales: L.supportedLocales,
+            home: const ReviewScheduler(child: SizedBox.shrink()),
+          ),
+        ),
+      );
+      // Second frame so the post-frame callback that opens the first sync has
+      // run up to its first await.
+      await tester.pump();
+      return notifications;
+    }
+
+    testWidgets('the loading fallback never empties the schedule; the first '
+        'pass waits for the real record and plans from it', (tester) async {
+      final snapshots = StreamController<StudySnapshot>();
+      addTearDown(snapshots.close);
+
+      final notifications = await pumpScheduler(tester, snapshots);
+
+      // The cold-start sync is now pending on data that has not arrived. It
+      // used to run straight away against `StudySnapshot.empty()` instead:
+      // that pass cancelled every alarm on the device and recorded the
+      // emptiness as applied, so each launch held zero alarms until the first
+      // real pass, and a reminder falling due inside the gap was lost.
+      expect(
+        notifications.rescheduleEnabled,
+        isEmpty,
+        reason: 'no pass may run while the snapshot is still loading',
+      );
+      // Still nothing even past the debounce: waiting for data is not the
+      // same as waiting out a debounce over an empty answer.
+      await tester.pump(const Duration(seconds: 6));
+      expect(notifications.rescheduleEnabled, isEmpty);
+
+      // The record arrives; the pending pass resumes and plans from it.
+      snapshots.add(snapshotOf([lessonWith(id: 7, lastReviewedAt: kAnchor)]));
+      await tester.pump(const Duration(seconds: 6));
+
+      expect(
+        notifications.rescheduleEnabled,
+        isNotEmpty,
+        reason: 'the sync owed to the arrived data must actually happen',
+      );
+      // Every pass that did run saw real lessons -- never the fallback.
+      expect(notifications.rescheduleEnabled, everyElement(isTrue));
+      expect(
+        notifications.plannedReminders.map((r) => r.lessonId),
+        everyElement(7),
+      );
+      expect(notifications.cancelAllCount, 0);
     });
   });
 }

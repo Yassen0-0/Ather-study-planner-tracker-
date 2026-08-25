@@ -129,8 +129,19 @@ class _ReviewSchedulerState extends ConsumerState<ReviewScheduler>
       // what lets a student who granted the permission months ago keep getting
       // reminders, and what notices one revoked in system settings.
       await service.refreshPermission();
+      // `.future`, never `snapshotValueProvider`. That one falls back to an
+      // empty snapshot while drift's first query is still running --
+      // deliberately, so a transient frame cannot crash a screen -- but read
+      // here it asked "what reminders does this student have?" at the one
+      // moment the honest answer is "not known yet". The empty answer cancelled
+      // every alarm on the device *and* persisted that emptiness as the applied
+      // fingerprint (see `reschedule`), so every cold start held zero alarms
+      // for the length of the debounce, and any reminder falling due inside
+      // that window was lost for good. Awaiting is free here: nothing renders
+      // off this path.
+      final snapshot = await ref.read(snapshotProvider.future);
       await service.reschedule(
-        snapshot: ref.read(snapshotValueProvider),
+        snapshot: snapshot,
         now: ref.read(clockProvider).now(),
         // Signed out counts as off, and this is a leak rather than a tidiness
         // point. A reminder's body is the lesson's name and its chapter's --
