@@ -254,15 +254,15 @@ void main() {
   // system back gesture threw the whole entry away without asking, so a student
   // reaching for "go back one question" could lose a fully described paper.
   group('the exam wizard does not lose what has been typed', () {
-  Future<void> openWizard(WidgetTester tester) async {
-    await tester.pumpWidget(await bootApp(snapshot: overdueSnapshot()));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('مراجعة'));
-    await tester.pumpAndSettle();
-    // The row is the exam route; there is no button inside it anymore.
-    await tester.tap(find.text('تركيب الخلية'));
-    await tester.pumpAndSettle();
-  }
+    Future<void> openWizard(WidgetTester tester) async {
+      await tester.pumpWidget(await bootApp(snapshot: overdueSnapshot()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('مراجعة'));
+      await tester.pumpAndSettle();
+      // The row is the exam route; there is no button inside it anymore.
+      await tester.tap(find.text('تركيب الخلية'));
+      await tester.pumpAndSettle();
+    }
 
     testWidgets('leaving with nothing typed just closes', (tester) async {
       await openWizard(tester);
