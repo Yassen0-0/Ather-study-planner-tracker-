@@ -1,5 +1,4 @@
 import '../entities/daily_task.dart';
-import '../entities/exam_entry.dart';
 import '../entities/lesson.dart';
 import '../entities/mastery.dart';
 import '../entities/study_snapshot.dart';
@@ -369,12 +368,3 @@ abstract final class ReviewCycleService {
   // regenerated (§3.24) — to reclaim eight bytes a row, and `deleteExam` and
   // `recordExam` already keep it coherent for free.
 }
-
-/// Convenience view used by exam entry to decide `isReviewExam`.
-extension ReviewStateX on Lesson {
-  bool isOverdueAt(DateTime now) => ReviewCycleService.needsReview(this, now);
-}
-
-/// Re-exported so callers touching review logic do not also need to import
-/// the exam entity just for [DraftQuestionGroup].
-typedef ExamDraftGroup = DraftQuestionGroup;
