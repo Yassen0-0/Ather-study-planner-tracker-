@@ -25,6 +25,7 @@ import '../../core/widgets/mastery_bar.dart';
 import '../../core/widgets/pressable.dart';
 import '../../core/widgets/reduced_motion.dart';
 import '../../domain/entities/exam_entry.dart';
+import '../../domain/entities/mastery.dart';
 import '../../domain/services/mastery_calculator.dart';
 import '../common/prompts.dart';
 import '../providers/app_providers.dart';
@@ -676,18 +677,20 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
 
     // The verdict and the "what do I need next" line are derived from the
     // *resulting* mastery -- the state the lesson is actually in once this
-    // paper is counted -- not from the raw score alone.
-    final String? verdict = switch (after) {
-      < 50 => l.examVerdictWeak,
-      < 70 => l.examVerdictPassed,
+    // paper is counted -- not from the raw score alone. The band, not bare
+    // literals: the edges are domain policy (M2).
+    final afterBand = MasteryBand.fromPercentage(after);
+    final String? verdict = switch (afterBand) {
+      MasteryBand.weak => l.examVerdictWeak,
+      MasteryBand.medium => l.examVerdictPassed,
       _ => null,
     };
-    final Color? verdictColor = switch (after) {
+    final Color? verdictColor = switch (afterBand) {
       // Red, like the number it explains.
-      < 50 => context.colors.wrong,
+      MasteryBand.weak => context.colors.wrong,
       // Deliberately not green: "passed" is not a success the product counts,
       // only the absence of failure. Neutral grey keeps that honest.
-      < 70 => context.colors.textSecondary,
+      MasteryBand.medium => context.colors.textSecondary,
       _ => null,
     };
 
@@ -700,7 +703,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
     }
     final double meanExisting =
         existing.isEmpty ? 0 : existingSum / existing.length;
-    final int? neededScore = after < 70
+    final int? neededScore = afterBand.belowGood
         ? MasteryCalculator.scoreNeededToCross(meanOfExisting: meanExisting)
         : null;
 
@@ -834,7 +837,7 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
       // AND the value's 600ms count -- visible start t≈720ms, fade landing at
       // t=900ms as the number settles rather than while it travels. The delay
       // is an Interval on one controller -- no timers, pumpAndSettle returns.
-      if (verdict != null || (after < 70 && neededScore != null)) ...<Widget>[
+      if (verdict != null || (afterBand.belowGood && neededScore != null)) ...<Widget>[
         const SizedBox(height: AppSpacing.md),
         RiseIn(
           rise: 0,
@@ -854,9 +857,9 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
                       color: verdictColor,
                     ),
                   ),
-                if (verdict != null && neededScore != null && after < 70)
+                if (verdict != null && neededScore != null && afterBand.belowGood)
                   const SizedBox(height: AppSpacing.textGap),
-                if (after < 70 && neededScore != null)
+                if (afterBand.belowGood && neededScore != null)
                   Text(
                     l.examNeedToCross(iso('$neededScore%')),
                     style: AppTypography.statusLine.copyWith(

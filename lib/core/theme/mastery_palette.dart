@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/entities/mastery.dart';
 import 'app_colors.dart';
 
 /// The one rule that decides what colour a mastery number is.
@@ -35,11 +36,15 @@ abstract final class MasteryPalette {
   }) {
     if (!hasData) return colors.textNoData;
     if (needsReview) return colors.wrong;
-    if (percentage < 50) return colors.wrong;
+    // Branches 3-5 read the band, not their own literals: the edges are
+    // domain policy (M2), and a palette that re-implemented them could
+    // disagree with every verdict and label drawn beside it.
+    final band = MasteryBand.fromPercentage(percentage);
+    if (band == MasteryBand.weak) return colors.wrong;
     // `rightText`, not `right`: what this function colours is a *number* and the
     // bar beneath it, and the brand green is 2.2:1 on white. In the dark palette
     // the two tokens are the same value, so nothing changes there.
-    if (percentage >= 90) return colors.rightText;
+    if (band == MasteryBand.excellent) return colors.rightText;
     return colors.textPrimary;
   }
 
