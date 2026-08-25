@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/gestures.dart' show kLongPressTimeout, kPressTimeout;
 import 'package:flutter/material.dart';
@@ -560,6 +562,58 @@ void main() {
 
     expect(strike<StraightStrikePainter>(), findsOneWidget);
     expect(semantics(l.taskCompletedStrike), findsOneWidget);
+
+    await closeApp(tester);
+  });
+
+  testWidgets('crossing midnight re-seeds the selection to today (N8)', (
+    tester,
+  ) async {
+    phoneSized(tester);
+
+    // A clock whose day changes while the screen stays alive: exactly what
+    // happens to a keep-alive notifier across midnight or a resume that
+    // lands on a new date.
+    final DateTime first = now;
+    final DateTime nextDay = now.add(const Duration(days: 1));
+    final controller = StreamController<DateTime>.broadcast();
+    addTearDown(controller.close);
+    controller.add(first);
+
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final preferences = await SharedPreferences.getInstance();
+    final app = ProviderScope(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
+        backupRepositoryProvider.overrideWithValue(
+          FakeBackupRepository.failing(),
+        ),
+        sharedPreferencesProvider.overrideWithValue(preferences),
+        databaseProvider.overrideWithValue(db),
+        clockProvider.overrideWithValue(MutableClock(first)),
+        nowProvider.overrideWith((ref) => controller.stream),
+      ],
+      child: const AtherApp(),
+    );
+    await tester.pumpWidget(app);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('مهامك'));
+    await tester.pumpAndSettle();
+
+    // The student picks yesterday and leaves the screen on it.
+    await tester.tap(day(tester, 'ثلاثاء ${iso(4)}'));
+    await tester.pumpAndSettle();
+    expect(find.text('مهام اليوم'), findsNothing);
+
+    // The day turns. The sticky selection must follow -- otherwise a fresh
+    // "+" quietly writes into a day the student is no longer looking at.
+    controller.add(nextDay);
+    await tester.pumpAndSettle();
+    expect(find.text('مهام اليوم'), findsOneWidget);
+
+    await addTask(tester, 'مهمة جديدة');
+    expect(await tasksOn(tester, nextDay), hasLength(1));
+    expect(await tasksOn(tester, first), isEmpty);
 
     await closeApp(tester);
   });

@@ -25,13 +25,16 @@ final tasksValueProvider = Provider<List<DailyTask>>(
 
 /// Which day the tasks screen is showing.
 ///
-/// Seeded with `read`, never `watch`: [nowValueProvider] re-emits whenever the
-/// *day* changes -- once just past midnight, and on resume if the clock moved
-/// across a date boundary -- and watching it here would drag the student back
-/// to today while they were reading another day.
+/// Seeded from the day clock and **re-seeded whenever the day changes** (N8):
+/// [nowValueProvider] re-emits exactly at date boundaries -- just past
+/// midnight, and on resume when the clock moved -- so a keep-alive selection
+/// can no longer outlive its own day and quietly aim a fresh "+" at a day the
+/// student is no longer looking at. An explicit pick survives every same-day
+/// rebuild; only a real day change resets it, which is also the moment the
+/// old pick starts to lie.
 class SelectedTaskDayNotifier extends Notifier<DateTime> {
   @override
-  DateTime build() => dayOf(ref.read(clockProvider).now());
+  DateTime build() => dayOf(ref.watch(nowValueProvider));
 
   void select(DateTime day) => state = dayOf(day);
 }
