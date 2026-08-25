@@ -206,26 +206,34 @@ class DriftTaskRepository implements TaskRepository {
 
   @override
   Future<void> restoreTasks(List<DailyTask> tasks) {
-    return _db.transaction(() async {
-      await _db.delete(_db.dailyTasks).go();
-      await _db.batch((Batch batch) {
-        batch.insertAll(_db.dailyTasks, <DailyTasksCompanion>[
-          for (final t in tasks)
-            DailyTasksCompanion.insert(
-              id: Value(t.id),
-              // The blob was written on another phone, possibly under another
-              // UTC offset; its `day` is an instant that only means "that day"
-              // where it was written. Re-truncating lands the row on the day
-              // the backup meant rather than 23:00 of the evening before.
-              day: dayOf(t.day),
-              title: t.title,
-              done: Value(t.done),
-              surrendered: Value(t.surrendered),
-              sortOrder: t.sortOrder,
-              createdAt: t.createdAt,
-            ),
-        ]);
-      });
+    return _db.transaction(() => restoreTasksWithin(tasks));
+  }
+
+  /// The body of [restoreTasks] without a transaction of its own, so
+  /// `DriftStudyRepository.restoreEverything` can run the study and task
+  /// halves of a restore inside **one** transaction (D-02). Statements issued
+  /// here while an outer transaction is open on [_db] join it; called
+  /// standalone there is no outer transaction and each statement stands
+  /// alone -- which is why this is not public API for general use.
+  Future<void> restoreTasksWithin(List<DailyTask> tasks) async {
+    await _db.delete(_db.dailyTasks).go();
+    await _db.batch((Batch batch) {
+      batch.insertAll(_db.dailyTasks, <DailyTasksCompanion>[
+        for (final t in tasks)
+          DailyTasksCompanion.insert(
+            id: Value(t.id),
+            // The blob was written on another phone, possibly under another
+            // UTC offset; its `day` is an instant that only means "that day"
+            // where it was written. Re-truncating lands the row on the day
+            // the backup meant rather than 23:00 of the evening before.
+            day: dayOf(t.day),
+            title: t.title,
+            done: Value(t.done),
+            surrendered: Value(t.surrendered),
+            sortOrder: t.sortOrder,
+            createdAt: t.createdAt,
+          ),
+      ]);
     });
   }
 

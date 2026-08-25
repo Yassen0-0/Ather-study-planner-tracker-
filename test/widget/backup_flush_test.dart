@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:drift/native.dart';
+
 import 'package:ather/core/clock/clock.dart';
+import 'package:ather/data/db/app_database.dart';
 import 'package:ather/domain/entities/chapter.dart';
 import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
@@ -14,8 +17,6 @@ import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/entities/study_backup.dart';
 import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/domain/repositories/study_repository.dart';
-import 'package:ather/domain/repositories/task_repository.dart'
-    show TaskRepository;
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_providers.dart';
@@ -24,37 +25,13 @@ import 'package:ather/presentation/providers/task_providers.dart';
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
 
-/// Satisfies the repository touches the upload path makes beyond its streams:
-/// reading the capture history, and -- only in the marker test -- a restore.
-/// These tests stub the *streams*, so a real database here would be an
-/// accident; `noSuchMethod` keeps each fake to exactly the members in use.
+/// Satisfies the one repository touch the upload path makes beyond its
+/// streams: reading the capture history. These tests stub the *streams*, so a
+/// real database here would be an accident; `noSuchMethod` keeps the fake to
+/// exactly the member in use.
 class _EventsOnlyStudyRepository implements StudyRepository {
-  _EventsOnlyStudyRepository({this.onRestore});
-
-  final void Function()? onRestore;
-
-  int restoreCount = 0;
-
   @override
   Future<List<StudyEvent>> readEvents() async => const <StudyEvent>[];
-
-  @override
-  Future<void> restore(StudyBackup backup) async {
-    restoreCount++;
-    onRestore?.call();
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) =>
-      throw UnimplementedError('${invocation.memberName} not stubbed');
-}
-
-/// Same idea for the task half of a restore.
-class _RestoreOnlyTaskRepository implements TaskRepository {
-  int restoreCount = 0;
-
-  @override
-  Future<void> restoreTasks(List<DailyTask> tasks) async => restoreCount++;
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -342,8 +319,6 @@ void main() {
     // The other half of N4: once a restore has genuinely brought the cloud
     // copy down, "I deleted everything" must reach the cloud as before. The
     // marker is what separates that state from a restore that never happened.
-    final study = _EventsOnlyStudyRepository();
-    final taskRepo = _RestoreOnlyTaskRepository();
     SharedPreferences.setMockInitialValues(<String, Object>{
       kLastAccountUidKey: 'test-uid',
       // No marker: the device has never taken the cloud copy in.
@@ -353,12 +328,16 @@ void main() {
     // Offline until the restore below succeeds -- the state the failure mode
     // lives in.
     final backup = FakeBackupRepository.failing();
+    // A real database: since D-02 the restore runs through one joined
+    // transaction owned by DriftStudyRepository.restoreEverything, so stubbing
+    // the repositories here would stub nothing.
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
     final container = ProviderContainer(
       overrides: [
         authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
         backupRepositoryProvider.overrideWithValue(backup),
-        studyRepositoryProvider.overrideWithValue(study),
-        taskRepositoryProvider.overrideWithValue(taskRepo),
+        databaseProvider.overrideWithValue(db),
         sharedPreferencesProvider.overrideWithValue(preferences),
         clockProvider.overrideWithValue(MutableClock(now)),
         snapshotProvider.overrideWith(
@@ -393,8 +372,6 @@ void main() {
 
     // A restore completes -- the auto path and the Settings button share it.
     await container.read(backupSyncProvider.notifier).restore(_emptyBackup());
-    expect(study.restoreCount, 1);
-    expect(taskRepo.restoreCount, 1);
     expect(preferences.getInt(kLastCloudDownloadKey), isNotNull);
 
     // ...and now the same empty record is an informed delete-everything.

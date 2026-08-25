@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/backup/firestore_backup_repository.dart';
+import '../../data/repositories/drift_study_repository.dart';
 import '../../domain/entities/study_backup.dart';
 import '../../domain/repositories/backup_repository.dart';
 import 'app_providers.dart';
@@ -191,9 +192,15 @@ class BackupSyncNotifier extends Notifier<SyncState> {
   /// Pulls the cloud copy over the local database. Destructive by definition, so
   /// every caller confirms first -- except the empty-database case, where there
   /// is nothing to lose.
+  ///
+  /// One call, one transaction: study world and daily tasks land together or
+  /// not at all (D-02). Two unjoined transactions across two repositories let
+  /// process death strand a half-state that the next flush made
+  /// cloud-permanent.
   Future<void> restore(StudyBackup backup) async {
-    await ref.read(studyRepositoryProvider).restore(backup);
-    await ref.read(taskRepositoryProvider).restoreTasks(backup.tasks);
+    await DriftStudyRepository(
+      ref.read(databaseProvider),
+    ).restoreEverything(backup);
 
     // Only a *completed* bring-down marks the device: from here an empty local
     // record is an informed state that flush may upload, not a failed

@@ -13,6 +13,9 @@ import '../../domain/entities/study_snapshot.dart';
 import '../../domain/entities/subject.dart';
 import '../../domain/repositories/study_repository.dart';
 import '../db/app_database.dart';
+// Mutual import: restoreEverything runs the task half of a restore inside its
+// transaction, and the task repository's transaction-free core lives there.
+import 'drift_task_repository.dart';
 
 /// Drift-backed [StudyRepository].
 class DriftStudyRepository implements StudyRepository {
@@ -620,7 +623,12 @@ class DriftStudyRepository implements StudyRepository {
     // One transaction around the delete and every insert. drift rolls the whole
     // thing back if any statement throws, which is the only reason it is safe to
     // delete the student's data before knowing the inserts will succeed.
-    return _db.transaction(() async {
+    return _db.transaction(() => restoreWorld(backup));
+  }
+
+  /// The study half of a restore without a transaction of its own -- see
+  /// [restoreEverything] for why this shape exists.
+  Future<void> restoreWorld(StudyBackup backup) async {
       // A backup without subjects (version 1 or 2) describes only the four
       // seeded subjects' world. Chapters under a subject the student added
       // themselves belong to no cloud copy at all, so they are lifted out and
@@ -749,6 +757,23 @@ class DriftStudyRepository implements StudyRepository {
       if (preserved != null && preserved.isNotEmpty) {
         await _reinsertCustomSubjectData(preserved, backup);
       }
+  }
+
+  /// Restores the **whole** backup -- study world and daily tasks -- inside
+  /// one transaction (D-02).
+  ///
+  /// Restore used to be two transactions across two repositories: process
+  /// death between them stranded a half-state (curriculum from the cloud,
+  /// tasks still local, or the reverse) that the next debounced flush then
+  /// uploaded and made cloud-permanent. Both halves now share this single
+  /// boundary; a throw anywhere rolls everything back to exactly what the
+  /// student had before.
+  Future<void> restoreEverything(StudyBackup backup) {
+    return _db.transaction(() async {
+      await restoreWorld(backup);
+      // Plain statements on the same database: inside this zone they run on
+      // the transaction's executor, so they join it rather than racing it.
+      await DriftTaskRepository(_db).restoreTasksWithin(backup.tasks);
     });
   }
 

@@ -263,6 +263,106 @@ void main() {
     expect(snapshot.subjects, hasLength(4));
   });
 
+  test('restoreEverything brings the tasks with the curriculum', () async {
+    // The joined entry the sync notifier calls (D-02): one call, both halves.
+    await study.restoreEverything(backup());
+
+    final snapshot = await study.readSnapshot();
+    expect(snapshot.chapters.single.id, 7);
+    final restoredTask = await tasks.watchTasks().first;
+    expect(restoredTask.single.id, 4);
+    expect(restoredTask.single.surrendered, isTrue);
+  });
+
+  test('study and task halves land together or not at all', () async {
+    // Process death between two unjoined transactions used to strand a
+    // half-state that the next flush made cloud-permanent. A failure anywhere
+    // in the joined restore must leave BOTH halves exactly as they were.
+    await tasks.addTask(day: dayOf(t0), title: 'شغل الطالب', at: t0);
+
+    // Same broken lesson as the test above, but carrying a task set a naive
+    // implementation would already have written by the time it failed.
+    final broken = StudyBackup(
+      subjects: const <Subject>[
+        Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+      ],
+      chapters: backup().chapters,
+      lessons: <Lesson>[
+        Lesson(
+          id: 21,
+          chapterId: 999,
+          name: 'يتيم',
+          createdAt: t0,
+          checklist: const LessonChecklist(),
+        ),
+      ],
+      exams: const <ExamEntry>[],
+      homework: const <HomeworkEntry>[],
+      tasks: <DailyTask>[
+        DailyTask(
+          id: 9,
+          day: dayOf(t0),
+          title: 'مهمة السحابة',
+          done: false,
+          surrendered: false,
+          sortOrder: 0,
+          createdAt: t0,
+        ),
+      ],
+    );
+
+    await expectLater(study.restoreEverything(broken), throwsA(anything));
+
+    // Study half rolled back...
+    final snapshot = await study.readSnapshot();
+    expect(snapshot.chapters, isEmpty);
+    // ...and the task half with it: nothing replaced, nothing lost.
+    final keptTasks = await tasks.watchTasks().first;
+    expect(keptTasks.single.title, 'شغل الطالب');
+  });
+
+  test('a failure in the task half rolls the study half back too', () async {
+    // The direction the old two-transaction shape could not protect: study
+    // statements commit-ready inside the boundary, then the task half fails.
+    // Joined, everything unwinds -- under the old split the curriculum above
+    // was already cloud-permanent by the time tasks misbehaved.
+    final duplicateIds = <DailyTask>[
+      DailyTask(
+        id: 9,
+        day: dayOf(t0),
+        title: 'أولى',
+        done: false,
+        surrendered: false,
+        sortOrder: 0,
+        createdAt: t0,
+      ),
+      DailyTask(
+        id: 9,
+        day: dayOf(t0),
+        title: 'ثانية بنفس المعرف',
+        done: false,
+        surrendered: false,
+        sortOrder: 1,
+        createdAt: t0,
+      ),
+    ];
+    final broken = StudyBackup(
+      subjects: backup().subjects,
+      chapters: backup().chapters,
+      lessons: backup().lessons,
+      exams: backup().exams,
+      homework: backup().homework,
+      tasks: duplicateIds,
+    );
+
+    await expectLater(study.restoreEverything(broken), throwsA(anything));
+
+    // The perfectly valid curriculum did not survive the task half's failure.
+    final snapshot = await study.readSnapshot();
+    expect(snapshot.chapters, isEmpty);
+    expect(snapshot.lessons, isEmpty);
+  });
+
   group('restoring a version 1 file keeps what no backup owns', () {
     // A version 1 file carries no subjects, so its chapters can only describe
     // the four seeded ones. A subject the student added themselves -- and its
