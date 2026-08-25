@@ -1064,11 +1064,6 @@ final class _PreservedCustomData {
   final List<HomeworkEntryRow> homework;
 }
 
-/// Minimal combineLatest for exactly six streams.
-///
-/// Hand-rolled rather than pulling in rxdart for one operator. Emits nothing
-/// until every source has produced a value, then emits on each subsequent
-/// change -- which is what makes a snapshot internally consistent.
 /// How long the combined snapshot stream waits for a burst of table events to
 /// finish before emitting.
 ///
@@ -1078,6 +1073,13 @@ final class _PreservedCustomData {
 /// day the window changed.
 const Duration kSnapshotCoalesceWindow = Duration(milliseconds: 16);
 
+/// Minimal combineLatest for exactly six streams.
+///
+/// Hand-rolled rather than pulling in rxdart for one operator. Emits nothing
+/// until every source has produced a value, then emits on each subsequent
+/// change -- bursts inside one frame collapse into a single emission, see
+/// [kSnapshotCoalesceWindow] -- which is what makes a snapshot internally
+/// consistent.
 Stream<R> _combineLatest6<A, B, C, D, E, F, R>(
   Stream<A> sa,
   Stream<B> sb,
