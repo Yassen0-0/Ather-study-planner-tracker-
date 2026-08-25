@@ -303,8 +303,16 @@ class AtherTextField extends StatelessWidget {
 /// anything else runs. A keyboard that produces them is common on devices set
 /// up in Arabic, and a filter that silently swallowed every keystroke left the
 /// exam wizard -- the heart of the product -- looking broken on those phones
-/// with no message explaining why. A minus sign or decimal point is still
-/// refused: the parser has one job and it is whole numbers.
+/// with no message explaining why.
+///
+/// Everything that is not a digit -- minus sign, decimal point, the Arabic
+/// decimal separator ٫ -- *rejects the whole edit* rather than being stripped.
+/// Stripping was worse than refusing: pasting `2.5` or `٢٫٥` lost its
+/// separator and landed as 25, silently multiplying an exam score by ten.
+/// There is no decimal mode to fall back on either -- scores live in integer
+/// columns end to end (`exam_entry_screen` parses with `int.tryParse`,
+/// `total_possible_points` is an INTEGER column), so a fraction has nowhere to
+/// be stored even if it were accepted.
 class NumberField extends StatelessWidget {
   const NumberField({
     super.key,
@@ -391,11 +399,13 @@ class _BareNumberInput extends StatelessWidget {
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       inputFormatters: <TextInputFormatter>[
-        // Translate first, then constrain: the length limit has to count the
-        // digits the student actually sees, and the allow-list after
-        // normalisation still stops a minus sign or a decimal point.
+        // Translate first, then gate: the length limit has to count the
+        // digits the student actually sees. The gate *rejects* rather than
+        // strips -- an edit carrying a separator or any other non-digit
+        // leaves the field exactly as it was, instead of the old behaviour
+        // that turned a pasted `2.5` into 25.
         _arabicIndicDigitsFormatter,
-        FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+        const _RejectNonDigits(),
         LengthLimitingTextInputFormatter(maxLength),
       ],
       decoration: InputDecoration(
@@ -451,5 +461,39 @@ class _ArabicIndicDigits extends TextInputFormatter {
       selection: newValue.selection,
       composing: newValue.composing,
     );
+  }
+}
+
+/// Accepts only ASCII digits, and refuses an edit that would carry anything
+/// else.
+///
+/// Runs after [_arabicIndicDigitsFormatter], so "anything else" means a minus
+/// sign, a decimal point (Western ٫ or Arabic ٬), letters pasted from a web
+/// page, an invisible character -- anything at all. Refusal returns
+/// [oldValue]: the field keeps exactly what it showed before the edit, which
+/// is the difference between "nothing happened" and "your 2.5 became 25".
+///
+/// A whole-edit refusal is deliberate. Stripping the offending characters --
+/// what `FilteringTextInputFormatter.allow` did here before -- is silent
+/// corruption for a paste, because the surviving digits are not the number the
+/// student copied: `2.5` arrived as 25, a tenfold error on an exam score.
+/// For single keystrokes the two behaviours look identical to the student;
+/// for pastes they could not differ more.
+class _RejectNonDigits extends TextInputFormatter {
+  const _RejectNonDigits();
+
+  static const int _zero = 0x30; // '0'
+  static const int _nine = 0x39; // '9'
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // Empty text (a deletion) passes by construction.
+    for (final unit in newValue.text.codeUnits) {
+      if (unit < _zero || unit > _nine) return oldValue;
+    }
+    return newValue;
   }
 }

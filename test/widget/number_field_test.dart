@@ -51,14 +51,61 @@ void main() {
     expect(controller.text, '75');
   });
 
-  testWidgets('a minus sign and a decimal point are still refused', (
+  testWidgets('a minus sign and a decimal point refuse the whole edit', (
     tester,
   ) async {
     final controller = TextEditingController();
     await pump(tester, controller);
     await tester.enterText(find.byType(TextField), '-5.5');
 
-    expect(controller.text, '55');
+    // Rejected, not stripped: the field is empty because nothing was
+    // accepted -- never '55', which is what stripping produced.
+    expect(controller.text, '');
+  });
+
+  testWidgets('pasting a decimal leaves the field as it was', (tester) async {
+    final controller = TextEditingController();
+    await pump(tester, controller);
+    await tester.enterText(find.byType(TextField), '12');
+    await tester.enterText(find.byType(TextField), '2.5');
+
+    // The old behaviour stripped the separator and recorded 25 -- a tenfold
+    // error on an exam score. The paste is refused whole instead.
+    expect(controller.text, '12');
+  });
+
+  testWidgets('an Arabic decimal separator refuses too', (tester) async {
+    // ٫ U+066B -- what an Arabic keyboard produces for '2.5'. There is no
+    // normalising it: scores are integer columns end to end.
+    final controller = TextEditingController();
+    await pump(tester, controller);
+    await tester.enterText(find.byType(TextField), '٢٫٥');
+
+    expect(controller.text, '');
+  });
+
+  testWidgets('multiple and trailing separators refuse as well', (
+    tester,
+  ) async {
+    final controller = TextEditingController();
+    await pump(tester, controller);
+
+    await tester.enterText(find.byType(TextField), '1.2.3');
+    expect(controller.text, '');
+
+    await tester.enterText(find.byType(TextField), '7.');
+    expect(controller.text, '');
+  });
+
+  testWidgets('digits still land after a refused edit', (tester) async {
+    final controller = TextEditingController();
+    await pump(tester, controller);
+    await tester.enterText(find.byType(TextField), '2.5');
+
+    expect(controller.text, '');
+
+    await tester.enterText(find.byType(TextField), '٢٥');
+    expect(controller.text, '25');
   });
 
   testWidgets('the length limit counts the digits the student sees', (
