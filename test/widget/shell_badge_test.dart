@@ -44,7 +44,11 @@ void main() {
         daysOverdue: daysOverdue,
       );
 
-  Future<void> pumpShell(WidgetTester tester, List<ReviewItem> queue) async {
+  Future<void> pumpShell(
+    WidgetTester tester,
+    List<ReviewItem> queue, {
+    ThemeData? theme,
+  }) async {
     final router = GoRouter(
       initialLocation: '/home',
       routes: <RouteBase>[
@@ -77,7 +81,7 @@ void main() {
           locale: const Locale('ar'),
           localizationsDelegates: L.localizationsDelegates,
           supportedLocales: L.supportedLocales,
-          theme: AppTheme.light,
+          theme: theme ?? AppTheme.light,
         ),
       ),
     );
@@ -93,6 +97,9 @@ void main() {
         .whereType<BoxDecoration>()
         .firstWhere((d) => d.color != null);
   }
+
+  Color textColorOfBadge(WidgetTester tester, String count) =>
+      tester.widget<Text>(find.text(count)).style!.color!;
 
   testWidgets('a weak-only queue wears accent, never alarm red', (
     tester,
@@ -132,5 +139,52 @@ void main() {
 
     // One red pill counts the whole queue of three.
     expect(decorationOfBadge(tester, '3').color, AppColors.light.wrong);
+  });
+
+  // The fill's foreground must come from the fill's own token. onState is
+  // white in both themes, which is right only on the red alarm fill; accent
+  // flips to a light blue in the dark theme and its contract foreground,
+  // onAccent, flips near-black with it. White digits on it wash out.
+  testWidgets('weak queue: light-theme digits sit on accent as white', (
+    tester,
+  ) async {
+    await pumpShell(tester, <ReviewItem>[
+      item(1, ReviewReason.lowMastery, mastery: 40),
+    ]);
+
+    expect(decorationOfBadge(tester, '1').color, AppColors.light.accent);
+    expect(textColorOfBadge(tester, '1'), AppColors.light.onAccent);
+    expect(textColorOfBadge(tester, '1'), AppColors.light.onState);
+  });
+
+  testWidgets('weak queue: dark-theme digits flip to accent\'s near-black', (
+    tester,
+  ) async {
+    await pumpShell(
+      tester,
+      <ReviewItem>[item(2, ReviewReason.declining)],
+      theme: AppTheme.dark,
+    );
+
+    expect(decorationOfBadge(tester, '1').color, AppColors.dark.accent);
+    expect(textColorOfBadge(tester, '1'), AppColors.dark.onAccent);
+    expect(textColorOfBadge(tester, '1'), isNot(AppColors.dark.onState));
+  });
+
+  testWidgets('overdue queue: alarm digits stay onState in both themes', (
+    tester,
+  ) async {
+    final queue = <ReviewItem>[
+      item(3, ReviewReason.overdue, mastery: 90, daysOverdue: 10),
+    ];
+    for (final (theme, palette) in <(ThemeData, AppColors)>[
+      (AppTheme.light, AppColors.light),
+      (AppTheme.dark, AppColors.dark),
+    ]) {
+      await pumpShell(tester, queue, theme: theme);
+
+      expect(decorationOfBadge(tester, '1').color, palette.wrong);
+      expect(textColorOfBadge(tester, '1'), palette.onState);
+    }
   });
 }

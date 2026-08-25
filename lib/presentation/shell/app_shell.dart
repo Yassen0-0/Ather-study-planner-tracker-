@@ -543,9 +543,13 @@ Widget _badge(BuildContext context, int count, {required bool alarm}) {
       color: alarm ? context.colors.wrong : context.colors.accent,
       borderRadius: BorderRadius.circular(8),
     ),
-    child: Text(
-      '$count',
-      style: AppTypography.badgeCount.copyWith(color: context.colors.onState),
-    ),
+      // onState rides only on the red alarm fill; accent's own foreground
+      // flips with the theme (near-black in dark), per the palette contract.
+      child: Text(
+        '$count',
+        style: AppTypography.badgeCount.copyWith(
+          color: alarm ? context.colors.onState : context.colors.onAccent,
+        ),
+      ),
   );
 }
