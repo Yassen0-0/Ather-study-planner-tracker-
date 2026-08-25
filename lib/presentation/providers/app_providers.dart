@@ -282,11 +282,14 @@ const String kLastAccountUidKey = 'last_account_uid';
 const String kLastCloudDownloadKey = 'last_cloud_download_at';
 
 /// Prefix of the exam wizard's per-lesson draft keys:
-/// `'exam_draft_$lessonId'`, written on every keystroke by
-/// `ExamEntryScreen._persistDraft`. The screen owns the full key shape; this
-/// file owns the wipe, so the prefix here must stay in sync with that
-/// screen's `_draftKeyFor` -- a stale draft resurfacing under the next
-/// student is exactly what D-01 exists to prevent.
+/// `'exam_draft_$lessonId'`. Writes belong to `ExamDraftStore`
+/// (`exam_draft_store.dart`): `scheduleSave` debounces a keystroke burst into
+/// one trailing-edge write after `kExamDraftWriteDelay`, with `flush` covering
+/// the loss boundaries the debounce cannot see coming -- not one write per
+/// keystroke. The store owns the key shape through `ExamDraftStore.keyPrefix`;
+/// this file owns the wipe, and the two literals cannot be shared across
+/// layers, so they must stay byte-equal by hand -- a stale draft resurfacing
+/// under the next student is exactly what D-01 exists to prevent.
 const String kExamDraftKeyPrefix = 'exam_draft_';
 
 /// Clears every preference that belongs to a **student** rather than to the

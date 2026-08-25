@@ -375,11 +375,12 @@ void main() {
 
   /// Pumps [DashboardScreen] on its own, under the overrides it reads.
   ///
-  /// Deliberately not the full `AtherApp`: the backup gate awaits
-  /// `snapshotProvider.future` outside its try, so an errored read escapes as
-  /// an unhandled zone error from a file this workstream does not own
-  /// (C6's fatal half, reported, not fixed here). The screen itself is what
-  /// N7/C6's UI half changed.
+  /// Deliberately not the full `AtherApp`: when this was written the backup
+  /// gate awaited `snapshotProvider.future` outside its try, so an errored
+  /// read escaped as an unhandled zone error from a file this workstream does
+  /// not own. e81724f has since guarded all three gate awaits
+  /// (`backup_gate.dart`), closing C6's fatal half; what stays under test
+  /// here is the screen itself, which is what N7/C6's UI half changed.
   Future<void> bootScreen(
     WidgetTester tester,
     Stream<StudySnapshot> snapshotStream,
