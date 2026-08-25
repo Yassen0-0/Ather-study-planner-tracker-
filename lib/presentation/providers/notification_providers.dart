@@ -172,10 +172,13 @@ class _ReviewSchedulerState extends ConsumerState<ReviewScheduler>
         buildDecliningBody: l.reviewBodyDeclining,
         buildWeakBody: l.reviewBodyWeak,
       );
-    } catch (_) {
+    } on Object catch (error, stack) {
       // Notifications are an enhancement, never a gate. If the platform
       // refuses -- unsupported desktop build, revoked permission, missing
-      // channel -- the in-app red flags still carry the whole mechanic.
+      // channel -- the in-app red flags still carry the whole mechanic. The
+      // failure is logged rather than vanished because a swallowed refusal
+      // looks identical to a scheduling bug from the outside.
+      debugPrint('Ather: review reminder sync failed -- $error\n$stack');
     } finally {
       _running = false;
       if (_dirty) {

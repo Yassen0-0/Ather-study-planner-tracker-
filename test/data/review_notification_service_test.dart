@@ -13,6 +13,7 @@ import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/notification_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -550,15 +551,15 @@ void main() {
     /// The scheduler mounted the way the app mounts it, against a snapshot
     /// stream that has **not** emitted yet -- the exact state of a cold start
     /// for the few seconds drift needs to answer its first query.
-    Future<FakeNotificationService> pumpScheduler(
+    Future<void> pumpScheduler(
       WidgetTester tester,
-      StreamController<StudySnapshot> snapshots,
-    ) async {
+      StreamController<StudySnapshot> snapshots, {
+      required ReviewNotificationService notifications,
+    }) async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final preferences = await SharedPreferences.getInstance();
       final auth = FakeAuthRepository.signedIn();
       addTearDown(auth.dispose);
-      final notifications = FakeNotificationService();
 
       await tester.pumpWidget(
         ProviderScope(
@@ -580,15 +581,15 @@ void main() {
       // Second frame so the post-frame callback that opens the first sync has
       // run up to its first await.
       await tester.pump();
-      return notifications;
     }
 
     testWidgets('the loading fallback never empties the schedule; the first '
         'pass waits for the real record and plans from it', (tester) async {
       final snapshots = StreamController<StudySnapshot>();
       addTearDown(snapshots.close);
+      final notifications = FakeNotificationService();
 
-      final notifications = await pumpScheduler(tester, snapshots);
+      await pumpScheduler(tester, snapshots, notifications: notifications);
 
       // The cold-start sync is now pending on data that has not arrived. It
       // used to run straight away against `StudySnapshot.empty()` instead:
@@ -622,5 +623,53 @@ void main() {
       );
       expect(notifications.cancelAllCount, 0);
     });
+
+    testWidgets('a scheduler failure is logged, not swallowed silently', (
+      tester,
+    ) async {
+      final snapshots = StreamController<StudySnapshot>();
+      addTearDown(snapshots.close);
+
+      final logs = <String>[];
+      final realDebugPrint = debugPrint;
+      // Restored in a finally rather than a tear-down: the framework checks
+      // its debug variables before package:test tear-downs run.
+      debugPrint = (String? message, {int? wrapWidth}) =>
+          logs.add(message ?? '');
+      try {
+        // A platform that refuses at initialise -- what an unsupported desktop
+        // build does. The real service would throw the same way from any of
+        // its plugin calls.
+        await pumpScheduler(
+          tester,
+          snapshots,
+          notifications: _RefusingService(),
+        );
+        await tester.pump(const Duration(seconds: 6));
+      } finally {
+        debugPrint = realDebugPrint;
+      }
+
+      expect(logs, isNotEmpty, reason: 'the refusal must be visible somewhere');
+      expect(
+        logs.join('\n'),
+        allOf(contains('Ather:'), contains('platform refused')),
+        reason: 'a silent catch reads as a scheduling bug from the outside',
+      );
+    });
   });
+}
+
+/// A service whose platform refuses at [initialise] -- how an unsupported
+/// desktop build reports itself. Extends the real service because the
+/// scheduler's contract with it is what the catch sits around.
+class _RefusingService extends ReviewNotificationService {
+  _RefusingService() : super(FlutterLocalNotificationsPlugin());
+
+  @override
+  Future<void> initialise({
+    required void Function(int lessonId) onLessonTapped,
+  }) async {
+    throw StateError('platform refused');
+  }
 }
