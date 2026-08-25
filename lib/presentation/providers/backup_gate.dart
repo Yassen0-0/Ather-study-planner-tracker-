@@ -91,7 +91,25 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
     // the same honest answer _restoreIfEmpty insists on below -- never from
     // the loading fallback. Daily tasks are deliberately not consulted; the
     // reason is written on _restoreIfEmpty.
-    final empty = (await ref.read(snapshotProvider.future)).isEmpty;
+    //
+    // A read that *fails* answers neither way, and since WS6 (c771d13) a
+    // failing stream rejects rather than collapsing to empty -- so this await
+    // is guarded like its siblings below: guessing "empty" wipes without
+    // asking and guessing "non-empty" sheets a wipe built on a guess. The
+    // honest answer is unknown, unknown holds, and holding here skips the
+    // whole hand-over -- no wipe decision, no restore, and the old uid stays
+    // recorded so the next launch asks again. Same fail-safe direction as the
+    // confirmation sheet above, whose no-surface fallback this mirrors.
+    final bool empty;
+    try {
+      empty = (await ref.read(snapshotProvider.future)).isEmpty;
+    } on Object catch (error, stack) {
+      debugPrint(
+        'Ather: account-switch check held -- device read failed: '
+        '$error\n$stack',
+      );
+      return false;
+    }
     if (!empty) {
       final confirmed = await _confirmWipe();
       if (!confirmed) {
@@ -224,7 +242,29 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
     // stream's first real emission gives a true answer, and it goes through the
     // same provider every screen reads -- so a test that stubs the snapshot
     // stubs this too, rather than this quietly opening a second database.
-    if (!(await ref.read(snapshotProvider.future)).isEmpty) return;
+    //
+    // Guarded, because since WS6 (c771d13) a failing read rejects instead of
+    // collapsing to empty, and this future runs fire-and-forget off a
+    // lifecycle callback -- an unguarded rejection escapes as an unhandled
+    // zone error and files a fatal crash report for what is a recoverable
+    // read hiccup (C6). It must not be guessed about either: "empty" would
+    // restore onto unknown data, "non-empty" would skip it silently. Unknown
+    // holds -- skip this session's restore, with the news on the sync card
+    // exactly as a failed download reports (N14). The next successful launch
+    // retries; nothing was written in the meantime.
+    final bool empty;
+    try {
+      empty = (await ref.read(snapshotProvider.future)).isEmpty;
+    } on Object catch (error, stack) {
+      debugPrint(
+        'Ather: automatic restore held -- device read failed: $error\n$stack',
+      );
+      ref.read(backupSyncProvider.notifier).reportFailure(
+            BackupFailure.unknown,
+          );
+      return;
+    }
+    if (!empty) return;
 
     try {
       final backup = await ref.read(backupRepositoryProvider).download();
@@ -232,7 +272,27 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       if (!mounted) return;
       // Re-read rather than re-use: the download took a network round trip, and
       // the student may have started building a chapter during it.
-      if (!(await ref.read(snapshotProvider.future)).isEmpty) return;
+      //
+      // Inside the try but not covered by its catch: that catches only
+      // `BackupException` -- cloud failures -- while a rejecting read is a
+      // *local* one. Guarded on its own, for the same reason as the first
+      // read above, and holding is doubly right here: the download already
+      // succeeded, so restoring over an answer we could not get would risk
+      // exactly the work this re-read exists to protect. The cloud copy stays
+      // where it is and the student can restore by hand from Settings.
+      final bool stillEmpty;
+      try {
+        stillEmpty = (await ref.read(snapshotProvider.future)).isEmpty;
+      } on Object catch (error, stack) {
+        debugPrint(
+          'Ather: automatic restore held -- re-read failed: $error\n$stack',
+        );
+        ref.read(backupSyncProvider.notifier).reportFailure(
+              BackupFailure.unknown,
+            );
+        return;
+      }
+      if (!stillEmpty) return;
       await ref.read(backupSyncProvider.notifier).restore(backup);
     } on BackupException catch (e) {
       // Offline, or the rules were never published. Either way the app is

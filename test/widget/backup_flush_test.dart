@@ -17,6 +17,8 @@ import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/entities/study_backup.dart';
 import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/domain/repositories/study_repository.dart';
+import 'package:ather/domain/repositories/backup_repository.dart'
+    show BackupFailure;
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_providers.dart';
@@ -274,6 +276,28 @@ void main() {
     await container.read(backupSyncProvider.notifier).flush();
 
     expect(backup.uploadCount, 0);
+  });
+
+  test('a failing local read holds the cycle instead of rejecting unhandled (C6)',
+      () async {
+    // WS6 (c771d13) made an errored stream reject `.future` instead of
+    // collapsing to empty -- and both of flush's reads sat outside its try, so
+    // a disk hiccup escaped the debounce's `unawaited` as a fatal crash report.
+    // Held instead: nothing is known about the record, so nothing may go up,
+    // and the card carries the news like any other failed flush.
+    final backup = FakeBackupRepository();
+    final container = await boot(
+      backup: backup,
+      snapshots: Stream<StudySnapshot>.error(StateError('disk full')),
+      tasks: Stream<List<DailyTask>>.value(<DailyTask>[task()]),
+    );
+
+    await container.read(backupSyncProvider.notifier).flush();
+
+    expect(backup.uploadCount, 0);
+    final sync = container.read(backupSyncProvider);
+    expect(sync.status, SyncStatus.failed);
+    expect(sync.failure, BackupFailure.unknown);
   });
 
   test('an empty record never seen the cloud does not overwrite it (N4)',

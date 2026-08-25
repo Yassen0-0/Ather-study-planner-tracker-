@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/backup/firestore_backup_repository.dart';
 import '../../data/repositories/drift_study_repository.dart';
+import '../../domain/entities/daily_task.dart';
 import '../../domain/entities/study_backup.dart';
+import '../../domain/entities/study_snapshot.dart';
 import '../../domain/repositories/backup_repository.dart';
 import 'app_providers.dart';
 import 'auth_providers.dart';
@@ -120,8 +122,31 @@ class BackupSyncNotifier extends Notifier<SyncState> {
     // This is the same trap, in the same feature, that `BackupSyncGate` already
     // documents at length for the restore direction. Awaiting is free here:
     // nothing renders off this path.
-    final snapshot = await ref.read(snapshotProvider.future);
-    final tasks = await ref.read(tasksProvider.future);
+    //
+    // Guarded, because since WS6 (c771d13) a failing stream rejects instead of
+    // collapsing to empty -- and this whole method runs fire-and-forget (the
+    // debounce wraps it in `unawaited`, the lifecycle call awaits nothing), so
+    // a rejection here escaped as an unhandled zone error and reached
+    // Crashlytics marked fatal for what is a recoverable read hiccup (C6).
+    // The catch below only handles cloud failures, so these two local reads
+    // are guarded ahead of it. Degradation is hold, not proceed: a read that
+    // failed leaves the record unknown, and uploading an unknown record is
+    // how one student's data ends up over another's cloud copy -- the same
+    // direction the N4 guard below already prefers. Nothing was written by
+    // this cycle; the next write re-schedules one.
+    final StudySnapshot snapshot;
+    final List<DailyTask> tasks;
+    try {
+      snapshot = await ref.read(snapshotProvider.future);
+      tasks = await ref.read(tasksProvider.future);
+    } on Object catch (error, stack) {
+      debugPrint('Ather: holding upload -- local read failed: $error\n$stack');
+      state = state.copyWith(
+        status: SyncStatus.failed,
+        failure: BackupFailure.unknown,
+      );
+      return;
+    }
 
     // **There is deliberately no empty-state guard here** -- with one N4
     // exception below.

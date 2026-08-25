@@ -12,6 +12,7 @@ import 'package:ather/core/l10n/generated/app_localizations.dart';
 import 'package:ather/core/theme/app_theme.dart';
 import 'package:ather/data/db/app_database.dart';
 import 'package:ather/domain/entities/account.dart';
+import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/data/repositories/drift_study_repository.dart';
 import 'package:ather/data/repositories/drift_task_repository.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
@@ -44,8 +45,13 @@ void main() {
   final DateTime now = DateTime(2026, 8, 5);
 
   /// Boots the gate alone under a MaterialApp whose navigator **is** the root
-  /// navigator, with [seeded] deciding whether the device holds a record.
-  Future<Widget> boot({required bool seeded}) async {
+  /// navigator, with [seeded] deciding whether the device holds a record and
+  /// [snapshots] replacing the snapshot stream wholesale (for driving the gate
+  /// with a read that fails).
+  Future<Widget> boot({
+    required bool seeded,
+    Stream<StudySnapshot>? snapshots,
+  }) async {
     if (seeded) {
       final study = DriftStudyRepository(db);
       final chapterId = await study.createChapter(
@@ -68,6 +74,7 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(preferences),
         databaseProvider.overrideWithValue(db),
         clockProvider.overrideWithValue(MutableClock(now)),
+        if (snapshots != null) snapshotProvider.overrideWith((ref) => snapshots),
       ],
       child: MaterialApp(
         locale: const Locale('ar'),
@@ -443,6 +450,38 @@ void main() {
     expect(preferences.getString(kLastAccountUidKey), 'test-uid');
     // The ordinary auto-restore ran for the account that said yes.
     expect(backup.downloadCount, 1);
+  });
+
+  testWidgets('a read that fails during the switch check holds everything (C6)',
+      (tester) async {
+    // The wipe decision needs to know whether the device holds somebody else's
+    // record, and since WS6 (c771d13) a failing stream rejects rather than
+    // collapsing to an "empty" that would wipe without asking. Held instead:
+    // no sheet built on a guess, no wipe, no restore, and the old uid stays
+    // recorded so the next launch asks again.
+    await tester.pumpWidget(
+      await boot(
+        seeded: true,
+        snapshots: Stream<StudySnapshot>.error(StateError('disk full')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await auth.signInWithGoogle();
+    await tester.pumpAndSettle();
+
+    expect(find.text('حساب مختلف'), findsNothing);
+    expect(find.text('امسح بيانات الجهاز'), findsNothing);
+
+    await closeGate(tester);
+
+    final kept = await tester.runAsync(
+      () => DriftStudyRepository(db).readSnapshot(),
+    );
+    // Not one byte moved.
+    expect(kept!.chapters.map((c) => c.name), contains('شغل الطالب'));
+    expect(preferences.getString(kLastAccountUidKey), 'test-uid');
+    expect(backup.downloadCount, 0);
   });
 
   testWidgets('backgrounding after a refusal uploads nothing',
