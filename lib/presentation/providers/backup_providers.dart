@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/backup/firestore_backup_repository.dart';
@@ -12,6 +13,17 @@ import 'task_providers.dart';
 final backupRepositoryProvider = Provider<BackupRepository>(
   (ref) => FirestoreBackupRepository(),
 );
+
+/// The last time a cloud copy was successfully brought down onto this device,
+/// as millis-since-epoch -- absent when none ever was.
+///
+/// Written only by [BackupSyncNotifier.restore], once the copy is actually in
+/// the database. Its one reader is [BackupSyncNotifier.flush]: an **empty**
+/// local record may only be uploaded after the device has seen the cloud,
+/// because until then "empty" might mean "the auto-restore never got through"
+/// rather than "there is nothing" -- and uploading that emptiness would
+/// replace the very copy the student is trying to pull.
+const String kLastCloudDownloadKey = 'last_cloud_download_at';
 
 /// What the Settings card shows. Never blocks anything.
 enum SyncStatus {
@@ -121,7 +133,8 @@ class BackupSyncNotifier extends Notifier<SyncState> {
     final snapshot = await ref.read(snapshotProvider.future);
     final tasks = await ref.read(tasksProvider.future);
 
-    // **There is deliberately no empty-state guard here.**
+    // **There is deliberately no empty-state guard here** -- with one N4
+    // exception below.
     //
     // There used to be -- `if (snapshot.isEmpty && tasks.isEmpty) return;` --
     // and it was written to defend against the loading-state bug described
@@ -135,6 +148,26 @@ class BackupSyncNotifier extends Notifier<SyncState> {
     // student signed into -- so deleting their data locally looked like it had
     // worked and then quietly undid itself. Emptiness is a state worth
     // recording, and it is the one state the old guard refused to record.
+    //
+    // But only once the emptiness is *informed*. If no cloud copy has ever
+    // reached this device, "empty" can equally mean a failed offline
+    // auto-restore -- and uploading that would overwrite the newer cloud doc
+    // with nothing. Until a restore has succeeded here (marker in
+    // [kLastCloudDownloadKey]), an empty record stays local. A brand-new
+    // account loses nothing by this: there was nothing in its cloud document
+    // to protect, and the first real upload creates it as before.
+    if (snapshot.isEmpty &&
+        tasks.isEmpty &&
+        ref
+            .read(sharedPreferencesProvider)
+            .getInt(kLastCloudDownloadKey)
+            == null) {
+      debugPrint(
+        'Ather: holding empty upload -- no cloud copy has reached this '
+        'device yet',
+      );
+      return;
+    }
 
     // The account can change while those two awaits are in flight, and an upload
     // is addressed by uid. Re-check rather than trust the value read above.
@@ -172,6 +205,16 @@ class BackupSyncNotifier extends Notifier<SyncState> {
   Future<void> restore(StudyBackup backup) async {
     await ref.read(studyRepositoryProvider).restore(backup);
     await ref.read(taskRepositoryProvider).restoreTasks(backup.tasks);
+
+    // Only a *completed* bring-down marks the device: from here an empty local
+    // record is an informed state that flush may upload, not a failed
+    // auto-restore it must protect (N4).
+    await ref
+        .read(sharedPreferencesProvider)
+        .setInt(
+          kLastCloudDownloadKey,
+          ref.read(clockProvider).now().millisecondsSinceEpoch,
+        );
   }
 }
 

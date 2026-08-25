@@ -7,9 +7,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ather/core/clock/clock.dart';
 import 'package:ather/domain/entities/chapter.dart';
 import 'package:ather/domain/entities/daily_task.dart';
+import 'package:ather/domain/entities/exam_entry.dart';
+import 'package:ather/domain/entities/homework_entry.dart';
+import 'package:ather/domain/entities/lesson.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/entities/study_backup.dart';
+import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/domain/repositories/study_repository.dart';
+import 'package:ather/domain/repositories/task_repository.dart'
+    show TaskRepository;
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_providers.dart';
@@ -18,13 +24,37 @@ import 'package:ather/presentation/providers/task_providers.dart';
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
 
-/// Satisfies the one repository touch the upload path makes beyond its
-/// streams: reading the capture history. These tests stub the *streams*, so a
-/// real database here would be an accident; the empty list is the honest
-/// stand-in, and `noSuchMethod` keeps the fake to exactly the member in use.
+/// Satisfies the repository touches the upload path makes beyond its streams:
+/// reading the capture history, and -- only in the marker test -- a restore.
+/// These tests stub the *streams*, so a real database here would be an
+/// accident; `noSuchMethod` keeps each fake to exactly the members in use.
 class _EventsOnlyStudyRepository implements StudyRepository {
+  _EventsOnlyStudyRepository({this.onRestore});
+
+  final void Function()? onRestore;
+
+  int restoreCount = 0;
+
   @override
   Future<List<StudyEvent>> readEvents() async => const <StudyEvent>[];
+
+  @override
+  Future<void> restore(StudyBackup backup) async {
+    restoreCount++;
+    onRestore?.call();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName} not stubbed');
+}
+
+/// Same idea for the task half of a restore.
+class _RestoreOnlyTaskRepository implements TaskRepository {
+  int restoreCount = 0;
+
+  @override
+  Future<void> restoreTasks(List<DailyTask> tasks) async => restoreCount++;
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -74,14 +104,20 @@ void main() {
 
   /// A container wired the way the app wires it, with both streams under the
   /// test's control so "still loading" is a state it can hold open.
+  ///
+  /// [cloudSeen] seeds the last-successful-download marker (N4): true is the
+  /// state of a device that has restored at least once, false the state of a
+  /// fresh sign-in whose auto-restore may never have got through.
   Future<ProviderContainer> boot({
     required FakeBackupRepository backup,
     required Stream<StudySnapshot> snapshots,
     required Stream<List<DailyTask>> tasks,
     String owner = 'test-uid',
+    bool cloudSeen = true,
   }) async {
     SharedPreferences.setMockInitialValues(<String, Object>{
       kLastAccountUidKey: owner,
+      if (cloudSeen) kLastCloudDownloadKey: now.millisecondsSinceEpoch,
     });
     final preferences = await SharedPreferences.getInstance();
 
@@ -262,4 +298,119 @@ void main() {
 
     expect(backup.uploadCount, 0);
   });
+
+  test('an empty record never seen the cloud does not overwrite it (N4)',
+      () async {
+    // The failed-offline-restore hazard: a fresh sign-in whose auto-restore
+    // never got through holds an empty local record while a newer cloud doc
+    // sits untouched. Uploading that emptiness -- which the debounce or a
+    // backgrounding will happily schedule -- would replace the student's real
+    // copy with nothing. Until one restore has succeeded on this device,
+    // emptiness is not knowledge, and it stays local.
+    // Offline, as the failed auto-restore left it.
+    final backup = FakeBackupRepository.failing();
+    final container = await boot(
+      backup: backup,
+      snapshots: Stream<StudySnapshot>.value(const StudySnapshot.empty()),
+      tasks: Stream<List<DailyTask>>.value(const <DailyTask>[]),
+      cloudSeen: false,
+    );
+
+    await container.read(backupSyncProvider.notifier).flush();
+
+    expect(backup.uploadCount, isZero);
+  });
+
+  test('a populated record uploads without any marker', () async {
+    // The N4 guard is about *empty* records only: a student who recorded work
+    // offline must sync exactly as before, marker or no marker.
+    final backup = FakeBackupRepository();
+    final container = await boot(
+      backup: backup,
+      snapshots: Stream<StudySnapshot>.value(snapshotWithChapter()),
+      tasks: Stream<List<DailyTask>>.value(<DailyTask>[task()]),
+      cloudSeen: false,
+    );
+
+    await container.read(backupSyncProvider.notifier).flush();
+
+    expect(backup.uploadCount, 1);
+    expect(backup.stored!.chapters, hasLength(1));
+  });
+
+  test('a completed restore lets emptiness flow again', () async {
+    // The other half of N4: once a restore has genuinely brought the cloud
+    // copy down, "I deleted everything" must reach the cloud as before. The
+    // marker is what separates that state from a restore that never happened.
+    final study = _EventsOnlyStudyRepository();
+    final taskRepo = _RestoreOnlyTaskRepository();
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      kLastAccountUidKey: 'test-uid',
+      // No marker: the device has never taken the cloud copy in.
+    });
+    final preferences = await SharedPreferences.getInstance();
+
+    // Offline until the restore below succeeds -- the state the failure mode
+    // lives in.
+    final backup = FakeBackupRepository.failing();
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(FakeAuthRepository.signedIn()),
+        backupRepositoryProvider.overrideWithValue(backup),
+        studyRepositoryProvider.overrideWithValue(study),
+        taskRepositoryProvider.overrideWithValue(taskRepo),
+        sharedPreferencesProvider.overrideWithValue(preferences),
+        clockProvider.overrideWithValue(MutableClock(now)),
+        snapshotProvider.overrideWith(
+          (ref) => Stream<StudySnapshot>.value(const StudySnapshot.empty()),
+        ),
+        tasksProvider.overrideWith(
+          (ref) => Stream<List<DailyTask>>.value(const <DailyTask>[]),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    // Same reason boot() holds these: a bare `read` leaves the streams with no
+    // listener and `.future` never settles.
+    addTearDown(
+      container
+          .listen(accountProvider, (_, _) {}, fireImmediately: true)
+          .close,
+    );
+    addTearDown(
+      container
+          .listen(snapshotProvider, (_, _) {}, fireImmediately: true)
+          .close,
+    );
+    addTearDown(
+      container.listen(tasksProvider, (_, _) {}, fireImmediately: true).close,
+    );
+    await container.read(accountProvider.future);
+
+    // Before any restore: the empty record is held back.
+    await container.read(backupSyncProvider.notifier).flush();
+    expect(backup.uploadCount, isZero);
+
+    // A restore completes -- the auto path and the Settings button share it.
+    await container.read(backupSyncProvider.notifier).restore(_emptyBackup());
+    expect(study.restoreCount, 1);
+    expect(taskRepo.restoreCount, 1);
+    expect(preferences.getInt(kLastCloudDownloadKey), isNotNull);
+
+    // ...and now the same empty record is an informed delete-everything.
+    backup.failure = null;
+    await container.read(backupSyncProvider.notifier).flush();
+
+    expect(backup.uploadCount, 1);
+    expect(backup.stored!.isEmpty, isTrue);
+  });
 }
+
+StudyBackup _emptyBackup() => const StudyBackup(
+  subjects: <Subject>[],
+  chapters: <Chapter>[],
+  lessons: <Lesson>[],
+  exams: <ExamEntry>[],
+  homework: <HomeworkEntry>[],
+  tasks: <DailyTask>[],
+);
