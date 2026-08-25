@@ -1,3 +1,53 @@
+# Ather — release build, 2026-08-25 · 1.9.0+17
+
+**The release where the app stops keeping dangerous secrets.** A phone handed from one student to
+another can no longer quietly upload the first student's whole record into the second student's
+cloud backup; a failed restore can no longer be overwritten by an empty local copy; and the app
+now says when something went wrong instead of pretending nothing did.
+
+Installs straight over `1.8.0+16`. Same upload key, `versionCode` 16 → 17, every exam kept.
+The database schema does not move in this release — it stays at version 5 — so the upgrade is a
+pure code change with nothing to migrate.
+
+## What changed since 1.8.0+16
+
+### Handing your phone to a brother or cousin is safe now
+
+Signing into a second account on a device that never had one recorded used to skip every safety
+question: the next backup could carry the previous student's entire history into the new account's
+one cloud document, where wiping the old account would leave nothing to restore. The gate now asks
+based on what is actually on the device, not what a preferences file remembers.
+
+### Backups fail loudly, recover cleanly
+
+A failed automatic restore used to look exactly like success with an empty record — and the next
+sync could then push that emptiness over the good cloud copy. Restores now land as one all-or-
+nothing step, empty uploads wait until this device has actually seen the cloud, and the sync card
+tells you when something failed instead of staying green while nothing happened.
+
+### Reminders survive the cold start
+
+Every cold start briefly cancelled all scheduled reminders against a loading placeholder before
+rebuilding them; a reminder due inside that window was lost for good. The scheduler now waits for
+real data first, and failures are logged instead of swallowed.
+
+### Exam entry refuses wrong input instead of recording it
+
+Leaving the correct-count field blank no longer records every answer as wrong. A pasted `2.5`
+is rejected outright rather than silently becoming `25` (scores are whole numbers everywhere).
+Names made only of invisible characters are refused like blank ones. And the Arabic plurals you
+meet most — «متأخّر يوم», «بقي يومان», the comeback line on the dashboard — are now grammatically
+correct at every count, including zero and the dual, in both languages.
+
+### Deleting an account deletes the account
+
+Delete-account and account-switch now clear every per-student trace: exam drafts, profile name,
+lock settings, the works — through one shared routine instead of two hand-maintained lists that
+had already drifted apart.
+
+Plus: review-badge red is reserved for genuinely overdue decay (dark mode included), task adds
+follow the day you are actually on, and dead weight left over from retired tooling is gone.
+
 # Ather — release build, 2026-08-23 · 1.8.0+16
 
 **The release where the app is honest from its first frame.** The tab icons are there when the
