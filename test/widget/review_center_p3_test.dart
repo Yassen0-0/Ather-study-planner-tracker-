@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ather/app/app.dart';
@@ -229,6 +230,54 @@ void main() {
       findsOneWidget,
       reason: 'tapping the row is the exam route, not a detour through the '
           'lesson screen',
+    );
+  });
+
+  testWidgets('a failed read says so instead of congratulating an empty queue',
+      (tester) async {
+    final ar = await L.delegate.load(const Locale('ar'));
+
+    // Pumped on its own, not through `bootReviewTab`: the backup gate inside
+    // `AtherApp` awaits `snapshotProvider.future` outside its try, so an
+    // errored read escapes as an unhandled zone error from a file this
+    // workstream does not own (C6's fatal half, reported, not fixed here).
+    tester.view.physicalSize = const Size(390 * 3, 1200 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final preferences = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(preferences),
+          snapshotProvider.overrideWith(
+            (ref) => Stream<StudySnapshot>.error(StateError('disk full')),
+          ),
+          clockProvider.overrideWithValue(MutableClock(kNow)),
+          nowProvider.overrideWith((ref) => Stream<DateTime>.value(kNow)),
+        ],
+        child: MaterialApp(
+          locale: const Locale('ar'),
+          supportedLocales: const <Locale>[Locale('ar'), Locale('en')],
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            L.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const ReviewCenterScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(ar.commonSomethingWentWrong), findsOneWidget);
+    expect(
+      find.text(ar.reviewEmptyTitle),
+      findsNothing,
+      reason: 'the green "all caught up" state is a claim about a record this '
+          'read never saw (N7/C6)',
     );
   });
 }

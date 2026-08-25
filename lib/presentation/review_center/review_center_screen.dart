@@ -50,6 +50,11 @@ class _ReviewCenterScreenState extends ConsumerState<ReviewCenterScreen> {
     final l = L.of(context);
     final queue = ref.watch(reviewQueueProvider);
     final snapshot = ref.watch(snapshotValueProvider);
+    // N7/C6: the success empty state below is a claim ("you are on top of
+    // it") the screen may only make once the read has settled and not failed;
+    // otherwise a failing disk congratulated the student over an intact
+    // record.
+    final read = ref.watch(snapshotReadProvider);
     // Watched, not read once: the radar shifts a column every midnight the
     // moment `nowProvider` emits, without waiting for the student to reopen
     // the screen.
@@ -77,7 +82,15 @@ class _ReviewCenterScreenState extends ConsumerState<ReviewCenterScreen> {
         actions: const <Widget>[SettingsButton()],
       ),
       children: <Widget>[
-        if (queue.isEmpty)
+        if (read is SnapshotFailed)
+          // Text only, reusing the app's existing generic failure string --
+          // same restraint as the dashboard's failed-read card (N7/C6).
+          EmptyState(title: l.commonSomethingWentWrong)
+        else if (read is SnapshotLoading)
+          // Settle-gating: no emission yet, so neither the queue's rows nor
+          // its celebration may speak for a record not read.
+          const SizedBox.shrink()
+        else if (queue.isEmpty)
           // The success shape: green disc, congratulation, and deliberately no
           // button. An empty review queue is a result, not a task -- and a
           // "0 درس" counter above it would be counting a victory.

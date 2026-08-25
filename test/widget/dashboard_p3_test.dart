@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ather/app/app.dart';
@@ -18,6 +21,7 @@ import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/domain/repositories/study_repository.dart';
 import 'package:ather/presentation/common/subject_mark.dart';
+import 'package:ather/presentation/dashboard/dashboard_screen.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_providers.dart';
@@ -314,5 +318,131 @@ void main() {
       reason: 'the id createSubject returns is the route into the new '
           'subject -- an eager student must not be left on the dashboard',
     );
+  });
+
+  group('snapshotReadProvider [N7/C6]', () {
+    ProviderContainer containerWith(Stream<StudySnapshot> stream) {
+      final container = ProviderContainer(
+        overrides: [snapshotProvider.overrideWith((ref) => stream)],
+      );
+      addTearDown(container.dispose);
+      // Subscribing starts the stream; the mapping runs on each state change.
+      final sub = container.listen(snapshotReadProvider, (_, _) {});
+      addTearDown(sub.close);
+      return container;
+    }
+
+    test('a stream error settles as failed, never as empty', () async {
+      final container = containerWith(
+        Stream<StudySnapshot>.error(StateError('disk full')),
+      );
+
+      await expectLater(
+        container.read(snapshotProvider.future),
+        throwsA(isA<StateError>()),
+      );
+      expect(
+        container.read(snapshotReadProvider),
+        isA<SnapshotFailed>(),
+        reason: 'a failing disk must not dress itself up as a fresh install',
+      );
+    });
+
+    test('a slow stream holds loading until it settles', () async {
+      final controller = StreamController<StudySnapshot>();
+      addTearDown(controller.close);
+      final container = containerWith(controller.stream);
+
+      expect(container.read(snapshotReadProvider), isA<SnapshotLoading>());
+
+      // Settled empty is its own state -- the first-run card may speak only
+      // now, not during the wait above.
+      controller.add(const StudySnapshot.empty());
+      await pumpEventQueue();
+      expect(container.read(snapshotReadProvider), isA<SnapshotEmpty>());
+
+      // A record with chapters and lessons -- `snapshotWith()` alone counts
+      // as empty (`isEmpty` is chapters+lessons), so it cannot prove Ready.
+      controller.add(awayEightDays().$1);
+      await pumpEventQueue();
+      expect(container.read(snapshotReadProvider), isA<SnapshotReady>());
+    });
+  });
+
+  /// Pumps [DashboardScreen] on its own, under the overrides it reads.
+  ///
+  /// Deliberately not the full `AtherApp`: the backup gate awaits
+  /// `snapshotProvider.future` outside its try, so an errored read escapes as
+  /// an unhandled zone error from a file this workstream does not own
+  /// (C6's fatal half, reported, not fixed here). The screen itself is what
+  /// N7/C6's UI half changed.
+  Future<void> bootScreen(
+    WidgetTester tester,
+    Stream<StudySnapshot> snapshotStream,
+  ) async {
+    tester.view.physicalSize = const Size(390 * 3, 1600 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final stored = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(stored),
+          snapshotProvider.overrideWith((ref) => snapshotStream),
+          clockProvider.overrideWithValue(MutableClock(kNow)),
+          nowProvider.overrideWith((ref) => Stream<DateTime>.value(kNow)),
+        ],
+        child: MaterialApp(
+          locale: const Locale('ar'),
+          supportedLocales: const <Locale>[Locale('ar'), Locale('en')],
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            L.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const DashboardScreen(),
+        ),
+      ),
+    );
+  }
+
+  testWidgets('a failed read shows the generic error, not the first-run card', (
+    tester,
+  ) async {
+    final ar = await L.delegate.load(const Locale('ar'));
+
+    await bootScreen(
+      tester,
+      Stream<StudySnapshot>.error(StateError('disk full')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(ar.commonSomethingWentWrong), findsOneWidget);
+    expect(
+      find.text(ar.firstRunTitle),
+      findsNothing,
+      reason: 'the record is intact behind the failed read; first-run copy '
+          'would tell the student their work is gone',
+    );
+  });
+
+  testWidgets('the first-run card waits for the stream to settle', (
+    tester,
+  ) async {
+    final ar = await L.delegate.load(const Locale('ar'));
+    final controller = StreamController<StudySnapshot>();
+    addTearDown(controller.close);
+
+    await bootScreen(tester, controller.stream);
+
+    expect(find.text(ar.firstRunTitle), findsNothing);
+
+    controller.add(const StudySnapshot.empty());
+    await tester.pumpAndSettle();
+    expect(find.text(ar.firstRunTitle), findsOneWidget);
   });
 }

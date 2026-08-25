@@ -135,6 +135,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final stats = ref.watch(homeStatsProvider);
     final next = ref.watch(nextTargetProvider);
     final profileName = ref.watch(profileNameProvider);
+    // N7/C6: branch on how the read stands, not just what it last held --
+    // otherwise a failing disk renders as the first-run card over an intact
+    // record.
+    final read = ref.watch(snapshotReadProvider);
 
     return AtherScreen(
       // No week strip. The dashboard's copy was inert -- nothing to select and
@@ -170,22 +174,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           const SizedBox(height: AppSpacing.md),
         ],
-        // A brand-new student used to land on "—", three zeroes and four
-        // subject rows, with the actual first step -- open a subject, add a
-        // chapter, add a lesson, sit an exam -- written down nowhere. It is the
-        // longest path in the app and it was the only one with no signposting.
-        //
-        // The card **replaces** the two summary cards rather than sitting above
-        // them: with nothing recorded they show "—" and "0 / 0" three times, so
-        // they occupy the top of the screen to say nothing. Stacking a third
-        // card on top of them pushed the four subjects -- the only things worth
-        // tapping -- below the fold.
-        if (dashboard.isEmpty)
-          _FirstRunCard(subjects: dashboard.subjects)
-        else ...<Widget>[
-          _OverallCard(dashboard: dashboard),
-          const SizedBox(height: AppSpacing.md),
-          _StatsCard(stats: stats),
+        // A failed read is the one state allowed to say so; loading shows
+        // nothing yet -- emptiness is a claim about the record and the first
+        // emission has not landed to back it (N7/C6 settle-gating).
+        if (read is SnapshotFailed)
+          const _ReadFailedCard()
+        else if (read is! SnapshotLoading) ...<Widget>[
+          // A brand-new student used to land on "—", three zeroes and four
+          // subject rows, with the actual first step -- open a subject, add a
+          // chapter, add a lesson, sit an exam -- written down nowhere. It is the
+          // longest path in the app and it was the only one with no signposting.
+          //
+          // The card **replaces** the two summary cards rather than sitting above
+          // them: with nothing recorded they show "—" and "0 / 0" three times, so
+          // they occupy the top of the screen to say nothing. Stacking a third
+          // card on top of them pushed the four subjects -- the only things worth
+          // tapping -- below the fold.
+          if (dashboard.isEmpty)
+            _FirstRunCard(subjects: dashboard.subjects)
+          else ...<Widget>[
+            _OverallCard(dashboard: dashboard),
+            const SizedBox(height: AppSpacing.md),
+            _StatsCard(stats: stats),
+          ],
         ],
         const SizedBox(height: AppSpacing.xxxl),
         SectionTitle(l.sectionSubjects, trailing: const _AddSubjectButton()),
@@ -310,6 +321,27 @@ class _FirstRunCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Shown only when the snapshot read itself failed.
+///
+/// The one honest thing the dashboard can say from here: not the first-run
+/// card over an intact record, and not silence. Text only, reusing the app's
+/// existing generic failure string -- a read error needs no new copy of its
+/// own (N7/C6).
+class _ReadFailedCard extends StatelessWidget {
+  const _ReadFailedCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return AtherCard(
+      padding: AppSpacing.cardPadding,
+      child: Text(
+        L.of(context).commonSomethingWentWrong,
+        style: context.text.secondary,
       ),
     );
   }

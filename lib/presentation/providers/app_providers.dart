@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:drift/drift.dart' show QueryExecutor;
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,9 +29,6 @@ final databaseProvider = Provider<AppDatabase>((ref) {
   ref.onDispose(db.close);
   return db;
 });
-
-/// Escape hatch for tests that want to supply their own executor.
-final databaseExecutorProvider = Provider<QueryExecutor?>((ref) => null);
 
 final studyRepositoryProvider = Provider<StudyRepository>(
   (ref) => DriftStudyRepository(ref.watch(databaseProvider)),
@@ -152,11 +148,66 @@ final snapshotProvider = StreamProvider<StudySnapshot>(
 
 /// Snapshot without the async wrapper, for widgets already inside an
 /// `AsyncValue.when`. Falls back to empty rather than throwing, so a transient
-/// loading frame cannot crash a screen.
+/// loading frame cannot crash a screen. Screens that must tell "empty" apart
+/// from "loading" or "failed" read [snapshotReadProvider] instead.
 // Riverpod 3.x removed `valueOrNull`; `AsyncValue.value` is itself nullable.
 final snapshotValueProvider = Provider<StudySnapshot>(
   (ref) => ref.watch(snapshotProvider).value ?? const StudySnapshot.empty(),
 );
+
+/// How the latest snapshot read stands, kept as four distinct states because
+/// they are four different news for the student (N7/C6).
+///
+/// Riverpod 3 turns a stream error into a null [AsyncValue.value], so the old
+/// `?? empty` fallback rendered a failing disk exactly like a fresh install:
+/// the dashboard showed the first-run card over an intact record, and the
+/// review centre congratulated the student on being all caught up.
+sealed class SnapshotRead {
+  const SnapshotRead();
+}
+
+/// The stream has not produced its first emission yet. Distinct from empty on
+/// purpose: emptiness is a claim about the record, and nothing has been read
+/// to back it.
+final class SnapshotLoading extends SnapshotRead {
+  const SnapshotLoading();
+}
+
+/// Settled with real content.
+final class SnapshotReady extends SnapshotRead {
+  const SnapshotReady(this.snapshot);
+
+  final StudySnapshot snapshot;
+}
+
+/// Settled genuinely empty -- the one state allowed to show first-run copy.
+final class SnapshotEmpty extends SnapshotRead {
+  const SnapshotEmpty();
+}
+
+/// The read itself failed. Recoverable by design: the drift watch keeps
+/// running, so the next successful re-query settles this back to ready or
+/// empty with no action from the student.
+final class SnapshotFailed extends SnapshotRead {
+  const SnapshotFailed(this.error);
+
+  final Object error;
+}
+
+/// Classifies [snapshotProvider]'s latest state into a [SnapshotRead].
+///
+/// A re-subscription (an invalidated provider, say) carries the previous value
+/// alongside `isLoading`; that value stays on screen rather than flapping back
+/// to a spinner for a frame.
+final snapshotReadProvider = Provider<SnapshotRead>((ref) {
+  final async = ref.watch(snapshotProvider);
+  final StudySnapshot? settled = async.isLoading ? null : async.value;
+  if (settled != null) {
+    return settled.isEmpty ? const SnapshotEmpty() : SnapshotReady(settled);
+  }
+  if (!async.isLoading && async.hasError) return SnapshotFailed(async.error!);
+  return const SnapshotLoading();
+});
 
 /// Current time, resolved. Falls back to the clock directly on the first frame.
 final nowValueProvider = Provider<DateTime>(
