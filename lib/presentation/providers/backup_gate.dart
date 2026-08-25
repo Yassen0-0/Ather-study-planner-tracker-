@@ -234,9 +234,13 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       // the student may have started building a chapter during it.
       if (!(await ref.read(snapshotProvider.future)).isEmpty) return;
       await ref.read(backupSyncProvider.notifier).restore(backup);
-    } on BackupException {
+    } on BackupException catch (e) {
       // Offline, or the rules were never published. Either way the app is
-      // perfectly usable and the student can restore by hand from Settings.
+      // perfectly usable and the student can restore by hand from Settings --
+      // but the sync card carries the news instead of swallowing it (N14),
+      // exactly as a failed upload already does.
+      debugPrint('Ather: automatic restore failed -- ${e.failure}');
+      ref.read(backupSyncProvider.notifier).reportFailure(e.failure);
     }
   }
 

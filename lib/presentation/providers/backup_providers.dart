@@ -189,6 +189,14 @@ class BackupSyncNotifier extends Notifier<SyncState> {
     }
   }
 
+  /// Records a failure that happened outside the upload path -- the
+  /// automatic restore in `BackupSyncGate` (N14). The card shows the same
+  /// "failed" state a failed flush produces, so a restore that could not get
+  /// through is news the student can see rather than silence.
+  void reportFailure(BackupFailure failure) {
+    state = state.copyWith(status: SyncStatus.failed, failure: failure);
+  }
+
   /// Pulls the cloud copy over the local database. Destructive by definition, so
   /// every caller confirms first -- except the empty-database case, where there
   /// is nothing to lose.

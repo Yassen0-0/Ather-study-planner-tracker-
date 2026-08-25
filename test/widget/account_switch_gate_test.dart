@@ -18,7 +18,9 @@ import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_gate.dart';
 import 'package:ather/presentation/providers/backup_providers.dart'
-    show backupRepositoryProvider;
+    show SyncStatus, backupRepositoryProvider, backupSyncProvider;
+import 'package:ather/domain/repositories/backup_repository.dart'
+    show BackupFailure;
 
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
@@ -360,6 +362,36 @@ void main() {
     }
     expect(preferences.getString(kLastAccountUidKey), 'google-uid');
     expect(preferences.getString('locale_code'), 'en');
+  });
+
+  testWidgets('a failed offline auto-restore reaches the sync card (N14)',
+      (tester) async {
+    // The swallow used to make the download's failure invisible: offline at
+    // sign-in looked identical to "checked, nothing there", and nothing said
+    // why the cloud copy had not arrived. It must land on the card as a
+    // failure, same as a failed upload does.
+    backup = FakeBackupRepository.failing();
+
+    await tester.pumpWidget(await boot(seeded: false));
+    await tester.pumpAndSettle();
+
+    await auth.signInWithGoogle();
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(BackupSyncGate)),
+    );
+    final sync = container.read(backupSyncProvider);
+    expect(sync.status, SyncStatus.failed);
+    expect(sync.failure, BackupFailure.offline);
+
+    // The sync notifier now holds the tasks stream, whose first query lands
+    // across zone timers -- give it frames rather than leaving the provider
+    // to be disposed mid-load when the tree comes down.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 10));
+
+    await closeGate(tester);
   });
 
   testWidgets('a third account is asked again within the same session',
