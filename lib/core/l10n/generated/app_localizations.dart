@@ -1296,17 +1296,77 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'قفل بالبصمة'**
   String get lockSetting;
+
+  /// No description provided for @lockMethodsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة الفتح'**
   String get lockMethodsTitle;
+
+  /// No description provided for @lockMethodBiometric.
+  ///
+  /// In ar, this message translates to:
+  /// **'بصمة فقط'**
   String get lockMethodBiometric;
+
+  /// No description provided for @lockMethodPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة سر فقط'**
   String get lockMethodPassword;
+
+  /// No description provided for @lockMethodBoth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاثنين معًا'**
   String get lockMethodBoth;
+
+  /// No description provided for @setPasswordTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعيين كلمة السر'**
   String get setPasswordTitle;
+
+  /// No description provided for @newPasswordLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة السر الجديدة'**
   String get newPasswordLabel;
+
+  /// No description provided for @confirmNewPasswordLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد كلمة السر الجديدة'**
   String get confirmNewPasswordLabel;
+
+  /// No description provided for @currentPasswordLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة السر الحالية'**
   String get currentPasswordLabel;
+
+  /// No description provided for @passwordMismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمتا السر غير متطابقتين.'**
   String get passwordMismatch;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة السر ٤ أحرف على الأقل.'**
   String get passwordTooShort;
+
+  /// No description provided for @wrongPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة السر غير صحيحة.'**
   String get wrongPassword;
+
+  /// No description provided for @unlockWithPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح بكلمة السر'**
   String get unlockWithPassword;
 
   /// No description provided for @hapticsSetting.

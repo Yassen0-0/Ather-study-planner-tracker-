@@ -694,17 +694,41 @@ class LEn extends L {
 
   @override
   String get lockSetting => 'Fingerprint lock';
+
+  @override
   String get lockMethodsTitle => 'Unlock method';
+
+  @override
   String get lockMethodBiometric => 'Fingerprint only';
+
+  @override
   String get lockMethodPassword => 'Password only';
+
+  @override
   String get lockMethodBoth => 'Both';
+
+  @override
   String get setPasswordTitle => 'Set password';
+
+  @override
   String get newPasswordLabel => 'New password';
+
+  @override
   String get confirmNewPasswordLabel => 'Confirm new password';
+
+  @override
   String get currentPasswordLabel => 'Current password';
-  String get passwordMismatch => 'Passwords don''t match.';
+
+  @override
+  String get passwordMismatch => 'Passwords don\'t match.';
+
+  @override
   String get passwordTooShort => 'Use at least 4 characters.';
+
+  @override
   String get wrongPassword => 'Wrong password.';
+
+  @override
   String get unlockWithPassword => 'Unlock with password';
 
   @override

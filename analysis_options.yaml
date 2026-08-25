@@ -8,6 +8,13 @@ analyzer:
     - wt-session-a/**
     - wt-session-b/**
     - .auto-claude/**
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   rules:
