@@ -133,8 +133,8 @@ void main() {
 
     // All three section headers are up...
     expect(find.text('غير مُثبت — بلا امتحان'), findsOneWidget);
-    expect(find.text('الأضعف إتقانًا'), findsOneWidget);
-    expect(find.text('الأقرب سقوطًا'), findsOneWidget);
+    expect(find.text('الأضعف إتقاناً'), findsOneWidget);
+    expect(find.text('الأقرب معاداً'), findsOneWidget);
 
     // ...and the rows sit in tier order. `widgetList` yields matches in
     // document order, so the row titles must come out ① then ② then ③.
@@ -185,9 +185,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Only tier 3 can speak here: nothing unexamined, nothing weak.
-    expect(find.text('الأقرب سقوطًا'), findsOneWidget);
+    expect(find.text('الأقرب معاداً'), findsOneWidget);
     expect(find.text('غير مُثبت — بلا امتحان'), findsNothing);
-    expect(find.text('الأضعف إتقانًا'), findsNothing);
+    expect(find.text('الأضعف إتقاناً'), findsNothing);
   });
 
   testWidgets('a subject with no lessons gets no button to press',
@@ -240,7 +240,7 @@ void main() {
       reason: 'fromLesson:false lands as from=list on the wizard route',
     );
     // And the sheet itself is gone.
-    expect(find.text('الأضعف إتقانًا'), findsNothing);
+    expect(find.text('الأضعف إتقاناً'), findsNothing);
   });
 }
 
