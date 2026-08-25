@@ -21,6 +21,7 @@ import 'package:ather/presentation/review_center/review_center_screen.dart';
 import 'package:ather/presentation/tasks/tasks_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/established_install.dart';
 import '../support/fake_auth.dart';
 import '../support/fake_backup.dart';
 
@@ -49,7 +50,11 @@ StudySnapshot _emptySnapshot() => StudySnapshot(
 );
 
 Future<Widget> _boot() async {
-  SharedPreferences.setMockInitialValues(<String, Object>{});
+  // Recorded uid matches the signed-in fake: an established install, not a
+  // legacy device. An empty-prefs boot now falls through the account gate and
+  // arms BackupSyncNotifier's upload debounce -- a 20s timer no cold-start
+  // mount-count assertion here needs (or can retire).
+  SharedPreferences.setMockInitialValues(establishedInstallPrefs());
   final preferences = await SharedPreferences.getInstance();
 
   return ProviderScope(
