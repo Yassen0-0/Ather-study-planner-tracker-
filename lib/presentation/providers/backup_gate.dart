@@ -47,7 +47,10 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
   /// not tied to sign-out. Signing out leaves everything in place, so the same
   /// student signing back in -- offline, with work that never reached the cloud
   /// -- finds it exactly as they left it. Data only becomes the wrong data when
-  /// somebody else's account arrives.
+  /// somebody else's account arrives -- or when **no** account was ever
+  /// recorded, the state of every phone upgraded from before logins existed;
+  /// those decide from the data on the device, exactly as a different uid
+  /// would.
   ///
   /// **The wipe is confirmed, never silent.** It is the one destructive act in
   /// the app with no undo, and it sits behind a mis-tap: "create account" and
@@ -69,13 +72,21 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
     final preferences = ref.read(sharedPreferencesProvider);
     final previous = preferences.getString(kLastAccountUidKey);
 
-    // First sign-in ever, or the same student coming back: nothing on this
-    // device belongs to anybody else, so there is nothing to ask about.
-    if (previous == null || previous == uid) {
+    // The same student coming back: nothing on this device belongs to anybody
+    // else, so there is nothing to ask about.
+    if (previous == uid) {
       await preferences.setString(kLastAccountUidKey, uid);
       return true;
     }
 
+    // **A missing key is not an empty device.** Phones that predate accounts
+    // hold a whole curriculum under no uid at all -- the key is written only
+    // here -- and on those the first account this gate ever sees is already
+    // the second student. So `previous == null` falls through to the very
+    // same decision as a known-different uid, made from the data actually on
+    // the device rather than from the absence of a marker (C1): empty means
+    // nobody's record is at risk, non-empty means somebody must consent.
+    //
     // Emptiness is read from the database through `snapshotProvider.future`,
     // the same honest answer _restoreIfEmpty insists on below -- never from
     // the loading fallback. Daily tasks are deliberately not consulted; the

@@ -212,6 +212,42 @@ void main() {
     expect(preferences.getString(kLastAccountUidKey), 'google-uid');
   });
 
+  testWidgets('a legacy device with no recorded uid asks before wiping too',
+      (tester) async {
+    // The C1 upgrade path: this phone ran Ather all year before logins
+    // existed -- no `kLastAccountUidKey`, no session -- yet it holds student
+    // A's whole record. The first account this gate ever sees is therefore
+    // student B signing in, and "no recorded account" must decide exactly the
+    // way "a different account" does, from the data actually present.
+    // Otherwise backgrounding once uploads A's curriculum into B's cloud
+    // document.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    preferences = await SharedPreferences.getInstance();
+    auth = FakeAuthRepository();
+    expect(preferences.getString(kLastAccountUidKey), isNull);
+
+    await tester.pumpWidget(await boot(seeded: true));
+    await tester.pumpAndSettle();
+
+    await auth.signInWithGoogle();
+    await tester.pumpAndSettle();
+
+    expect(find.text('حساب مختلف'), findsOneWidget);
+    expect(find.text('امسح بيانات الجهاز'), findsOneWidget);
+
+    // Confirming hands the device over exactly like any other switch.
+    await tester.tap(find.text('امسح بيانات الجهاز'));
+    await tester.pumpAndSettle();
+
+    await closeGate(tester);
+
+    final wiped = await tester.runAsync(
+      () => DriftStudyRepository(db).readSnapshot(),
+    );
+    expect(wiped!.chapters, isEmpty);
+    expect(preferences.getString(kLastAccountUidKey), 'google-uid');
+  });
+
   testWidgets('the same student signing back in asks nothing', (tester) async {
     await tester.pumpWidget(await boot(seeded: true));
     await tester.pumpAndSettle();
