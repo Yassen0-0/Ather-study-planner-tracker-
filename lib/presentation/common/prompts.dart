@@ -60,11 +60,57 @@ class _NamePromptSheet extends StatefulWidget {
   State<_NamePromptSheet> createState() => _NamePromptSheetState();
 }
 
+/// The name prompt's one validity rule: after trimming whitespace and
+/// stripping every character with no visible form, something must remain.
+///
+/// `trim().isNotEmpty` -- what this sheet used to ask -- answers "does the
+/// string contain code points", not "does it contain content". The zero-width
+/// space (U+200B), the LRM/RLM marks (U+200E/U+200F), the directional
+/// isolates this app's own number formatting emits (U+2066-U+2069) and the
+/// tatweel (ـ U+0640) are all real characters with no ink, and each of them
+/// sailed past a trim. A name built only from those was saved as non-empty,
+/// then rendered in a lesson header as an apparently-blank row.
+///
+/// What is *saved* is still exactly what the student typed -- see
+/// `DriftStudyRepository._matchKey` for why normalising stored names rewrites
+/// a choice the student made. This gate decides validity only.
+///
+/// Composition order matters: strip first, **then** trim. Trimming first lets
+/// plain spaces hide between the invisibles and pass for content.
+bool _nameHasVisibleContent(String raw) {
+  final visible = StringBuffer();
+  for (final rune in raw.runes) {
+    if (!_isFormattingOrTatweel(rune)) visible.writeCharCode(rune);
+  }
+  // The sheet's original blank rule, now applied to what can actually be seen.
+  return visible.toString().trim().isNotEmpty;
+}
+
+/// Unicode category Cf -- format characters, invisible by definition -- plus
+/// the tatweel, which is category Lo but invisible for a name's purposes:
+/// it stretches neighbouring letters and carries no content of its own.
+bool _isFormattingOrTatweel(int rune) {
+  if (rune == 0x0640) return true; // ـ tatweel
+  return switch (rune) {
+    0x00AD || // soft hyphen
+    0x061C || // Arabic letter mark
+    0x180E || // Mongolian vowel separator
+    0xFEFF || // zero-width no-break space / BOM
+    >= 0x200B && <= 0x200F || // ZWSP ZWNJ ZWJ LRM RLM
+    >= 0x202A && <= 0x202E || // LRE RLE PDF LRO RLO
+    >= 0x2060 && <= 0x2064 || // word joiner, invisible operators
+    >= 0x2066 && <= 0x2069 || // LRI RLI FSI PDI
+    >= 0xFFF9 && <= 0xFFFB // interlinear annotation anchors
+    => true,
+    _ => false,
+  };
+}
+
 class _NamePromptSheetState extends State<_NamePromptSheet> {
   late final TextEditingController _controller = TextEditingController(
     text: widget.initialValue,
   );
-  late bool _valid = _controller.text.trim().isNotEmpty;
+  late bool _valid = _nameHasVisibleContent(_controller.text);
 
   @override
   void dispose() {
@@ -79,7 +125,11 @@ class _NamePromptSheetState extends State<_NamePromptSheet> {
     // Was a bare `return`, which swallowed the tap in silence -- the exact thing
     // the comment on the button below says this app never does, and the
     // opposite of what the homework sheet does with the same problem.
-    if (value.isEmpty) {
+    //
+    // The gate is [_nameHasVisibleContent], not isEmpty: a string of zero-width
+    // and direction-mark characters trims to non-empty and used to pass here,
+    // reach drift, and come back out of the database looking blank.
+    if (!_nameHasVisibleContent(value)) {
       setState(() => _showError = true);
       return;
     }
@@ -111,7 +161,7 @@ class _NamePromptSheetState extends State<_NamePromptSheet> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _submit(),
               onChanged: (value) {
-                final valid = value.trim().isNotEmpty;
+                final valid = _nameHasVisibleContent(value);
                 if (valid != _valid) setState(() => _valid = valid);
               },
               style: AppTypography.body,
