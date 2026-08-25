@@ -31,6 +31,18 @@ void main() {
 
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
 
+  /// Unmount the tree before the database closes: the failing backup repo
+  /// arms BackupSyncNotifier during boot, and its provider listens hold live
+  /// drift stream queries that never let `db.close()` finish under the test
+  /// binding if the app is still mounted. Same house teardown as
+  /// backup_test/delete_account.
+  Future<void> closeApp(WidgetTester tester) async {
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 10));
+    await tester.pump(const Duration(milliseconds: 10));
+  }
+
   Future<Widget> boot() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final preferences = await SharedPreferences.getInstance();
@@ -151,8 +163,10 @@ void main() {
       findsNothing,
     );
 
-    // Drift keeps stream-query timers alive; closing here rather than in
-    // tearDown lets them drain before the binding checks for pending timers.
+    // Drift keeps stream-query timers alive; unmount first so the provider
+    // listeners release their queries, then close, then let the rest drain
+    // before the binding checks for pending timers.
+    await closeApp(tester);
     await db.close();
     await tester.pump(const Duration(seconds: 1));
   });
