@@ -9,6 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/clock/clock.dart';
 import '../../core/haptics/app_haptics.dart';
 import '../../data/db/app_database.dart';
+// Mutual import with auth_providers.dart: the account wipe below has to reach
+// both files' preference keys, and each file owns half of them.
+import 'auth_providers.dart';
 import '../../data/repositories/drift_study_repository.dart';
 import '../../domain/entities/study_snapshot.dart';
 import '../../domain/repositories/study_repository.dart';
@@ -206,11 +209,70 @@ const String _kProfileYearKey = 'profile_year';
 
 /// The uid whose data is currently on this device.
 ///
-/// Public because two places have to agree on it: `BackupSyncGate` wipes the
-/// device when a *different* account signs in, and `BackupSyncNotifier` refuses
-/// to upload until the stored uid and the signed-in uid match. Both exist to
-/// stop one student's curriculum reaching another student's cloud document.
+/// Public because several places have to agree on it: `BackupSyncGate` wipes
+/// the device when a *different* account signs in, `BackupSyncNotifier`
+/// refuses to upload until the stored uid and the signed-in uid match, and
+/// [wipeAccountPreferences] clears it. All exist to stop one student's
+/// curriculum reaching another student's cloud document.
 const String kLastAccountUidKey = 'last_account_uid';
+
+/// The last time a cloud copy was successfully brought down onto this device,
+/// as millis-since-epoch -- absent when none ever was.
+///
+/// Written only by `BackupSyncNotifier.restore`, once the copy is actually in
+/// the database. Its one reader is `BackupSyncNotifier.flush`: an **empty**
+/// local record may only be uploaded after the device has seen the cloud,
+/// because until then "empty" might mean "the auto-restore never got through"
+/// rather than "there is nothing" -- and uploading that emptiness would
+/// replace the very copy the student is trying to pull (N4). Lives beside
+/// [kLastAccountUidKey] because it answers the same question -- whose record
+/// does this device hold, and how did it get there -- and because the wipe
+/// below has to reach it.
+const String kLastCloudDownloadKey = 'last_cloud_download_at';
+
+/// Prefix of the exam wizard's per-lesson draft keys:
+/// `'exam_draft_$lessonId'`, written on every keystroke by
+/// `ExamEntryScreen._persistDraft`. The screen owns the full key shape; this
+/// file owns the wipe, so the prefix here must stay in sync with that
+/// screen's `_draftKeyFor` -- a stale draft resurfacing under the next
+/// student is exactly what D-01 exists to prevent.
+const String kExamDraftKeyPrefix = 'exam_draft_';
+
+/// Clears every preference that belongs to a **student** rather than to the
+/// device: their name and year, the app-lock configuration they chose, the
+/// recorded account uid and download marker, and every exam draft.
+///
+/// Both paths that end one student's presence on a phone -- delete-everything
+/// in Settings (`_AccountActionsState`) and the confirmed account-switch wipe
+/// in `BackupSyncGate` -- call this, so a store added later joins the wipe by
+/// living in one list instead of being remembered in three hand-copied
+/// sequences (SEC-04, D-01, arch F-02).
+///
+/// Drafts are matched by prefix because their keys embed the lesson id, which
+/// restarts at 1 after a wipe -- without this, student B inherits student A's
+/// prefilled scores.
+///
+/// Locale, theme and notification choices are deliberately kept: they
+/// describe the device, not the student.
+Future<void> wipeAccountPreferences(SharedPreferences preferences) async {
+  final drafts = preferences
+      .getKeys()
+      .where((key) => key.startsWith(kExamDraftKeyPrefix))
+      .toList(growable: false);
+  for (final key in drafts) {
+    await preferences.remove(key);
+  }
+  await preferences.remove(_kProfileNameKey);
+  await preferences.remove(_kProfileYearKey);
+  await preferences.remove(kLockEnabledKey);
+  await preferences.remove(kLockMethodKey);
+  await preferences.remove(kPasscodeHashKey);
+  await preferences.remove(kPasscodeDigitsKey);
+  // Removed before it is rewritten on the switch path: between the two, flush
+  // sees no owner at all and refuses to upload anything -- the safe direction.
+  await preferences.remove(kLastAccountUidKey);
+  await preferences.remove(kLastCloudDownloadKey);
+}
 
 /// Selected UI locale, persisted.
 ///

@@ -307,6 +307,61 @@ void main() {
     expect(backup.downloadCount, 0);
   });
 
+  testWidgets('the switch wipe clears every student preference too',
+      (tester) async {
+    // D-01 + SEC-04: the database was only half of what student A leaves on
+    // the phone. Drafts keyed by lesson id would resurface under B once ids
+    // restart at 1; the name, year and lock configuration are A's as well.
+    // Device-level choices -- locale here -- are nobody's student record and
+    // stay.
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      kLastAccountUidKey: 'test-uid',
+      'profile_name': 'أحمد',
+      'profile_year': 2,
+      kLockEnabledKey: true,
+      kLockMethodKey: 'password',
+      kPasscodeHashKey: 'salt:digest',
+      kPasscodeDigitsKey: false,
+      kLastCloudDownloadKey: 1754300000000,
+      // The wizard writes one per lesson, so two shapes of stale draft.
+      'exam_draft_5': '[["12","1","9"]]',
+      'exam_draft_12': 'not json at all',
+      'locale_code': 'en',
+    });
+    preferences = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(await boot(seeded: true));
+    await tester.pumpAndSettle();
+
+    await auth.signInWithGoogle();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('امسح بيانات الجهاز'));
+    await tester.pumpAndSettle();
+
+    await closeGate(tester);
+
+    final surviving = preferences.getKeys();
+    expect(
+      surviving.where((key) => key.startsWith('exam_draft_')),
+      isEmpty,
+      reason: "student A's drafts must not be here for student B",
+    );
+    for (final key in <String>[
+      'profile_name',
+      'profile_year',
+      kLockEnabledKey,
+      kLockMethodKey,
+      kPasscodeHashKey,
+      kPasscodeDigitsKey,
+      kLastCloudDownloadKey,
+    ]) {
+      expect(surviving, isNot(contains(key)), reason: '$key survived');
+    }
+    expect(preferences.getString(kLastAccountUidKey), 'google-uid');
+    expect(preferences.getString('locale_code'), 'en');
+  });
+
   testWidgets('a third account is asked again within the same session',
       (tester) async {
     // The session opens owned by an account neither of the two uids the fake

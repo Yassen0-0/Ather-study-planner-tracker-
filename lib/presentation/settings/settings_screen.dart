@@ -727,29 +727,49 @@ class _AccountActionsState extends ConsumerState<_AccountActions> {
     }
   }
 
-  /// Flush → wipe device → delete cloud mirror → delete account. Each step
-  /// only runs if the one before it succeeded, so a failure anywhere leaves
-  /// a state that can be retried rather than half-deleted.
-  Future<void> _deleteEverything() async {
-    final repository = ref.read(authRepositoryProvider);
-    await ref.read(backupSyncProvider.notifier).flush();
+  /// Flush → wipe device → delete cloud mirror → delete account → clear
+  /// preferences. Each step only runs if the one before it succeeded, so a
+  /// failure anywhere leaves a state that can be retried rather than
+  /// half-deleted.
+  ///
+  /// One sequence for both entries into deletion -- the plain delete and the
+  /// re-auth retry differ only in whether there is anything left to flush and
+  /// how the account itself goes away. These were hand-copies that had already
+  /// been written twice (arch F-02); they share this body so the next store
+  /// joins one list instead of being remembered twice more. Preferences are
+  /// wiped strictly **after** the account deletion succeeded (SEC-04): a
+  /// failed attempt must not have taken the student's name and lock with it.
+  Future<void> _runDeletion({
+    required bool flushFirst,
+    required Future<void> Function() deleteAccount,
+  }) async {
+    if (flushFirst) await ref.read(backupSyncProvider.notifier).flush();
     await ref.read(studyRepositoryProvider).clear();
     await ref.read(taskRepositoryProvider).clearTasks();
     await ref.read(backupRepositoryProvider).deleteCloudData();
-    await repository.deleteAccount();
+    await deleteAccount();
+    await wipeAccountPreferences(ref.read(sharedPreferencesProvider));
   }
 
-  /// The password retry after `requires-recent-login`. Same order minus the
-  /// flush — the first attempt already pushed what it could.
+  Future<void> _deleteEverything() async {
+    await _runDeletion(
+      flushFirst: true,
+      deleteAccount: () => ref.read(authRepositoryProvider).deleteAccount(),
+    );
+  }
+
+  /// The password retry after `requires-recent-login`. No flush: the first
+  /// attempt already pushed what it could.
   Future<void> _retryWithPassword() async {
     final l = L.of(context);
     setState(() => _deleting = true);
     try {
       final repository = ref.read(authRepositoryProvider);
-      await ref.read(studyRepositoryProvider).clear();
-      await ref.read(taskRepositoryProvider).clearTasks();
-      await ref.read(backupRepositoryProvider).deleteCloudData();
-      await repository.deleteAccountWithPassword(_reauthPassword!);
+      await _runDeletion(
+        flushFirst: false,
+        deleteAccount: () =>
+            repository.deleteAccountWithPassword(_reauthPassword!),
+      );
     } on Object {
       if (mounted) _reportFailure(l);
     } finally {

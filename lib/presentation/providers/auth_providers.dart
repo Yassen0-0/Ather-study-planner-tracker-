@@ -48,7 +48,10 @@ final needsEmailVerificationProvider = Provider<bool>((ref) {
 
 // --- Biometric app lock ------------------------------------------------------
 
-const String _kLockEnabledKey = 'app_lock_enabled';
+/// Public so [wipeAccountPreferences] can reach them: the lock configuration
+/// describes the student who turned it on, and it must leave the device when
+/// they do (SEC-04).
+const String kLockEnabledKey = 'app_lock_enabled';
 
 final localAuthProvider = Provider<LocalAuthentication>(
   (ref) => LocalAuthentication(),
@@ -76,13 +79,13 @@ final biometricsAvailableProvider = FutureProvider<bool>((ref) async {
 class AppLockNotifier extends Notifier<bool> {
   @override
   bool build() =>
-      ref.watch(sharedPreferencesProvider).getBool(_kLockEnabledKey) ?? false;
+      ref.watch(sharedPreferencesProvider).getBool(kLockEnabledKey) ?? false;
 
   Future<void> set(bool enabled) async {
     state = enabled;
     await ref
         .read(sharedPreferencesProvider)
-        .setBool(_kLockEnabledKey, enabled);
+        .setBool(kLockEnabledKey, enabled);
   }
 }
 
@@ -110,9 +113,9 @@ extension LockMethodX on LockMethod {
   bool get usesPassword => this != LockMethod.biometric;
 }
 
-const String _kLockMethodKey = 'lock_methods';
-const String _kPasscodeHashKey = 'lock_password_hash';
-const String _kPasscodeDigitsKey = 'lock_password_digits';
+const String kLockMethodKey = 'lock_methods';
+const String kPasscodeHashKey = 'lock_password_hash';
+const String kPasscodeDigitsKey = 'lock_password_digits';
 
 /// Tolerant read of the stored preference. Anything unrecognised -- including
 /// a key missing entirely on an install upgraded from before T4 -- lands on
@@ -126,14 +129,14 @@ LockMethod parseLockMethod(String? raw) => switch (raw) {
 class LockMethodNotifier extends Notifier<LockMethod> {
   @override
   LockMethod build() => parseLockMethod(
-    ref.watch(sharedPreferencesProvider).getString(_kLockMethodKey),
+    ref.watch(sharedPreferencesProvider).getString(kLockMethodKey),
   );
 
   Future<void> set(LockMethod method) async {
     state = method;
     await ref
         .read(sharedPreferencesProvider)
-        .setString(_kLockMethodKey, method.name);
+        .setString(kLockMethodKey, method.name);
   }
 }
 
@@ -158,19 +161,19 @@ class AppPasscodeNotifier extends Notifier<StoredAppPasscode?> {
   @override
   StoredAppPasscode? build() {
     final prefs = ref.watch(sharedPreferencesProvider);
-    final hash = prefs.getString(_kPasscodeHashKey);
+    final hash = prefs.getString(kPasscodeHashKey);
     if (hash == null) return null;
     return StoredAppPasscode(
       hash: hash,
-      digitsOnly: prefs.getBool(_kPasscodeDigitsKey) ?? false,
+      digitsOnly: prefs.getBool(kPasscodeDigitsKey) ?? false,
     );
   }
 
   Future<void> set(StoredAppPasscode passcode) async {
     state = passcode;
     final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_kPasscodeHashKey, passcode.hash);
-    await prefs.setBool(_kPasscodeDigitsKey, passcode.digitsOnly);
+    await prefs.setString(kPasscodeHashKey, passcode.hash);
+    await prefs.setBool(kPasscodeDigitsKey, passcode.digitsOnly);
   }
 }
 

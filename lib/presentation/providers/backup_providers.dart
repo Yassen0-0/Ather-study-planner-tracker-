@@ -14,17 +14,6 @@ final backupRepositoryProvider = Provider<BackupRepository>(
   (ref) => FirestoreBackupRepository(),
 );
 
-/// The last time a cloud copy was successfully brought down onto this device,
-/// as millis-since-epoch -- absent when none ever was.
-///
-/// Written only by [BackupSyncNotifier.restore], once the copy is actually in
-/// the database. Its one reader is [BackupSyncNotifier.flush]: an **empty**
-/// local record may only be uploaded after the device has seen the cloud,
-/// because until then "empty" might mean "the auto-restore never got through"
-/// rather than "there is nothing" -- and uploading that emptiness would
-/// replace the very copy the student is trying to pull.
-const String kLastCloudDownloadKey = 'last_cloud_download_at';
-
 /// What the Settings card shows. Never blocks anything.
 enum SyncStatus {
   /// Nothing has been sent yet this session, and nothing is known to be wrong.

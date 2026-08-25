@@ -101,6 +101,12 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
 
     await ref.read(studyRepositoryProvider).clear();
     await ref.read(taskRepositoryProvider).clearTasks();
+    // The database was only half of what the previous student left: drafts
+    // keyed by lesson id would resurface under the new student once ids
+    // restart at 1 (D-01), and the name and lock configuration are theirs too
+    // (SEC-04). Runs before the uid rewrite below, so a crash mid-wipe leaves
+    // no uid recorded rather than the wrong one.
+    await wipeAccountPreferences(preferences);
     // The restore below asks whether the device is empty, and the stream it
     // asks may not have re-emitted since these deletes landed -- a stale
     // non-empty answer would skip the auto-restore for the very student who
