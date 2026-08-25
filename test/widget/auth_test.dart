@@ -225,7 +225,7 @@ void main() {
     await tester.tap(find.text('دخول'));
     await tester.pumpAndSettle();
     expect(
-      find.text('كلمة السر ٨ أحرف على الأقل'),
+      find.text('كلمة السر 8 أحرف على الأقل.'),
       findsNothing,
       reason: 'the server decides whether an existing password is right',
     );
@@ -257,7 +257,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(submit);
     await tester.pumpAndSettle();
-    expect(find.text('كلمة السر ٨ أحرف على الأقل'), findsOneWidget);
+    expect(find.text('كلمة السر 8 أحرف على الأقل.'), findsOneWidget);
 
     // And nothing was sent: validation refuses before the network is touched.
     expect(auth.currentAccount, isNull);

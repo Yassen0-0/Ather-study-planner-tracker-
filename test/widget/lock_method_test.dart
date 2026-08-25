@@ -274,7 +274,7 @@ void main() {
     await tester.enterText(find.byType(TextField).at(1), '24');
     await tester.tap(find.text('حفظ'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('٤ أحرف على الأقل'), findsOneWidget);
+    expect(find.textContaining('4 أحرف على الأقل'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).at(0), '2468');
     await tester.enterText(find.byType(TextField).at(1), '2468');
