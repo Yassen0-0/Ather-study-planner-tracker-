@@ -520,8 +520,10 @@ void main() {
       await tester.tap(find.text('التالي'));
       await tester.pumpAndSettle();
 
-      // Step 3: three of them right -> 6 of 10 points -> 60%.
+      // Step 3: three of them right -> 6 of 10 points -> 60%. One pump so
+      // the button re-arms from the typed text before the tap lands.
       await tester.enterText(find.byType(TextField).first, '3');
+      await tester.pump();
       await tester.tap(find.text('التالي'));
       await tester.pumpAndSettle();
 
@@ -570,6 +572,48 @@ void main() {
     );
 
     testWidgets(
+      'a blank correct count cannot silently record an all-wrong paper',
+      (tester) async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final preferences = await SharedPreferences.getInstance();
+
+        await pumpWizard(tester, preferences);
+
+        // Describe the paper: five questions worth two marks each.
+        await tester.enterText(find.byType(TextField).first, '5');
+        await tester.tap(find.text('التالي'));
+        await tester.pumpAndSettle();
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), '5');
+        await tester.enterText(fields.at(1), '2');
+        await tester.tap(find.text('التالي'));
+        await tester.pumpAndSettle();
+
+        // Step 3 arrives with the correct-count field still blank. Tapping
+        // Next must go nowhere: a blank used to parse as 0 and an unfinished
+        // form saved itself as a paper answered entirely wrong.
+        expect(find.byType(TextField), findsOneWidget);
+        await tester.tap(find.text('التالي'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ExamEntryScreen), findsOneWidget);
+        expect(find.text(iso('0%')), findsNothing);
+
+        // Entering the count re-arms Next, and the flow completes normally:
+        // 3 of 5 right at two points each -> 60%. One pump lets the button
+        // rebuild from the typed text before the tap.
+        await tester.enterText(find.byType(TextField).first, '3');
+        await tester.pump();
+        await tester.tap(find.text('التالي'));
+        await tester.pumpAndSettle();
+        expect(find.text(iso('60%')), findsExactly(2));
+
+        dbClosedByTest = true;
+        await db.close();
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+
+    testWidgets(
       'step 4: the bar and the number land on one beat (SP-04أ)',
       (tester) async {
         SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -587,6 +631,8 @@ void main() {
         await tester.tap(find.text('التالي'));
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField).first, '3');
+        // One pump so the gated Next re-arms from the typed count.
+        await tester.pump();
 
         double step4BarFill() => tester
             .widget<FractionallySizedBox>(

@@ -219,6 +219,18 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
     if (_error != null) setState(() => _error = null);
   }
 
+  /// Step 3's Next is gated on every group having a *typed* correct count:
+  /// a blank parses to 0, and advancing would record an all-wrong paper from
+  /// an unfinished form (N9). A typed 0 stays valid -- all-wrong is a real
+  /// answer when the student said so.
+  bool get _step3Complete => _groups.every((g) {
+    final correct = int.tryParse(g.correct.text);
+    return correct != null && correct >= 0 && correct <= g.countValue;
+  });
+
+  /// Whether the bottom bar's primary action may fire on this step.
+  bool get _nextAllowed => _step != 3 || _step3Complete;
+
   int get _totalValue => int.tryParse(_total.text) ?? 0;
 
   int get _assigned =>
@@ -512,6 +524,20 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen> {
                         ? PrimaryButtonTone.wrong
                         : PrimaryButtonTone.primary,
                     busy: _saving,
+                    // No validation banner covers "you have not typed this
+                    // yet" among the wizard's strings, so the button itself
+                    // carries the rule: Next stays inert until every group
+                    // has a count (N9).
+                    //
+                    // Gated through the controllers' own notifications rather
+                    // than a setState: the rest of the route must not rebuild
+                    // per keystroke (PF1), so only the button re-reads the
+                    // rule as the student types.
+                    nextEnabled: () => _nextAllowed,
+                    nextEnabledWhen: Listenable.merge(<Listenable>[
+                      _total,
+                      for (final group in _groups) group.correct,
+                    ]),
                     onBack: _back,
                     onNext: _next,
                   ),
@@ -1206,6 +1232,8 @@ class _BottomBar extends StatelessWidget {
     required this.nextTone,
     required this.onBack,
     required this.onNext,
+    required this.nextEnabled,
+    required this.nextEnabledWhen,
     this.busy = false,
   });
 
@@ -1214,6 +1242,14 @@ class _BottomBar extends StatelessWidget {
   final PrimaryButtonTone nextTone;
   final VoidCallback onBack;
   final VoidCallback onNext;
+
+  /// Re-evaluated whenever [nextEnabledWhen] fires.
+  ///
+  /// The listenable indirection exists so a step whose completeness depends on
+  /// typed text (step 3) can arm and disarm the button without dragging the
+  /// whole route through a rebuild per keystroke.
+  final bool Function() nextEnabled;
+  final Listenable nextEnabledWhen;
 
   /// The save is in flight. Back is disabled too: stepping out from under a
   /// write in progress is the one way to end up unsure whether it landed.
@@ -1243,11 +1279,17 @@ class _BottomBar extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               flex: 2,
-              child: PrimaryButton(
-                label: nextLabel,
-                tone: nextTone,
-                busy: busy,
-                onTap: onNext,
+              child: ListenableBuilder(
+                listenable: nextEnabledWhen!,
+                builder: (context, _) {
+                  final allowed = nextEnabled!.call();
+                  return PrimaryButton(
+                    label: nextLabel,
+                    tone: nextTone,
+                    busy: busy,
+                    onTap: busy || !allowed ? null : onNext,
+                  );
+                },
               ),
             ),
           ],
