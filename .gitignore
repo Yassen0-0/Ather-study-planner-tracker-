@@ -78,6 +78,17 @@ android/key.properties
 *.jks
 *.keystore
 
+# The three rules above are path-anchored, and that is not enough. When the
+# upload key was carried over from the Windows machine on 2026-08-28 it arrived
+# in a folder inside the repository together with a copy of key.properties. The
+# .jks was ignored by the wildcard; `arch/key.properties` was NOT, because the
+# rule above names `android/key.properties` and nothing else. One `git add -A`
+# -- a command this repository's own workflow runs -- would have committed the
+# keystore passwords in plain text, permanently, in every clone.
+key.properties
+*.p12
+*.pfx
+
 # The APK served from the site. Firebase Hosting deploys whatever is in
 # `public/`, so the file has to be there at deploy time -- but a 24MB binary
 # committed once per release makes the repository grow by a quarter of a
