@@ -157,6 +157,9 @@ class _LinkedProvider implements UserInfo {
 
 /// A signed-in user whose sign-in is too old to delete: Firebase answers
 /// `requires-recent-login` until the user re-authenticates.
+// MockUser's own fields (_displayName, _photoURL) are mutable, so any subclass
+// trips this whatever its own fields are; the mock cannot be subclassed clean.
+// ignore: must_be_immutable
 class _StaleSessionUser extends MockUser {
   _StaleSessionUser({required String providerId})
     : super(

@@ -128,7 +128,12 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       }
     }
 
+    // Gone mid-hand-over (the app closed): stop without touching `ref`. The
+    // old uid is still recorded, so the next launch asks again -- the same
+    // recovery a crash mid-wipe gets, described below.
+    if (!mounted) return false;
     await ref.read(studyRepositoryProvider).clear();
+    if (!mounted) return false;
     await ref.read(taskRepositoryProvider).clearTasks();
     // The database was only half of what the previous student left: drafts
     // keyed by lesson id would resurface under the new student once ids
@@ -136,6 +141,7 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
     // (SEC-04). Runs before the uid rewrite below, so a crash mid-wipe leaves
     // no uid recorded rather than the wrong one.
     await wipeAccountPreferences(preferences);
+    if (!mounted) return false;
     // The restore below asks whether the device is empty, and the stream it
     // asks may not have re-emitted since these deletes landed -- a stale
     // non-empty answer would skip the auto-restore for the very student who
@@ -258,6 +264,10 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
     // data on the device is not theirs -- and if they declined to hand it
     // over, neither the wipe nor this session's restore may touch anything.
     if (!await _clearIfDifferentAccount(uid)) return;
+    // Every await below can outlive this widget (the app closing mid-restore),
+    // and `ref` throws once it has; each one is followed by this check before
+    // `ref` is touched again.
+    if (!mounted) return;
 
     // `snapshotProvider.future`, not `snapshotValueProvider`: awaiting the
     // stream's first real emission gives a true answer, and it goes through the
@@ -280,12 +290,13 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       debugPrint(
         'Ather: automatic restore held -- device read failed: $error\n$stack',
       );
+      if (!mounted) return;
       ref.read(backupSyncProvider.notifier).reportFailure(
             BackupFailure.unknown,
           );
       return;
     }
-    if (!empty) return;
+    if (!empty || !mounted) return;
 
     try {
       final backup = await ref.read(backupRepositoryProvider).download();
@@ -308,12 +319,13 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
         debugPrint(
           'Ather: automatic restore held -- re-read failed: $error\n$stack',
         );
+        if (!mounted) return;
         ref.read(backupSyncProvider.notifier).reportFailure(
               BackupFailure.unknown,
             );
         return;
       }
-      if (!stillEmpty) return;
+      if (!stillEmpty || !mounted) return;
       await ref.read(backupSyncProvider.notifier).restore(backup);
     } on BackupException catch (e) {
       // Offline, or the rules were never published. Either way the app is
@@ -321,6 +333,7 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       // but the sync card carries the news instead of swallowing it (N14),
       // exactly as a failed upload already does.
       debugPrint('Ather: automatic restore failed -- ${e.failure}');
+      if (!mounted) return;
       _restoreFailed = true;
       ref.read(backupSyncProvider.notifier).reportFailure(e.failure);
     }

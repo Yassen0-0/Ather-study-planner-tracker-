@@ -145,6 +145,7 @@ class BackupSyncNotifier extends Notifier<SyncState> {
       tasks = await ref.read(tasksProvider.future);
     } on Object catch (error, stack) {
       debugPrint('Ather: holding upload -- local read failed: $error\n$stack');
+      if (!ref.mounted) return;
       state = state.copyWith(
         status: SyncStatus.failed,
         failure: BackupFailure.unknown,
@@ -177,7 +178,18 @@ class BackupSyncNotifier extends Notifier<SyncState> {
     // A brand-new account loses nothing by this: there was nothing in its
     // cloud document to protect, and the first real upload creates it as
     // before.
+    // Every `await` in this method is a point where the notifier can be torn
+    // down under it -- the app closing mid-flush, the container of a test
+    // ending -- and touching `ref` or `state` after that throws. Each await
+    // that is followed by either is therefore followed by this check first. A
+    // flush abandoned here has uploaded nothing it has not finished uploading;
+    // the next session's first write schedules another.
+    if (!ref.mounted) return;
     final preferences = ref.read(sharedPreferencesProvider);
+    // Read up front, so the in-sync marker can still be written after a
+    // completed upload even if the notifier is gone by then: the marker states
+    // a fact about the cloud, not about this notifier.
+    final clock = ref.read(clockProvider);
     final knowsCloud =
         preferences.getInt(kLastCloudDownloadKey) != null ||
         preferences.getInt(kCloudInSyncKey) != null;
@@ -199,6 +211,7 @@ class BackupSyncNotifier extends Notifier<SyncState> {
       // would let the first restore erase exactly what the events table
       // exists to keep.
       final events = await ref.read(studyRepositoryProvider).readEvents();
+      if (!ref.mounted) return;
       final backup = StudyBackup.fromSnapshot(snapshot, tasks, events: events);
       final repository = ref.read(backupRepositoryProvider);
 
@@ -231,6 +244,7 @@ class BackupSyncNotifier extends Notifier<SyncState> {
       // ([kCloudInSyncKey]) and later flushes skip the look.
       if (!knowsCloud && !overwriteCloud) {
         final cloud = await repository.readMetadata();
+        if (!ref.mounted) return;
         if (cloud != null &&
             (cloud.chapterCount > backup.chapterCount ||
                 cloud.examCount > backup.examCount)) {
@@ -260,17 +274,20 @@ class BackupSyncNotifier extends Notifier<SyncState> {
       if (!knowsCloud) {
         await preferences.setInt(
           kCloudInSyncKey,
-          ref.read(clockProvider).now().millisecondsSinceEpoch,
+          clock.now().millisecondsSinceEpoch,
         );
       }
+      if (!ref.mounted) return;
       state = state.copyWith(
         status: SyncStatus.saved,
-        lastSavedAt: ref.read(clockProvider).now(),
+        lastSavedAt: clock.now(),
         clearFailure: true,
       );
     } on BackupException catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(status: SyncStatus.failed, failure: e.failure);
     } on Object {
+      if (!ref.mounted) return;
       state = state.copyWith(
         status: SyncStatus.failed,
         failure: BackupFailure.unknown,
@@ -295,6 +312,11 @@ class BackupSyncNotifier extends Notifier<SyncState> {
   /// process death strand a half-state that the next flush made
   /// cloud-permanent.
   Future<void> restore(StudyBackup backup) async {
+    // Read before the first await, like flush: the marker below records that
+    // the database now holds the cloud copy, which stays true even if this
+    // notifier is disposed while the transaction runs.
+    final preferences = ref.read(sharedPreferencesProvider);
+    final clock = ref.read(clockProvider);
     await DriftStudyRepository(
       ref.read(databaseProvider),
     ).restoreEverything(backup);
@@ -302,12 +324,11 @@ class BackupSyncNotifier extends Notifier<SyncState> {
     // Only a *completed* bring-down marks the device: from here an empty local
     // record is an informed state that flush may upload, not a failed
     // auto-restore it must protect (N4).
-    await ref
-        .read(sharedPreferencesProvider)
-        .setInt(
-          kLastCloudDownloadKey,
-          ref.read(clockProvider).now().millisecondsSinceEpoch,
-        );
+    await preferences.setInt(
+      kLastCloudDownloadKey,
+      clock.now().millisecondsSinceEpoch,
+    );
+    if (!ref.mounted) return;
 
     // Whatever the card was reporting -- a failed automatic restore, or a
     // cloudHasMore hold -- has been answered: device and cloud now agree.
