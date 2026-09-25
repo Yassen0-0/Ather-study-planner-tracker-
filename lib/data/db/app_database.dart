@@ -68,38 +68,32 @@ class AppDatabase extends _$AppDatabase {
     // Additive only: new tables and new nullable columns, nothing dropped and
     // nothing rewritten. The student's curriculum is the one thing in this
     // file that cannot be regenerated.
+    //
+    // **Safe against process death between two statements (D3).** drift does
+    // not run this callback in a transaction, and it writes `user_version`
+    // only after the callback returns. A phone killed between, say, the first
+    // and second `addColumn` of step 3 used to reopen at version 2 with
+    // `subjects.name` already present -- and every later open failed on
+    // "duplicate column name", an app that can never open its own data again.
+    // Two independent guards now:
+    //
+    // * the whole ladder runs in one transaction, with the new version
+    //   written *inside* it. SQLite's DDL is transactional and so is
+    //   `user_version`: a death anywhere rolls every step back to the
+    //   version the file claims;
+    // * every step is idempotent anyway -- `createTable` is
+    //   `CREATE TABLE IF NOT EXISTS`, columns go through [_addColumnIfMissing],
+    //   the seed is insert-or-ignore. That is what heals a file already left
+    //   half-migrated by a build without the transaction: a rollback cannot
+    //   rescue a step that has already been committed.
     onUpgrade: (Migrator m, int from, int to) async {
       try {
-        if (from < 2) await m.createTable(dailyTasks);
-        if (from < 3) {
-          await m.addColumn(subjects, subjects.name);
-          await m.addColumn(subjects, subjects.archivedAt);
-          await m.addColumn(subjects, subjects.deletedAt);
-          // The last time the seed is ever allowed to run against an existing
-          // database. It covers a file created before a seed change, and it can
-          // only add rows the student never had the ability to delete -- because
-          // until this very migration, they did not.
-          await _seedSubjects();
-        }
-        if (from < 4) {
-          // 4 added the capture-only study event log. Written by nothing
-          // before it existed, so the upgrade has exactly one job: make the
-          // table exist, and leave every other byte alone.
-          await m.createTable(studyEvents);
-        }
-        if (from < 5 && from >= 2) {
-          // 5 added the surrender flag. ADD COLUMN with DEFAULT 0 is the only
-          // shape that can run against a table holding rows: SQLite applies
-          // the default to every existing row in place -- pre-existing tasks
-          // were never surrendered, and they now say so -- while nothing is
-          // rewritten and the done flags keep every value they had.
-          //
-          // Skipped when the climb starts below 2: there `daily_tasks` did
-          // not exist yet, and `createTable` above built it straight to the
-          // current shape -- column included -- so adding it again would fail
-          // on a duplicate column name.
-          await m.addColumn(dailyTasks, dailyTasks.surrendered);
-        }
+        await transaction(() async {
+          await _upgrade(m, from);
+          // Inside the transaction, so it commits or rolls back with the
+          // steps. drift writes the same value again once this returns.
+          await customStatement('PRAGMA user_version = $to');
+        });
       } catch (error, stack) {
         // Report non-fatal error to Crashlytics before rethrowing.
         // Migration failures are critical: they prevent the app from opening
@@ -115,6 +109,56 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// The version ladder itself. Each step may find its work already done --
+  /// see the D3 note on [migration] -- and must then do nothing.
+  Future<void> _upgrade(Migrator m, int from) async {
+    if (from < 2) await m.createTable(dailyTasks);
+    if (from < 3) {
+      await _addColumnIfMissing(m, subjects, subjects.name);
+      await _addColumnIfMissing(m, subjects, subjects.archivedAt);
+      await _addColumnIfMissing(m, subjects, subjects.deletedAt);
+      // The last time the seed is ever allowed to run against an existing
+      // database. It covers a file created before a seed change, and it can
+      // only add rows the student never had the ability to delete -- because
+      // until this very migration, they did not.
+      await _seedSubjects();
+    }
+    if (from < 4) {
+      // 4 added the capture-only study event log. Written by nothing
+      // before it existed, so the upgrade has exactly one job: make the
+      // table exist, and leave every other byte alone.
+      await m.createTable(studyEvents);
+    }
+    if (from < 5 && from >= 2) {
+      // 5 added the surrender flag. ADD COLUMN with DEFAULT 0 is the only
+      // shape that can run against a table holding rows: SQLite applies
+      // the default to every existing row in place -- pre-existing tasks
+      // were never surrendered, and they now say so -- while nothing is
+      // rewritten and the done flags keep every value they had.
+      //
+      // Skipped when the climb starts below 2: there `daily_tasks` did
+      // not exist yet, and `createTable` above built it straight to the
+      // current shape -- column included -- so adding it again would fail
+      // on a duplicate column name.
+      await _addColumnIfMissing(m, dailyTasks, dailyTasks.surrendered);
+    }
+  }
+
+  /// `ALTER TABLE ... ADD COLUMN`, unless the column is already there.
+  ///
+  /// SQLite has no `ADD COLUMN IF NOT EXISTS`, so the table is asked first.
+  Future<void> _addColumnIfMissing(
+    Migrator m,
+    TableInfo<Table, dynamic> table,
+    GeneratedColumn<Object> column,
+  ) async {
+    final columns = await customSelect(
+      'PRAGMA table_info(${table.actualTableName})',
+    ).get();
+    if (columns.any((row) => row.read<String>('name') == column.name)) return;
+    await m.addColumn(table, column);
+  }
 
   /// Puts the subjects table back to exactly the four Ather ships with.
   ///

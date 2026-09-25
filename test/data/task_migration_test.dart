@@ -99,36 +99,131 @@ void main() {
     // The seed is still idempotent across the upgrade: four subjects, not eight.
     expect(await db.select(db.subjects).get(), hasLength(4));
 
-    expect(db.schemaVersion, 5); // 5 = study_events capture table, then surrender
+    expect(
+      db.schemaVersion,
+      5,
+    ); // 5 = study_events capture table, then surrender
   });
 
-  test('upgrading from v2 adds the subject columns and keeps everything', () async {
-    await seedV2Database();
+  test(
+    'upgrading from v2 adds the subject columns and keeps everything',
+    () async {
+      await seedV2Database();
+
+      final db = open();
+      addTearDown(db.close);
+
+      // The columns exist and are writable, not merely declared.
+      await db.customStatement(
+        "INSERT INTO subjects (id, code, name, sort_order) "
+        "VALUES (99, 'custom', 'رياضيات', 4)",
+      );
+      final subjects = await db.select(db.subjects).get();
+      expect(subjects, hasLength(5));
+      expect(subjects.firstWhere((s) => s.id == 99).name, 'رياضيات');
+      // The four that were already there kept their null name rather than being
+      // rewritten with one -- their names come from the ARB files.
+      expect(subjects.firstWhere((s) => s.id == 1).name, isNull);
+      expect(subjects.every((s) => s.archivedAt == null), isTrue);
+      // Nothing arrives in the recycle bin as a side effect of upgrading.
+      expect(subjects.every((s) => s.deletedAt == null), isTrue);
+
+      // And nothing the student built was touched on the way.
+      final chapters = await db.select(db.chapters).get();
+      expect(chapters, hasLength(1));
+      expect(chapters.single.name, 'الباب الأول — الخلية');
+
+      expect(
+        db.schemaVersion,
+        5,
+      ); // 5 = study_events capture table, then surrender
+    },
+  );
+
+  // D3: drift runs onUpgrade outside any transaction and writes user_version
+  // only after it returns, so a phone killed between two statements of one
+  // step reopened half-migrated at the old version -- and every open after
+  // that failed on "duplicate column name". These are the files that state
+  // leaves behind.
+  test('a v2 file killed in the middle of step 3 still upgrades', () async {
+    // `subjects.name` made it to disk; `archived_at`, `deleted_at`, the
+    // study_events table and the surrender column did not; the file still
+    // says version 2.
+    final seed = open();
+    await seed
+        .into(seed.chapters)
+        .insert(
+          ChaptersCompanion.insert(
+            subjectId: 1,
+            name: 'الباب الأول — الخلية',
+            createdAt: DateTime(2026, 7, 1),
+          ),
+        );
+    await seed.customStatement('ALTER TABLE subjects DROP COLUMN archived_at');
+    await seed.customStatement('ALTER TABLE subjects DROP COLUMN deleted_at');
+    await seed.customStatement('DROP TABLE study_events');
+    await seed.customStatement(
+      'ALTER TABLE daily_tasks DROP COLUMN surrendered',
+    );
+    await seed.customStatement('PRAGMA user_version = 2');
+    await seed.close();
 
     final db = open();
     addTearDown(db.close);
 
-    // The columns exist and are writable, not merely declared.
-    await db.customStatement(
-      "INSERT INTO subjects (id, code, name, sort_order) "
-      "VALUES (99, 'custom', 'رياضيات', 4)",
-    );
+    // It opens, and every column of every step is there and usable.
     final subjects = await db.select(db.subjects).get();
-    expect(subjects, hasLength(5));
-    expect(subjects.firstWhere((s) => s.id == 99).name, 'رياضيات');
-    // The four that were already there kept their null name rather than being
-    // rewritten with one -- their names come from the ARB files.
-    expect(subjects.firstWhere((s) => s.id == 1).name, isNull);
+    expect(subjects, hasLength(4));
     expect(subjects.every((s) => s.archivedAt == null), isTrue);
-    // Nothing arrives in the recycle bin as a side effect of upgrading.
     expect(subjects.every((s) => s.deletedAt == null), isTrue);
+    expect(await db.select(db.studyEvents).get(), isEmpty);
+    await db
+        .into(db.dailyTasks)
+        .insert(
+          DailyTasksCompanion.insert(
+            day: DateTime(2026, 8, 5),
+            title: 'أذاكر',
+            sortOrder: 0,
+            createdAt: DateTime(2026, 8, 5),
+          ),
+        );
+    expect((await db.select(db.dailyTasks).getSingle()).surrendered, isFalse);
 
-    // And nothing the student built was touched on the way.
     final chapters = await db.select(db.chapters).get();
-    expect(chapters, hasLength(1));
     expect(chapters.single.name, 'الباب الأول — الخلية');
 
-    expect(db.schemaVersion, 5); // 5 = study_events capture table, then surrender
+    // And the version marker moved, so the next open does not climb again.
+    final version = await db.customSelect('PRAGMA user_version').getSingle();
+    expect(version.read<int>('user_version'), 5);
+  });
+
+  test('every step is a no-op on a file that already has its work', () async {
+    // The extreme of the same failure: the whole ladder landed but the
+    // version did not. Replaying it from 1 must change nothing and fail on
+    // nothing.
+    final seed = open();
+    await seed
+        .into(seed.chapters)
+        .insert(
+          ChaptersCompanion.insert(
+            subjectId: 1,
+            name: 'الباب الأول — الخلية',
+            createdAt: DateTime(2026, 7, 1),
+          ),
+        );
+    await seed.customStatement('PRAGMA user_version = 1');
+    await seed.close();
+
+    final db = open();
+    addTearDown(db.close);
+
+    expect(await db.select(db.subjects).get(), hasLength(4));
+    expect(
+      (await db.select(db.chapters).get()).single.name,
+      'الباب الأول — الخلية',
+    );
+    final version = await db.customSelect('PRAGMA user_version').getSingle();
+    expect(version.read<int>('user_version'), 5);
   });
 
   test('the seed never runs again once a subject can be deleted', () async {
@@ -159,6 +254,9 @@ void main() {
 
     expect(await db.select(db.dailyTasks).get(), isEmpty);
     expect(await db.select(db.subjects).get(), hasLength(4));
-    expect(db.schemaVersion, 5); // 5 = study_events capture table, then surrender
+    expect(
+      db.schemaVersion,
+      5,
+    ); // 5 = study_events capture table, then surrender
   });
 }
