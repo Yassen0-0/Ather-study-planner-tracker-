@@ -240,6 +240,10 @@ class BackupSyncNotifier extends Notifier<SyncState> {
       // * the look itself fails (offline) -> the catch below records it and
       //   nothing is uploaded or marked; the next flush looks again.
       //
+      // Subjects are not in the metadata (no field carries them), so a cloud
+      // copy holding only custom subjects compares as empty here. The most
+      // that rule can overwrite is subject names -- never a chapter or exam.
+      //
       // Once an upload has gone through on these terms the device is marked
       // ([kCloudInSyncKey]) and later flushes skip the look.
       if (!knowsCloud && !overwriteCloud) {
