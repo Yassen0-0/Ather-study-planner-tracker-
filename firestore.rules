@@ -12,7 +12,8 @@ rules_version = '2';
 // every student with no code change to explain it.
 //
 // The client half of this contract is `FirestoreBackupRepository`, which writes
-// one document per student at `users/{uid}/backup/snapshot`.
+// one document per student at `users/{uid}/backup/snapshot` -- and that one
+// document, in that one shape, is all these rules admit.
 //
 // Deploy with:  firebase deploy --only firestore:rules
 // Nothing deploys these automatically; `firebase.json` only makes it possible.
@@ -23,9 +24,33 @@ service cloud.firestore {
     // else. `request.auth.uid == uid` is the whole guarantee: the uid in the
     // path has to be the uid on the token, so a client cannot ask for someone
     // else's document by editing a path.
-    match /users/{uid}/backup/{document=**} {
+    //
+    // **One exact document, not `backup/{document=**}`** (S1). The client only
+    // ever writes `users/{uid}/backup/snapshot`; the old wildcard also let a
+    // signed-in client create any number of other documents, at any depth,
+    // under its own `backup/` -- unbounded storage on this project's bill, and
+    // none of it ever read by the app. Anything else under `backup/` now falls
+    // through to the global deny below.
+    match /users/{uid}/backup/snapshot {
       allow read: if request.auth != null && request.auth.uid == uid;
 
+      // The document's shape is pinned to exactly what
+      // `FirestoreBackupRepository.upload` writes, field by field:
+      //
+      //   payload        bytes      the gzipped record (size ceiling below)
+      //   checksum       string     SHA-256 hex of the payload; absent on
+      //                             documents written before format 3, and
+      //                             builds from then are still installed, so it
+      //                             is allowed rather than required
+      //   formatVersion  int
+      //   chapterCount   int >= 0   read by readMetadata without the payload
+      //   examCount      int >= 0
+      //   updatedAt      timestamp  FieldValue.serverTimestamp()
+      //
+      // `hasOnly` refuses any other field; `hasAll` requires the five every
+      // build has always written. Change `upload()` and this list together --
+      // `test/security/firestore_rules_test.dart` fails if they drift apart.
+      //
       // The size ceiling is also enforced client-side (`_maxBlobBytes`, 900 KiB)
       // so a student gets a real error instead of a rejection they cannot read.
       // It is repeated here because a client-side limit is a courtesy, not a
@@ -47,8 +72,22 @@ service cloud.firestore {
       // loss, it is the operation an "erase my data" feature is made of.
       allow create, update: if request.auth != null
                             && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly([
+                                 'payload', 'checksum', 'formatVersion',
+                                 'chapterCount', 'examCount', 'updatedAt'])
+                            && request.resource.data.keys().hasAll([
+                                 'payload', 'formatVersion',
+                                 'chapterCount', 'examCount', 'updatedAt'])
                             && request.resource.data.payload is bytes
-                            && request.resource.data.payload.size() <= 921600;
+                            && request.resource.data.payload.size() <= 921600
+                            && (!('checksum' in request.resource.data)
+                                || request.resource.data.checksum is string)
+                            && request.resource.data.formatVersion is int
+                            && request.resource.data.chapterCount is int
+                            && request.resource.data.chapterCount >= 0
+                            && request.resource.data.examCount is int
+                            && request.resource.data.examCount >= 0
+                            && request.resource.data.updatedAt is timestamp;
 
       allow delete: if request.auth != null && request.auth.uid == uid;
     }

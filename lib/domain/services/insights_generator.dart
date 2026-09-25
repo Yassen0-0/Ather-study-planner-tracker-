@@ -488,7 +488,11 @@ abstract final class InsightsGenerator {
     }
     if (latest == null) return 0;
     if (previousCount == 0) return latest.percentage;
-    return latest.percentage * 0.7 + (previousTotal / previousCount) * 0.3;
+    // The same weights as MasteryCalculator, by name: a literal copy would
+    // let the trajectory drift from the figure it is plotting the moment
+    // either constant moved.
+    return latest.percentage * kRecentWeight +
+        (previousTotal / previousCount) * kHistoryWeight;
   }
 }
 

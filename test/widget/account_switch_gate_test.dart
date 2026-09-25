@@ -221,6 +221,32 @@ void main() {
     expect(preferences.getString(kLastAccountUidKey), 'google-uid');
   });
 
+  // D6: emptiness used to mean "no chapters and no lessons", so a phone
+  // holding nothing but subjects the student had created changed hands with
+  // no question asked -- and lost them.
+  testWidgets('a device with only a custom subject still asks before wiping',
+      (tester) async {
+    await DriftStudyRepository(db).createSubject(name: 'رياضيات');
+    await tester.pumpWidget(await boot(seeded: false));
+    await tester.pumpAndSettle();
+
+    await auth.signInWithGoogle();
+    await tester.pumpAndSettle();
+
+    expect(find.text('حساب مختلف'), findsOneWidget);
+    await tester.tap(find.text('إلغاء'));
+    await tester.pumpAndSettle();
+
+    await closeGate(tester);
+
+    final kept = await tester.runAsync(
+      () => DriftStudyRepository(db).readSnapshot(),
+    );
+    expect(kept!.subjects.map((s) => s.name), contains('رياضيات'));
+    // And nothing was restored over it.
+    expect(backup.downloadCount, 0);
+  });
+
   testWidgets('a legacy device with no recorded uid asks before wiping too',
       (tester) async {
     // The C1 upgrade path: this phone ran Ather all year before logins

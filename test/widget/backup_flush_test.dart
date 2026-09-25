@@ -481,6 +481,41 @@ void main() {
     expect(backup.uploadCount, 1);
   });
 
+  test('a record of only custom subjects is not held as empty (D6)', () async {
+    // N4 holds an *empty* record that has never seen the cloud. A subject
+    // the student created is not emptiness: it goes through the D1 look like
+    // any other record -- and here, with no cloud document, it goes up.
+    final backup = FakeBackupRepository();
+    final container = await boot(
+      backup: backup,
+      snapshots: Stream<StudySnapshot>.value(
+        StudySnapshot(
+          subjects: const <Subject>[
+            Subject(
+              id: 5,
+              code: null,
+              name: 'رياضيات',
+              sortOrder: 4,
+              archivedAt: null,
+            ),
+          ],
+          chapters: const <Chapter>[],
+          lessons: const <Lesson>[],
+          exams: const <ExamEntry>[],
+          homework: const <HomeworkEntry>[],
+        ),
+      ),
+      tasks: Stream<List<DailyTask>>.value(const <DailyTask>[]),
+      cloudSeen: false,
+    );
+
+    await container.read(backupSyncProvider.notifier).flush();
+
+    expect(backup.metadataReadCount, 1);
+    expect(backup.uploadCount, 1);
+    expect(backup.stored!.subjects.single.name, 'رياضيات');
+  });
+
   test('wiping the account preferences forgets the in-sync marker', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{
       kCloudInSyncKey: 1,

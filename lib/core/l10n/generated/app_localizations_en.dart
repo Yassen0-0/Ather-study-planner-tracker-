@@ -63,6 +63,9 @@ class LEn extends L {
   String get todayLabel => 'Today';
 
   @override
+  String get dayPickerBackToToday => 'Back to today';
+
+  @override
   String get dashboardTitle => 'Today';
 
   @override
@@ -494,6 +497,10 @@ class LEn extends L {
   String get reviewNotificationTitle => 'Time to review';
 
   @override
+  String get reviewChannelDescription =>
+      'Reminders for lessons that are due for review.';
+
+  @override
   String reviewNotificationBody(String lesson, String chapter) {
     return 'Time to review $lesson in $chapter';
   }
@@ -778,6 +785,11 @@ class LEn extends L {
 
   @override
   String get unlockWithPassword => 'Unlock with password';
+
+  @override
+  String lockTryAgainIn(String wait) {
+    return 'Too many attempts. Try again in $wait.';
+  }
 
   @override
   String get lockForgotPassword => 'Forgot the app password?';

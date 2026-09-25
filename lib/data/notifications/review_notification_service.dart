@@ -55,18 +55,24 @@ final class ScheduledReminder {
 /// reminder is useful. A reconciliation pass on resume repairs any drift
 /// (clock changes, reboots, exams recorded on another day).
 class ReviewNotificationService {
-  /// [preferences] carries the store the applied-fingerprint persists through
-  /// (see [_applied]). Optional so tests can run the service with no store --
-  /// the dedupe then behaves exactly as it did when it was memory-only.
+  /// [preferences] is used for one thing only: removing the applied
+  /// fingerprint earlier builds persisted (see [kAppliedFingerprintKey]).
   ReviewNotificationService(this._plugin, {SharedPreferences? preferences})
-     : _storedPrefs = preferences;
+    : _storedPrefs = preferences;
 
   final FlutterLocalNotificationsPlugin _plugin;
 
   final SharedPreferences? _storedPrefs;
 
   static const String _channelId = 'sahm_review';
-  static const String _channelName = 'Review reminders';
+
+  /// What the channel is called in Android's notification settings when the
+  /// caller passes nothing. Arabic first, like the app: this used to be a
+  /// hard-coded English 'Review reminders' shown to Arabic students in their
+  /// own system settings. The scheduler passes the localised pair.
+  static const String kDefaultChannelName = 'إشعارات المراجعة';
+  static const String kDefaultChannelDescription =
+      'تذكير بالدروس التي حان موعد مراجعتها.';
 
   bool _initialised = false;
 
@@ -112,12 +118,13 @@ class ReviewNotificationService {
 
     _initialised = true;
 
-    // Seed the applied-fingerprint from storage. This is the whole point of
-    // persisting it: `_applied` used to start every cold run as null, and null
-    // never matches anything, so the first pass after every launch paid a full
-    // `cancelAll()` plus one registration per reminder to rebuild a schedule
-    // that was already on the device and had not moved overnight.
-    _applied = _storedPrefs?.getString(kAppliedFingerprintKey);
+    // Earlier builds persisted the applied fingerprint and trusted it on the
+    // next cold start (C2, see [_applied]). The record is meaningless now and
+    // is removed so it cannot mislead anything; best-effort, because a
+    // leftover string in preferences harms nothing that still reads it.
+    try {
+      await _storedPrefs?.remove(kAppliedFingerprintKey);
+    } catch (_) {}
   }
 
   /// Reads the current permission back from the OS, showing nothing.
@@ -162,22 +169,32 @@ class ReviewNotificationService {
     return true;
   }
 
-  /// What the schedule currently on the device is made of, so an identical
-  /// rebuild can be skipped entirely.
+  /// What the schedule this process put on the device is made of, so an
+  /// identical rebuild *within the same process* can be skipped.
   ///
-  /// Seeded from [kAppliedFingerprintKey] in storage when [initialise] runs,
-  /// and written back through on every change, because a fingerprint that
-  /// lived only in memory died with every process: each cold run then paid
-  /// `cancelAll()` plus one platform round-trip per reminder for a schedule
-  /// that had not changed while the app was closed.
+  /// **Memory only, on purpose (C2).** It used to be persisted and trusted on
+  /// the next cold start, so a launch that found yesterday's fingerprint did
+  /// no platform work at all. But what a fingerprint in storage proves is what
+  /// was registered, not what is still registered: Android's *Force stop*
+  /// (and some OEM battery managers that do the same) deletes every alarm an
+  /// app holds, and nothing tells the app. The next launch matched the stored
+  /// record, skipped the rebuild, and the student never got another reminder
+  /// until some unrelated change happened to move the fingerprint.
   ///
-  /// Null until the first successful pass, and cleared -- here *and* in
-  /// storage -- whenever a pass is abandoned part-way. An unknown device state
-  /// must never look like a matching one, and after a process death mid-rebuild
-  /// only a cleared record keeps the next cold start honest.
+  /// Asking the plugin does not help: `pendingNotificationRequests()` reads
+  /// the plugin's own saved list, which survives a force stop that the alarms
+  /// themselves do not. So every process starts with this null and pays one
+  /// full rebuild -- `cancelAll()` plus at most [kMaxScheduledAlarms]
+  /// registrations, once per cold start -- which is the price of a schedule
+  /// that is known rather than assumed.
+  ///
+  /// Null until the first successful pass, and cleared whenever a pass is
+  /// abandoned part-way: an unknown device state must never look like a
+  /// matching one.
   String? _applied;
 
-  /// The SharedPreferences key [_applied] is stored under.
+  /// Where earlier builds persisted [_applied]. Never written any more;
+  /// [initialise] removes it.
   static const String kAppliedFingerprintKey = 'review_schedule_fingerprint';
 
   /// The most alarms this app will ever hold registered at once.
@@ -274,8 +291,7 @@ class ReviewNotificationService {
         final weakBody = buildWeakBody;
         if (weakBody != null &&
             exams.isNotEmpty &&
-            MasteryCalculator.lessonMastery(exams) <
-                kLowMasteryFlagThreshold) {
+            MasteryCalculator.lessonMastery(exams) < kLowMasteryFlagThreshold) {
           return weakBody(lesson.name);
         }
         return buildBody(lesson.name, chapterName);
@@ -342,10 +358,8 @@ class ReviewNotificationService {
   /// So the pass is fingerprinted first. Everything the schedule depends on
   /// goes into the fingerprint -- every reminder id, the moment each one fires,
   /// the bodies, and the enabled flag -- and an identical one returns before
-  /// touching the platform at all. The comparison survives cold starts: the
-  /// fingerprint of the last successful pass is persisted, so a run that finds
-  /// the same schedule it left on the device yesterday does no platform work
-  /// at all.
+  /// touching the platform at all. The comparison deliberately does **not**
+  /// survive a cold start; see [_applied] for why.
   Future<void> reschedule({
     required StudySnapshot snapshot,
     required DateTime now,
@@ -355,6 +369,8 @@ class ReviewNotificationService {
     String Function(String lesson)? buildDecliningBody,
     String Function(String lesson)? buildWeakBody,
     required String title,
+    String channelName = kDefaultChannelName,
+    String channelDescription = kDefaultChannelDescription,
   }) async {
     if (!_initialised) return;
 
@@ -380,19 +396,11 @@ class ReviewNotificationService {
     // Cleared, not set, before the platform work: if any call below throws, the
     // device is in a state this object cannot describe, and claiming otherwise
     // would strand the student with a stale schedule no later pass would fix.
-    // The stored copy is cleared first too, and deliberately before the
-    // platform calls: a process dying between `cancelAll()` and the last
-    // registration must not leave tomorrow's cold start reading yesterday's
-    // fingerprint for a device that no longer matches it. Clearing costs at
-    // worst one extra rebuild; trusting a stale record silently drops
-    // reminders.
     _applied = null;
-    await _writeStoredFingerprint(null);
 
     await _plugin.cancelAll();
     if (due.isEmpty) {
       _applied = fingerprint;
-      await _writeStoredFingerprint(fingerprint);
       return;
     }
 
@@ -402,14 +410,20 @@ class ReviewNotificationService {
         title: title,
         body: reminder.body,
         scheduledDate: tz.TZDateTime.from(reminder.at, tz.local),
-        notificationDetails: const NotificationDetails(
+        // `update`, not the default create-if-missing: every install already
+        // has this channel under the old English name, and only an update
+        // relabels it (Android changes name and description on an existing
+        // channel, and nothing the student set on it).
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             _channelId,
-            _channelName,
+            channelName,
+            channelDescription: channelDescription,
+            channelAction: AndroidNotificationChannelAction.update,
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
           ),
-          windows: WindowsNotificationDetails(),
+          windows: const WindowsNotificationDetails(),
         ),
         // Inexact deliberately: exact alarms need SCHEDULE_EXACT_ALARM, which
         // Play treats as a restricted permission. A study reminder does not
@@ -423,24 +437,6 @@ class ReviewNotificationService {
 
     // Only once every call above has landed.
     _applied = fingerprint;
-    await _writeStoredFingerprint(fingerprint);
-  }
-
-  /// Mirrors [_applied] into storage, or removes the record when it is null.
-  ///
-  /// A failed write propagates: the caller's catch treats the pass as failed,
-  /// and the failure direction is the safe one -- memory already holds the new
-  /// state, so later passes this run skip correctly, while a cold start that
-  /// reads a stale or absent record pays one rebuild rather than trusting a
-  /// schedule that may not be there.
-  Future<void> _writeStoredFingerprint(String? fingerprint) async {
-    final prefs = _storedPrefs;
-    if (prefs == null) return;
-    if (fingerprint == null) {
-      await prefs.remove(kAppliedFingerprintKey);
-    } else {
-      await prefs.setString(kAppliedFingerprintKey, fingerprint);
-    }
   }
 
   Future<void> cancelAll() => _plugin.cancelAll();

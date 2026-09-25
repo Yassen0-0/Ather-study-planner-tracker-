@@ -143,9 +143,14 @@ class SettingsRow extends StatelessWidget {
     final isToggle = toggle != null;
 
     final row = Padding(
-      padding: const EdgeInsets.symmetric(
+      padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.cardPadding,
-        vertical: AppSpacing.xl,
+        // A toggle's switch occupies a full 48-point target around its
+        // 30-point track (see AtherSwitch); the padding gives back the
+        // difference so the row keeps the height every other row has.
+        vertical: isToggle
+            ? AppSpacing.xl - (kMinTarget - AtherSwitch.trackHeight) / 2
+            : AppSpacing.xl,
       ),
       child: Row(
         children: <Widget>[

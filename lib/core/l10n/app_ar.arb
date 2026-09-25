@@ -24,6 +24,7 @@
   "@todayLabel": {
     "description": "What today's cell says in the day picker, in place of its weekday and date. Today always carries it, selected or not: it is the one fixed landmark in a row whose other cells change every time the student moves a day."
   },
+  "dayPickerBackToToday": "العودة إلى اليوم",
   "dashboardTitle": "اليوم",
   "overallMastery": "الإتقان العام",
   "statLessonsRemaining": "دروس متراكمة",
@@ -277,6 +278,7 @@
   "reviewReasonWeak": "مستوى ضعيف",
   "reviewReasonDeclining": "مستواك ينخفض",
   "reviewNotificationTitle": "وقت المراجعة",
+  "reviewChannelDescription": "تذكير بالدروس التي حان موعد مراجعتها.",
   "reviewNotificationBody": "حان وقت مراجعة درس {lesson} في {chapter}",
   "@reviewNotificationBody": {
     "placeholders": {
@@ -432,6 +434,14 @@
   "passwordTooShort": "كلمة السر 4 أحرف على الأقل.",
   "wrongPassword": "كلمة السر غير صحيحة.",
   "unlockWithPassword": "افتح بكلمة السر",
+  "lockTryAgainIn": "محاولات كثيرة. حاول مرة أخرى بعد {wait}.",
+  "@lockTryAgainIn": {
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
   "lockForgotPassword": "نسيت كلمة سر التطبيق؟",
   "lockForgotBody": "اكتب كلمة سر حسابك ليُزال قفل التطبيق. يمكنك تعيينه من جديد من الإعدادات.",
   "lockForgotAccountHint": "كلمة سر حسابك",

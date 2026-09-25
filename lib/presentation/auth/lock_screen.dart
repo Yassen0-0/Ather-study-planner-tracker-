@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
@@ -5,6 +7,7 @@ import 'package:local_auth/local_auth.dart';
 import '../../core/auth/app_passcode.dart';
 import '../../core/branding/ather_brand.dart';
 import '../../core/haptics/app_haptics.dart';
+import '../../core/l10n/formatting.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -82,6 +85,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   /// An account re-authentication is in flight.
   bool _verifyingAccount = false;
 
+  /// Redraws the backoff countdown once a second while it runs; see
+  /// [_showLockout].
+  Timer? _ticker;
+
   @override
   void initState() {
     super.initState();
@@ -89,9 +96,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     // killed, typically -- the refusal is stated up front rather than after
     // one more wasted attempt.
     final attempts = ref.read(lockAttemptStoreProvider);
-    if (attempts.lockedUntil(ref.read(clockProvider).now()) != null) {
-      _message = (l) => l.authErrorTooManyAttempts;
-    }
+    final until = attempts.lockedUntil(ref.read(clockProvider).now());
+    if (until != null) _showLockout(until);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Fires only where there is nothing to type into: the pure-biometric
       // cold start keeps today's behaviour of offering the prompt straight
@@ -104,6 +110,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
 
   @override
   void dispose() {
+    _ticker?.cancel();
     _passcode.dispose();
     super.dispose();
   }
@@ -198,8 +205,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     final typed = _passcode.text;
     _passcode.clear();
 
-    if (attempts.lockedUntil(now) != null) {
-      setState(() => _message = (l) => l.authErrorTooManyAttempts);
+    final lockedUntil = attempts.lockedUntil(now);
+    if (lockedUntil != null) {
+      setState(() => _showLockout(lockedUntil));
       return;
     }
 
@@ -216,11 +224,35 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     AppHaptics.light();
     await attempts.recordFailure(now);
     if (!mounted) return;
-    final nowLockedOut = attempts.lockedUntil(now) != null;
+    final until = attempts.lockedUntil(now);
     setState(() {
-      _message = nowLockedOut
-          ? (l) => l.authErrorTooManyAttempts
-          : (l) => l.wrongPassword;
+      if (until != null) {
+        _showLockout(until);
+      } else {
+        _message = (l) => l.wrongPassword;
+      }
+    });
+  }
+
+  /// Says how long the backoff has left, and keeps saying it: "try again
+  /// later" with no number sends a student to guess when later is, and every
+  /// early try is refused anyway. Redrawn each second from the clock and
+  /// cleared the moment the wait is over. Call inside setState, or before the
+  /// first build.
+  void _showLockout(DateTime until) {
+    _ticker?.cancel();
+    _message = (l) => l.lockTryAgainIn(
+      iso(formatLockWait(until.difference(ref.read(clockProvider).now()))),
+    );
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      if (until.isAfter(ref.read(clockProvider).now())) {
+        setState(() {});
+        return;
+      }
+      _ticker?.cancel();
+      _ticker = null;
+      setState(() => _message = null);
     });
   }
 
@@ -467,6 +499,15 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       ),
     );
   }
+}
+
+/// A backoff's remaining time as `m:ss`, rounded up -- "0:00" never shows
+/// while the gate is still refusing. Western digits, like every number in the
+/// app (PROJECT.md §3.16); the caller isolates it.
+@visibleForTesting
+String formatLockWait(Duration left) {
+  final seconds = left.isNegative ? 0 : (left.inMilliseconds + 999) ~/ 1000;
+  return '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
 }
 
 /// The gate's one input, in the house field shape (the bare container +

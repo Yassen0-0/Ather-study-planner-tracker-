@@ -205,6 +205,12 @@ abstract class L {
   /// **'اليوم'**
   String get todayLabel;
 
+  /// No description provided for @dayPickerBackToToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة إلى اليوم'**
+  String get dayPickerBackToToday;
+
   /// No description provided for @dashboardTitle.
   ///
   /// In ar, this message translates to:
@@ -859,6 +865,12 @@ abstract class L {
   /// **'وقت المراجعة'**
   String get reviewNotificationTitle;
 
+  /// No description provided for @reviewChannelDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير بالدروس التي حان موعد مراجعتها.'**
+  String get reviewChannelDescription;
+
   /// No description provided for @reviewNotificationBody.
   ///
   /// In ar, this message translates to:
@@ -1368,6 +1380,12 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'افتح بكلمة السر'**
   String get unlockWithPassword;
+
+  /// No description provided for @lockTryAgainIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاولات كثيرة. حاول مرة أخرى بعد {wait}.'**
+  String lockTryAgainIn(String wait);
 
   /// No description provided for @lockForgotPassword.
   ///

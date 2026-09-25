@@ -116,8 +116,15 @@ final class StudyBackup {
   /// as "nothing had been captured yet", never as corruption.
   final List<StudyEvent> events;
 
+  /// A student-created subject counts, as on `StudySnapshot.isEmpty` (D6):
+  /// a cloud copy holding only custom subjects is a record worth restoring,
+  /// not nothing. The seeded four are on every install and prove nothing.
   bool get isEmpty =>
-      chapters.isEmpty && lessons.isEmpty && exams.isEmpty && tasks.isEmpty;
+      chapters.isEmpty &&
+      lessons.isEmpty &&
+      exams.isEmpty &&
+      tasks.isEmpty &&
+      !subjects.any((subject) => !subject.isSeeded);
 
   /// What the student sees when asked to choose between two copies. Chapters and
   /// exams, because those are the two numbers that mean something to them.

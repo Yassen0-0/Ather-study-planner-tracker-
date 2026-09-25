@@ -18,6 +18,7 @@
   "weekdayThursday": "Thu",
   "weekdayFriday": "Fri",
   "todayLabel": "Today",
+  "dayPickerBackToToday": "Back to today",
   "dashboardTitle": "Today",
   "overallMastery": "Overall mastery",
   "statLessonsRemaining": "Lessons owed",
@@ -236,6 +237,7 @@
   "reviewReasonWeak": "Weak score",
   "reviewReasonDeclining": "Your score is dropping",
   "reviewNotificationTitle": "Time to review",
+  "reviewChannelDescription": "Reminders for lessons that are due for review.",
   "reviewNotificationBody": "Time to review {lesson} in {chapter}",
   "analyticsTitle": "Progress",
   "analyticsInsights": "Notes",
@@ -321,6 +323,14 @@
   "passwordTooShort": "Use at least 4 characters.",
   "wrongPassword": "Wrong password.",
   "unlockWithPassword": "Unlock with password",
+  "lockTryAgainIn": "Too many attempts. Try again in {wait}.",
+  "@lockTryAgainIn": {
+    "placeholders": {
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
   "lockForgotPassword": "Forgot the app password?",
   "lockForgotBody": "Type your account password to remove the app lock. You can set it again in Settings.",
   "lockForgotAccountHint": "Your account password",

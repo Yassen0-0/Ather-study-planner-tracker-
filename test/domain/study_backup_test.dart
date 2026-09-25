@@ -152,6 +152,43 @@ void main() {
     expect(out.examCount, 0);
   });
 
+  // D6: the seeded four are on every install and prove nothing; a subject the
+  // student created is their data, and a copy holding one is not empty.
+  test('a backup holding only a custom subject is not empty', () {
+    const seededOnly = StudyBackup(
+      subjects: <Subject>[
+        Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+      ],
+      chapters: <Chapter>[],
+      lessons: <Lesson>[],
+      exams: <ExamEntry>[],
+      homework: <HomeworkEntry>[],
+      tasks: <DailyTask>[],
+    );
+    expect(seededOnly.isEmpty, isTrue);
+
+    const custom = StudyBackup(
+      subjects: <Subject>[
+        Subject.seeded(id: 1, code: SubjectCode.biology, sortOrder: 0),
+        Subject(
+          id: 5,
+          code: null,
+          name: 'رياضيات',
+          sortOrder: 4,
+          archivedAt: null,
+        ),
+      ],
+      chapters: <Chapter>[],
+      lessons: <Lesson>[],
+      exams: <ExamEntry>[],
+      homework: <HomeworkEntry>[],
+      tasks: <DailyTask>[],
+    );
+    expect(custom.isEmpty, isFalse);
+    // And it stays so across the wire, where the custom code is serialised.
+    expect(roundTrip(custom).isEmpty, isFalse);
+  });
+
   test('dates survive as exact instants', () {
     // Epoch milliseconds rather than an ISO string, so nothing here can shift by
     // a timezone when a student restores onto a phone set to another zone.

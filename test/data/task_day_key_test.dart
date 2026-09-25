@@ -86,10 +86,7 @@ void main() {
         for (final r in await db.select(db.dailyTasks).get())
           r.day.millisecondsSinceEpoch,
       };
-      expect(
-        keys.single,
-        DateTime.utc(2026, 12, 20).millisecondsSinceEpoch,
-      );
+      expect(keys.single, DateTime.utc(2026, 12, 20).millisecondsSinceEpoch);
     });
   });
 
@@ -133,26 +130,44 @@ void main() {
   });
 
   group('restore', () {
-    test('re-truncates a foreign instant onto the day its fields name',
-        () async {
-      // A blob written on another phone can hand over any instant for `day`.
-      // This one says "the 19th, late evening" in its own calendar fields; the
-      // restored row is keyed to the 19th rather than carrying 23:30 around to
-      // be re-interpreted by whoever reads it next.
-      await tasks.restoreTasks(<DailyTask>[
-        DailyTask(
-          id: 1,
-          day: DateTime.utc(2026, 12, 19, 23, 30),
-          title: 'مهمة مستوردة',
-          done: false,
-          sortOrder: 0,
-          createdAt: DateTime.utc(2026, 12, 19, 22),
-        ),
-      ]);
+    test(
+      'lands a restored key on the day it names, read by its instant',
+      () async {
+        // Restored keys come back from the blob as instants. The canonical one
+        // is a UTC midnight and means its UTC date for every reader; a legacy one
+        // is a local midnight, here written on this very phone. Neither may slip
+        // to the evening before -- which is what reading the canonical key's
+        // *local* fields did west of UTC (D5).
+        await tasks.restoreTasks(<DailyTask>[
+          DailyTask(
+            id: 1,
+            day: DateTime.utc(2026, 12, 19),
+            title: 'مهمة مستوردة',
+            done: false,
+            sortOrder: 0,
+            createdAt: DateTime.utc(2026, 12, 19, 22),
+          ),
+          DailyTask(
+            id: 2,
+            day: DateTime(2026, 12, 20),
+            title: 'مهمة قديمة',
+            done: false,
+            sortOrder: 0,
+            createdAt: DateTime.utc(2026, 12, 20, 9),
+          ),
+        ]);
 
-      final task = await tasks.watchTasks().first;
-      expect(task.single.day, DateTime.utc(2026, 12, 19));
-    });
+        final restored = await tasks.watchTasks().first;
+        expect(
+          restored.firstWhere((t) => t.id == 1).day,
+          DateTime.utc(2026, 12, 19),
+        );
+        expect(
+          restored.firstWhere((t) => t.id == 2).day,
+          DateTime.utc(2026, 12, 20),
+        );
+      },
+    );
 
     test('a backup round trip keeps the calendar day', () async {
       final original = DailyTask(
@@ -191,18 +206,79 @@ void main() {
     });
   });
 
+  // D5: the host's timezone cannot be set from inside a test, so the reader's
+  // offset is passed explicitly here. (Running this file under
+  // `TZ=America/New_York` exercises the repository paths above at -5 too.)
+  group('dayOfStoredKey', () {
+    const west = Duration(hours: -5);
+    const farWest = Duration(hours: -10);
+    const cairoSummer = Duration(hours: 3);
+    const cairoWinter = Duration(hours: 2);
+    const farEast = Duration(hours: 14);
+
+    test('a canonical key is its UTC date at every offset', () {
+      final key = DateTime.utc(2026, 7, 10);
+      for (final offset in <Duration>[
+        west,
+        farWest,
+        Duration.zero,
+        cairoWinter,
+        cairoSummer,
+        farEast,
+      ]) {
+        expect(
+          dayOfStoredKey(key, offset: offset),
+          DateTime.utc(2026, 7, 10),
+          reason: 'read at $offset',
+        );
+      }
+      // The bug, for the record: the same instant as a -5 reader's wall clock
+      // is 19:00 on the 9th, and truncating those fields lost a day.
+      expect(dayOf(DateTime.utc(2026, 7, 10).add(west)).day, 9);
+    });
+
+    test('a canonical key read back as a local DateTime keeps its day', () {
+      // What drift actually hands over: the instant as a local DateTime.
+      expect(
+        dayOfStoredKey(DateTime.utc(2026, 7, 10).toLocal()),
+        DateTime.utc(2026, 7, 10),
+      );
+    });
+
+    test('a legacy local midnight survives the yearly move', () {
+      // Written as local midnight of 10 July at +3 (21:00Z on the 9th), read
+      // in winter at +2: 23:00 on the 9th on the wall, which is the 10th.
+      final summerKey = DateTime.utc(2026, 7, 9, 21);
+      expect(
+        dayOfStoredKey(summerKey, offset: cairoWinter),
+        DateTime.utc(2026, 7, 10),
+      );
+      expect(
+        dayOfStoredKey(summerKey, offset: cairoSummer),
+        DateTime.utc(2026, 7, 10),
+      );
+      // And the mirror image west of UTC: local midnight of the 10th at -5
+      // (05:00Z), read at -4 -- 01:00 on the 10th.
+      final westKey = DateTime.utc(2026, 7, 10, 5);
+      expect(
+        dayOfStoredKey(westKey, offset: const Duration(hours: -4)),
+        DateTime.utc(2026, 7, 10),
+      );
+      expect(dayOfStoredKey(westKey, offset: west), DateTime.utc(2026, 7, 10));
+    });
+  });
+
   group('comparison in the providers', () {
     /// The task list is handed to `tasksValueProvider` directly rather than
     /// through its upstream stream provider: a plain value needs no listener
     /// bookkeeping, and these tests are about the *comparison*, not the
     /// plumbing above it.
-    ProviderContainer containerWith(List<DailyTask> tasks) =>
-        ProviderContainer(
-          overrides: [
-            clockProvider.overrideWithValue(MutableClock(DateTime(2026, 8, 5))),
-            tasksValueProvider.overrideWithValue(tasks),
-          ],
-        );
+    ProviderContainer containerWith(List<DailyTask> tasks) => ProviderContainer(
+      overrides: [
+        clockProvider.overrideWithValue(MutableClock(DateTime(2026, 8, 5))),
+        tasksValueProvider.overrideWithValue(tasks),
+      ],
+    );
 
     bool hasTitle(List<DailyTask> tasks, String title) =>
         tasks.any((t) => t.title == title);

@@ -270,7 +270,10 @@ class _ShareProgressButtonState extends State<_ShareProgressButton> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: AppSpacing.xs),
+      // Directional: the gap belongs after the button in reading order, which
+      // is the left in Arabic and the right in English (PROJECT.md: never
+      // left/right).
+      padding: const EdgeInsetsDirectional.only(end: AppSpacing.xs),
       child: CircleHeaderButton(
         // `_share` returns early while one is already running, which is what
         // stops a second tap from starting a second render.

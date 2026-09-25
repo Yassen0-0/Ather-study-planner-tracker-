@@ -66,7 +66,22 @@ final class StudySnapshot {
     return byDate != 0 ? byDate : b.id.compareTo(a.id);
   }
 
-  bool get isEmpty => chapters.isEmpty && lessons.isEmpty;
+  /// Whether the student has put **anything** on this device.
+  ///
+  /// A subject the student created counts (D6). It used to be only chapters
+  /// and lessons, so a phone holding nothing but custom subjects read as empty
+  /// -- and "empty" is what lets the account-switch wipe skip its confirmation
+  /// sheet and what lets the automatic restore land on the device. The four
+  /// seeded subjects do not count: every install has them, including one that
+  /// has never been touched.
+  ///
+  /// Read by the account-switch wipe and the automatic restore
+  /// (`BackupSyncGate`), the upload's N4 empty-guard (`BackupSyncNotifier`),
+  /// the delete-account warning, and the dashboard's first-run state.
+  bool get isEmpty =>
+      chapters.isEmpty &&
+      lessons.isEmpty &&
+      !subjects.any((subject) => !subject.isSeeded);
 
   /// Every subject that is neither archived nor deleted, in sort order.
   ///

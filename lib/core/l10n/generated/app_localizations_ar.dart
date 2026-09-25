@@ -63,6 +63,9 @@ class LAr extends L {
   String get todayLabel => 'اليوم';
 
   @override
+  String get dayPickerBackToToday => 'العودة إلى اليوم';
+
+  @override
   String get dashboardTitle => 'اليوم';
 
   @override
@@ -526,6 +529,10 @@ class LAr extends L {
   String get reviewNotificationTitle => 'وقت المراجعة';
 
   @override
+  String get reviewChannelDescription =>
+      'تذكير بالدروس التي حان موعد مراجعتها.';
+
+  @override
   String reviewNotificationBody(String lesson, String chapter) {
     return 'حان وقت مراجعة درس $lesson في $chapter';
   }
@@ -807,6 +814,11 @@ class LAr extends L {
 
   @override
   String get unlockWithPassword => 'افتح بكلمة السر';
+
+  @override
+  String lockTryAgainIn(String wait) {
+    return 'محاولات كثيرة. حاول مرة أخرى بعد $wait.';
+  }
 
   @override
   String get lockForgotPassword => 'نسيت كلمة سر التطبيق؟';
