@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>أثر — أنت لا تُنهي الدروس، بل تُتقنها</title>
-<meta name="description" content="أثر يقرأ درجات امتحاناتك الحقيقية ويقول لك أضعف باب عندك وأي درس محتاج مراجعة. مجاني، يعمل دون إنترنت، لطلبة الثانوية العامة.">
+<title>أثر: أنت لا تُنهي الدروس، بل تُتقنها</title>
+<meta name="description" content="دخّل درجات امتحاناتك سؤال بسؤال، وأثر يقولك إنت فاهم إيه بجد وإيه اللي محتاج ترجعله. مجاني، شغال من غير نت، لطلبة الثانوية العامة.">
 <meta name="theme-color" content="#EFEFF2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
@@ -22,195 +22,177 @@
       <path style="stroke:var(--ballpoint)" stroke-linecap="round" pathLength="100" stroke-dasharray="27 100" d="M50 22.48 C58.46 22.05 72.24 22.77 77.02 28.45 C81.80 34.13 80.56 47.48 78.7 56.55 C76.84 65.62 72.65 79.73 65.83 82.87 C59.01 86.01 46.14 79.54 37.78 75.37 C29.42 71.20 17.61 65.22 15.68 57.83 C13.75 50.44 20.51 36.94 26.23 31.05 C31.95 25.16 41.54 22.91 50 22.48 Z"/>
     </g>
   </symbol>
-  <symbol id="down" viewBox="0 0 24 24">
-    <path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-  </symbol>
-  <symbol id="arrow" viewBox="0 0 24 24">
-    <path d="M5 12h13m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  </symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="tick" viewBox="0 0 26 26"><path class="tickmark" d="M4 14 L10 20 L22 5"/></symbol>
+  <symbol id="i-offline" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.8a14 14 0 0 1 4.3-2.6M10.4 5.1A14 14 0 0 1 21.5 8.8M5.6 12.3a9 9 0 0 1 3.1-1.9M14.6 10.3a9 9 0 0 1 3.8 2M9 15.6a4.5 4.5 0 0 1 6 0"/><circle cx="12" cy="19" r=".9" fill="currentColor"/><path d="M3 3l18 18"/></g></symbol>
+  <symbol id="i-noads" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></g></symbol>
+  <symbol id="i-report" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z"/><path d="M13.5 3.5V8h4.5M9.5 13h5M9.5 16.5h3"/></g></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.75 4.75 0 0 0 7 18.5z"/><path d="M12 11.5v4.5m0 0-2-2m2 2 2-2"/></g></symbol>
 </svg>
 
-<div class="desk">
+<div class="page">
 
 <header class="topbar">
   <a class="brand" href="./"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg>أثر</a>
-  <nav class="lang" aria-label="اللغة / Language">
-    <a href="#ar" aria-current="true">العربية</a>
+  <nav class="topnav" aria-label="الصفحة">
+    <a href="#how">بيحسبها إزاي؟</a>
     <a href="#en" lang="en">English</a>
   </nav>
 </header>
 
-<main>
-<section id="ar" lang="ar" dir="rtl">
+<main id="ar" lang="ar" dir="rtl">
 
-<!-- ================= The paper, being graded ================= -->
-<div class="hero">
-  <div class="stack">
-    <article class="sheet">
-      <div class="score" role="img" aria-label="الدرجة 12 من 16">
-        <svg class="ring" viewBox="0 0 106 106" aria-hidden="true"><path class="pen-stroke draw now" style="--len:330;--d:250ms" d="M60 6 C88 8 102 30 99 56 C96 84 72 101 47 99 C20 97 4 76 6 50 C8 24 28 5 56 7 C64 8 70 11 76 15"/></svg>
-        <span class="got">12</span><span class="of">16</span>
-      </div>
-      <div class="fields">
-        <div class="field">الاسم: <b>أنت</b></div>
-        <div class="field">المادة: <b>فيزياء · التيار الكهربي</b></div>
-      </div>
-
-      <h1 class="answer">أنت لا تُنهي الدروس، بل تُتقنها</h1>
-      <p class="lined">أثر يقرأ درجات امتحاناتك الحقيقية ويقول لك <b>أضعف باب عندك</b> و<b>أي درس محتاج مراجعة</b> — فتذاكر اللي محتاجه، مش اللي خلّصته.</p>
-
-      <div class="cta">
-        <a class="btn" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk">
-          <svg aria-hidden="true"><use href="#down"/></svg>حمّل أثر
-        </a>
-        <p class="small">مجاني · أندرويد 7 فأحدث · الإصدار 1.10.0</p>
-      </div>
-    </article>
-  </div>
-
-  <figure class="hero-aside">
-    <img src="./assets/screens/ar-today.jpg" width="499" height="1080" alt="الشاشة الرئيسية في أثر: الإتقان العام 38% وقائمة المواد">
-  </figure>
-</div>
-
-<!-- ================= Weakest chapter, circled ================= -->
-<article class="sheet" data-mark>
-  <h2 class="q">هتعرف تذاكر إيه بالظبط</h2>
-  <p class="lined">كل باب ليه رقم واحد، محسوب من امتحاناته هو بس. الأضعف بيبان لوحده، فتبدأ منه بدل ما تعيد اللي أنت شاطر فيه.</p>
-  <ul class="report" aria-label="تقرير الفيزياء — مثال">
-    <li class="good"><span class="name">التيار الكهربي وقانون أوم</span><span class="sub">4 دروس · 6 امتحانات</span><span class="v">88%</span><span class="bar"><i style="--v:88%"></i></span></li>
-    <li><span class="name">التأثير المغناطيسي للتيار</span><span class="sub">3 دروس · 4 امتحانات</span><span class="v">71%</span><span class="bar"><i style="--v:71%"></i></span></li>
-    <li class="weak">
-      <svg class="ring" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><path class="pen-stroke draw" vector-effect="non-scaling-stroke" style="--len:760;--d:150ms" d="M24 9 C120 1 252 3 290 20 C302 38 244 57 150 56 C60 55 5 50 8 31 C10 16 40 8 78 6"/></svg>
-      <span class="name">الحث الكهرومغناطيسي</span><span class="sub">درس واحد متأخّر عن مراجعته</span><span class="v">38%</span><span class="bar"><i style="--v:38%"></i></span>
-    </li>
-  </ul>
-  <p class="report-note"><span class="note-pen fade" style="--d:520ms">ابدأ من هنا</span></p>
-  <p class="small">مثال من شاشة التقرير — الأرقام توضيحية.</p>
-</article>
-
-<div class="pair">
-  <!-- ================= The mark comes from real answers ================= -->
-  <article class="sheet" data-mark>
-    <h2 class="q">الرقم ده جاي منين؟</h2>
-    <p class="lined">من ورقة امتحان حقيقية. بتدخّل كل سؤال: صح ولا غلط، وأثر بيحسب.</p>
-    <ol class="answers" aria-label="تصحيح امتحان — مثال">
-      <li><svg class="mk" viewBox="0 0 26 26" aria-hidden="true"><path class="tick-stroke draw" style="--len:40;--d:100ms" d="M4 14 L10 20 L22 5"/></svg><span class="n">س1</span><span class="a">قانون أوم</span><span class="pts">4 / 4</span></li>
-      <li><svg class="mk" viewBox="0 0 26 26" aria-hidden="true"><path class="tick-stroke draw" style="--len:40;--d:220ms" d="M4 14 L10 20 L22 5"/></svg><span class="n">س2</span><span class="a">مقاومة الموصل</span><span class="pts">4 / 4</span></li>
-      <li class="wrong"><svg class="mk" viewBox="0 0 26 26" aria-hidden="true"><path class="pen-stroke draw" style="--len:44;--d:340ms" d="M6 6 L20 20 M20 6 L6 20"/></svg><span class="n">س3</span><span class="a">قاعدة كيرشوف الثانية</span><span class="pts">0 / 4</span></li>
-      <li><svg class="mk" viewBox="0 0 26 26" aria-hidden="true"><path class="tick-stroke draw" style="--len:40;--d:460ms" d="M4 14 L10 20 L22 5"/></svg><span class="n">س4</span><span class="a">توصيل المقاومات</span><span class="pts">4 / 4</span></li>
-    </ol>
-    <div class="total"><span class="pct">75%</span><span class="frac">12 / 16 درجة</span></div>
-    <div class="shift" aria-label="الإتقان قبل 77% وبعد 76%">
-      <div><span>الإتقان قبل</span><b>77%</b></div>
-      <svg aria-hidden="true"><use href="#arrow"/></svg>
-      <div><span>الإتقان بعد</span><b>76%</b></div>
+<section class="hero">
+  <div class="hero-copy">
+    <h1 class="display">أنت لا تُنهي الدروس، بل <span class="inked">تُتقنها<svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path d="M2 6 C 22 3, 48 8, 70 5 S 94 4, 98 6"/></svg></span></h1>
+    <p class="lede">دخّل درجات امتحاناتك سؤال بسؤال، وأثر يقولك إنت فاهم إيه بجد، وإيه اللي محتاج ترجعله قبل الامتحان.</p>
+    <div class="actions">
+      <a class="btn" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk"><svg aria-hidden="true"><use href="#down"/></svg>حمّل أثر</a>
+      <a class="textlink" href="#how">بيحسبها إزاي؟</a>
     </div>
-    <p class="small">الإتقان = آخر امتحان (70%) + متوسط اللي قبله (30%).</p>
-    <p style="margin-top:18px"><span class="struck"><span class="box"></span>راجعت الدرس<svg class="x" viewBox="0 0 142 34" preserveAspectRatio="none" aria-hidden="true"><path class="pen-stroke draw" vector-effect="non-scaling-stroke" style="--len:300;--d:600ms" d="M4 26 C44 22 96 14 138 6"/></svg></span>
-    &nbsp;<span class="note-pen fade" style="--d:820ms">مفيش الزرار ده</span></p>
-    <p class="small">الرقم بيتحرّك بامتحان بس. الواجب بيتسجّل، لكنه مش بيدخل في الحساب.</p>
-  </article>
-
-  <!-- ================= The 30-day clock ================= -->
-  <article class="sheet" data-mark>
-    <h2 class="q">والرقم بيقلّ لو سبته</h2>
-    <p class="lined">كل درس ليه عدّاد 30 يوم. لما يخلص، الدرس بيحمرّ لحد ما تمتحن فيه تاني — مفيش حاجة تانية بتصفّره.</p>
-    <ul class="clock" aria-label="عدّاد المراجعة — مثال">
-      <li><span class="name">قانون أوم</span><span class="when">من 4 أيام</span><span class="days" data-on="4"></span></li>
-      <li><span class="name">قاعدتا كيرشوف</span><span class="when">من 18 يوم</span><span class="days" data-on="18"></span></li>
-      <li class="late"><span class="name">الحث المتبادل</span><span class="when">من 31 يوم · تأخّرت مراجعته</span><span class="days" data-on="30"></span></li>
-    </ul>
-    <p><span class="note-pen fade" style="--d:300ms">امتحن فيه تاني!</span></p>
-  </article>
-</div>
-
-<!-- ================= Real screens ================= -->
-<h2 class="q" style="margin:12px 2px 6px">ده شكله على موبايلك</h2>
-<div class="screens">
-  <figure><img src="./assets/screens/ar-today.jpg" width="499" height="1080" loading="lazy" alt="الشاشة الرئيسية: الإتقان العام وقائمة المواد"><figcaption>اليوم</figcaption></figure>
-  <figure><img src="./assets/screens/ar-lesson.jpg" width="499" height="1080" loading="lazy" alt="شاشة الدرس: نسبة الإتقان وخطوات المذاكرة"><figcaption>الدرس</figcaption></figure>
-  <figure><img src="./assets/screens/ar-result.jpg" width="499" height="1080" loading="lazy" alt="نتيجة امتحان: 75% والإتقان قبل وبعد"><figcaption>نتيجة امتحان</figcaption></figure>
-</div>
-
-<!-- ================= تعليمات ================= -->
-<article class="sheet plain">
-  <div class="rules">
-    <h2>تعليمات هامة</h2>
-    <ol>
-      <li><b>يعمل دون إنترنت.</b> كل حاجة محفوظة على موبايلك. الحساب مطلوب مرة واحدة عند أول تسجيل دخول.</li>
-      <li><b>مفيش إعلانات ولا تتبّع</b>، ومفيش مشاركة مع أي طرف تالت.</li>
-      <li>نسخ المتجر بتبعت <b>تقارير أعطال فنية</b> لـ Firebase Crashlytics — تفاصيل العطل بس، مش سجل مذاكرتك.</li>
-      <li>سجل مذاكرتك في مكانين بس: <b>موبايلك</b>، ونسخة احتياطية على <b>حسابك أنت</b>.</li>
-      <li>تقدر <a href="./account-deletion">تمسح حسابك</a> في أي وقت. <a href="./privacy">سياسة الخصوصية</a>.</li>
-    </ol>
+    <p class="fine">مجاني · أندرويد 7 أو أحدث · آخر نسخة 1.10.0</p>
   </div>
-</article>
 
-<!-- ================= Hand it in ================= -->
-<article class="sheet handin" id="download">
-  <h2 class="q">ابدأ من أول امتحان</h2>
-  <div class="cta">
-    <a class="btn" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk">
-      <svg aria-hidden="true"><use href="#down"/></svg>حمّل أثر 1.10.0
-    </a>
-    <p class="small">أندرويد 7 فأحدث، ٦٤-بت · <a href="https://github.com/Yassen0-0/ather-releases/releases">كل النسخ وبصماتها</a></p>
-  </div>
-  <div class="pen-note">
-    <span class="note-pen">عندك نسخة 1.9.0 أو أقدم؟</span>
-    النسخة دي مش بتتثبّت فوقها. بالترتيب: افتح القديمة واستنى لحد ما المزامنة تخلص، امسحها، ثبّت الجديدة، وسجّل دخول بنفس الحساب — بياناتك هترجع من السحابة.
-  </div>
-  <p class="contact" style="margin-top:20px">
-    <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a>
-    <a href="./privacy">سياسة الخصوصية</a>
-    <a href="./account-deletion">حذف حسابك</a>
-  </p>
-</article>
-
-</section>
-
-<!-- ================= English ================= -->
-<section id="en" lang="en" dir="ltr">
-  <div class="stack">
-    <article class="sheet">
-      <div class="score" role="img" aria-label="Score 12 out of 16">
-        <svg class="ring" viewBox="0 0 106 106" aria-hidden="true"><path class="pen-stroke" d="M60 6 C88 8 102 30 99 56 C96 84 72 101 47 99 C20 97 4 76 6 50 C8 24 28 5 56 7 C64 8 70 11 76 15"/></svg>
+  <article class="sheet" data-mark aria-label="ورقة امتحان متصححة، مثال">
+    <header class="sheet-head">
+      <div class="subject"><b>فيزياء</b><span>الباب الأول: التيار الكهربي</span></div>
+      <div class="score" role="img" aria-label="12 من 16">
+        <svg viewBox="0 0 98 98" aria-hidden="true"><path class="pen draw" style="--len:320;--d:200ms" d="M55 5 C82 7 95 28 92 52 C89 78 67 94 44 92 C19 90 4 70 6 46 C8 22 26 5 52 6 C60 7 66 10 71 14"/></svg>
         <span class="got">12</span><span class="of">16</span>
       </div>
-      <div class="fields">
-        <div class="field">Name: <b>You</b></div>
-        <div class="field">Subject: <b>Physics · Electric current</b></div>
-      </div>
-      <h2 class="answer">You don't finish lessons. You master them.</h2>
-      <p class="lined">Ather reads your real exam results and tells you <b>your weakest chapter</b> and <b>which lesson is overdue</b> — so you study what you need, not what you already finished.</p>
-      <ol class="answers" aria-label="How it works">
-        <li><svg class="mk" viewBox="0 0 26 26" aria-hidden="true"><path class="tick-stroke" d="M4 14 L10 20 L22 5"/></svg><span class="n">1</span><span class="a">Mastery comes from exams only. There is no "I reviewed this" button.</span><span></span></li>
-        <li><svg class="mk" viewBox="0 0 26 26" aria-hidden="true"><path class="tick-stroke" d="M4 14 L10 20 L22 5"/></svg><span class="n">2</span><span class="a">It decays: 30 days after the last exam, the lesson turns red.</span><span></span></li>
-        <li><svg class="mk" viewBox="0 0 26 26" aria-hidden="true"><path class="tick-stroke" d="M4 14 L10 20 L22 5"/></svg><span class="n">3</span><span class="a">Offline, no ads, no tracking. Store builds send crash reports to Firebase Crashlytics, never your study record.</span><span></span></li>
-      </ol>
-      <div class="cta">
-        <a class="btn" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk">
-          <svg aria-hidden="true"><use href="#down"/></svg>Get Ather 1.10.0
-        </a>
-        <p class="small">Free · Android 7+, 64-bit · <a href="https://github.com/Yassen0-0/ather-releases/releases">All versions and checksums</a></p>
-      </div>
-      <p class="small" style="margin-top:14px"><b>On 1.9.0 or older?</b> This version does not install over it: let the old one finish syncing, uninstall it, install this one, and sign in with the same account — your data comes back from the cloud.</p>
-      <p class="contact" style="margin-top:14px">
-        <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a>
-        <a href="./privacy">Privacy Policy</a>
-        <a href="./account-deletion">Delete your account</a>
-      </p>
-    </article>
-  </div>
+    </header>
+    <ol class="rows">
+      <li><svg class="mk" aria-hidden="true"><use href="#tick"/></svg><span class="t">قانون أوم</span><span class="v">4 / 4</span></li>
+      <li><svg class="mk" aria-hidden="true"><use href="#tick"/></svg><span class="t">مقاومة الموصّل</span><span class="v">4 / 4</span></li>
+      <li class="wrong">
+        <svg class="mk" viewBox="0 0 26 26" aria-hidden="true"><path class="pen draw" style="--len:44;--d:520ms" d="M6 6 L20 20 M20 6 L6 20"/></svg>
+        <span class="t">قاعدة كيرشوف التانية</span><span class="v">0 / 4</span>
+        <span class="note later" style="--d:760ms">ذاكر كيرشوف تاني</span>
+      </li>
+      <li><svg class="mk" aria-hidden="true"><use href="#tick"/></svg><span class="t">توصيل المقاومات</span><span class="v">4 / 4</span></li>
+    </ol>
+    <footer class="sheet-foot">
+      <span class="pct">75%</span>
+      <span class="fine">ورقة مثال، والأرقام للتوضيح</span>
+    </footer>
+  </article>
 </section>
+
+<section class="chapter" id="how">
+  <div class="chapter-copy">
+    <h2 class="h2">الرقم مش بيتحرك غير بامتحان</h2>
+    <p class="body">تقدر تعلّم إنك شفت الشرح وحليت الواجب، ودي حاجات بتساعدك تنظّم يومك. بس نسبة الإتقان بتفضل زي ما هي لحد ما تحل امتحان وتدخّل إجاباتك.</p>
+    <p class="body">والحسبة واضحة: آخر امتحان عليه 70% من الرقم، ومتوسط الامتحانات اللي قبله عليه 30%.</p>
+  </div>
+  <article class="sheet" data-mark aria-label="خطوات مذاكرة درس، مثال">
+    <header class="sheet-head">
+      <div class="subject"><b>قانون أوم</b><span>خطوات المذاكرة</span></div>
+      <div class="subject" style="text-align:end"><span class="dash">لسه</span><span>الإتقان</span></div>
+    </header>
+    <ul class="rows check">
+      <li><span class="box"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.5 6 10.5 11 4"/></svg></span><span class="t">شفت الشرح</span></li>
+      <li><span class="box"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.5 6 10.5 11 4"/></svg></span><span class="t">قريت الملزمة</span></li>
+      <li><span class="box"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.5 6 10.5 11 4"/></svg></span><span class="t">حليت الواجب</span></li>
+      <li><span class="box"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.5 6 10.5 11 4"/></svg></span><span class="t">راجعت الملزمة</span></li>
+      <li class="counts"><span class="box"></span><span class="t">سجّلت نتيجة امتحان</span>
+        <span class="note later" style="--d:300ms">دي بس اللي بتتحسب</span></li>
+    </ul>
+  </article>
+</section>
+
+<section class="chapter flip">
+  <div class="chapter-copy">
+    <h2 class="h2">ولو سبت الدرس، الرقم بينزل</h2>
+    <p class="body">كل درس ليه 30 يوم من آخر امتحان. لو عدّوا من غير ما تمتحن فيه تاني، بيقلب أحمر. التطبيق مش هيجاملك في الرقم، وده اللي بيخليه ينفعك.</p>
+  </div>
+  <article class="sheet" data-mark aria-label="عدّاد المراجعة، مثال">
+    <header class="sheet-head">
+      <div class="subject"><b>المراجعة</b><span>من آخر امتحان في كل درس</span></div>
+    </header>
+    <ul class="rows clock">
+      <li><span class="t">قانون أوم</span><span class="v">من 4 أيام</span><span class="days" data-on="4"></span></li>
+      <li><span class="t">قاعدتا كيرشوف</span><span class="v">من 18 يوم</span><span class="days" data-on="18"></span></li>
+      <li class="late"><span class="t">الحث المتبادل</span><span class="v">من 31 يوم</span><span class="days" data-on="30"></span>
+        <span class="note later" style="--d:250ms">امتحن فيه تاني</span></li>
+    </ul>
+  </article>
+</section>
+
+<section class="chapter">
+  <div class="chapter-copy">
+    <h2 class="h2">وتعرف تبدأ منين الليلة</h2>
+    <p class="body">كل باب ليه نسبة لوحده. أضعف باب بيبان من أول نظرة، فتبدأ بيه بدل ما تعيد باب إنت أصلًا فاهمه.</p>
+  </div>
+  <article class="sheet" data-mark aria-label="نسب الأبواب، مثال">
+    <header class="sheet-head">
+      <div class="subject"><b>فيزياء</b><span>الأبواب</span></div>
+    </header>
+    <ul class="rows report">
+      <li class="good"><span class="t">التيار الكهربي وقانون أوم<small>4 دروس · 6 امتحانات</small></span><span class="v">88%</span><span class="bar"><i style="--v:88%"></i></span></li>
+      <li><span class="t">التأثير المغناطيسي للتيار<small>3 دروس · 4 امتحانات</small></span><span class="v">71%</span><span class="bar"><i style="--v:71%"></i></span></li>
+      <li class="weak">
+        <svg class="ring" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true"><path class="pen draw" vector-effect="non-scaling-stroke" style="--len:900;--d:150ms" d="M26 10 C120 2 250 4 290 26 C302 50 246 76 150 75 C60 74 6 68 8 42 C10 22 44 10 84 8"/></svg>
+        <span class="t">الحث الكهرومغناطيسي<small>درس متأخّر عن المراجعة</small></span><span class="v">38%</span><span class="bar"><i style="--v:38%"></i></span>
+      </li>
+    </ul>
+    <p style="margin-top:var(--s4)"><span class="note later" style="--d:700ms">ابدأ من هنا</span></p>
+  </article>
+</section>
+
+<section class="facts">
+  <div class="chapter-copy">
+    <h2 class="h2">حاجات لازم تعرفها قبل ما تنزّله</h2>
+  </div>
+  <ul>
+    <li><svg aria-hidden="true"><use href="#i-offline"/></svg><p><b>شغال من غير نت</b>بتسجّل دخول أول مرة بس، وبعدها كل حاجة محفوظة على موبايلك.</p></li>
+    <li><svg aria-hidden="true"><use href="#i-noads"/></svg><p><b>مفيش إعلانات ولا تتبّع</b>ومش بنبيع أو نشارك بياناتك مع أي حد.</p></li>
+    <li><svg aria-hidden="true"><use href="#i-report"/></svg><p><b>تقارير الأعطال</b>لو التطبيق وقع، بيبعت تقرير فني لخدمة اسمها <bdi class="nowrap">Firebase Crashlytics</bdi>. التقرير فيه العطل نفسه، مفيهوش دروسك ولا درجاتك.</p></li>
+    <li><svg aria-hidden="true"><use href="#i-cloud"/></svg><p><b>نسخة على حسابك إنت بس</b>وتقدر <a href="./account-deletion">تمسح حسابك</a> في أي وقت. التفاصيل في <a href="./privacy">سياسة الخصوصية</a>.</p></li>
+  </ul>
+</section>
+
+<section class="close" id="download">
+  <h2 class="h2">جرّبه في أول امتحان جاي</h2>
+  <div class="actions">
+    <a class="btn" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk"><svg aria-hidden="true"><use href="#down"/></svg>حمّل أثر 1.10.0</a>
+  </div>
+  <p class="fine">أندرويد 7 أو أحدث، 64-بت · <a href="https://github.com/Yassen0-0/ather-releases/releases">كل النسخ وبصمات الملفات</a></p>
+  <p class="migrate"><b>كان عندك نسخة 1.9.0 أو أقدم؟</b> النسخة الجديدة مش هتتثبّت فوقها. افتح القديمة واستنى المزامنة لحد ما تخلص، امسحها، نزّل الجديدة، وادخل بنفس الحساب. بياناتك هترجع زي ما هي.</p>
+</section>
+
 </main>
 
-<footer><svg class="mark" aria-hidden="true"><use href="#mark"/></svg>أثر · Ather</footer>
+<section class="en" id="en" lang="en" dir="ltr">
+  <div class="hero">
+    <div class="hero-copy">
+      <h2 class="display">You don't finish lessons. You <span class="inked">master<svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path d="M2 6 C 22 3, 48 8, 70 5 S 94 4, 98 6"/></svg></span> them.</h2>
+      <p class="lede">Enter your exam results question by question. Ather shows you what you actually understand, and what to go back to before the exam.</p>
+      <div class="actions">
+        <a class="btn" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk"><svg aria-hidden="true"><use href="#down"/></svg>Get Ather</a>
+      </div>
+      <p class="fine">Free · Android 7 or later, 64-bit · Version 1.10.0</p>
+    </div>
+    <div class="chapter-copy">
+      <p class="body">Mastery only moves when you record an exam. Ticking off study steps helps you plan, but it never changes the number. The latest exam counts for 70% and the ones before it for 30%.</p>
+      <p class="body">Every lesson gets 30 days after its last exam. After that it turns red until you test it again.</p>
+      <p class="body">It works offline, with no ads and no tracking. Store builds send crash reports to Firebase Crashlytics with the error only, never your lessons or scores. <a href="./privacy">Privacy policy</a> · <a href="./account-deletion">Delete your account</a></p>
+      <p class="migrate" style="margin-top:var(--s2)"><b>On 1.9.0 or older?</b> This version won't install over it. Open the old one and let it finish syncing, uninstall it, install the new one, and sign in with the same account. Your data comes back.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <a class="brand" href="./"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg>أثر</a>
+  <nav aria-label="روابط">
+    <a href="./privacy">سياسة الخصوصية</a>
+    <a href="./account-deletion">حذف الحساب</a>
+    <a href="mailto:yassen.y.mohamed.s@gmail.com">تواصل معانا</a>
+  </nav>
+</footer>
 
 </div>
 
 <script>
-  // The 30-day clocks: one cell per day, filled up to the lesson's age.
   document.querySelectorAll('.days').forEach(function (row) {
     var on = +row.dataset.on;
     for (var i = 0; i < 30; i++) {
@@ -219,18 +201,18 @@
       row.appendChild(cell);
     }
     row.setAttribute('role', 'img');
-    row.setAttribute('aria-label', on + ' / 30');
+    row.setAttribute('aria-label', on + ' من 30 يوم');
   });
-  // The pen marks each sheet once, as it comes into view.
+  var sheets = document.querySelectorAll('[data-mark]');
   if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) { e.target.classList.add('marked'); io.unobserve(e.target); }
       });
-    }, { threshold: 0.35 });
-    document.querySelectorAll('[data-mark]').forEach(function (el) { io.observe(el); });
+    }, { threshold: 0.3 });
+    sheets.forEach(function (el) { io.observe(el); });
   } else {
-    document.querySelectorAll('[data-mark]').forEach(function (el) { el.classList.add('marked'); });
+    sheets.forEach(function (el) { el.classList.add('marked'); });
   }
 </script>
 </body>
