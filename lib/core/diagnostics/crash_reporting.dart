@@ -27,19 +27,74 @@ import 'package:flutter/foundation.dart';
 /// Release builds only, matching `main.dart`'s policy for the crash channels:
 /// `debugPrint` covers local visibility, and a development device reporting
 /// non-fatals would fill the production console with its own experiments.
-void reportNonFatal(Object error, StackTrace stack, {String? reason}) {
+void reportNonFatal(Object error, StackTrace stack, {String? reason}) =>
+    _report(error, stack, reason: reason, fatal: false);
+
+/// [reportNonFatal] for an error nothing caught -- `main.dart`'s
+/// `PlatformDispatcher.onError`. Same scrubbing, same never-throw; the report
+/// keeps `fatal: true` because the error really was unhandled everywhere.
+void reportFatal(Object error, StackTrace stack) =>
+    _report(error, stack, fatal: true);
+
+/// The framework's error channel (`FlutterError.onError`), scrubbed.
+///
+/// Replaces `FirebaseCrashlytics.instance.recordFlutterError`, which sends
+/// `exceptionAsString()` -- the same student text [scrubbedDescription]
+/// exists to keep home -- plus the `context` node and everything the
+/// `informationCollector` adds. Those describe the widget that failed, and a
+/// widget's description can quote the `Text` it was showing: a lesson name,
+/// a task. So the exception goes through [ScrubbedError], the context through
+/// [scrubText], and the collected information is not sent at all. The
+/// library name and the stack trace are kept: they locate the bug and carry
+/// nothing the student typed.
+///
+/// The error is still printed to the local console first, as
+/// `recordFlutterError` did, so a release log on a developer's own device
+/// reads the same as before.
+void reportFlutterError(FlutterErrorDetails details, {bool fatal = false}) {
+  try {
+    FlutterError.presentError(details);
+  } catch (_) {}
+  try {
+    final context = details.context?.toString();
+    final scrubbedContext = context == null ? '' : scrubText(context);
+    final reason = <String>[
+      if (details.library != null) details.library!,
+      if (scrubbedContext.isNotEmpty) scrubbedContext,
+    ].join(': ');
+    _report(
+      details.exception,
+      details.stack ?? StackTrace.empty,
+      reason: reason.isEmpty ? null : reason,
+      fatal: fatal,
+    );
+  } catch (_) {}
+}
+
+void _report(
+  Object error,
+  StackTrace stack, {
+  String? reason,
+  required bool fatal,
+}) {
   try {
     final scrubbed = ScrubbedError.of(error);
     final sink = nonFatalSinkForTesting;
     if (sink != null) {
-      sink(scrubbed, stack, reason);
+      sink(scrubbed, stack, reason, fatal);
       return;
     }
     if (kDebugMode) return;
     if (Firebase.apps.isEmpty) return;
     unawaited(
       FirebaseCrashlytics.instance
-          .recordError(scrubbed, stack, reason: reason, fatal: false)
+          .recordError(
+            scrubbed,
+            stack,
+            reason: reason,
+            fatal: fatal,
+            printDetails: false,
+          )
           .catchError((Object _) {}),
     );
   } catch (_) {
@@ -48,9 +103,15 @@ void reportNonFatal(Object error, StackTrace stack, {String? reason}) {
   }
 }
 
-/// Receives what [reportNonFatal] would have sent, in place of Crashlytics.
+/// Receives what [reportNonFatal], [reportFatal] and [reportFlutterError]
+/// would have sent, in place of Crashlytics.
 @visibleForTesting
-void Function(ScrubbedError error, StackTrace stack, String? reason)?
+void Function(
+  ScrubbedError error,
+  StackTrace stack,
+  String? reason,
+  bool fatal,
+)?
 nonFatalSinkForTesting;
 
 /// What actually leaves the phone for an error: its type, and a description
@@ -106,7 +167,15 @@ String scrubbedDescription(Object error) {
   // carries.
   final type = error.runtimeType.toString();
   if (text.startsWith('$type: ')) text = text.substring(type.length + 2);
+  return scrubText(text);
+}
 
+/// The text half of [scrubbedDescription], for any string that may quote
+/// the student: cut at the first [_cutMarkers] entry, quoted spans and
+/// non-ASCII characters removed, whitespace collapsed, capped at
+/// [kMaxScrubbedLength].
+String scrubText(String input) {
+  var text = input;
   for (final marker in _cutMarkers) {
     final at = text.indexOf(marker);
     if (at != -1) text = text.substring(0, at);
