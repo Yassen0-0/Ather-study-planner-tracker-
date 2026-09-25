@@ -2,7 +2,7 @@ name: ather
 description: "Ather - mastery measurement for Thanaweya Amma"
 publish_to: 'none'
 
-version: 1.9.0+17
+version: 1.10.0+18
 
 environment:
   sdk: ^3.12.2
