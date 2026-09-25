@@ -732,7 +732,7 @@ class LEn extends L {
 
   @override
   String get privacyNoCollectBody =>
-      'No ads. No tracking. No selling data. No third-party analytics or crash reporting. The app works offline most of the time anyway.';
+      'No ads. No tracking. No selling data. No analytics. The one thing sent without you asking is a technical crash report to Firebase Crashlytics when the app crashes or fails to save: the error details and your device model, never your study record.';
 
   @override
   String get lockUnlock => 'Unlock';
