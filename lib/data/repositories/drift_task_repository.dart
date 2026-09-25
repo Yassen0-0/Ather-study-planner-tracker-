@@ -186,7 +186,7 @@ class DriftTaskRepository implements TaskRepository {
       )..where((t) => t.id.isIn(orderedIds))).get();
       final sameDay = <int>{
         for (final row in candidates)
-          if (dayNumber(dayOf(row.day)) == target) row.id,
+          if (dayNumber(dayOfStoredKey(row.day)) == target) row.id,
       };
 
       await _db.batch((Batch batch) {
@@ -225,8 +225,10 @@ class DriftTaskRepository implements TaskRepository {
             // The blob was written on another phone, possibly under another
             // UTC offset; its `day` is an instant that only means "that day"
             // where it was written. Re-truncating lands the row on the day
-            // the backup meant rather than 23:00 of the evening before.
-            day: dayOf(t.day),
+            // the backup meant rather than 23:00 of the evening before. Read by
+            // its instant, not its local fields (D5): the parser hands it
+            // back local, and west of UTC that is the previous evening.
+            day: dayOfStoredKey(t.day),
             title: t.title,
             done: Value(t.done),
             surrendered: Value(t.surrendered),
@@ -246,8 +248,10 @@ class DriftTaskRepository implements TaskRepository {
     // was anchored to UTC carry a local midnight, and a row like that read
     // under a different UTC offset comes back at 23:00 or 01:00. Re-truncating
     // here hands every caller -- screens and providers alike -- the canonical
-    // form, whatever the column held.
-    day: dayOf(r.day),
+    // form, whatever the column held. `dayOfStoredKey`, not `dayOf`: drift
+    // returns the column as a *local* DateTime, and midnight UTC read as local
+    // fields west of UTC is the previous day (D5).
+    day: dayOfStoredKey(r.day),
     title: r.title,
     done: r.done,
     surrendered: r.surrendered,

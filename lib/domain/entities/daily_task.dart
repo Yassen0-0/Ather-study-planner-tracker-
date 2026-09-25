@@ -59,6 +59,45 @@ final class DailyTask {
 DateTime dayOf(DateTime moment) =>
     DateTime.utc(moment.year, moment.month, moment.day);
 
+/// The day a **stored** key names -- for an instant read back from SQLite or a
+/// backup blob, never for a moment the student picked.
+///
+/// [dayOf] reads a [DateTime]'s calendar fields in whatever zone it carries,
+/// which is right for a date the student means and wrong for a key that comes
+/// back from storage: drift and the backup parser hand the instant back as a
+/// *local* [DateTime], and midnight UTC rendered locally west of Greenwich is
+/// the previous evening -- at -5, the task written for the 10th read back on
+/// the 9th (D5). So a stored key is read by its instant:
+///
+/// * exactly midnight UTC -> the canonical key [dayOf] writes; its UTC date
+///   is the day, whatever zone the reader is in;
+/// * anything else -> a legacy key, written as *local* midnight before the key
+///   was anchored to UTC. Its wall-clock time under [offset] (the reader's own
+///   by default) is within an hour or two of a midnight -- the gap between the
+///   offset it was written under and the one it is read under -- so it is
+///   rounded to the nearest midnight rather than truncated: 23:00 is the next
+///   day, 01:00 this one.
+///
+/// [offset] exists so the legacy branch can be tested at any UTC offset
+/// without the host's timezone; callers leave it alone.
+DateTime dayOfStoredKey(DateTime stored, {Duration? offset}) {
+  final utc = stored.toUtc();
+  if (utc.hour == 0 &&
+      utc.minute == 0 &&
+      utc.second == 0 &&
+      utc.millisecond == 0 &&
+      utc.microsecond == 0) {
+    return DateTime.utc(utc.year, utc.month, utc.day);
+  }
+  // Wall-clock fields under the reader's offset, carried on a UTC DateTime so
+  // adding a day below cannot be bent by a daylight-saving change. The
+  // device's offset *at that instant*, via toLocal(): a UTC-flagged input
+  // would otherwise report an offset of zero.
+  final wall = utc.add(offset ?? stored.toLocal().timeZoneOffset);
+  final nearest = wall.hour >= 12 ? wall.add(const Duration(days: 1)) : wall;
+  return DateTime.utc(nearest.year, nearest.month, nearest.day);
+}
+
 /// The calendar day [d] falls on, as a count of days -- the form days are
 /// compared in.
 ///
