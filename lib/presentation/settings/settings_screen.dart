@@ -60,7 +60,7 @@ class SettingsScreen extends ConsumerWidget {
   /// `tool/check_invariants.sh`, which looks for it on this class — which is
   /// why it stays declared here even though the About screen is what displays
   /// it now.
-  static const String appVersion = '1.10.0+18';
+  static const String appVersion = '1.10.1+19';
 
   /// The order the three theme options appear in, and the only place that
   /// order is written down.
