@@ -109,10 +109,7 @@ void main() {
   ) async {
     // A fresh instance standing in for a fresh process: nothing in memory
     // survives between passes except what went through [preferences].
-    final service = ReviewNotificationService(
-      plugin,
-      preferences: preferences,
-    );
+    final service = ReviewNotificationService(plugin, preferences: preferences);
     await service.initialise(onLessonTapped: (_) {});
     await service.refreshPermission();
     return service;
@@ -133,117 +130,105 @@ void main() {
     );
   }
 
-  test('a cold start whose stored fingerprint matches pays zero platform '
-      'calls', () async {
+  // C2: the applied fingerprint used to be persisted and trusted on the next
+  // cold start. A Force Stop deletes an app's alarms without telling it, so
+  // the next launch matched yesterday's record, skipped the rebuild, and the
+  // reminders were gone for good. Every process now rebuilds once.
+  test('every cold start rebuilds, even when nothing moved', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final preferences = await SharedPreferences.getInstance();
 
-    // The run that builds the schedule.
     final firstPlugin = _CountingPlugin();
-    await reschedule(
-      await coldPass(firstPlugin, preferences),
-      oneLesson,
-      true,
-    );
-
+    await reschedule(await coldPass(firstPlugin, preferences), oneLesson, true);
     expect(firstPlugin.cancelAllCalls, 1);
     expect(firstPlugin.scheduledIds, hasLength(2));
-    expect(preferences.getString(ReviewNotificationService.kAppliedFingerprintKey), isNotNull);
 
-    // The next launch reads the same storage and finds nothing moved.
+    // Force stop, then a launch: same data, fresh process. The alarms may be
+    // gone and nothing says so -- the schedule is registered again.
     final secondPlugin = _CountingPlugin();
     await reschedule(
       await coldPass(secondPlugin, preferences),
       oneLesson,
       true,
     );
-
-    expect(secondPlugin.cancelAllCalls, 0, reason: 'no reason to cancel');
-    expect(secondPlugin.scheduledIds, isEmpty);
-
-    // A later pass over changed data still gets through the dedupe.
-    await reschedule(
-      await coldPass(secondPlugin, preferences),
-      twoLessons,
-      true,
-    );
-
     expect(secondPlugin.cancelAllCalls, 1);
-    expect(secondPlugin.scheduledIds, hasLength(4));
+    expect(secondPlugin.scheduledIds, hasLength(2));
   });
 
-  test('a pass that fails half-way clears the stored fingerprint', () async {
+  test('within one process an identical pass still costs nothing', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final preferences = await SharedPreferences.getInstance();
+    final plugin = _CountingPlugin();
+    final service = await coldPass(plugin, preferences);
 
-    final goodPlugin = _CountingPlugin();
-    await reschedule(
-      await coldPass(goodPlugin, preferences),
-      oneLesson,
-      true,
+    await reschedule(service, oneLesson, true);
+    await reschedule(service, oneLesson, true);
+
+    expect(
+      plugin.cancelAllCalls,
+      1,
+      reason:
+          'the dedupe is what makes '
+          'resume and every debounced write cheap',
     );
-    expect(preferences.getString(ReviewNotificationService.kAppliedFingerprintKey), isNotNull);
+    expect(plugin.scheduledIds, hasLength(2));
 
-    // Different data forces the rebuild path, and the platform then refuses.
-    final failingPlugin = _CountingPlugin()
+    // Changed data still gets through.
+    await reschedule(service, twoLessons, true);
+    expect(plugin.cancelAllCalls, 2);
+    expect(plugin.scheduledIds, hasLength(6));
+  });
+
+  test('a pass that fails half-way is rebuilt by the next one', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final preferences = await SharedPreferences.getInstance();
+    final plugin = _CountingPlugin()
       ..scheduleFailure = Exception('platform refused');
-    final failingService = await coldPass(failingPlugin, preferences);
+    final service = await coldPass(plugin, preferences);
 
-    await expectLater(
-      reschedule(failingService, twoLessons, true),
-      throwsException,
-    );
-    expect(preferences.getString(ReviewNotificationService.kAppliedFingerprintKey), isNull);
+    await expectLater(reschedule(service, oneLesson, true), throwsException);
 
-    // And the next honest pass therefore rebuilds rather than trusting a
-    // record for a device state nobody can describe.
-    final recoveryPlugin = _CountingPlugin();
-    await reschedule(
-      await coldPass(recoveryPlugin, preferences),
-      twoLessons,
-      true,
-    );
-
-    expect(recoveryPlugin.cancelAllCalls, 1);
-    expect(recoveryPlugin.scheduledIds, hasLength(4));
+    // Same data, platform healthy again: an unknown device state never counts
+    // as the one asked for.
+    plugin.scheduleFailure = null;
+    await reschedule(service, oneLesson, true);
+    expect(plugin.cancelAllCalls, 2);
+    expect(plugin.scheduledIds, hasLength(2));
   });
 
-  test('an emptied queue persists its fingerprint too, so sign-out stays '
-      'empty across restarts', () async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    final preferences = await SharedPreferences.getInstance();
+  test(
+    'a fingerprint an earlier build stored is removed, never trusted',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final preferences = await SharedPreferences.getInstance();
 
-    // Signed in with reminders owed: the schedule gets built.
-    final signedInPlugin = _CountingPlugin();
-    await reschedule(
-      await coldPass(signedInPlugin, preferences),
-      oneLesson,
-      true,
-    );
-    expect(signedInPlugin.scheduledIds, hasLength(2));
+      // Learn the exact fingerprint a pass over this data produces...
+      final fingerprint = ReviewNotificationService.fingerprintOf(
+        reminders: ReviewNotificationService.planReminders(
+          snapshot: oneLesson,
+          now: kAnchor,
+          enabled: true,
+          buildBody: (lesson, chapter) => 'due:$lesson/$chapter',
+          buildEarlyBody: (lesson, chapter) => 'early:$lesson/$chapter',
+        ),
+        enabled: true,
+        title: 'title',
+      );
+      // ...and leave it where 1.10.0 would have: a perfect match.
+      await preferences.setString(
+        ReviewNotificationService.kAppliedFingerprintKey,
+        fingerprint,
+      );
 
-    // Signing out empties the queue -- and records having done so.
-    final signedOutPlugin = _CountingPlugin();
-    await reschedule(
-      await coldPass(signedOutPlugin, preferences),
-      oneLesson,
-      false,
-    );
+      final plugin = _CountingPlugin();
+      await reschedule(await coldPass(plugin, preferences), oneLesson, true);
 
-    expect(signedOutPlugin.cancelAllCalls, 1);
-    expect(signedOutPlugin.scheduledIds, isEmpty);
-    expect(preferences.getString(ReviewNotificationService.kAppliedFingerprintKey), isNotNull);
-
-    // So the next launch does not cancel anything again to arrive at an
-    // emptiness it already recorded.
-    final nextLaunchPlugin = _CountingPlugin();
-    await reschedule(
-      await coldPass(nextLaunchPlugin, preferences),
-      oneLesson,
-      false,
-    );
-
-    expect(nextLaunchPlugin.cancelAllCalls, 0);
-    expect(nextLaunchPlugin.scheduledIds, isEmpty);
-  });
+      expect(plugin.cancelAllCalls, 1);
+      expect(plugin.scheduledIds, hasLength(2));
+      expect(
+        preferences.getString(ReviewNotificationService.kAppliedFingerprintKey),
+        isNull,
+      );
+    },
+  );
 }
