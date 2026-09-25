@@ -1240,7 +1240,9 @@ so it reads like a broken checkout rather than a one-switch machine setting.
 - ~~**The release signing config is wired, but no keystore exists yet.**~~ **The keystore exists
   (since 2026-08-05)** and has signed every release since, up to `1.2.0+6`. Its certificate is
   `CN=yassen, OU=per, O=ather, L=giza, ST=giza, C=eg`, SHA-1 `f3eaec08…623e` — that fingerprint
-  is now the app's identity and must never change. The paragraph below still describes how the
+  is now the app's identity and must never change. *(Superseded 2026-09-25: that key and its
+  password were lost, and releases from `1.10.0+18` on are signed with a new key, SHA-1
+  `4E:A8:66:F7…30:C1` — see RELEASING.md §1 for what it cost.)* The paragraph below still describes how the
   wiring behaves, and is why a missing keystore fails the build instead of silently using the
   debug key.
 
@@ -1583,7 +1585,8 @@ week is on screen. Narrowing the glow or making its inner half inert would fix i
 An upload key now exists (procedure and warnings: RELEASING.md). Its SHA-1 and SHA-256 are
 registered against `com.ather.app` in Firebase and `android/app/google-services.json` was
 re-downloaded — it now carries two certificate hashes for the package, the debug key and
-`f3eaec08…`.
+`f3eaec08…`. *(2026-09-25: a third, `4ea866f7…`, is the replacement upload key; the first one was
+lost — RELEASING.md §1.)*
 
 Verified on the device, in this order, because each step only proves the next one is worth
 trying:

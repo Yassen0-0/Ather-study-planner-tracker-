@@ -1,3 +1,57 @@
+# Ather — release build, 2026-09-25 · 1.10.0+18
+
+**The release that has to be installed fresh.** The key that signed every build up to
+`1.9.0+17` was lost, and this is the first build signed with its replacement. Android will not
+install it over `1.9.0` — to Android it is a different publisher's app with the same name.
+
+**Does NOT install over `1.9.0+17`.** New upload key (SHA-1 `4ea866f7…`, was `f3eaec08…`),
+`versionCode` 17 → 18. The database schema does not move — it stays at version 5 — so
+nothing about the data itself changes; only the road to it does:
+
+1. Open the old version and wait until the sync card says it is saved.
+2. Uninstall it.
+3. Install `1.10.0+18`.
+4. Sign in with the same account. The curriculum and every exam come back from the cloud.
+
+A student who never signed in to a backup has no cloud copy to come back from. For them there
+is no safe route, and they should stay on `1.9.0` until they have one.
+
+The first fix below is what makes step 4 safe, and it is why this build could not go out
+without it.
+
+## What changed since 1.9.0+17
+
+### A slow first restore can no longer cost you the cloud copy
+
+On a new phone, if the automatic restore timed out and you then added anything at all — one
+task, one chapter — the next backup pushed that near-empty phone over years of history in the
+cloud. A phone that has never synced now checks the cloud copy before its first upload, and if
+the cloud holds more chapters or exams than the phone, it holds the upload and says so on the
+sync card. The restore is also retried when you come back to the app, instead of once per
+launch. Saving over the cloud copy anyway is still possible — from the backup screen, and only
+after it tells you what is in the cloud.
+
+### Forgetting the app password no longer means clearing the app
+
+With a password-only lock there was no way back in except Android's "Clear data", which deletes
+the database. The lock screen now has «نسيت كلمة سر التطبيق؟»: prove it is your account
+(Google, or your account password) and the lock is removed. Wrong guesses are now limited —
+five free, then a wait that doubles up to fifteen minutes — and the limit survives closing the
+app.
+
+### Deleting an account works for Google accounts too
+
+A Google account opened in an earlier session was asked for a password it does not have, and
+by then the device and the cloud copy had already been wiped. The app now asks for proof of
+ownership first — Google or password, whichever the account actually uses — and wipes nothing
+until it has it. Backing out leaves everything as it was.
+
+### "What do I need next time" counts the paper you just entered
+
+After an exam the wizard tells you what the next paper needs for the lesson to cross the line.
+It left the paper on screen out of its arithmetic, so on a first exam it always said 100%. A
+first paper at 50% now says 79%.
+
 # Ather — release build, 2026-08-25 · 1.9.0+17
 
 **The release where the app stops keeping dangerous secrets.** A phone handed from one student to

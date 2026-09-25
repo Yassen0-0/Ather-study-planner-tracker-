@@ -12,17 +12,17 @@
 # Generate the keystore yourself (never paste a password into a chat or a file
 # that gets committed):
 #
-#   keytool -genkey -v -keystore C:\Users\<you>\keys\ather-upload.jks \
+#   keytool -genkey -v -keystore ~/keys/ather-upload-2026.jks \
 #     -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias ather
 #
 # Then verify a build with:
 #
 #   flutter build apk --release
-#   apksigner verify --print-certs build\app\outputs\flutter-apk\app-release.apk
+#   apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk
 #
 # The certificate DN must be your own details, NOT "CN=Android Debug".
 
-storeFile=C:\\Users\\<you>\\keys\\ather-upload.jks
+storeFile=/Users/<you>/keys/ather-upload-2026.jks
 storePassword=<the store password you chose>
 keyAlias=ather
 keyPassword=<the key password you chose>
