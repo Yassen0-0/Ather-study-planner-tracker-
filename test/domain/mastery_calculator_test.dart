@@ -347,7 +347,7 @@ void main() {
       // sat; 62 does.
       expect(61 * kRecentWeight + 90 * kHistoryWeight, lessThan(70));
       expect(
-        needed! * kRecentWeight + 90 * kHistoryWeight,
+        needed * kRecentWeight + 90 * kHistoryWeight,
         greaterThanOrEqualTo(kChapterMasteryThreshold),
       );
     });
@@ -396,7 +396,7 @@ void main() {
       for (var m = 0.0; m < 70; m += 3.5) {
         final needed = MasteryCalculator.scoreNeededToCross(meanOfExisting: m);
         expect(needed, isNotNull, reason: 'mean $m');
-        final achieved = needed! * kRecentWeight + m * kHistoryWeight;
+        final achieved = needed * kRecentWeight + m * kHistoryWeight;
         expect(
           achieved,
           greaterThanOrEqualTo(kChapterMasteryThreshold),

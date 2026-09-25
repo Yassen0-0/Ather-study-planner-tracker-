@@ -162,7 +162,7 @@ abstract final class MasteryCalculator {
   }
 
   /// The percentage the *next* paper must reach for the lesson to cross
-  /// [threshold], or null when there is nothing to cross.
+  /// [threshold]. Always an answer, never null -- see below.
   ///
   /// Answers the student's one real question after a bad paper: "how much do I
   /// need next time?". The formula is [lessonMastery] inverted around the paper
@@ -178,14 +178,19 @@ abstract final class MasteryCalculator {
   /// {100,0} to different numbers depending on order; the records do not, and
   /// only the records know the history weight will actually pull on.
   ///
-  /// null when [meanOfExisting] already sits at or above [threshold]: there is
-  /// no line to cross, and inventing one would nag a student who has crossed.
+  /// A mean already at or above [threshold] still gets a number -- a strong
+  /// past lowers the ask, it does not waive the next paper. Whether the line is
+  /// worth *showing* is the caller's decision, not this function's.
+  ///
+  /// "All" includes a paper that is being entered but not yet saved: the
+  /// wizard asks this question before its save, so its caller folds the
+  /// on-screen paper into the mean (`scoreNeededAfterPaper`).
   ///
   /// Rounds **up**: a promised score must clear the threshold once sat, and a
   /// rounded-down 61% against mean 90 lands at 69.7 -- a promise that breaks.
   /// Clamped into [0, 100] so floating-point overshoot at the exact-100 end
   /// cannot advertise more than a perfect paper.
-  static int? scoreNeededToCross({
+  static int scoreNeededToCross({
     required double meanOfExisting,
     double threshold = kChapterMasteryThreshold,
   }) {

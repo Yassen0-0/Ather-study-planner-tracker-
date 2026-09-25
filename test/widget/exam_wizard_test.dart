@@ -16,6 +16,7 @@ import 'package:ather/data/db/app_database.dart';
 import 'package:ather/data/exam_draft_store.dart';
 import 'package:ather/data/repositories/drift_study_repository.dart';
 import 'package:ather/domain/entities/exam_entry.dart';
+import 'package:ather/domain/entities/mastery.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/repositories/study_repository.dart';
 import 'package:ather/domain/services/mastery_calculator.dart';
@@ -447,6 +448,54 @@ void main() {
     );
   });
 
+  // C1: "what do I need next time?" is asked before the save, so the paper on
+  // screen is part of the history the NEXT paper will stand on. The mean must
+  // count it; before this fix a first paper always read an empty history and
+  // was told 100% no matter what it had just scored.
+  group('score needed after this paper', () {
+    ExamEntry recorded(double percentage) => ExamEntry(
+      id: 1,
+      lessonId: 7,
+      isReviewExam: false,
+      totalPossiblePoints: 10,
+      correctPoints: 0,
+      percentage: percentage,
+      createdAt: now,
+    );
+
+    test('a first paper at 50% asks 79, not 100', () {
+      // Mean of {50} = 50: (70 - 0.3*50)/0.7 = 78.57 -> 79.
+      expect(
+        scoreNeededAfterPaper(existing: const <ExamEntry>[], paperPercentage: 50),
+        79,
+      );
+    });
+
+    test('a recorded 90 and this paper at 20 average to 55 -> 77', () {
+      // Mean of {90, 20} = 55: (70 - 0.3*55)/0.7 = 76.43 -> 77. Reading the
+      // recorded 90 alone would have promised 62 -- too low to cross.
+      expect(
+        scoreNeededAfterPaper(
+          existing: <ExamEntry>[recorded(90)],
+          paperPercentage: 20,
+        ),
+        77,
+      );
+      expect(
+        77 * kRecentWeight + 55 * kHistoryWeight,
+        greaterThanOrEqualTo(kChapterMasteryThreshold),
+      );
+    });
+
+    test('equals the calculator fed the mean of every paper', () {
+      final existing = <ExamEntry>[recorded(30), recorded(45)];
+      expect(
+        scoreNeededAfterPaper(existing: existing, paperPercentage: 60),
+        MasteryCalculator.scoreNeededToCross(meanOfExisting: 45),
+      );
+    });
+  });
+
   // P3-04: the wizard is the one screen holding data that exists nowhere
   // else yet. These exercise the two guards around it: the draft that
   // survives process death, and the back press arriving while a save is in
@@ -779,6 +828,28 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text(iso('60%')), findsExactly(2));
         expect(step4BarFill(), closeTo(0.6, 0.001));
+
+        dbClosedByTest = true;
+        await db.close();
+        await tester.pump(const Duration(seconds: 1));
+      },
+    );
+
+    testWidgets(
+      'step 4 on a first paper asks what the next one needs from THIS history',
+      (tester) async {
+        SharedPreferences.setMockInitialValues(<String, Object>{});
+        final preferences = await SharedPreferences.getInstance();
+
+        await pumpWizard(tester, preferences);
+        // The lesson has no recorded exams; this paper scores 60%.
+        await fillToStep4(tester);
+        await tester.pumpAndSettle();
+
+        // Mean of {60} = 60: (70 - 0.3*60)/0.7 = 74.29 -> 75. The old call
+        // site averaged the empty record set to 0 and always said 100%.
+        expect(find.textContaining(iso('75%')), findsOneWidget);
+        expect(find.textContaining(iso('100%')), findsNothing);
 
         dbClosedByTest = true;
         await db.close();
