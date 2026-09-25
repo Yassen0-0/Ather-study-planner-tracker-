@@ -1,3 +1,27 @@
+# Ather — release build, 2026-09-25 · 1.10.1+19
+
+**The release that closes the audit.** Installs straight over `1.10.0+18`: same (new) upload key,
+`versionCode` 18 → 19, every exam kept. The database schema stays at version 5.
+
+## What changed since 1.10.0+18
+
+- **An interrupted upgrade can no longer brick the database.** The migration ladder runs in one
+  transaction and skips any step a half-finished upgrade already applied.
+- **Reminders survive a Force Stop.** They are re-registered on every cold start; phones that
+  kill background alarms (Xiaomi, Oppo, Realme) no longer go quiet until the schedule changes.
+- **A device holding only subjects you created counts as not empty,** so an account switch asks
+  before wiping it.
+- **Tasks stay on their own day** for anyone west of UTC.
+- **Crash reports never carry what you typed.** Every report, fatal or not, is reduced to the
+  error type and a scrubbed message; lesson names and scores never leave the phone.
+- **An upload that timed out cannot land later.** Backups now go through the server directly or
+  not at all, instead of waiting in an offline queue.
+- **The privacy screen tells the truth about crash reports,** matching the published policy.
+- **App lock:** the lockout shows how long to wait; turning the lock off resets the counter.
+- **Smaller things:** the notification channel is named in Arabic, small controls have full-size
+  touch targets, and the dashboard spacing mirrors correctly in Arabic.
+- **Cloud rules** (deployed separately): only the one backup document, in its one shape.
+
 # Ather — release build, 2026-09-25 · 1.10.0+18
 
 **The release that has to be installed fresh.** The key that signed every build up to
