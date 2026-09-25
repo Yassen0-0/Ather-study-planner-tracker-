@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import '../../core/diagnostics/crash_reporting.dart';
 
 import '../../domain/entities/subject.dart';
 import 'tables.dart';
@@ -98,7 +98,9 @@ class AppDatabase extends _$AppDatabase {
         // Report non-fatal error to Crashlytics before rethrowing.
         // Migration failures are critical: they prevent the app from opening
         // and can leave a student's database in an inconsistent state.
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
+        // Never throws, even with Firebase down -- a report that threw here
+        // would replace the migration error in the rethrow below.
+        reportNonFatal(error, stack, reason: 'migration');
         rethrow;
       }
     },

@@ -1,9 +1,8 @@
 import 'dart:async';
 
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 
+import '../../core/diagnostics/crash_reporting.dart';
 import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/widgets/ather_toast.dart';
 
@@ -49,18 +48,10 @@ Future<bool> runWrite(
     // real failure on the cheap phones this app runs on -- shows up as a
     // student seeing "حصل خطأ ما" over and over and zero traces on the console.
     //
-    // Release only, matching main.dart's policy: debugPrint already covers
-    // local visibility, and a development device reporting non-fatals would
-    // pollute the production console with crashes its own build caused.
-    // Unawaited with an swallowed error: sending a crash report must never
-    // become the failure the student is told about.
-    if (!kDebugMode) {
-      unawaited(
-        FirebaseCrashlytics.instance
-            .recordError(error, stack, fatal: false)
-            .catchError((Object _) {}),
-      );
-    }
+    // Through the one reporting door (S4/S5): release only, never throws, and
+    // never sends the student's text -- a failed write is exactly where a
+    // drift exception quotes the row it refused.
+    reportNonFatal(error, stack, reason: 'write');
     if (overlay != null) {
       showAtherToastOn(
         overlay,

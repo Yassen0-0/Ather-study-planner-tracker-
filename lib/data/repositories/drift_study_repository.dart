@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import '../../core/clock/clock.dart';
+import '../../core/diagnostics/crash_reporting.dart';
 import '../../domain/entities/chapter.dart';
 import '../../domain/entities/exam_entry.dart';
 import '../../domain/entities/homework_entry.dart';
@@ -506,7 +506,8 @@ class DriftStudyRepository implements StudyRepository {
     } catch (error, stack) {
       // Report non-fatal error to Crashlytics before rethrowing.
       // Exam save failures are critical: they represent lost student work.
-      FirebaseCrashlytics.instance.recordError(error, stack);
+      // Scrubbed: the exception can quote the exam row it refused.
+      reportNonFatal(error, stack, reason: 'recordExam');
       rethrow;
     }
   }
