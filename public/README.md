@@ -30,33 +30,44 @@ files, and keeps the policy on infrastructure we already depend on.
 |---|---|
 | Publisher | `Yassen Yousry` — must stay identical to the developer name on the Play listing; a policy naming a different entity than the store page is a rejection reason |
 | Contact | `yassen.y.mohamed.s@gmail.com` |
-| Download | `./ather-latest.apk`, served from this same site |
+| Download | `ather-latest.apk` from the public `Yassen0-0/ather-releases` repository (see below) |
 
-## The APK is served from here, and is not in git
+## The APK is served from a public releases repository, not from here
 
-The download button points at `ather-latest.apk` on this host rather than at a
-GitHub release, for a plain reason: **this repository is private.** A release on
-a private repository is invisible to anyone without access, so the button on a
-public page would answer 404 for every student it was built for. Serving the
-file beside the pages that describe it needs no repository to become public and
-no second place to administer.
+The download button points at
+`https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk`.
 
-The filename is fixed rather than versioned so the page never has to be edited
-to ship a build. The version a student is getting is printed under the button,
-which is the only place it needs to be accurate.
+It used to point at `./ather-latest.apk` on this host, on the reasoning that this
+repository is private and a release here is invisible to the students the button is
+for. That half was right. The other half never ran: the site was first deployed on
+2026-09-25, and Firebase refused the upload outright — **executable files are
+forbidden on the Spark (free) plan**, and an `.apk` is one. Nothing had caught it,
+because nothing had ever deployed.
 
-`public/*.apk` is **git-ignored** — a 24MB binary committed once per release
-grows the repository by a quarter of a gigabyte a year, and git keeps every copy
-forever. So the file has to be put in place before each deploy:
+So the APK lives in [`Yassen0-0/ather-releases`](https://github.com/Yassen0-0/ather-releases),
+a **public** repository that holds a README and signed APKs and **no source at all**.
+The source stays private; the builds are public, which is what a download link needs.
+
+Each release there carries the APK twice: once under its versioned name
+(`Ather-1.10.0-build18.apk`) and once as **`ather-latest.apk`**. The fixed name is what
+makes `releases/latest/download/ather-latest.apk` resolve to the newest build, so the
+page never has to be edited to ship one. Forget the fixed-name copy and the button
+keeps handing out the previous release — a quiet failure, since the page still works.
+
+Per release:
 
 ```bash
-flutter build apk --release
-cp build/app/outputs/flutter-apk/app-release.apk public/ather-latest.apk
+cp build/app/outputs/flutter-apk/app-release.apk Ather-X.Y.Z-buildN.apk
+cp Ather-X.Y.Z-buildN.apk ather-latest.apk
+gh release create vX.Y.Z-buildN -R Yassen0-0/ather-releases --latest \
+  --title "..." --notes-file notes.md Ather-X.Y.Z-buildN.apk ather-latest.apk
 ```
 
-Do that, update the version under the button in `index.html`, and then deploy.
-Deploying without the copy step leaves the previous build in place, which is a
-quiet failure: the page still works and hands out a stale app.
+Then update the version printed under the button in `index.html` and deploy. That line
+is the only place on the page the version needs to be accurate.
+
+Moving to the Blaze plan would let the file sit here again. It was not done because it
+needs a billing account, for a problem a free public repository solves.
 
 ## Deploying
 
