@@ -48,6 +48,10 @@ final class FakeNotificationService extends ReviewNotificationService {
     return true;
   }
 
+  /// The channel name the last pass asked for -- the localised one when the
+  /// real scheduler drives this.
+  String? lastChannelName;
+
   @override
   Future<void> reschedule({
     required StudySnapshot snapshot,
@@ -58,7 +62,11 @@ final class FakeNotificationService extends ReviewNotificationService {
     String Function(String lesson)? buildDecliningBody,
     String Function(String lesson)? buildWeakBody,
     required String title,
+    String channelName = ReviewNotificationService.kDefaultChannelName,
+    String channelDescription =
+        ReviewNotificationService.kDefaultChannelDescription,
   }) async {
+    lastChannelName = channelName;
     rescheduleEnabled.add(enabled);
     plannedReminders = ReviewNotificationService.planReminders(
       snapshot: snapshot,

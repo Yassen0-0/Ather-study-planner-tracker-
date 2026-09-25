@@ -600,10 +600,13 @@ class _ReturnEdge extends StatelessWidget {
   final DayEdge edge;
   final VoidCallback onTap;
 
-  /// Wide enough to be an easy tap beside the row; the visible mark inside it
-  /// is only [_edge]. The old gradient was 18 wide and overlaid a whole day
-  /// cell's worth of glow.
-  static const double _width = 18;
+  /// The tap target: [kMinTarget], like every other control -- it was 18,
+  /// which is a strip a thumb has to aim for. The visible mark inside it is
+  /// still only [_edge], so nothing on screen changes. The trade: the outer
+  /// part of the cell at that edge -- the visible day nearest to today --
+  /// now returns to today rather than picking that day. Both move toward
+  /// today, and the rest of that cell still picks it.
+  static const double _width = kMinTarget;
 
   /// The approved replacement for the gradient this cue used to draw: §3.10
   /// bans gradients and sanctions one exception (the tab bar's glass), so the
@@ -622,14 +625,21 @@ class _ReturnEdge extends StatelessWidget {
       start: atStart ? 0 : null,
       end: atStart ? null : 0,
       width: _width,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Align(
-          alignment: atStart
-              ? AlignmentDirectional.centerStart
-              : AlignmentDirectional.centerEnd,
-          child: Container(width: _edge, color: green),
+      // The line carries no text, so without a label a screen reader finds
+      // an unnamed tap target at the row's edge.
+      child: Semantics(
+        button: true,
+        label: L.of(context).dayPickerBackToToday,
+        excludeSemantics: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Align(
+            alignment: atStart
+                ? AlignmentDirectional.centerStart
+                : AlignmentDirectional.centerEnd,
+            child: Container(width: _edge, color: green),
+          ),
         ),
       ),
     );

@@ -473,6 +473,27 @@ void main() {
       expect(picked.single, today);
     });
 
+    testWidgets('it is a full 48-point target, and says what it does', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      selected = DateTime(2026, 8, 12);
+      await pump(tester);
+
+      // The drawn line stays 2 wide; the target around it no longer asks a
+      // thumb to find an 18-point strip.
+      final marker = tester.getRect(glow);
+      expect(marker.width, 48);
+      expect(find.bySemanticsLabel('العودة إلى اليوم'), findsOneWidget);
+
+      // A tap well inside the old strip's reach -- 40 in from the edge --
+      // still goes home.
+      await tester.tapAt(Offset(marker.right - 40, marker.center.dy));
+      await tester.pumpAndSettle();
+      expect(picked.single, today);
+      semantics.dispose();
+    });
+
     testWidgets('a week back puts it on the other side', (tester) async {
       selected = DateTime(2026, 7, 29);
       await pump(tester);

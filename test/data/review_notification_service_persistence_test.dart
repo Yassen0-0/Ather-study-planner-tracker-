@@ -89,7 +89,10 @@ final class _CountingPlugin implements FlutterLocalNotificationsPlugin {
     final failure = scheduleFailure;
     if (failure != null) throw failure;
     scheduledIds.add(id);
+    lastDetails = notificationDetails;
   }
+
+  NotificationDetails? lastDetails;
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -229,6 +232,42 @@ void main() {
         preferences.getString(ReviewNotificationService.kAppliedFingerprintKey),
         isNull,
       );
+    },
+  );
+
+  test(
+    'the channel is named in the student\'s language, and relabelled',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final preferences = await SharedPreferences.getInstance();
+
+      // Nothing passed: Arabic first, never the old hard-coded English.
+      final plugin = _CountingPlugin();
+      await reschedule(await coldPass(plugin, preferences), oneLesson, true);
+      final byDefault = plugin.lastDetails!.android!;
+      expect(
+        byDefault.channelName,
+        ReviewNotificationService.kDefaultChannelName,
+      );
+      expect(byDefault.channelName, isNot('Review reminders'));
+      expect(byDefault.channelDescription, isNotEmpty);
+      // `update`: every install already has the channel under its old name.
+      expect(byDefault.channelAction, AndroidNotificationChannelAction.update);
+
+      // The scheduler's localised pair goes straight through.
+      final english = _CountingPlugin();
+      final service = await coldPass(english, preferences);
+      await service.reschedule(
+        snapshot: oneLesson,
+        now: kAnchor,
+        enabled: true,
+        title: 'title',
+        channelName: 'Review reminders',
+        channelDescription: 'Reminders for lessons that are due for review.',
+        buildBody: (lesson, chapter) => 'due:$lesson/$chapter',
+        buildEarlyBody: (lesson, chapter) => 'early:$lesson/$chapter',
+      );
+      expect(english.lastDetails!.android!.channelName, 'Review reminders');
     },
   );
 }

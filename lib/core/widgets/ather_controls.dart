@@ -79,6 +79,12 @@ class AtherCheckbox extends StatelessWidget {
 /// A 50x30 switch. Accent when on with the knob at the **end** of the track —
 /// which under RTL is the physical left, so the control is forced LTR: a
 /// switch is a physical metaphor, and mirroring it makes "on" look like "off".
+///
+/// The track is drawn 50x30, but the control *occupies* [kMinTarget] of
+/// height with the track centred in it, and all of that takes the tap: a
+/// 30-point target is below the 48 every other control here keeps
+/// (`Pressable.minTarget`). `SettingsRow` trims its padding by the difference
+/// so a toggle row stays exactly as tall as it was.
 class AtherSwitch extends StatelessWidget {
   const AtherSwitch({
     super.key,
@@ -95,6 +101,10 @@ class AtherSwitch extends StatelessWidget {
   /// Settings sounds identical.
   final String? semanticLabel;
 
+  /// The drawn track. The width already clears [kMinTarget].
+  static const double trackWidth = 50;
+  static const double trackHeight = 30;
+
   @override
   Widget build(BuildContext context) {
     final reduced = prefersReducedMotion(context);
@@ -103,46 +113,59 @@ class AtherSwitch extends StatelessWidget {
       label: semanticLabel,
       toggled: value,
       child: GestureDetector(
+        // Opaque, so the transparent band above and below the track answers
+        // too -- that band is the point of the extra height.
+        behavior: HitTestBehavior.opaque,
         onTap: () => onChanged(!value),
-        child: Ltr(
-          child: AnimatedContainer(
-            duration: reduced ? Duration.zero : AppMotion.press,
-            curve: AppMotion.standard,
-            width: 50,
-            height: 30,
-            decoration: BoxDecoration(
-              // The **brand accent**, not `right`. `right` is the mastery
-              // green -- it means "you scored 90 or above", and it is the only
-              // green in the palette. Spending it on "this preference is on"
-              // says nothing about mastery and drains the one colour that does.
-              //
-              // It also read as the stock platform switch, which is the single
-              // most template-looking control an app can have: every other
-              // control here is drawn, and this one arrived green by default
-              // and stayed.
-              color: value ? context.colors.accent : context.colors.switchOff,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: AnimatedAlign(
-              duration: reduced ? Duration.zero : AppMotion.press,
-              curve: AppMotion.standard,
-              alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                width: 25,
-                height: 25,
+        child: SizedBox(
+          width: trackWidth,
+          height: kMinTarget,
+          child: Center(
+            child: Ltr(
+              child: AnimatedContainer(
+                duration: reduced ? Duration.zero : AppMotion.press,
+                curve: AppMotion.standard,
+                width: trackWidth,
+                height: trackHeight,
                 decoration: BoxDecoration(
-                  color: context.colors.switchKnob,
-                  shape: BoxShape.circle,
-                  // The one shadow the design allows anywhere in the app: a
-                  // knob with no lift reads as a painted dot, not a control.
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: Color(0x40000000),
-                      blurRadius: 3,
-                      offset: Offset(0, 1),
+                  // The **brand accent**, not `right`. `right` is the mastery
+                  // green -- it means "you scored 90 or above", and it is the only
+                  // green in the palette. Spending it on "this preference is on"
+                  // says nothing about mastery and drains the one colour that does.
+                  //
+                  // It also read as the stock platform switch, which is the single
+                  // most template-looking control an app can have: every other
+                  // control here is drawn, and this one arrived green by default
+                  // and stayed.
+                  color: value
+                      ? context.colors.accent
+                      : context.colors.switchOff,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: AnimatedAlign(
+                  duration: reduced ? Duration.zero : AppMotion.press,
+                  curve: AppMotion.standard,
+                  alignment: value
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                    width: 25,
+                    height: 25,
+                    decoration: BoxDecoration(
+                      color: context.colors.switchKnob,
+                      shape: BoxShape.circle,
+                      // The one shadow the design allows anywhere in the app: a
+                      // knob with no lift reads as a painted dot, not a control.
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Color(0x40000000),
+                          blurRadius: 3,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

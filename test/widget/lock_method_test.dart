@@ -8,6 +8,7 @@ import 'package:ather/core/widgets/buttons.dart';
 import 'package:ather/domain/entities/daily_task.dart';
 import 'package:ather/domain/entities/study_snapshot.dart';
 import 'package:ather/domain/repositories/auth_repository.dart';
+import 'package:ather/presentation/auth/lock_screen.dart' show formatLockWait;
 import 'package:ather/presentation/dashboard/dashboard_screen.dart';
 import 'package:ather/presentation/common/settings_button.dart';
 import 'package:ather/presentation/providers/app_providers.dart';
@@ -108,6 +109,14 @@ void main() {
       expect(preferences.getInt(kLockFailedAttemptsKey), isNull);
       expect(preferences.getInt(kLockLockedUntilKey), isNull);
     });
+  });
+
+  test('the wait reads m:ss, rounded up, never 0:00 while still refusing', () {
+    expect(formatLockWait(const Duration(seconds: 30)), '0:30');
+    expect(formatLockWait(const Duration(milliseconds: 29001)), '0:30');
+    expect(formatLockWait(const Duration(milliseconds: 1)), '0:01');
+    expect(formatLockWait(const Duration(minutes: 15)), '15:00');
+    expect(formatLockWait(const Duration(seconds: -3)), '0:00');
   });
 
   late SharedPreferences prefs;
@@ -227,7 +236,8 @@ void main() {
     );
   });
 
-  const tooMany = 'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى.';
+  // The wait itself is named (m:ss, isolated): 30 s after the fifth miss.
+  String tooMany(String wait) => 'محاولات كثيرة. حاول مرة أخرى بعد \u2066$wait\u2069.';
   const passwordLock = <String, Object>{'lock_methods': 'password'};
 
   testWidgets('five wrong passwords stop the gate listening, across a restart', (
@@ -251,7 +261,7 @@ void main() {
       await tester.tap(submit('افتح بكلمة السر'));
       await tester.pumpAndSettle();
     }
-    expect(find.text(tooMany), findsOneWidget);
+    expect(find.text(tooMany('0:30')), findsOneWidget);
 
     // Even the right answer is not checked while the refusal runs.
     await tester.enterText(find.byType(TextField), '1357');
@@ -280,14 +290,21 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text(tooMany), findsOneWidget);
+    expect(find.text(tooMany('0:30')), findsOneWidget);
+    // And it counts down with the clock.
+    clock.advance(const Duration(seconds: 10));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text(tooMany('0:20')), findsOneWidget);
     await tester.enterText(find.byType(TextField), '1357');
     await tester.tap(submit('افتح بكلمة السر'));
     await tester.pumpAndSettle();
     expect(locked(tester), isTrue);
 
-    // Once it has run out, the right answer opens and the count starts over.
-    clock.advance(const Duration(seconds: 31));
+    // Once it has run out the message goes by itself, the right answer
+    // opens, and the count starts over.
+    clock.advance(const Duration(seconds: 21));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.textContaining('محاولات كثيرة'), findsNothing);
     await tester.enterText(find.byType(TextField), '1357');
     await tester.tap(submit('افتح بكلمة السر'));
     await tester.pumpAndSettle();
@@ -389,6 +406,55 @@ void main() {
     expect(locked(tester), isTrue);
     expect(prefs.getBool('app_lock_enabled'), isTrue);
     expect(prefs.getString('lock_password_hash'), hash);
+  });
+
+  testWidgets('turning the lock off in Settings forgets the guessing count', (
+    tester,
+  ) async {
+    final localAuth = FakeLocalAuth(result: true);
+
+    // The lock is on and a backoff is still counting from earlier misses.
+    await tester.pumpWidget(
+      await boot(
+        localAuth,
+        stored: <String, Object>{
+          'lock_failed_attempts': 7,
+          'lock_locked_until': now
+              .add(const Duration(minutes: 2))
+              .millisecondsSinceEpoch,
+        },
+      ),
+    );
+    // The sensor answers: in, and a sensor success resets the count too --
+    // so plant the stale count again to isolate the switch.
+    await tester.pumpAndSettle();
+    expect(locked(tester), isFalse);
+    await prefs.setInt('lock_failed_attempts', 7);
+    await prefs.setInt(
+      'lock_locked_until',
+      now.add(const Duration(minutes: 2)).millisecondsSinceEpoch,
+    );
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(DashboardScreen),
+        matching: find.byType(SettingsButton),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final switchRow = find.text('قفل بالبصمة');
+    await tester.scrollUntilVisible(
+      switchRow,
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(switchRow);
+    await tester.pumpAndSettle();
+
+    expect(prefs.getBool('app_lock_enabled'), isFalse);
+    expect(prefs.getInt('lock_failed_attempts'), isNull);
+    expect(prefs.getInt('lock_locked_until'), isNull);
   });
 
   testWidgets('both ways in: the password side alone can open', (tester) async {

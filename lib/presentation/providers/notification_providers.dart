@@ -158,6 +158,8 @@ class _ReviewSchedulerState extends ConsumerState<ReviewScheduler>
             ref.read(isSignedInProvider) &&
             ref.read(notificationsEnabledProvider),
         title: l.reviewNotificationTitle,
+        channelName: l.settingsNotifications,
+        channelDescription: l.reviewChannelDescription,
         buildBody: (lesson, chapter) =>
             l.reviewNotificationBody(lesson, chapter),
         // A different sentence, not the same one earlier: the due-day body says

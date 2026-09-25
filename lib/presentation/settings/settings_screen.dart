@@ -260,6 +260,10 @@ class SettingsScreen extends ConsumerWidget {
     final lock = ref.read(appLockEnabledProvider.notifier);
     if (!enable) {
       await lock.set(false);
+      // A lock the owner just switched off leaves no guesses to count: a
+      // backoff surviving it would greet the next "on" with a refusal the
+      // student never earned.
+      await ref.read(lockAttemptStoreProvider).reset();
       return;
     }
     final biometrics = ref.read(biometricsAvailableProvider).value ?? false;

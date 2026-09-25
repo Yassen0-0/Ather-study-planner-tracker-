@@ -65,7 +65,14 @@ class ReviewNotificationService {
   final SharedPreferences? _storedPrefs;
 
   static const String _channelId = 'sahm_review';
-  static const String _channelName = 'Review reminders';
+
+  /// What the channel is called in Android's notification settings when the
+  /// caller passes nothing. Arabic first, like the app: this used to be a
+  /// hard-coded English 'Review reminders' shown to Arabic students in their
+  /// own system settings. The scheduler passes the localised pair.
+  static const String kDefaultChannelName = 'إشعارات المراجعة';
+  static const String kDefaultChannelDescription =
+      'تذكير بالدروس التي حان موعد مراجعتها.';
 
   bool _initialised = false;
 
@@ -362,6 +369,8 @@ class ReviewNotificationService {
     String Function(String lesson)? buildDecliningBody,
     String Function(String lesson)? buildWeakBody,
     required String title,
+    String channelName = kDefaultChannelName,
+    String channelDescription = kDefaultChannelDescription,
   }) async {
     if (!_initialised) return;
 
@@ -401,14 +410,20 @@ class ReviewNotificationService {
         title: title,
         body: reminder.body,
         scheduledDate: tz.TZDateTime.from(reminder.at, tz.local),
-        notificationDetails: const NotificationDetails(
+        // `update`, not the default create-if-missing: every install already
+        // has this channel under the old English name, and only an update
+        // relabels it (Android changes name and description on an existing
+        // channel, and nothing the student set on it).
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             _channelId,
-            _channelName,
+            channelName,
+            channelDescription: channelDescription,
+            channelAction: AndroidNotificationChannelAction.update,
             importance: Importance.defaultImportance,
             priority: Priority.defaultPriority,
           ),
-          windows: WindowsNotificationDetails(),
+          windows: const WindowsNotificationDetails(),
         ),
         // Inexact deliberately: exact alarms need SCHEDULE_EXACT_ALARM, which
         // Play treats as a restricted permission. A study reminder does not
