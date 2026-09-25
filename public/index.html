@@ -203,13 +203,17 @@
     row.setAttribute('role', 'img');
     row.setAttribute('aria-label', on + ' من 30 يوم');
   });
-  var sheets = document.querySelectorAll('[data-mark]');
+  // The first sheet is graded the moment the page opens, even when a phone
+  // shows only its top half; the rest are graded as they come into view.
+  var first = document.querySelector('.hero [data-mark]');
+  requestAnimationFrame(function () { first.classList.add('marked'); });
+  var sheets = document.querySelectorAll('main [data-mark]:not(.hero [data-mark])');
   if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) { e.target.classList.add('marked'); io.unobserve(e.target); }
       });
-    }, { threshold: 0.3 });
+    }, { threshold: 0.15 });
     sheets.forEach(function (el) { io.observe(el); });
   } else {
     sheets.forEach(function (el) { el.classList.add('marked'); });
