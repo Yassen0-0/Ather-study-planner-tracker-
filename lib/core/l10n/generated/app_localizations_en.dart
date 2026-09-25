@@ -1007,6 +1007,14 @@ class LEn extends L {
   String get backupErrorUnknown => 'Saving didn\'t work';
 
   @override
+  String get backupErrorCloudHasMore =>
+      'The cloud copy holds more than this phone, so nothing was saved over it. Restore it below.';
+
+  @override
+  String get backupOverwriteConfirm =>
+      'The cloud copy holds more than this phone. Saving now replaces it with what is on this phone, and cannot be undone.';
+
+  @override
   String get tasksTitle => 'Today\'s tasks';
 
   @override

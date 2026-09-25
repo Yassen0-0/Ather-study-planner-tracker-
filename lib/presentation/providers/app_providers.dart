@@ -281,6 +281,23 @@ const String kLastAccountUidKey = 'last_account_uid';
 /// below has to reach it.
 const String kLastCloudDownloadKey = 'last_cloud_download_at';
 
+/// Set, as millis-since-epoch, the first time this device uploads **as the
+/// owner of the cloud document** -- because none existed, because it held no
+/// more than this device, or because the student explicitly chose to save this
+/// phone over it (D1).
+///
+/// Together with [kLastCloudDownloadKey] it answers one question for
+/// `BackupSyncNotifier.flush`: *does this device know what the cloud holds?*
+/// Either marker means yes, and uploads flow freely. Neither means the device
+/// has never met the cloud document, and before its first upload it has to
+/// look (`readMetadata`) rather than assume -- the failed-auto-restore phone
+/// that then gains one chapter must not overwrite years of history.
+///
+/// A separate key rather than a second writer of [kLastCloudDownloadKey],
+/// because that one's name is a claim ("a copy came down") an upload cannot
+/// make. Cleared by [wipeAccountPreferences] with it.
+const String kCloudInSyncKey = 'cloud_in_sync_at';
+
 /// Prefix of the exam wizard's per-lesson draft keys:
 /// `'exam_draft_$lessonId'`. Writes belong to `ExamDraftStore`
 /// (`exam_draft_store.dart`): `scheduleSave` debounces a keystroke burst into
@@ -294,7 +311,7 @@ const String kExamDraftKeyPrefix = 'exam_draft_';
 
 /// Clears every preference that belongs to a **student** rather than to the
 /// device: their name and year, the app-lock configuration they chose, the
-/// recorded account uid and download marker, and every exam draft.
+/// recorded account uid and both cloud markers, and every exam draft.
 ///
 /// Both paths that end one student's presence on a phone -- delete-everything
 /// in Settings (`_AccountActionsState`) and the confirmed account-switch wipe
@@ -328,6 +345,7 @@ Future<void> wipeAccountPreferences(SharedPreferences preferences) async {
   // sees no owner at all and refuses to upload anything -- the safe direction.
   await preferences.remove(kLastAccountUidKey);
   await preferences.remove(kLastCloudDownloadKey);
+  await preferences.remove(kCloudInSyncKey);
 }
 
 /// Selected UI locale, persisted.

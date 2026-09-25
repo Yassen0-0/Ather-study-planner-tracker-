@@ -551,6 +551,8 @@
   "backupErrorTooLarge": "بياناتك أكبر من أن تُحفظ دفعة واحدة",
   "backupErrorUnreadable": "النسخة السحابية غير مقروءة",
   "backupErrorUnknown": "لم ينجح الحفظ",
+  "backupErrorCloudHasMore": "في النسخة السحابية أكثر مما على هذا الهاتف، فلم يُحفظ فوقها. استرجعها من الأسفل.",
+  "backupOverwriteConfirm": "في النسخة السحابية أكثر مما على هذا الهاتف. الحفظ الآن يستبدلها بما على الهاتف، ولا يمكن التراجع.",
   "tasksTitle": "مهام اليوم",
   "@tasksTitle": {
     "description": "The tasks screen's title while today is the selected day. The day picker sitting under it says 'اليوم' for today's cell, so the title names what the list is rather than repeating the day."

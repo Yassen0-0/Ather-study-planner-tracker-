@@ -35,6 +35,17 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
   /// since typed.
   bool _restoreChecked = false;
 
+  /// This session's automatic restore could not reach the cloud (a
+  /// [BackupException] -- offline, a timeout, the rules).
+  ///
+  /// It used to be final for the session: `_restoreChecked` stayed true and
+  /// nothing asked again until the next cold start. By then the student had
+  /// often typed something, the device was no longer empty, and no automatic
+  /// restore would ever run for it again (D1). So a failed attempt is retried
+  /// the next time the app comes back to the foreground -- still only onto an
+  /// empty device, re-read at that moment, so a retry can never land on work.
+  bool _restoreFailed = false;
+
   /// Wipes the device when the account that just signed in is **not** the one
   /// whose data is sitting on it.
   ///
@@ -205,6 +216,16 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
         state == AppLifecycleState.detached) {
       ref.read(backupSyncProvider.notifier).flush();
     }
+    // Back in front after a restore that could not get through: the network
+    // may well be back too (see [_restoreFailed]).
+    if (state == AppLifecycleState.resumed && _restoreFailed) {
+      final account = ref.read(accountProvider).value;
+      if (account != null) {
+        _restoreFailed = false;
+        _restoreChecked = false;
+        unawaited(_restoreIfEmpty(account.id));
+      }
+    }
   }
 
   /// Restores **only** onto an empty database.
@@ -300,6 +321,7 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       // but the sync card carries the news instead of swallowing it (N14),
       // exactly as a failed upload already does.
       debugPrint('Ather: automatic restore failed -- ${e.failure}');
+      _restoreFailed = true;
       ref.read(backupSyncProvider.notifier).reportFailure(e.failure);
     }
   }
@@ -318,11 +340,15 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       // same account, which happens on every token refresh.
       if (now != null && now.id != was?.id) {
         _restoreChecked = false;
+        _restoreFailed = false;
         _restoreIfEmpty(now.id);
       }
       // Signing out clears the guard so the next student on this device gets
       // their own restore check rather than inheriting this one's.
-      if (now == null) _restoreChecked = false;
+      if (now == null) {
+        _restoreChecked = false;
+        _restoreFailed = false;
+      }
     });
 
     return widget.child;

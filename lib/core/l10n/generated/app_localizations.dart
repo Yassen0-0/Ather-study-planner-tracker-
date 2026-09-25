@@ -1753,6 +1753,18 @@ abstract class L {
   /// **'لم ينجح الحفظ'**
   String get backupErrorUnknown;
 
+  /// No description provided for @backupErrorCloudHasMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'في النسخة السحابية أكثر مما على هذا الهاتف، فلم يُحفظ فوقها. استرجعها من الأسفل.'**
+  String get backupErrorCloudHasMore;
+
+  /// No description provided for @backupOverwriteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'في النسخة السحابية أكثر مما على هذا الهاتف. الحفظ الآن يستبدلها بما على الهاتف، ولا يمكن التراجع.'**
+  String get backupOverwriteConfirm;
+
   /// The tasks screen's title while today is the selected day. The day picker sitting under it says 'اليوم' for today's cell, so the title names what the list is rather than repeating the day.
   ///
   /// In ar, this message translates to:

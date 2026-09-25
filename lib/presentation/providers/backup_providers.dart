@@ -90,7 +90,11 @@ class BackupSyncNotifier extends Notifier<SyncState> {
 
   /// Uploads now. Called by the debounce, by the app going to the background,
   /// and by the manual button in Settings.
-  Future<void> flush() async {
+  ///
+  /// [overwriteCloud] is the student's explicit "save this phone over the
+  /// cloud copy", confirmed on the backup screen after a
+  /// [BackupFailure.cloudHasMore] hold. Nothing else passes it.
+  Future<void> flush({bool overwriteCloud = false}) async {
     _debounce?.cancel();
     final account = ref.read(accountProvider).value;
     if (account == null) return;
@@ -168,15 +172,16 @@ class BackupSyncNotifier extends Notifier<SyncState> {
     // reached this device, "empty" can equally mean a failed offline
     // auto-restore -- and uploading that would overwrite the newer cloud doc
     // with nothing. Until a restore has succeeded here (marker in
-    // [kLastCloudDownloadKey]), an empty record stays local. A brand-new
-    // account loses nothing by this: there was nothing in its cloud document
-    // to protect, and the first real upload creates it as before.
-    if (snapshot.isEmpty &&
-        tasks.isEmpty &&
-        ref
-            .read(sharedPreferencesProvider)
-            .getInt(kLastCloudDownloadKey)
-            == null) {
+    // [kLastCloudDownloadKey]) -- or this device has uploaded as the cloud
+    // document's owner ([kCloudInSyncKey], D1) -- an empty record stays local.
+    // A brand-new account loses nothing by this: there was nothing in its
+    // cloud document to protect, and the first real upload creates it as
+    // before.
+    final preferences = ref.read(sharedPreferencesProvider);
+    final knowsCloud =
+        preferences.getInt(kLastCloudDownloadKey) != null ||
+        preferences.getInt(kCloudInSyncKey) != null;
+    if (snapshot.isEmpty && tasks.isEmpty && !knowsCloud) {
       debugPrint(
         'Ather: holding empty upload -- no cloud copy has reached this '
         'device yet',
@@ -194,11 +199,70 @@ class BackupSyncNotifier extends Notifier<SyncState> {
       // would let the first restore erase exactly what the events table
       // exists to keep.
       final events = await ref.read(studyRepositoryProvider).readEvents();
-      await ref
-          .read(backupRepositoryProvider)
-          .upload(
-            StudyBackup.fromSnapshot(snapshot, tasks, events: events),
+      final backup = StudyBackup.fromSnapshot(snapshot, tasks, events: events);
+      final repository = ref.read(backupRepositoryProvider);
+
+      // D1: a **populated** record used to upload with no questions asked,
+      // and that was the hole N4 left open. New phone, slow network, the
+      // automatic restore times out; the student adds one chapter; twenty
+      // seconds later this replaced years of cloud history with it -- and from
+      // then on the device was non-empty, so no automatic restore would ever
+      // run again to notice.
+      //
+      // So a device that does not yet know the cloud looks before its first
+      // upload. The rule:
+      //
+      // * no cloud document -> this device is the origin; upload.
+      // * the cloud holds **no more** chapters and **no more** exams than
+      //   this record -> upload. This is also the upgrade path: installs that
+      //   created their cloud copy by uploading (never downloading) carry no
+      //   marker, and without this they would stop backing up forever. Their
+      //   cloud copy is an earlier state of this very device, so it normally
+      //   holds at most what the device holds now. Counts, not timestamps: a
+      //   phone's clock proves nothing, and "more exams" is exactly the loss
+      //   that must never happen silently.
+      // * the cloud holds more of either -> hold, and say so. Never silently
+      //   overwrite a copy with more exams than this device has. The student
+      //   restores it, or knowingly saves over it ([overwriteCloud]).
+      // * the look itself fails (offline) -> the catch below records it and
+      //   nothing is uploaded or marked; the next flush looks again.
+      //
+      // Once an upload has gone through on these terms the device is marked
+      // ([kCloudInSyncKey]) and later flushes skip the look.
+      if (!knowsCloud && !overwriteCloud) {
+        final cloud = await repository.readMetadata();
+        if (cloud != null &&
+            (cloud.chapterCount > backup.chapterCount ||
+                cloud.examCount > backup.examCount)) {
+          debugPrint(
+            'Ather: holding upload -- the cloud copy holds more than this '
+            'device, which has never synced with it',
           );
+          state = state.copyWith(
+            status: SyncStatus.failed,
+            failure: BackupFailure.cloudHasMore,
+          );
+          // The restore row on the backup screen stands only when the
+          // metadata is known; on the phone this is about, the screen's own
+          // read may have failed offline. It has just been read here, so let
+          // the screen read it again.
+          ref.invalidate(backupMetadataProvider);
+          return;
+        }
+        // Another network round trip: re-check whose document this is.
+        if (ref.read(accountProvider).value?.id != owner) {
+          state = state.copyWith(status: SyncStatus.idle);
+          return;
+        }
+      }
+
+      await repository.upload(backup);
+      if (!knowsCloud) {
+        await preferences.setInt(
+          kCloudInSyncKey,
+          ref.read(clockProvider).now().millisecondsSinceEpoch,
+        );
+      }
       state = state.copyWith(
         status: SyncStatus.saved,
         lastSavedAt: ref.read(clockProvider).now(),
@@ -244,6 +308,10 @@ class BackupSyncNotifier extends Notifier<SyncState> {
           kLastCloudDownloadKey,
           ref.read(clockProvider).now().millisecondsSinceEpoch,
         );
+
+    // Whatever the card was reporting -- a failed automatic restore, or a
+    // cloudHasMore hold -- has been answered: device and cloud now agree.
+    state = state.copyWith(status: SyncStatus.idle, clearFailure: true);
   }
 }
 

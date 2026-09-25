@@ -242,6 +242,34 @@ void main() {
     await closeApp(tester);
   });
 
+  // D1: the automatic restore used to run once per session. When it could not
+  // get through it was never tried again that session -- and by the next
+  // launch the student had usually typed something, so the device was no
+  // longer empty and no automatic restore would ever run for it.
+  testWidgets('a restore that could not get through is retried on resume', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    final backup = FakeBackupRepository.holding(cloudCopy())
+      ..failure = BackupFailure.offline;
+
+    await tester.pumpWidget(await boot(backup));
+    await tester.pumpAndSettle();
+    expect((await DriftStudyRepository(db).readSnapshot()).chapters, isEmpty);
+
+    // The network comes back while the app is in the background.
+    backup.failure = null;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    final snapshot = await DriftStudyRepository(db).readSnapshot();
+    expect(snapshot.chapters.single.name, 'باب من السحابة');
+
+    await closeApp(tester);
+  });
+
   // The device belonged to somebody else. Nothing used to notice, so the second
   // student opened the app to the first one's curriculum -- and the sync then
   // mirrored it into the second student's cloud document. Since the wipe grew

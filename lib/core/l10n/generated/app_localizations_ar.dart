@@ -1043,6 +1043,14 @@ class LAr extends L {
   String get backupErrorUnknown => 'لم ينجح الحفظ';
 
   @override
+  String get backupErrorCloudHasMore =>
+      'في النسخة السحابية أكثر مما على هذا الهاتف، فلم يُحفظ فوقها. استرجعها من الأسفل.';
+
+  @override
+  String get backupOverwriteConfirm =>
+      'في النسخة السحابية أكثر مما على هذا الهاتف. الحفظ الآن يستبدلها بما على الهاتف، ولا يمكن التراجع.';
+
+  @override
   String get tasksTitle => 'مهام اليوم';
 
   @override
