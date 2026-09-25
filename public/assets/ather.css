@@ -343,5 +343,10 @@ th { background: var(--field); color: var(--ink); font-size: 13px; font-weight: 
 br.lg { display: none; }
 @media (min-width: 880px) { br.lg { display: inline; } }
 @media (max-width: 879px) { .topnav a[href="#how"] { display: none; } }
-.table-card table { min-width: 540px; }
+@media (max-width: 480px) {
+  .table-card table { table-layout: fixed; }
+  .table-card th:first-child, .table-card td:first-child { width: 30%; }
+  .table-card th:nth-child(2), .table-card td:nth-child(2) { width: 44%; }
+  .table-card th, .table-card td { overflow-wrap: anywhere; }
+}
 @media (min-width: 880px) { .hero .display { font-size: clamp(44px, 4.6vw, 58px); } }
