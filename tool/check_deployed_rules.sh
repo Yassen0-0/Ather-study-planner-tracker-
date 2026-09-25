@@ -91,7 +91,12 @@ check() {
   fi
 }
 
-BODY='{"fields":{"payload":{"bytesValue":""},"formatVersion":{"integerValue":"1"},"chapterCount":{"integerValue":"1"},"examCount":{"integerValue":"1"}}}'
+# The shape FirestoreBackupRepository.upload() writes -- since S1 the rules
+# admit that shape and nothing else, so a probe missing a field would be
+# refused for the wrong reason.
+FIELDS='"payload":{"bytesValue":""},"checksum":{"stringValue":"0"},"formatVersion":{"integerValue":"5"},"chapterCount":{"integerValue":"1"},"examCount":{"integerValue":"1"},"updatedAt":{"timestampValue":"2026-01-01T00:00:00Z"}'
+BODY="{\"fields\":{$FIELDS}}"
+EXTRA="{\"fields\":{$FIELDS,\"extra\":{\"stringValue\":\"x\"}}}"
 
 # The whole confidentiality guarantee, in three lines.
 check "student B cannot read student A's backup" denied \
@@ -104,6 +109,14 @@ check "an unauthenticated caller cannot read it" denied "$DOC"
 check "no writing outside the backup subcollection" denied \
   -X PATCH -H "Authorization: Bearer $TOKEN_A" -H "Content-Type: application/json" \
   -d '{"fields":{"x":{"stringValue":"y"}}}' "$BASE/users/$UID_A/notes/probe"
+
+# S1: the backup is one exact document in one exact shape.
+check "no other document under the owner's backup/" denied \
+  -X PATCH -H "Authorization: Bearer $TOKEN_A" -H "Content-Type: application/json" \
+  -d "$BODY" "$BASE/users/$UID_A/backup/other"
+check "no field the app does not write" denied \
+  -X PATCH -H "Authorization: Bearer $TOKEN_A" -H "Content-Type: application/json" \
+  -d "$EXTRA" "$DOC"
 
 # The owner's own path has to keep working, or backup is broken for everyone.
 check "student A can write their own backup" allowed \
