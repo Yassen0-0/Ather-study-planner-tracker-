@@ -4,60 +4,36 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>سياسة الخصوصية — أثر / Privacy Policy — Ather</title>
-<style>
-  :root {
-    --ground: #F7F8FA; --surface: #FFFFFF; --ink: #171B22; --ink-soft: #4A515E;
-    --rule: #D8DCE4; --accent: #1F5FE0; --sunk: #EDEFF3;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --ground: #12151B; --surface: #191D25; --ink: #E9ECF2; --ink-soft: #AAB2C0;
-      --rule: #2E3540; --accent: #7BA5F5; --sunk: #21262F;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--ground); color: var(--ink);
-    font-family: "Segoe UI", Tahoma, system-ui, -apple-system, sans-serif;
-    font-size: 16.5px; line-height: 1.75;
-  }
-  .wrap { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
-  h1 { font-size: clamp(1.7rem, 5vw, 2.3rem); line-height: 1.2; margin: 0 0 .4rem; }
-  h2 {
-    font-size: 1.2rem; margin: 2.2rem 0 .6rem; padding-top: 1.1rem;
-    border-top: 1px solid var(--rule);
-  }
-  h3 { font-size: 1rem; margin: 1.4rem 0 .3rem; }
-  p, li { margin: .5rem 0; }
-  .meta { color: var(--ink-soft); font-size: .9rem; margin-bottom: 1.5rem; }
-  .langbar {
-    display: flex; gap: .5rem; margin-bottom: 2rem; padding-bottom: 1.2rem;
-    border-bottom: 1px solid var(--rule);
-  }
-  .langbar a {
-    padding: .35rem .8rem; border: 1px solid var(--rule); border-radius: 3px;
-    text-decoration: none; color: var(--accent); font-size: .9rem;
-  }
-  .note {
-    background: var(--sunk); border-inline-start: 3px solid var(--accent);
-    padding: .8rem 1rem; border-radius: 0 3px 3px 0; margin: 1rem 0;
-  }
-  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .93rem; }
-  th, td { text-align: start; padding: .55rem .7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
-  th { background: var(--sunk); font-size: .85rem; }
-  code { background: var(--sunk); padding: .1em .35em; border-radius: 3px; font-size: .88em; }
-  a { color: var(--accent); }
-  section[lang="en"] { direction: ltr; text-align: left; margin-top: 4rem; }
-  footer { margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); color: var(--ink-soft); font-size: .88rem; }
-</style>
+<meta name="theme-color" content="#EFEFF2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<link rel="preload" href="./assets/ReadexPro.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="./assets/ather.css">
 </head>
 <body>
+
+<!-- The mark, from assets/branding/glyph-mastery.svg: the loop in the ink
+     colour, a quarter of it drawn in the accent -- mastery, partly earned. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="8 16 80 76">
+    <g fill="none" stroke-width="8" stroke-linejoin="round">
+      <path stroke="currentColor" d="M50 22.48 C58.46 22.05 72.24 22.77 77.02 28.45 C81.80 34.13 80.56 47.48 78.7 56.55 C76.84 65.62 72.65 79.73 65.83 82.87 C59.01 86.01 46.14 79.54 37.78 75.37 C29.42 71.20 17.61 65.22 15.68 57.83 C13.75 50.44 20.51 36.94 26.23 31.05 C31.95 25.16 41.54 22.91 50 22.48 Z"/>
+      <path style="stroke:var(--accent)" stroke-linecap="round" pathLength="100" stroke-dasharray="27 100" d="M50 22.48 C58.46 22.05 72.24 22.77 77.02 28.45 C81.80 34.13 80.56 47.48 78.7 56.55 C76.84 65.62 72.65 79.73 65.83 82.87 C59.01 86.01 46.14 79.54 37.78 75.37 C29.42 71.20 17.61 65.22 15.68 57.83 C13.75 50.44 20.51 36.94 26.23 31.05 C31.95 25.16 41.54 22.91 50 22.48 Z"/>
+    </g>
+  </symbol>
+  <symbol id="down" viewBox="0 0 24 24">
+    <path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+</svg>
 <div class="wrap">
 
-<div class="langbar">
-  <a href="#ar">العربية</a>
-  <a href="#en">English</a>
-</div>
+<header class="topbar">
+  <a class="brand" href="./"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg>أثر</a>
+  <nav class="seg" aria-label="اللغة / Language">
+    <a href="#ar" aria-current="true">العربية</a>
+    <a href="#en" lang="en">English</a>
+  </nav>
+</header>
 
 <!-- ======================= ARABIC ======================= -->
 <section id="ar" lang="ar" dir="rtl">
@@ -75,7 +51,7 @@
 
 <h2>1. البيانات التي نجمعها</h2>
 
-<table>
+<div class="table-card"><table>
   <tr><th>البيانات</th><th>الغرض</th><th>إجبارية؟</th></tr>
   <tr>
     <td>البريد الإلكتروني</td>
@@ -102,7 +78,7 @@
     <td>لنعرف الأعطال الحقيقية ونصلحها في التحديث التالي. لا يتضمن التقرير سجل دراستك ولا أسماء الدروس ولا الدرجات</td>
     <td>نعم</td>
   </tr>
-</table>
+</table></div>
 
 <div class="note">
   <strong>النسخة السحابية تلقائية.</strong> يُرفع سجل دراستك إلى حسابك على
@@ -166,7 +142,7 @@
 <p>
   وإن تعذّر عليك فتح التطبيق، راسلنا من البريد المسجّل على
   <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> وسنحذفه خلال 30 يوماً على
-  الأكثر. التفاصيل في <a href="./account-deletion.html">صفحة حذف الحساب</a>.
+  الأكثر. التفاصيل في <a href="./account-deletion">صفحة حذف الحساب</a>.
 </p>
 
 <h2>4. حقوقك</h2>
@@ -217,7 +193,7 @@
 
 <h2>1. What we collect</h2>
 
-<table>
+<div class="table-card"><table>
   <tr><th>Data</th><th>Why</th><th>Required?</th></tr>
   <tr>
     <td>Email address</td>
@@ -244,7 +220,7 @@
     <td>So real crashes are known and fixed in the next update. The report does not contain your study record, lesson names, or scores</td>
     <td>Yes</td>
   </tr>
-</table>
+</table></div>
 
 <div class="note">
   <strong>The cloud copy is automatic.</strong> Your study record is uploaded to your
@@ -310,7 +286,7 @@
 <p>
   If you cannot open the app, email us from your registered address at
   <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> and we will delete it within
-  30 days. See the <a href="./account-deletion.html">account deletion page</a> for details.
+  30 days. See the <a href="./account-deletion">account deletion page</a> for details.
 </p>
 
 <h2>4. Your rights</h2>
@@ -346,7 +322,7 @@
 </section>
 
 <footer>
-  أثر · Ather — <code>com.ather.app</code>
+  <svg class="mark" aria-hidden="true"><use href="#mark"/></svg>  أثر · Ather — <code>com.ather.app</code>
 </footer>
 
 </div>
