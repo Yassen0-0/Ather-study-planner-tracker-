@@ -1,6 +1,7 @@
 import 'package:ather/core/diagnostics/crash_reporting.dart';
 import 'package:drift/drift.dart' show InvalidDataException;
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// S4/S5: what a non-fatal report may carry off the phone, and that sending
@@ -67,7 +68,7 @@ void main() {
     test('sends the scrubbed error, not the original', () {
       final sent = <ScrubbedError>[];
       String? sentReason;
-      nonFatalSinkForTesting = (error, _, reason) {
+      nonFatalSinkForTesting = (error, _, reason, _) {
         sent.add(error);
         sentReason = reason;
       };
@@ -84,7 +85,7 @@ void main() {
     });
 
     test('never throws, whatever goes wrong while reporting', () {
-      nonFatalSinkForTesting = (_, _, _) => throw StateError('sink broke');
+      nonFatalSinkForTesting = (_, _, _, _) => throw StateError('sink broke');
       expect(
         () => reportNonFatal(Exception('x'), StackTrace.current),
         returnsNormally,
@@ -97,6 +98,81 @@ void main() {
       expect(Firebase.apps, isEmpty);
       expect(
         () => reportNonFatal(Exception('x'), StackTrace.current),
+        returnsNormally,
+      );
+    });
+  });
+
+  // Round 3: the two crash channels main.dart installs used to hand the raw
+  // exception to Crashlytics.
+  group('fatal channels', () {
+    late List<(ScrubbedError, StackTrace, String?, bool)> sent;
+    setUp(() {
+      sent = <(ScrubbedError, StackTrace, String?, bool)>[];
+      nonFatalSinkForTesting = (error, stack, reason, fatal) =>
+          sent.add((error, stack, reason, fatal));
+    });
+
+    test('reportFatal scrubs, keeps the stack, and stays fatal', () {
+      final stack = StackTrace.current;
+      reportFatal(
+        InvalidDataException('Sorry, TasksCompanion(title: Value(سر)) bad'),
+        stack,
+      );
+
+      final (error, sentStack, _, fatal) = sent.single;
+      expect(error.type, 'InvalidDataException');
+      expect(error.toString(), isNot(contains('سر')));
+      expect(sentStack, same(stack));
+      expect(fatal, isTrue);
+    });
+
+    test('reportFlutterError scrubs the exception and the context', () {
+      final stack = StackTrace.current;
+      // Flutter's own error printing is not what is under test here.
+      final presented = FlutterError.presentError;
+      FlutterError.presentError = (_) {};
+      addTearDown(() => FlutterError.presentError = presented);
+
+      reportFlutterError(
+        FlutterErrorDetails(
+          exception: StateError("no chapter 'باب الخلية السري'"),
+          stack: stack,
+          library: 'widgets library',
+          context: ErrorDescription(
+            "while building Text('Ahmed private notes')",
+          ),
+          informationCollector: () => <DiagnosticsNode>[
+            ErrorDescription('The widget was Text("سري جداً")'),
+          ],
+        ),
+        fatal: true,
+      );
+
+      final (error, sentStack, reason, fatal) = sent.single;
+      expect(error.type, 'StateError');
+      expect(error.toString(), isNot(contains('الخلية')));
+      expect(reason, startsWith('widgets library: while building Text('));
+      expect(reason, isNot(contains('Ahmed')));
+      // The information collector is never sent.
+      expect(reason, isNot(contains('سري')));
+      expect(sentStack, same(stack));
+      expect(fatal, isTrue);
+    });
+
+    test('neither channel throws, even when reporting itself fails', () {
+      nonFatalSinkForTesting = (_, _, _, _) => throw StateError('sink broke');
+      final presented = FlutterError.presentError;
+      FlutterError.presentError = (_) => throw StateError('console broke');
+      addTearDown(() => FlutterError.presentError = presented);
+
+      expect(
+        () => reportFatal(Exception('x'), StackTrace.current),
+        returnsNormally,
+      );
+      expect(
+        () =>
+            reportFlutterError(FlutterErrorDetails(exception: Exception('x'))),
         returnsNormally,
       );
     });

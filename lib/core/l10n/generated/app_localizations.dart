@@ -1276,7 +1276,7 @@ abstract class L {
   /// No description provided for @privacyNoCollectBody.
   ///
   /// In ar, this message translates to:
-  /// **'لا إعلانات. لا تتبّع. لا بيع للبيانات. لا تحليلات ولا تقارير أخطاء لجهة خارجية.'**
+  /// **'لا إعلانات. لا تتبّع. لا بيع للبيانات. لا تحليلات. الشيء الوحيد الذي يُرسَل دون أن تطلبه تقرير عطل تقني إلى Firebase Crashlytics عند تعطّل التطبيق أو فشل عملية حفظ: تفاصيل الخطأ وطراز الجهاز، لا سجل دراستك.'**
   String get privacyNoCollectBody;
 
   /// No description provided for @lockUnlock.

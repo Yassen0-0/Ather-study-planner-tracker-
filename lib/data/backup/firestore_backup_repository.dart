@@ -172,24 +172,60 @@ class FirestoreBackupRepository implements BackupRepository {
       throw const BackupException(BackupFailure.tooLarge);
     }
 
-    await _guard(
-      () async => _doc()
-          .set(<String, Object?>{
-            'payload': Blob(bytes),
-            // A plain field beside the payload rather than a key inside it: it
-            // has to be readable without decompressing the thing it describes,
-            // and a digest stored inside the bytes it covers cannot cover
-            // itself.
-            'checksum': encoded.checksum,
-            // Plain, so readMetadata can answer "is the cloud newer?" without
-            // downloading and decompressing the payload.
-            'formatVersion': StudyBackup.formatVersion,
-            'chapterCount': backup.chapterCount,
-            'examCount': backup.examCount,
-            'updatedAt': FieldValue.serverTimestamp(),
-          })
-          .timeout(_timeout),
-    );
+    final data = <String, Object?>{
+      'payload': Blob(bytes),
+      // A plain field beside the payload rather than a key inside it: it
+      // has to be readable without decompressing the thing it describes,
+      // and a digest stored inside the bytes it covers cannot cover
+      // itself.
+      'checksum': encoded.checksum,
+      // Plain, so readMetadata can answer "is the cloud newer?" without
+      // downloading and decompressing the payload.
+      'formatVersion': StudyBackup.formatVersion,
+      'chapterCount': backup.chapterCount,
+      'examCount': backup.examCount,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    // **A transaction, not `set()`** (round 3). A plain `set()` offline does
+    // not fail: Firestore puts the write in its local queue, the `.timeout`
+    // we used to wrap it in only stopped *waiting*, and the write was sent
+    // whenever the network came back -- possibly after the app had decided
+    // not to upload at all (the D1 hold), or after a restore had replaced
+    // the record it describes. A stale backup landing late over a newer
+    // decision is exactly the overwrite D1 exists to prevent.
+    //
+    // A transaction is never queued: "Transactions must be performed while
+    // online ... the final commit will fail" (cloud_firestore 6.8.0,
+    // `runTransaction`). So an upload now either commits on the server or
+    // is gone, and the failure the app reports is the truth. Nothing is lost
+    // by it: the local database is the record, and the next flush uploads
+    // it again. The handler does no reads -- reading would download the
+    // whole payload for nothing -- so there is no contention to retry on.
+    //
+    // Options looked at and not taken: `waitForPendingWrites` only waits;
+    // `clearPersistence` wipes the whole local cache and must not run while
+    // the instance is in use; `disableNetwork`/`terminate` stop every other
+    // Firestore call too. Writes an earlier build already queued on a phone
+    // will still be sent once; nothing here can reach into that queue.
+    //
+    // The outer timeout is a backstop only, set past the transaction's own:
+    // the SDK abandons the commit at `_timeout`, so by the time this fires
+    // there is nothing left in flight to land later.
+    await _guard(() async {
+      // Inside the guard, like every other call here: `_doc()` and the
+      // instance throw without a Firebase app or an account.
+      final doc = _doc();
+      await (_firestore ?? FirebaseFirestore.instance)
+          .runTransaction<void>(
+            (transaction) async {
+              transaction.set(doc, data);
+            },
+            timeout: _timeout,
+            maxAttempts: 1,
+          )
+          .timeout(_timeout * 2);
+    });
   }
 
   @override

@@ -305,7 +305,7 @@
   "privacyDeleteTitle": "Deleting your data",
   "privacyDeleteBody": "At the very bottom of Settings there is a Delete account button. When you tap it: the data on your phone is erased, the cloud copy is erased, and the account itself is removed from Firebase. Permanently.",
   "privacyNoCollectTitle": "What we never do",
-  "privacyNoCollectBody": "No ads. No tracking. No selling data. No third-party analytics or crash reporting. The app works offline most of the time anyway.",
+  "privacyNoCollectBody": "No ads. No tracking. No selling data. No analytics. The one thing sent without you asking is a technical crash report to Firebase Crashlytics when the app crashes or fails to save: the error details and your device model, never your study record.",
   "lockUnlock": "Unlock",
   "lockReason": "Unlock Ather",
   "lockRefused": "That didn't unlock — try again",

@@ -3,13 +3,13 @@ import 'dart:ui' show PlatformDispatcher;
 
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'core/diagnostics/crash_reporting.dart';
 import 'core/haptics/app_haptics.dart';
 import 'firebase_options.dart';
 import 'presentation/providers/app_providers.dart';
@@ -194,9 +194,14 @@ Future<void> _initializeCrashlytics() async {
     // where that call throws gets no crash channels at all. Accepted on
     // purpose -- bootstrapping must never be what stops a student reaching
     // their own offline data.
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+    //
+    // Both go through `core/diagnostics/crash_reporting.dart` rather than
+    // straight to Crashlytics: an unhandled drift InvalidDataException carries
+    // the row it refused -- the student's own chapter or task name -- and the
+    // plain `recordFlutterError`/`recordError` would upload it verbatim.
+    FlutterError.onError = reportFlutterError;
     PlatformDispatcher.instance.onError = (error, stack) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      reportFatal(error, stack);
       return true;
     };
   } catch (error, stack) {
