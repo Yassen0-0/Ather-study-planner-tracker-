@@ -201,6 +201,121 @@ void main() {
     await closeApp(tester);
   });
 
+  // D4: a Google account whose session was restored from disk (an app
+  // restart) used to hit `requires-recent-login` only after the device and the
+  // cloud copy were wiped, and was then shown a password sheet it could never
+  // answer. Ownership is now proved first, in the account's own terms.
+  testWidgets(
+    'a Google account signed in long ago re-proves with Google, then deletes',
+    (tester) async {
+      phoneSized(tester);
+      final auth = FakeAuthRepository.signedIn()
+        ..reauthMethodValue = ReauthMethod.google
+        ..recentLogin = false;
+      final backup = FakeBackupRepository();
+      int? cloudDeletesAtReauth;
+      int? accountDeletesAtReauth;
+      auth.onReauth = () {
+        cloudDeletesAtReauth = backup.deleteCloudCount;
+        accountDeletesAtReauth = auth.deleteCount;
+      };
+      await tester.pumpWidget(await boot(auth, backup));
+      await tester.pumpAndSettle();
+
+      await openSettings(tester);
+      await reachDeleteButton(tester);
+      await tester.tap(find.text('حذف الحساب'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('حذف الحساب').last);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 3));
+
+      // Proved through Google, before anything was erased; no password sheet.
+      expect(auth.googleReauthCount, 1);
+      expect(cloudDeletesAtReauth, 0);
+      expect(accountDeletesAtReauth, 0);
+      expect(auth.reauthPasswords, isEmpty);
+      expect(find.textContaining('أكّد أنه حسابك'), findsNothing);
+
+      expect(backup.deleteCloudCount, 1);
+      expect(auth.deleteCount, 1);
+      expect(find.byType(LoginScreen), findsOneWidget);
+      await closeApp(tester);
+    },
+  );
+
+  testWidgets('backing out of the Google re-auth erases nothing', (
+    tester,
+  ) async {
+    phoneSized(tester);
+    final auth = FakeAuthRepository.signedIn()
+      ..reauthMethodValue = ReauthMethod.google
+      ..recentLogin = false
+      ..nextReauthFailure = AuthFailure.cancelled;
+    final backup = FakeBackupRepository();
+    await tester.pumpWidget(await boot(auth, backup));
+    await tester.pumpAndSettle();
+
+    await addChapter(tester);
+    await openSettings(tester);
+    await reachDeleteButton(tester);
+    await tester.tap(find.text('حذف الحساب'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('حذف الحساب').last);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 3));
+
+    // Not the device, not the cloud, not the account -- and no failure toast:
+    // backing out is the student's answer, not an error.
+    final chapters = await db
+        .customSelect('SELECT COUNT(*) AS c FROM chapters')
+        .get();
+    expect(chapters.first.read<int>('c'), 1);
+    expect(backup.deleteCloudCount, 0);
+    expect(auth.deleteCount, 0);
+    expect(find.text('لم يُحذف الحساب. حاول مرة أخرى.'), findsNothing);
+    expect(find.byType(LoginScreen), findsNothing);
+    await closeApp(tester);
+  });
+
+  testWidgets(
+    'a stale password account is asked before anything is erased',
+    (tester) async {
+      phoneSized(tester);
+      final auth = FakeAuthRepository.signedIn()..recentLogin = false;
+      final backup = FakeBackupRepository();
+      await tester.pumpWidget(await boot(auth, backup));
+      await tester.pumpAndSettle();
+
+      await addChapter(tester);
+      await openSettings(tester);
+      await reachDeleteButton(tester);
+      await tester.tap(find.text('حذف الحساب'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('حذف الحساب').last);
+      await tester.pumpAndSettle();
+
+      // The sheet is up and nothing has gone yet.
+      expect(find.textContaining('أكّد أنه حسابك'), findsOneWidget);
+      final before = await db
+          .customSelect('SELECT COUNT(*) AS c FROM chapters')
+          .get();
+      expect(before.first.read<int>('c'), 1);
+      expect(backup.deleteCloudCount, 0);
+
+      await tester.enterText(find.byType(TextField), 'the-password');
+      await tester.tap(find.text('احذف الحساب'));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 3));
+
+      expect(auth.reauthPasswords, <String>['the-password']);
+      expect(backup.deleteCloudCount, 1);
+      expect(auth.deleteCount, 1);
+      expect(find.byType(LoginScreen), findsOneWidget);
+      await closeApp(tester);
+    },
+  );
+
   testWidgets('declining the confirmation deletes nothing', (tester) async {
     phoneSized(tester);
     final auth = FakeAuthRepository.signedIn();

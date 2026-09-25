@@ -45,6 +45,14 @@ final class AuthException implements Exception {
   String toString() => 'AuthException(${failure.name})';
 }
 
+/// How the signed-in account proves, a second time, that it is its owner.
+///
+/// Decided from the account's own linked sign-in methods, never from how this
+/// process happened to sign in: a session restored from disk after a restart
+/// has not touched Google in this process, and asking a Google account for a
+/// password it never had is a question the student cannot answer.
+enum ReauthMethod { google, password }
+
 /// Accounts. Everything here throws [AuthException] and nothing else.
 abstract interface class AuthRepository {
   /// Emits the current account, or null when signed out. Emits immediately on
@@ -99,13 +107,33 @@ abstract interface class AuthRepository {
 
   /// Deletes the account **and the credentials Firebase holds for it**.
   ///
-  /// Throws [AuthException] with [AuthFailure.requiresRecentLogin] when the
-  /// sign-in is too old; the caller must re-authenticate and retry — never
+  /// Callers re-authenticate *before* starting a deletion (see
+  /// [hasRecentLogin]); this still throws [AuthException] with
+  /// [AuthFailure.requiresRecentLogin] when Firebase disagrees about how
+  /// recent the sign-in is and the account cannot re-prove itself here (a
+  /// password account). The caller must re-authenticate and retry — never
   /// swallow it, because Google Play requires in-app account deletion and a
   /// delete that quietly does nothing is a dead button.
   Future<void> deleteAccount();
 
-  /// [deleteAccount] after re-proving ownership with a password — the second
-  /// attempt, offered when the first reported [AuthFailure.requiresRecentLogin].
-  Future<void> deleteAccountWithPassword(String password);
+  /// Which proof [reauthenticateWithGoogle] / [reauthenticateWithPassword]
+  /// this account can give. Null when signed out.
+  ReauthMethod? get reauthMethod;
+
+  /// Whether the sign-in is recent enough for Firebase to accept a sensitive
+  /// operation (deleting the account) without asking again.
+  ///
+  /// Asked *before* anything destructive starts, so the answer "no" costs a
+  /// prompt rather than a device already wiped under an account that then
+  /// refuses to go. False when it cannot be told -- offline, signed out --
+  /// because the cost of a needless prompt is one tap and the cost of a wrong
+  /// "yes" is the student's data.
+  Future<bool> hasRecentLogin();
+
+  /// Re-proves ownership through the Google account sheet. Throws
+  /// [AuthFailure.cancelled] when the student backs out of it.
+  Future<void> reauthenticateWithGoogle();
+
+  /// Re-proves ownership with the account's password.
+  Future<void> reauthenticateWithPassword(String password);
 }

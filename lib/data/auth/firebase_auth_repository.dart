@@ -10,13 +10,45 @@ import '../../domain/repositories/auth_repository.dart';
 /// is translated into an [AuthFailure] here, so no Firebase error code and no
 /// English Firebase message can reach a screen.
 final class FirebaseAuthRepository implements AuthRepository {
-  FirebaseAuthRepository(this._auth, {GoogleSignIn? googleSignIn})
-    : _google = googleSignIn ?? GoogleSignIn.instance;
+  /// [googleIdToken] is for tests only: it stands in for the Google plugin's
+  /// account sheet, which talks to a platform channel no test has.
+  /// Production leaves it null.
+  FirebaseAuthRepository(
+    this._auth, {
+    GoogleSignIn? googleSignIn,
+    Future<String?> Function()? googleIdToken,
+  }) : _google = googleSignIn ?? GoogleSignIn.instance,
+       _googleIdTokenOverride = googleIdToken;
 
   final fb.FirebaseAuth _auth;
   final GoogleSignIn _google;
+  final Future<String?> Function()? _googleIdTokenOverride;
 
+  /// Whether *this process* has initialised the Google plugin -- which says
+  /// nothing about whether the account is a Google one. It used to be read as
+  /// if it did: after a restart it was false, a Google account's delete fell
+  /// through to a password prompt it could never answer. Only the plugin
+  /// lifecycle reads it now; [reauthMethod] decides the account's kind.
   bool _googleInitialised = false;
+
+  /// Firebase refuses a sensitive operation once the sign-in is about five
+  /// minutes old. Four leaves the flush and the wipe room to run between the
+  /// check and the delete; `requires-recent-login` remains the backstop.
+  static const Duration recentLoginWindow = Duration(minutes: 4);
+
+  /// Which proof an account with these linked sign-in methods can give.
+  ///
+  /// Google wins when it is linked at all: it answers with one tap on an
+  /// account sheet, and an account that reached Firebase through Google may
+  /// never have had a password the student knows. Anything else is the
+  /// email/password flow -- the only other way into this app.
+  static ReauthMethod reauthMethodFor(Iterable<String> providerIds) =>
+      providerIds.contains(googleProviderId)
+      ? ReauthMethod.google
+      : ReauthMethod.password;
+
+  /// Firebase's provider id for a linked Google sign-in.
+  static const String googleProviderId = 'google.com';
 
   /// `userChanges`, not `authStateChanges`.
   ///
@@ -93,22 +125,40 @@ final class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> signInWithGoogle() async {
     try {
-      // v7 requires an explicit initialise. `serverClientId` is deliberately
-      // omitted: on Android the plugin reads `default_web_client_id`, the
-      // string resource the google-services Gradle plugin generates from
-      // google-services.json, so the id lives in one place.
-      if (!_googleInitialised) {
-        await _google.initialize();
-        _googleInitialised = true;
-      }
+      await _auth.signInWithCredential(await _freshGoogleCredential());
+    } on fb.FirebaseAuthException catch (e) {
+      throw AuthException(_map(e));
+    } on AuthException {
+      rethrow;
+    } catch (_) {
+      throw const AuthException(AuthFailure.unknown);
+    }
+  }
 
-      final account = await _google.authenticate();
-      final idToken = account.authentication.idToken;
+  /// A Google ID token from the plugin's account sheet, initialising the
+  /// plugin on demand -- sign-in and re-authentication both come through here,
+  /// so a process that restored its session from disk can still re-prove a
+  /// Google account without having signed in through Google first.
+  Future<String?> _pluginGoogleIdToken() async {
+    // v7 requires an explicit initialise. `serverClientId` is deliberately
+    // omitted: on Android the plugin reads `default_web_client_id`, the
+    // string resource the google-services Gradle plugin generates from
+    // google-services.json, so the id lives in one place.
+    if (!_googleInitialised) {
+      await _google.initialize();
+      _googleInitialised = true;
+    }
+    final account = await _google.authenticate();
+    return account.authentication.idToken;
+  }
+
+  /// A fresh Google credential, with the plugin's failures already in the
+  /// app's vocabulary.
+  Future<fb.AuthCredential> _freshGoogleCredential() async {
+    try {
+      final idToken = await (_googleIdTokenOverride ?? _pluginGoogleIdToken)();
       if (idToken == null) throw const AuthException(AuthFailure.unknown);
-
-      await _auth.signInWithCredential(
-        fb.GoogleAuthProvider.credential(idToken: idToken),
-      );
+      return fb.GoogleAuthProvider.credential(idToken: idToken);
     } on GoogleSignInException catch (e) {
       // Backing out of the account sheet is not a failure to report.
       throw AuthException(
@@ -116,12 +166,6 @@ final class FirebaseAuthRepository implements AuthRepository {
             ? AuthFailure.cancelled
             : AuthFailure.unknown,
       );
-    } on fb.FirebaseAuthException catch (e) {
-      throw AuthException(_map(e));
-    } on AuthException {
-      rethrow;
-    } catch (_) {
-      throw const AuthException(AuthFailure.unknown);
     }
   }
 
@@ -182,81 +226,98 @@ final class FirebaseAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> deleteAccount() => _deleteAccount(null);
+  ReauthMethod? get reauthMethod {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    return reauthMethodFor(user.providerData.map((info) => info.providerId));
+  }
 
-  /// Deletes the account, re-authenticating first when Firebase demands it.
-  ///
-  /// [reauth] is the caller's second attempt with fresh proof of ownership
-  /// (a password re-typed into the delete sheet, or a fresh Google token) —
-  /// a closure rather than credentials so no password is ever held longer
-  /// than the call that uses it.
-  Future<void> _deleteAccount(Future<void> Function()? reauth) async {
+  @override
+  Future<bool> hasRecentLogin() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    try {
+      // `auth_time` is the claim Firebase itself checks for
+      // `requires-recent-login`; a re-authentication refreshes it.
+      final authTime = (await user.getIdTokenResult()).authTime;
+      if (authTime == null) return false;
+      return DateTime.now().difference(authTime) < recentLoginWindow;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> reauthenticateWithGoogle() =>
+      _reauthenticate(_freshGoogleCredential);
+
+  @override
+  Future<void> reauthenticateWithPassword(String password) =>
+      _reauthenticate(() async {
+        final email = _auth.currentUser?.email;
+        if (email == null) throw const AuthException(AuthFailure.unknown);
+        return fb.EmailAuthProvider.credential(
+          email: email,
+          password: password,
+        );
+      });
+
+  /// [credential] is a closure rather than a value so no password is held
+  /// longer than the call that uses it.
+  Future<void> _reauthenticate(
+    Future<fb.AuthCredential> Function() credential,
+  ) async {
+    final user = _auth.currentUser;
+    if (user == null) throw const AuthException(AuthFailure.unknown);
+    try {
+      await user.reauthenticateWithCredential(await credential());
+    } on fb.FirebaseAuthException catch (e) {
+      throw AuthException(_map(e));
+    } on AuthException {
+      rethrow;
+    } catch (_) {
+      throw const AuthException(AuthFailure.unknown);
+    }
+  }
+
+  /// Deletes the account. Callers re-authenticate first (see
+  /// [AuthRepository.hasRecentLogin]); what is here is the backstop for when
+  /// Firebase still answers `requires-recent-login`.
+  @override
+  Future<void> deleteAccount() async {
     final user = _auth.currentUser;
     // Already gone. Treated as success so a retry after a partial failure
     // finishes rather than reporting an error about work already done.
     if (user == null) return;
 
     try {
-      if (reauth != null) await reauth();
+      await _delete(user);
+    } on AuthException catch (e) {
+      // One automatic retry through the Google sheet when the account is a
+      // Google one -- decided from the account, not from whether this process
+      // signed in through Google (see [_googleInitialised]). The student with
+      // the phone in their hand is the owner, and a re-auth prompt they cannot
+      // answer is a dead delete button. A password account has to be asked,
+      // so that goes back to the caller.
+      if (e.failure != AuthFailure.requiresRecentLogin ||
+          reauthMethod != ReauthMethod.google) {
+        rethrow;
+      }
+      await reauthenticateWithGoogle();
+      await _delete(user);
+    }
+    await _clearGoogleSession();
+  }
+
+  Future<void> _delete(fb.User user) async {
+    try {
       await user.delete();
-      await _clearGoogleSession();
-      return;
     } on fb.FirebaseAuthException catch (e) {
-      if (e.code != 'requires-recent-login') {
-        throw AuthException(_map(e));
-      }
-      // The first attempt with stale credentials lands here. One automatic
-      // retry with a fresh Google token when this session is a Google one:
-      // the student with the phone in their hand is the owner, and a
-      // re-auth prompt they cannot answer is a dead delete button.
-      if (reauth == null && _googleInitialised) {
-        try {
-          final account = await _google.authenticate();
-          final idToken = account.authentication.idToken;
-          if (idToken == null) {
-            throw const AuthException(AuthFailure.unknown);
-          }
-          await user.reauthenticateWithCredential(
-            fb.GoogleAuthProvider.credential(idToken: idToken),
-          );
-          await user.delete();
-          await _clearGoogleSession();
-          return;
-        } on GoogleSignInException catch (e) {
-          throw AuthException(
-            e.code == GoogleSignInExceptionCode.canceled
-                ? AuthFailure.cancelled
-                : AuthFailure.unknown,
-          );
-        } on fb.FirebaseAuthException catch (e) {
-          throw AuthException(_map(e));
-        } on AuthException {
-          rethrow;
-        } catch (_) {
-          throw const AuthException(AuthFailure.unknown);
-        }
-      }
-      throw const AuthException(AuthFailure.requiresRecentLogin);
+      throw AuthException(_map(e));
     } catch (_) {
       throw const AuthException(AuthFailure.unknown);
     }
   }
-
-  /// Re-authenticates with email/password and deletes. The sheet's second
-  /// attempt, after the student has re-typed their password.
-  @override
-  Future<void> deleteAccountWithPassword(String password) =>
-      _deleteAccount(() async {
-        final user = _auth.currentUser;
-        if (user == null) throw const AuthException(AuthFailure.unknown);
-        final email = user.email;
-        if (email == null) {
-          throw const AuthException(AuthFailure.unknown);
-        }
-        await user.reauthenticateWithCredential(
-          fb.EmailAuthProvider.credential(email: email, password: password),
-        );
-      });
 
   /// Google's own session survives `user.delete()`, and leaving it in place
   /// pre-selects the account that was just deleted on the next attempt --

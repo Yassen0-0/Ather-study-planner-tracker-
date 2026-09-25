@@ -605,10 +605,11 @@ class _NotificationsWarning extends ConsumerWidget {
 /// the data survives — so it is a plain row. Deleting the account is, so it is
 /// red. Neither is a filled slab any more.
 ///
-/// The deletion order is deliberate and unchanged: confirm in words what
-/// disappears, flush anything that has not reached the cloud yet (deleting the
-/// cloud copy first would orphan the flush), wipe the device, delete the cloud
-/// mirror, and only then delete the account itself. An account deleted before
+/// The deletion order is deliberate: confirm in words what disappears, prove
+/// ownership again if the sign-in is stale (before anything is erased, D4),
+/// flush anything that has not reached the cloud yet (deleting the cloud copy
+/// first would orphan the flush), wipe the device, delete the cloud mirror,
+/// and only then delete the account itself. An account deleted before
 /// its data leaves a student whose cloud copy outlives their ability to ever
 /// reach it again.
 class _AccountActions extends ConsumerStatefulWidget {
@@ -621,7 +622,6 @@ class _AccountActions extends ConsumerStatefulWidget {
 class _AccountActionsState extends ConsumerState<_AccountActions> {
   bool _deleting = false;
   bool _signingOut = false;
-  String? _reauthPassword;
 
   @override
   Widget build(BuildContext context) {
@@ -701,7 +701,14 @@ class _AccountActionsState extends ConsumerState<_AccountActions> {
 
     setState(() => _deleting = true);
     try {
-      await _deleteEverything();
+      // Ownership is proved BEFORE anything is erased. The order used to be
+      // wipe first, ask later: a stale sign-in reached `requires-recent-login`
+      // only at the account step, by which point the device and the cloud copy
+      // were already gone -- and a Google account, asked for a password it
+      // never had, could not finish. The student was left with no data and an
+      // account that still existed. Backing out here touches nothing.
+      if (!await _ensureRecentLogin()) return;
+      await _runDeletion(flushFirst: true);
     } on AuthException catch (e) {
       // Stop the ring before anything else: a ring left running under the
       // re-auth sheet both freezes tests and reads as an action still in
@@ -709,13 +716,11 @@ class _AccountActionsState extends ConsumerState<_AccountActions> {
       if (mounted) setState(() => _deleting = false);
       if (!mounted) return;
       if (e.failure == AuthFailure.requiresRecentLogin) {
-        // Firebase wants fresh proof of ownership. Ask for it rather than
-        // reporting failure: the student asked to delete their account and
-        // "try again later" is not an answer to that request.
-        final retry = await _askReauth();
-        if (retry && mounted && _reauthPassword != null) {
-          await _retryWithPassword();
-        }
+        // The backstop: Firebase judged the sign-in stale after all (the
+        // check and the delete are minutes apart on a slow flush). Ask again
+        // rather than reporting failure: the student asked to delete their
+        // account and "try again later" is not an answer to that request.
+        await _retryAfterReauth();
         return;
       }
       _reportFailure(l);
@@ -727,69 +732,86 @@ class _AccountActionsState extends ConsumerState<_AccountActions> {
     }
   }
 
+  /// Makes sure Firebase will accept the deletion, asking the account for
+  /// fresh proof in the only form it can give -- the Google sheet for a Google
+  /// account, the password sheet otherwise (see [ReauthMethod]).
+  ///
+  /// Returns false when the student backed out; nothing has been touched and
+  /// nothing is reported. A wrong password or no network throws
+  /// [AuthException] and is reported by the caller.
+  Future<bool> _ensureRecentLogin({bool force = false}) async {
+    final auth = ref.read(authRepositoryProvider);
+    if (!force && await auth.hasRecentLogin()) return true;
+
+    final method = auth.reauthMethod;
+    // Signed out underneath us: deleteAccount treats that as already done.
+    if (method == null) return true;
+
+    if (method == ReauthMethod.google) {
+      try {
+        await auth.reauthenticateWithGoogle();
+        return true;
+      } on AuthException catch (e) {
+        if (e.failure == AuthFailure.cancelled) return false;
+        rethrow;
+      }
+    }
+
+    // The sheet goes up with the ring stopped (see _confirmDelete) and the
+    // ring comes back while the password is checked.
+    if (!mounted) return false;
+    setState(() => _deleting = false);
+    final password = await _askPassword();
+    if (password == null || !mounted) return false;
+    setState(() => _deleting = true);
+    await auth.reauthenticateWithPassword(password);
+    return true;
+  }
+
   /// Flush → wipe device → delete cloud mirror → delete account → clear
   /// preferences. Each step only runs if the one before it succeeded, so a
   /// failure anywhere leaves a state that can be retried rather than
-  /// half-deleted.
+  /// half-deleted. The cloud copy goes while the session is still alive,
+  /// because the Firestore rules only let its owner delete it.
   ///
   /// One sequence for both entries into deletion -- the plain delete and the
-  /// re-auth retry differ only in whether there is anything left to flush and
-  /// how the account itself goes away. These were hand-copies that had already
-  /// been written twice (arch F-02); they share this body so the next store
-  /// joins one list instead of being remembered twice more. Preferences are
-  /// wiped strictly **after** the account deletion succeeded (SEC-04): a
-  /// failed attempt must not have taken the student's name and lock with it.
-  Future<void> _runDeletion({
-    required bool flushFirst,
-    required Future<void> Function() deleteAccount,
-  }) async {
+  /// re-auth retry differ only in whether there is anything left to flush
+  /// (arch F-02). Preferences are wiped strictly **after** the account
+  /// deletion succeeded (SEC-04): a failed attempt must not have taken the
+  /// student's name and lock with it.
+  Future<void> _runDeletion({required bool flushFirst}) async {
     if (flushFirst) await ref.read(backupSyncProvider.notifier).flush();
     await ref.read(studyRepositoryProvider).clear();
     await ref.read(taskRepositoryProvider).clearTasks();
     await ref.read(backupRepositoryProvider).deleteCloudData();
-    await deleteAccount();
+    await ref.read(authRepositoryProvider).deleteAccount();
     await wipeAccountPreferences(ref.read(sharedPreferencesProvider));
   }
 
-  Future<void> _deleteEverything() async {
-    await _runDeletion(
-      flushFirst: true,
-      deleteAccount: () => ref.read(authRepositoryProvider).deleteAccount(),
-    );
-  }
-
-  /// The password retry after `requires-recent-login`. No flush: the first
-  /// attempt already pushed what it could.
-  Future<void> _retryWithPassword() async {
+  /// The retry after `requires-recent-login` reached the account step. No
+  /// flush: the first attempt already pushed what it could.
+  Future<void> _retryAfterReauth() async {
     final l = L.of(context);
     setState(() => _deleting = true);
     try {
-      final repository = ref.read(authRepositoryProvider);
-      await _runDeletion(
-        flushFirst: false,
-        deleteAccount: () =>
-            repository.deleteAccountWithPassword(_reauthPassword!),
-      );
+      if (!await _ensureRecentLogin(force: true)) return;
+      await _runDeletion(flushFirst: false);
     } on Object {
       if (mounted) _reportFailure(l);
     } finally {
-      _reauthPassword = null;
       if (mounted) setState(() => _deleting = false);
     }
   }
 
-  /// The sheet Firebase's `requires-recent-login` demands. Returns whether
-  /// the student gave a password; [_retryWithPassword] uses it.
-  Future<bool> _askReauth() {
-    return showAtherSheet<bool>(
+  /// The password sheet. Returns the typed password, or null when the student
+  /// closed the sheet instead.
+  Future<String?> _askPassword() {
+    return showAtherSheet<String>(
       context: context,
       builder: (sheetContext) => _ReauthSheet(
-        onSubmit: (password) {
-          _reauthPassword = password;
-          Navigator.of(sheetContext).pop(true);
-        },
+        onSubmit: (password) => Navigator.of(sheetContext).pop(password),
       ),
-    ).then((value) => value ?? false);
+    );
   }
 
   void _reportFailure(L l) {
