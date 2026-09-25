@@ -110,3 +110,6 @@ logs/security/
 
 # Kotlin 2.x compiler session data, written next to the Gradle build.
 android/.kotlin/
+
+# Firebase CLI deploy cache (hosting file hashes), written by `firebase deploy`.
+.firebase/

@@ -8,25 +8,11 @@ hand at a keyboard.
 
 ## Waiting on you
 
-**Deploy the site.** It is written, the placeholders are filled, and the domain
-decision is made (the free `ather-49705.web.app`). Deploying publishes to the
-public internet, so it is deliberately not automated:
-
-```bash
-firebase deploy --only hosting --project ather-49705
-```
-
-**Put the APK in place first.** The download button serves `ather-latest.apk`
-from this same host, because the GitHub repository is private and a release on
-a private repository is invisible to the students the button exists for:
-
-```bash
-flutter build apk --release
-cp build/app/outputs/flutter-apk/app-release.apk public/ather-latest.apk
-```
-
-`public/*.apk` is git-ignored, so deploying without that copy step silently
-ships whatever was there before. `public/README.md` has the whole procedure.
+~~**Deploy the site.**~~ **Done 2026-09-25** — `https://ather-49705.web.app` is live, with
+`/privacy` and `/account-deletion`. The APK is *not* served from it: Firebase's free plan
+refuses executable files, so the download button points at the public
+`Yassen0-0/ather-releases` repository instead. `public/README.md` has the per-release
+procedure — the APK goes up there twice, once under the fixed name `ather-latest.apk`.
 
 ---
 
