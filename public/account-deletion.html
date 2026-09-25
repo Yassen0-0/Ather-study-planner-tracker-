@@ -4,44 +4,36 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>حذف حسابك — أثر / Delete your account — Ather</title>
-<style>
-  :root {
-    --ground: #F7F8FA; --surface: #FFFFFF; --ink: #171B22; --ink-soft: #4A515E;
-    --rule: #D8DCE4; --accent: #1F5FE0; --sunk: #EDEFF3; --critical: #B3312A;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --ground: #12151B; --surface: #191D25; --ink: #E9ECF2; --ink-soft: #AAB2C0;
-      --rule: #2E3540; --accent: #7BA5F5; --sunk: #21262F; --critical: #F08B82;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--ground); color: var(--ink);
-    font-family: "Segoe UI", Tahoma, system-ui, -apple-system, sans-serif;
-    font-size: 16.5px; line-height: 1.75;
-  }
-  .wrap { max-width: 44rem; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
-  h1 { font-size: clamp(1.6rem, 5vw, 2.1rem); line-height: 1.2; margin: 0 0 .4rem; }
-  h2 { font-size: 1.15rem; margin: 2rem 0 .5rem; padding-top: 1rem; border-top: 1px solid var(--rule); }
-  .meta { color: var(--ink-soft); font-size: .9rem; margin-bottom: 1.5rem; }
-  ol { padding-inline-start: 1.4rem; }
-  li { margin: .45rem 0; }
-  .warn {
-    background: var(--sunk); border-inline-start: 3px solid var(--critical);
-    padding: .8rem 1rem; border-radius: 0 3px 3px 0; margin: 1.2rem 0;
-  }
-  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .93rem; }
-  th, td { text-align: start; padding: .55rem .7rem; border-bottom: 1px solid var(--rule); }
-  th { background: var(--sunk); font-size: .85rem; }
-  code { background: var(--sunk); padding: .1em .35em; border-radius: 3px; font-size: .88em; }
-  a { color: var(--accent); }
-  section[lang="en"] { direction: ltr; text-align: left; margin-top: 3.5rem; }
-  footer { margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); color: var(--ink-soft); font-size: .88rem; }
-</style>
+<meta name="theme-color" content="#EFEFF2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<link rel="preload" href="./assets/ReadexPro.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="./assets/ather.css">
 </head>
 <body>
+
+<!-- The mark, from assets/branding/glyph-mastery.svg: the loop in the ink
+     colour, a quarter of it drawn in the accent -- mastery, partly earned. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="8 16 80 76">
+    <g fill="none" stroke-width="8" stroke-linejoin="round">
+      <path stroke="currentColor" d="M50 22.48 C58.46 22.05 72.24 22.77 77.02 28.45 C81.80 34.13 80.56 47.48 78.7 56.55 C76.84 65.62 72.65 79.73 65.83 82.87 C59.01 86.01 46.14 79.54 37.78 75.37 C29.42 71.20 17.61 65.22 15.68 57.83 C13.75 50.44 20.51 36.94 26.23 31.05 C31.95 25.16 41.54 22.91 50 22.48 Z"/>
+      <path style="stroke:var(--accent)" stroke-linecap="round" pathLength="100" stroke-dasharray="27 100" d="M50 22.48 C58.46 22.05 72.24 22.77 77.02 28.45 C81.80 34.13 80.56 47.48 78.7 56.55 C76.84 65.62 72.65 79.73 65.83 82.87 C59.01 86.01 46.14 79.54 37.78 75.37 C29.42 71.20 17.61 65.22 15.68 57.83 C13.75 50.44 20.51 36.94 26.23 31.05 C31.95 25.16 41.54 22.91 50 22.48 Z"/>
+    </g>
+  </symbol>
+  <symbol id="down" viewBox="0 0 24 24">
+    <path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+</svg>
 <div class="wrap">
+
+<header class="topbar">
+  <a class="brand" href="./"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg>أثر</a>
+  <nav class="seg" aria-label="اللغة / Language">
+    <a href="#ar" aria-current="true">العربية</a>
+    <a href="#en" lang="en">English</a>
+  </nav>
+</header>
 
 <section id="ar" lang="ar" dir="rtl">
 <h1>حذف حسابك في أثر</h1>
@@ -70,14 +62,14 @@
 <p>نحذف الحساب خلال <strong>30 يوماً</strong> على الأكثر من وصول الطلب.</p>
 
 <h2>ما الذي يُحذف بالضبط</h2>
-<table>
+<div class="table-card"><table>
   <tr><th>البيانات</th><th>تُحذف؟</th></tr>
   <tr><td>سجل دراستك على الهاتف</td><td>نعم، وهو أول ما يُحذف</td></tr>
   <tr><td>نسختك السحابية (المواد والأبواب والدروس والامتحانات)</td><td>نعم، بعد الهاتف</td></tr>
   <tr><td>حسابك (البريد والاسم المعروض ومعرّف الحساب)</td><td>نعم، وهو آخر ما يُحذف</td></tr>
   <tr><td>اسمك وسنتك الدراسية في «ملفك»</td><td>محفوظان على هاتفك وحده، ويُحذفان مع بيانات التطبيق</td></tr>
   <tr><td>أي نسخة احتياطية أخرى</td><td>لا توجد — النسخة التلقائية في أندرويد معطّلة في أثر</td></tr>
-</table>
+</table></div>
 <p>لا مدة احتفاظ بعد الحذف، ولا نسخة أرشيفية.</p>
 </section>
 
@@ -108,19 +100,19 @@
 <p>Accounts are deleted within <strong>30 days</strong> of the request.</p>
 
 <h2>Exactly what is deleted</h2>
-<table>
+<div class="table-card"><table>
   <tr><th>Data</th><th>Deleted?</th></tr>
   <tr><td>Your study record on the phone</td><td>Yes, and it goes first</td></tr>
   <tr><td>Your cloud copy (subjects, chapters, lessons, exams)</td><td>Yes, after the phone</td></tr>
   <tr><td>Your account (email, display name, account identifier)</td><td>Yes, and it goes last</td></tr>
   <tr><td>Your name and school year from the profile</td><td>Kept on your phone only; removed with the app's data</td></tr>
   <tr><td>Any other copy anywhere</td><td>There is none — Android's automatic backup is switched off for Ather</td></tr>
-</table>
+</table></div>
 <p>There is no retention period after deletion and no archival copy.</p>
 </section>
 
 <footer>
-  أثر · Ather — <a href="./privacy.html">سياسة الخصوصية / Privacy Policy</a>
+  <svg class="mark" aria-hidden="true"><use href="#mark"/></svg>  أثر · Ather — <a href="./privacy">سياسة الخصوصية / Privacy Policy</a>
 </footer>
 
 </div>

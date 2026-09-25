@@ -2,186 +2,232 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>أثر — لا تكتفِ بإنهاء الدرس / Ather</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>أثر — أنت لا تُنهي الدروس، بل تُتقنها / Ather</title>
 <meta name="description" content="أثر تطبيق يقيس إتقانك من امتحاناتك الحقيقية، لا من عدد الدروس التي أنهيتها. يعمل دون إنترنت.">
-<style>
-  :root {
-    --ground: #F7F8FA; --surface: #FFFFFF; --ink: #171B22; --ink-soft: #4A515E;
-    --rule: #D8DCE4; --accent: #1F5FE0; --sunk: #EDEFF3;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --ground: #12151B; --surface: #191D25; --ink: #E9ECF2; --ink-soft: #AAB2C0;
-      --rule: #2E3540; --accent: #7BA5F5; --sunk: #21262F;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--ground); color: var(--ink);
-    font-family: "Segoe UI", Tahoma, system-ui, -apple-system, sans-serif;
-    font-size: 16.5px; line-height: 1.75;
-  }
-  .wrap { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
-  h1 { font-size: clamp(2rem, 7vw, 3rem); line-height: 1.15; margin: 0 0 .6rem; }
-  h2 {
-    font-size: 1.2rem; margin: 2.6rem 0 .6rem; padding-top: 1.1rem;
-    border-top: 1px solid var(--rule);
-  }
-  p, li { margin: .5rem 0; }
-  .lede { font-size: 1.15rem; color: var(--ink-soft); margin-bottom: 2rem; }
-  .langbar {
-    display: flex; gap: .5rem; margin-bottom: 2rem; padding-bottom: 1.2rem;
-    border-bottom: 1px solid var(--rule);
-  }
-  .langbar a {
-    padding: .35rem .8rem; border: 1px solid var(--rule); border-radius: 3px;
-    text-decoration: none; color: var(--accent); font-size: .9rem;
-  }
-  .claim {
-    background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
-    padding: 1.1rem 1.2rem; margin: 1rem 0;
-  }
-  .claim strong { display: block; margin-bottom: .2rem; }
-  .cta {
-    display: inline-block; margin: 1.5rem 0 .4rem; padding: .8rem 1.6rem;
-    background: var(--accent); color: #fff; text-decoration: none;
-    border-radius: 8px; font-weight: 600;
-  }
-  .cta-note { color: var(--ink-soft); font-size: .9rem; margin-top: .2rem; }
-  section[lang="en"] { direction: ltr; text-align: left; margin-top: 4.5rem; }
-  a { color: var(--accent); }
-  footer {
-    margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--rule);
-    color: var(--ink-soft); font-size: .9rem; text-align: center;
-  }
-</style>
+<meta name="theme-color" content="#EFEFF2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<link rel="preload" href="./assets/ReadexPro.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="./assets/ather.css">
 </head>
 <body>
+
+<!-- The mark, from assets/branding/glyph-mastery.svg: the loop in the ink
+     colour, a quarter of it drawn in the accent -- mastery, partly earned. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="8 16 80 76">
+    <g fill="none" stroke-width="8" stroke-linejoin="round">
+      <path stroke="currentColor" d="M50 22.48 C58.46 22.05 72.24 22.77 77.02 28.45 C81.80 34.13 80.56 47.48 78.7 56.55 C76.84 65.62 72.65 79.73 65.83 82.87 C59.01 86.01 46.14 79.54 37.78 75.37 C29.42 71.20 17.61 65.22 15.68 57.83 C13.75 50.44 20.51 36.94 26.23 31.05 C31.95 25.16 41.54 22.91 50 22.48 Z"/>
+      <path style="stroke:var(--accent)" stroke-linecap="round" pathLength="100" stroke-dasharray="27 100" d="M50 22.48 C58.46 22.05 72.24 22.77 77.02 28.45 C81.80 34.13 80.56 47.48 78.7 56.55 C76.84 65.62 72.65 79.73 65.83 82.87 C59.01 86.01 46.14 79.54 37.78 75.37 C29.42 71.20 17.61 65.22 15.68 57.83 C13.75 50.44 20.51 36.94 26.23 31.05 C31.95 25.16 41.54 22.91 50 22.48 Z"/>
+    </g>
+  </symbol>
+  <symbol id="down" viewBox="0 0 24 24">
+    <path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+</svg>
+
 <div class="wrap">
 
-<nav class="langbar">
-  <a href="#ar">العربية</a>
-  <a href="#en">English</a>
-</nav>
+<header class="topbar">
+  <a class="brand" href="./"><svg class="mark" aria-hidden="true"><use href="#mark"/></svg>أثر</a>
+  <nav class="seg" aria-label="اللغة / Language">
+    <a href="#ar" aria-current="true">العربية</a>
+    <a href="#en" lang="en">English</a>
+  </nav>
+</header>
 
+<!-- ============================== ARABIC ============================== -->
 <section id="ar" lang="ar" dir="rtl">
 
-<h1>أنت لا تُنهي الدروس، بل تُتقنها</h1>
-<p class="lede">
-  أثر يقيس إتقانك من امتحاناتك الحقيقية وحدها — لا من عدد الدروس التي شطبتها.
-</p>
-
-<h2>لماذا هو مختلف</h2>
-
-<div class="claim">
-  <strong>الإتقان يُحسب من الامتحانات، لا من غيرها.</strong>
-  لا يوجد في التطبيق زر «راجعت الدرس» يرفع رقمك. الطريقة الوحيدة لتحريك الرقم أن
-  تدخل امتحاناً وتسجّل نتيجته. الواجب يُسجَّل ولا يدخل في الحساب — هو مؤشر استعداد
-  فقط، لأن درجة واجب جيدة أسهل ما يُخلط بينه وبين الفهم.
+<div class="hero">
+  <svg class="mark rise" style="--i:0" aria-hidden="true"><use href="#mark"/></svg>
+  <h1 class="tagline rise" style="--i:1">أنت لا تُنهي الدروس،<br>بل تُتقنها</h1>
+  <p class="lede rise" style="--i:2">
+    أثر يقيس إتقانك من امتحاناتك الحقيقية وحدها — لا من عدد الدروس التي شطبتها.
+  </p>
+  <a class="btn rise" style="--i:3" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk">
+    <svg aria-hidden="true"><use href="#down"/></svg>حمّل أثر
+  </a>
+  <div class="chips rise" style="--i:4">
+    <span class="chip">الإصدار 1.10.0</span>
+    <span class="chip">أندرويد 7 فأحدث · ٦٤-بت</span>
+    <span class="chip">مجاني</span>
+    <span class="chip">بالعربية والإنجليزية</span>
+  </div>
 </div>
 
-<div class="claim">
-  <strong>وينخفض إذا تركته.</strong>
-  لكل درس عدّاد مراجعة مدته 30 يوماً. إذا مرّ الموعد، يقول لك التطبيق ذلك ولا يجمّل
-  الرقم. عدّاد المراجعة لا يُصفَّر إلا بامتحان جديد.
+<div class="demo rise" style="--i:5" aria-label="مثال من شاشة التطبيق الرئيسية">
+  <div class="card">
+    <div class="row">
+      <span class="label">الإتقان العام</span>
+      <span class="big weak-t">38%</span>
+    </div>
+    <div class="row"><span class="sub">أتقنت 1 من 4 أبواب</span></div>
+    <div class="bar weak" role="img" aria-label="38%"><i style="--v:38%"></i></div>
+  </div>
+  <div class="card subject">
+    <div><b>أحياء</b><span class="sub">1 من بابين · 3 دروس</span></div>
+    <span class="pct">83%</span>
+  </div>
+  <div class="card subject">
+    <div><b>فيزياء</b><span class="sub weak-t">تأخّرت مراجعة درس</span></div>
+    <span class="pct weak-t">29%</span>
+  </div>
 </div>
 
-<div class="claim">
-  <strong>يعمل دون إنترنت.</strong>
-  كل شيء محفوظ على هاتفك في قاعدة بيانات محلية، والحساب يُطلب مرة واحدة عند أول
-  تسجيل دخول. بعدها يعمل التطبيق كاملاً وأنت في الأتوبيس.
+<h2>ليه أثر مختلف</h2>
+
+<div class="stack">
+  <div class="card rise" style="--i:0">
+    <span class="card-title">الإتقان يُحسب من الامتحانات، لا من غيرها.</span>
+    <p>لا يوجد في التطبيق زر «راجعت الدرس» يرفع رقمك. الطريقة الوحيدة لتحريك الرقم أن
+    تدخل امتحاناً وتسجّل نتيجته. الواجب يُسجَّل ولا يدخل في الحساب — هو مؤشر استعداد
+    فقط، لأن درجة واجب جيدة أسهل ما يُخلط بينه وبين الفهم.</p>
+  </div>
+  <div class="card rise" style="--i:1">
+    <span class="card-title">وينخفض إذا تركته.</span>
+    <p>لكل درس عدّاد مراجعة مدته 30 يوماً. إذا مرّ الموعد، يقول لك التطبيق ذلك ولا يجمّل
+    الرقم. عدّاد المراجعة لا يُصفَّر إلا بامتحان جديد.</p>
+  </div>
+  <div class="card rise" style="--i:2">
+    <span class="card-title">يعمل دون إنترنت.</span>
+    <p>كل شيء محفوظ على هاتفك في قاعدة بيانات محلية، والحساب يُطلب مرة واحدة عند أول
+    تسجيل دخول. بعدها يعمل التطبيق كاملاً وأنت في الأتوبيس.</p>
+  </div>
+  <div class="card rise" style="--i:3">
+    <span class="card-title">ولا يبيعك لأحد.</span>
+    <p>لا إعلانات، ولا تتبّع، ولا مشاركة مع طرف ثالث. نسخ المتجر ترسل تقارير أعطال فنية
+    إلى Firebase Crashlytics — تفاصيل العطل فقط، ولا شيء من سجل دراستك. سجل دراستك موجود
+    في موضعين فقط: هاتفك، ونسخة احتياطية على حسابك أنت وحدك تصل إليها.</p>
+  </div>
 </div>
 
-<div class="claim">
-  <strong>ولا يبيعك لأحد.</strong>
-  لا إعلانات، ولا تتبّع، ولا تحليلات، ولا مشاركة مع طرف ثالث. سجل دراستك موجود في
-  موضعين فقط: هاتفك، ونسخة احتياطية على حسابك أنت وحدك تصل إليها.
+<h2>شكله من جوه</h2>
+<div class="screens">
+  <figure><img src="./assets/screens/ar-today.jpg" width="499" height="1080" loading="lazy" alt="الشاشة الرئيسية: الإتقان العام وقائمة المواد"><figcaption>اليوم</figcaption></figure>
+  <figure><img src="./assets/screens/ar-lesson.jpg" width="499" height="1080" loading="lazy" alt="شاشة الدرس: نسبة الإتقان وخطوات المذاكرة"><figcaption>الدرس</figcaption></figure>
+  <figure><img src="./assets/screens/ar-result.jpg" width="499" height="1080" loading="lazy" alt="نتيجة امتحان: 75% والإتقان قبل وبعد"><figcaption>نتيجة امتحان</figcaption></figure>
 </div>
 
-<h2>ماذا تسجّل فيه</h2>
-<p>
-  موادك — الأربعة التي يبدأ بها التطبيق أو ما تضيفه أنت — ثم الأبواب، ثم الدروس،
+<h2>بتسجّل فيه إيه</h2>
+<div class="card muted">
+  <p>موادك — الأربعة التي يبدأ بها التطبيق أو ما تضيفه أنت — ثم الأبواب، ثم الدروس،
   ثم نتائج الامتحانات. ومعها مهام يومك، وتقارير تقول لك أي باب أضعف وأي درس تأخّرت
-  عن مراجعته.
-</p>
+  عن مراجعته.</p>
+</div>
 
-<a class="cta" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk">حمّل أثر</a>
-<p class="cta-note">الإصدار 1.10.0 · أندرويد 7 فأحدث، ٦٤-بت · مجاني · بالعربية والإنجليزية</p>
-<p class="cta-note">عندك نسخة 1.9.0 أو أقدم؟ النسخة دي مش بتتثبّت فوقها: افتح القديمة واستنى لحد ما
-  المزامنة تخلص، امسحها، ثبّت الجديدة، وسجّل دخول بنفس الحساب — بياناتك هترجع من السحابة.</p>
+<h2>التحميل</h2>
+<div class="download">
+  <a class="btn" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk">
+    <svg aria-hidden="true"><use href="#down"/></svg>حمّل أثر 1.10.0
+  </a>
+  <p class="secondary">أندرويد 7 فأحدث، ٦٤-بت · <a href="https://github.com/Yassen0-0/ather-releases/releases">كل النسخ وبصماتها</a></p>
+</div>
+
+<div class="warn">
+  <strong>عندك نسخة 1.9.0 أو أقدم؟</strong> النسخة دي مش بتتثبّت فوقها. بالترتيب:
+  افتح القديمة واستنى لحد ما المزامنة تخلص، امسحها، ثبّت الجديدة، وسجّل دخول بنفس
+  الحساب — بياناتك هترجع من السحابة.
+</div>
 
 <h2>للتواصل</h2>
-<p>
-  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> —
-  <a href="./privacy.html">سياسة الخصوصية</a> ·
-  <a href="./account-deletion.html">حذف حسابك</a>
-</p>
+<div class="card links">
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a>
+  <a href="./privacy">سياسة الخصوصية</a>
+  <a href="./account-deletion">حذف حسابك</a>
+</div>
 
 </section>
 
+<!-- ============================== ENGLISH ============================= -->
 <section id="en" lang="en" dir="ltr">
 
-<h1>You don't finish lessons, you master them</h1>
-<p class="lede">
-  Ather measures mastery from your real exam results alone — not from how many
-  lessons you have ticked off.
-</p>
+<div class="hero">
+  <h1 class="tagline">You don't finish lessons,<br>you master them</h1>
+  <p class="lede">
+    Ather measures mastery from your real exam results alone — not from how many
+    lessons you have ticked off.
+  </p>
+  <a class="btn" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk">
+    <svg aria-hidden="true"><use href="#down"/></svg>Get Ather
+  </a>
+  <div class="chips">
+    <span class="chip">Version 1.10.0</span>
+    <span class="chip">Android 7+ · 64-bit</span>
+    <span class="chip">Free</span>
+    <span class="chip">Arabic and English</span>
+  </div>
+</div>
 
 <h2>Why it is different</h2>
 
-<div class="claim">
-  <strong>Mastery comes from exams and nothing else.</strong>
-  There is no "I reviewed this" button anywhere in the app that raises your number.
-  The only way to move it is to sit an exam and record the result. Homework is
-  logged but never counted — it is a readiness signal, because a good homework
-  score is the easiest thing to mistake for understanding.
+<div class="stack">
+  <div class="card">
+    <span class="card-title">Mastery comes from exams and nothing else.</span>
+    <p>There is no "I reviewed this" button anywhere in the app that raises your number.
+    The only way to move it is to sit an exam and record the result. Homework is
+    logged but never counted — it is a readiness signal, because a good homework
+    score is the easiest thing to mistake for understanding.</p>
+  </div>
+  <div class="card">
+    <span class="card-title">And it decays if you leave it.</span>
+    <p>Every lesson carries a 30-day review clock. Once it passes, the app says so
+    rather than flattering the number. Nothing resets that clock but another exam.</p>
+  </div>
+  <div class="card">
+    <span class="card-title">It works with no connection.</span>
+    <p>Everything lives on your phone in a local database. An account is asked for once,
+    at first sign-in; after that the whole app works on the bus.</p>
+  </div>
+  <div class="card">
+    <span class="card-title">And it does not sell you.</span>
+    <p>No ads, no tracking, no third-party sharing. Store releases do send technical
+    crash reports to Firebase Crashlytics — failure details only, never your study
+    record. Your study record exists in exactly two places: your phone, and a backup
+    under your own account that only you can reach.</p>
+  </div>
 </div>
 
-<div class="claim">
-  <strong>And it decays if you leave it.</strong>
-  Every lesson carries a 30-day review clock. Once it passes, the app says so
-  rather than flattering the number. Nothing resets that clock but another exam.
-</div>
-
-<div class="claim">
-  <strong>It works with no connection.</strong>
-  Everything lives on your phone in a local database. An account is asked for once,
-  at first sign-in; after that the whole app works on the bus.
-</div>
-
-<div class="claim">
-  <strong>And it does not sell you.</strong>
-  No ads, no tracking, no analytics, no third-party sharing. Store releases do
-  send technical crash reports to Firebase Crashlytics — failure details only,
-  never your study record. Your study record exists in exactly two places: your
-  phone, and a backup under your own account that only you can reach.
+<h2>Inside</h2>
+<div class="screens">
+  <figure><img src="./assets/screens/en-today.jpg" width="499" height="1080" loading="lazy" alt="Today: overall mastery and the subject list"><figcaption>Today</figcaption></figure>
+  <figure><img src="./assets/screens/en-lesson.jpg" width="499" height="1080" loading="lazy" alt="A lesson: mastery and study steps"><figcaption>Lesson</figcaption></figure>
+  <figure><img src="./assets/screens/en-result.jpg" width="499" height="1080" loading="lazy" alt="An exam result: 75% with mastery before and after"><figcaption>Exam result</figcaption></figure>
 </div>
 
 <h2>What you record in it</h2>
-<p>
-  Your subjects — the four it ships with, or any you add — then chapters, then
+<div class="card muted">
+  <p>Your subjects — the four it ships with, or any you add — then chapters, then
   lessons, then exam results. Alongside them: a daily task list, and reports naming
-  your weakest chapter and the lessons you are overdue to review.
-</p>
+  your weakest chapter and the lessons you are overdue to review.</p>
+</div>
 
-<a class="cta" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk">Get Ather</a>
-<p class="cta-note">Version 1.10.0 · Android 7+, 64-bit · Free · Arabic and English</p>
-<p class="cta-note">On 1.9.0 or older? This version does not install over it: open the old one and
-  let it finish syncing, uninstall it, install this one, and sign in with the same account —
-  your data comes back from the cloud.</p>
+<h2>Download</h2>
+<div class="download">
+  <a class="btn" href="https://github.com/Yassen0-0/ather-releases/releases/latest/download/ather-latest.apk">
+    <svg aria-hidden="true"><use href="#down"/></svg>Get Ather 1.10.0
+  </a>
+  <p class="secondary">Android 7+, 64-bit · <a href="https://github.com/Yassen0-0/ather-releases/releases">All versions and their checksums</a></p>
+</div>
+
+<div class="warn">
+  <strong>On 1.9.0 or older?</strong> This version does not install over it. In order:
+  open the old one and let it finish syncing, uninstall it, install this one, and sign in
+  with the same account — your data comes back from the cloud.
+</div>
 
 <h2>Contact</h2>
-<p>
-  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a> —
-  <a href="./privacy.html">Privacy Policy</a> ·
-  <a href="./account-deletion.html">Delete your account</a>
-</p>
+<div class="card links">
+  <a href="mailto:yassen.y.mohamed.s@gmail.com">yassen.y.mohamed.s@gmail.com</a>
+  <a href="./privacy">Privacy Policy</a>
+  <a href="./account-deletion">Delete your account</a>
+</div>
 
 </section>
 
 <footer>
-  أثر · Ather
+  <svg class="mark" aria-hidden="true"><use href="#mark"/></svg>أثر · Ather
 </footer>
 
 </div>
