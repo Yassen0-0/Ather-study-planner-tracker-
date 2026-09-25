@@ -1369,6 +1369,30 @@ abstract class L {
   /// **'افتح بكلمة السر'**
   String get unlockWithPassword;
 
+  /// No description provided for @lockForgotPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسيت كلمة سر التطبيق؟'**
+  String get lockForgotPassword;
+
+  /// No description provided for @lockForgotBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب كلمة سر حسابك ليُزال قفل التطبيق. يمكنك تعيينه من جديد من الإعدادات.'**
+  String get lockForgotBody;
+
+  /// No description provided for @lockForgotAccountHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة سر حسابك'**
+  String get lockForgotAccountHint;
+
+  /// No description provided for @lockForgotFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التأكد من حسابك. تأكد من اتصالك بالإنترنت ثم حاول مرة أخرى.'**
+  String get lockForgotFailed;
+
   /// No description provided for @hapticsSetting.
   ///
   /// In ar, this message translates to:
@@ -1728,6 +1752,18 @@ abstract class L {
   /// In ar, this message translates to:
   /// **'لم ينجح الحفظ'**
   String get backupErrorUnknown;
+
+  /// No description provided for @backupErrorCloudHasMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'في النسخة السحابية أكثر مما على هذا الهاتف، فلم يُحفظ فوقها. استرجعها من الأسفل.'**
+  String get backupErrorCloudHasMore;
+
+  /// No description provided for @backupOverwriteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'في النسخة السحابية أكثر مما على هذا الهاتف. الحفظ الآن يستبدلها بما على الهاتف، ولا يمكن التراجع.'**
+  String get backupOverwriteConfirm;
 
   /// The tasks screen's title while today is the selected day. The day picker sitting under it says 'اليوم' for today's cell, so the title names what the list is rather than repeating the day.
   ///

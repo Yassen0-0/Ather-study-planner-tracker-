@@ -25,6 +25,14 @@ enum BackupFailure {
   /// The stored copy cannot be parsed, or was written by a newer app.
   unreadable,
 
+  /// Not uploaded, on purpose: the cloud already holds a record with more
+  /// chapters or exams than this device, and this device has never synced
+  /// with it (D1). Typically a new phone whose automatic restore did not get
+  /// through before the student started typing -- uploading would replace
+  /// years of history with a morning's. The student decides, from the backup
+  /// screen: restore the cloud copy, or knowingly save this phone over it.
+  cloudHasMore,
+
   unknown,
 }
 

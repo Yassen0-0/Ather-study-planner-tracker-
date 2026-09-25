@@ -666,17 +666,15 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen>
       _ => null,
     };
 
-    // The required score reads from the recorded exams' plain mean (never from
-    // the displayed figure: no inverse of it exists at n > 1), and only asks a
-    // question while the line still stands ahead.
-    var existingSum = 0.0;
-    for (final exam in existing) {
-      existingSum += exam.percentage;
-    }
-    final double meanExisting =
-        existing.isEmpty ? 0 : existingSum / existing.length;
+    // The required score reads from the records' plain mean (never from the
+    // displayed figure: no inverse of it exists at n > 1), and only asks a
+    // question while the line still stands ahead. The records include the
+    // paper on this screen -- see [scoreNeededAfterPaper].
     final int? neededScore = afterBand.belowGood
-        ? MasteryCalculator.scoreNeededToCross(meanOfExisting: meanExisting)
+        ? scoreNeededAfterPaper(
+            existing: existing,
+            paperPercentage: _resultPercentage,
+          )
         : null;
 
     return <Widget>[
@@ -845,6 +843,32 @@ class _ExamEntryScreenState extends ConsumerState<ExamEntryScreen>
       ],
     ];
   }
+}
+
+/// What the paper *after* this one must score for the lesson to cross the
+/// line, once this one is saved.
+///
+/// "Next time" is asked on step 4, before the save, so by the time the next
+/// paper arrives the lesson holds [existing] **and** the paper being entered
+/// now. Its history is therefore all of them, and the mean handed to
+/// [MasteryCalculator.scoreNeededToCross] must count this paper too. Leaving it
+/// out was the bug: a first paper saw an empty history, read a mean of 0, and
+/// was always told to score 100% -- whatever it had just scored.
+///
+/// Top-level and pure so the call site's arithmetic can be pinned without
+/// driving the wizard to step 4 once per case.
+@visibleForTesting
+int scoreNeededAfterPaper({
+  required List<ExamEntry> existing,
+  required double paperPercentage,
+}) {
+  var sum = paperPercentage;
+  for (final exam in existing) {
+    sum += exam.percentage;
+  }
+  return MasteryCalculator.scoreNeededToCross(
+    meanOfExisting: sum / (existing.length + 1),
+  );
 }
 
 class _WizardHeader extends StatelessWidget {

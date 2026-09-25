@@ -50,8 +50,44 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     BackupFailure.permissionDenied => l.backupErrorPermission,
     BackupFailure.tooLarge => l.backupErrorTooLarge,
     BackupFailure.unreadable => l.backupErrorUnreadable,
+    BackupFailure.cloudHasMore => l.backupErrorCloudHasMore,
     BackupFailure.notSignedIn || BackupFailure.unknown => l.backupErrorUnknown,
   };
+
+  /// "احفظ الآن". Ordinarily just a flush -- but while the upload is held
+  /// because the cloud copy holds more than this phone (D1), saving would
+  /// replace that copy, so it asks first and names what the cloud holds. The
+  /// one way a student can knowingly keep this phone's record over a bigger
+  /// cloud copy; without it a device that legitimately deleted work before
+  /// the upgrade would never back up again.
+  Future<void> _saveNow() async {
+    final notifier = ref.read(backupSyncProvider.notifier);
+    if (ref.read(backupSyncProvider).failure != BackupFailure.cloudHasMore) {
+      await notifier.flush();
+      return;
+    }
+
+    final l = L.of(context);
+    BackupMetadata? meta;
+    try {
+      meta = await ref.read(backupRepositoryProvider).readMetadata();
+    } on BackupException {
+      meta = null;
+    }
+    if (!mounted) return;
+
+    final confirmed = await confirmDestructive(
+      context,
+      title: l.backupSaveNow,
+      message: meta == null
+          ? l.backupOverwriteConfirm
+          : '${l.backupOverwriteConfirm}\n'
+              '${l.restoreCopyCounts(meta.chapterCount, meta.examCount)}',
+      confirmLabel: l.backupSaveNow,
+    );
+    if (!confirmed || !mounted) return;
+    await notifier.flush(overwriteCloud: true);
+  }
 
   Future<void> _restore() async {
     if (_restoring) return;
@@ -163,7 +199,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                 label: l.backupSaveNow,
                 tone: PrimaryButtonTone.secondary,
                 busy: sync.status == SyncStatus.saving,
-                onTap: () => ref.read(backupSyncProvider.notifier).flush(),
+                onTap: _saveNow,
               ),
             ],
           ),

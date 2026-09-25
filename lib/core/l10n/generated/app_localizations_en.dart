@@ -780,6 +780,20 @@ class LEn extends L {
   String get unlockWithPassword => 'Unlock with password';
 
   @override
+  String get lockForgotPassword => 'Forgot the app password?';
+
+  @override
+  String get lockForgotBody =>
+      'Type your account password to remove the app lock. You can set it again in Settings.';
+
+  @override
+  String get lockForgotAccountHint => 'Your account password';
+
+  @override
+  String get lockForgotFailed =>
+      'Could not confirm your account. Check your internet connection and try again.';
+
+  @override
   String get hapticsSetting => 'Haptics';
 
   @override
@@ -991,6 +1005,14 @@ class LEn extends L {
 
   @override
   String get backupErrorUnknown => 'Saving didn\'t work';
+
+  @override
+  String get backupErrorCloudHasMore =>
+      'The cloud copy holds more than this phone, so nothing was saved over it. Restore it below.';
+
+  @override
+  String get backupOverwriteConfirm =>
+      'The cloud copy holds more than this phone. Saving now replaces it with what is on this phone, and cannot be undone.';
 
   @override
   String get tasksTitle => 'Today\'s tasks';

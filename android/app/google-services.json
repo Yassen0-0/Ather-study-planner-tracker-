@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "882606725720-18g5j4l44p5if0g5672fo0u9g8pekljs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ather.app",
+            "certificate_hash": "4ea866f71dbba1d380113f9647d07c1352e730c1"
+          }
+        },
+        {
           "client_id": "882606725720-3c00konkffjjdftvhfidpi3utaqutg40.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

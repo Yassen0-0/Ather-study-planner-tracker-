@@ -7,9 +7,37 @@ permanently break the app if they are got wrong.
 
 ## 1. Where the signing key lives
 
+**The current upload key (since `1.10.0+18`, created 2026-09-25):**
+
+| | |
+|---|---|
+| File | `~/keys/ather-upload-2026.jks` on the Mac — alias `ather`, JKS |
+| Certificate | `CN=yassen, OU=ather, O=ather-app, L=giza, ST=fisal, C=eg` |
+| SHA-1 | `4E:A8:66:F7:1D:BB:A1:D3:80:11:3F:96:47:D0:7C:13:52:E7:30:C1` |
+| SHA-256 | `E4:40:0D:4A:28:38:55:06:C0:83:CF:80:3C:1A:14:30:78:C3:70:D2:86:43:4D:76:C0:C2:D0:31:7E:C3:70:A7` |
+
+`apksigner verify --print-certs` on any release from `1.10.0+18` on must print that SHA-1.
+
+### The first key was lost — this has already happened once
+
+The original upload key (`CN=yassen, OU=per, O=ather …`, SHA-1 `f3eaec08…623e`), which signed
+everything up to `1.9.0+17`, lived only on the old Windows machine. It did not travel with the
+move to Linux and then the Mac, and by the time it was needed its password was gone too. A new
+key was generated on 2026-09-25 by the owner's decision, and that is the whole price described
+below, paid for real: **no install of `1.9.0+17` or earlier can update to `1.10.0+18`.** Every
+student has to confirm their last sync, uninstall, install the new build, and sign in so the
+cloud backup restores. Students who never signed in to a backup lose their data.
+
+Both fingerprints stay registered in Firebase while students migrate, so the old builds keep
+signing in until they are replaced. Remove `f3eaec08…` only once nobody is on `1.9.0` any more.
+
+The lesson is the paragraph after the table: the `.jks` **and** both passwords, in a password
+manager **and** a second place that is not this machine. Either one without the other is the
+same as neither.
+
 | Thing | Location | In git? |
 |---|---|---|
-| The keystore | `C:\Users\<you>\keys\ather-upload.jks` — **outside this repository** | **No** |
+| The keystore | `~/keys/ather-upload-2026.jks` — **outside this repository** | **No** |
 | Its credentials | `android/key.properties` | **No** — `.gitignore`d |
 | The template | [`android/key.properties.example`](android/key.properties.example) | Yes |
 | The signing wiring | [`android/app/build.gradle.kts`](android/app/build.gradle.kts) | Yes |
@@ -34,11 +62,17 @@ local database with it.
 
 ## 2. Creating the key (once, by a human)
 
+**The key already exists (§1). This section is the record of how it was made — do not run it
+again.** A second new key would strand every student a second time.
+
 ```bash
-mkdir -p /c/Users/<you>/keys
-keytool -genkey -v -keystore /c/Users/<you>/keys/ather-upload.jks \
+mkdir -p ~/keys
+keytool -genkey -v -keystore ~/keys/ather-upload-2026.jks \
   -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias ather
 ```
+
+At the `Is CN=... correct? [no]:` prompt, type `yes` — pressing Enter answers `no` and starts
+the questions over.
 
 It asks for a store password, your real name and organisation details (these go
 into the certificate), and then a key password — pressing Enter reuses the store
@@ -51,13 +85,14 @@ cp android/key.properties.example android/key.properties
 ```
 
 ```properties
-storeFile=C:\\Users\\<you>\\keys\\ather-upload.jks
+storeFile=/Users/<you>/keys/ather-upload-2026.jks
 storePassword=<the store password>
 keyAlias=ather
 keyPassword=<the key password>
 ```
 
-Backslashes are doubled — it is a Java properties file.
+On Windows the path is written with doubled backslashes instead
+(`C:\\Users\\<you>\\keys\\ather-upload-2026.jks`) — it is a Java properties file.
 
 ---
 
@@ -68,14 +103,18 @@ continuing to work perfectly in development. Google ties sign-in to the signing
 certificate, and the release key's fingerprint is different from the debug key's.
 
 ```bash
-keytool -list -v -alias ather -keystore /c/Users/<you>/keys/ather-upload.jks | grep SHA
+keytool -list -v -alias ather -keystore ~/keys/ather-upload-2026.jks | grep SHA
 ```
 
 Firebase console → project `ather-49705` → ⚙️ Project settings → under
 `com.ather.app` → **Add fingerprint** → paste SHA-1 (and SHA-256) → then
 re-download `google-services.json` into `android/app/`.
 
-The debug key's SHA-1 is already registered, which is why it works locally.
+The debug key is per machine (`~/.android/debug.keystore`), so every new machine brings a new
+debug fingerprint. The registered one (`6f69a69e…`) belongs to the old Windows machine; the
+Mac's debug key is `98:AD:2E:F9:11:FB:04:BB:81:D1:2E:1E:CA:0D:60:D6:96:E8:AB:AB` and, until it is
+registered the same way, Google Sign-In fails in debug builds made on the Mac. Release builds
+are unaffected.
 
 ### 3a. And then the **Play App Signing** key, which is a third key
 
@@ -316,6 +355,29 @@ The one-shot repair script for that batch is retired with its work done; this
 note is the lesson it carried.
 
 ---
+
+## 4c. The toolchain on the Mac (since 2026-09-25)
+
+Everything the build needs lives in **one folder**, `~/dev`, and `~/.zshrc` points at it
+through a single variable inside the `ATHER DEV TOOLS` block:
+
+| Tool | Where | Why this one |
+|---|---|---|
+| Flutter 3.47.1 (arm64) | `$DEV_ROOT/flutter` | the version CI pins (`guardrails.yml`) |
+| JDK 17 (Temurin) | `$DEV_ROOT/jdk-17` | `sourceCompatibility`/`jvmTarget` are 17 |
+| Android SDK — platform 36, build-tools 36.0.0, platform-tools, NDK 28.2.13676358 | `$DEV_ROOT/android-sdk` | `compileSdk` 36 and Flutter's NDK |
+| Gradle home, pub cache | `$DEV_ROOT/gradle-home`, `$DEV_ROOT/pub-cache` | so nothing lands in `~/.gradle` or `~/.pub-cache` |
+| Firebase CLI | `$DEV_ROOT/npm-global` | rules and hosting deploys |
+
+Moving it (to an external SSD, say) is: copy `~/dev` to the new place, change the one
+`DEV_ROOT=` line, open a new terminal, then `flutter clean && flutter pub get` in the project
+— `.dart_tool/package_config.json` stores absolute pub-cache paths. If the repository moves
+too, run `git worktree repair`. An external drive must be **APFS** with **no spaces** in its
+name: exFAT loses the symlinks and exec bits Flutter and Gradle depend on, and the NDK does
+not tolerate spaces in its path.
+
+**The keystore does not go with it.** `~/keys/` stays where it is and is backed up on its own
+(§1) — a drive that holds the only copy of the key is how the first key was lost.
 
 ## 5. Before the first public release
 

@@ -35,6 +35,17 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
   /// since typed.
   bool _restoreChecked = false;
 
+  /// This session's automatic restore could not reach the cloud (a
+  /// [BackupException] -- offline, a timeout, the rules).
+  ///
+  /// It used to be final for the session: `_restoreChecked` stayed true and
+  /// nothing asked again until the next cold start. By then the student had
+  /// often typed something, the device was no longer empty, and no automatic
+  /// restore would ever run for it again (D1). So a failed attempt is retried
+  /// the next time the app comes back to the foreground -- still only onto an
+  /// empty device, re-read at that moment, so a retry can never land on work.
+  bool _restoreFailed = false;
+
   /// Wipes the device when the account that just signed in is **not** the one
   /// whose data is sitting on it.
   ///
@@ -117,7 +128,12 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       }
     }
 
+    // Gone mid-hand-over (the app closed): stop without touching `ref`. The
+    // old uid is still recorded, so the next launch asks again -- the same
+    // recovery a crash mid-wipe gets, described below.
+    if (!mounted) return false;
     await ref.read(studyRepositoryProvider).clear();
+    if (!mounted) return false;
     await ref.read(taskRepositoryProvider).clearTasks();
     // The database was only half of what the previous student left: drafts
     // keyed by lesson id would resurface under the new student once ids
@@ -125,6 +141,7 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
     // (SEC-04). Runs before the uid rewrite below, so a crash mid-wipe leaves
     // no uid recorded rather than the wrong one.
     await wipeAccountPreferences(preferences);
+    if (!mounted) return false;
     // The restore below asks whether the device is empty, and the stream it
     // asks may not have re-emitted since these deletes landed -- a stale
     // non-empty answer would skip the auto-restore for the very student who
@@ -205,6 +222,16 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
         state == AppLifecycleState.detached) {
       ref.read(backupSyncProvider.notifier).flush();
     }
+    // Back in front after a restore that could not get through: the network
+    // may well be back too (see [_restoreFailed]).
+    if (state == AppLifecycleState.resumed && _restoreFailed) {
+      final account = ref.read(accountProvider).value;
+      if (account != null) {
+        _restoreFailed = false;
+        _restoreChecked = false;
+        unawaited(_restoreIfEmpty(account.id));
+      }
+    }
   }
 
   /// Restores **only** onto an empty database.
@@ -237,6 +264,10 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
     // data on the device is not theirs -- and if they declined to hand it
     // over, neither the wipe nor this session's restore may touch anything.
     if (!await _clearIfDifferentAccount(uid)) return;
+    // Every await below can outlive this widget (the app closing mid-restore),
+    // and `ref` throws once it has; each one is followed by this check before
+    // `ref` is touched again.
+    if (!mounted) return;
 
     // `snapshotProvider.future`, not `snapshotValueProvider`: awaiting the
     // stream's first real emission gives a true answer, and it goes through the
@@ -259,12 +290,13 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       debugPrint(
         'Ather: automatic restore held -- device read failed: $error\n$stack',
       );
+      if (!mounted) return;
       ref.read(backupSyncProvider.notifier).reportFailure(
             BackupFailure.unknown,
           );
       return;
     }
-    if (!empty) return;
+    if (!empty || !mounted) return;
 
     try {
       final backup = await ref.read(backupRepositoryProvider).download();
@@ -287,12 +319,13 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
         debugPrint(
           'Ather: automatic restore held -- re-read failed: $error\n$stack',
         );
+        if (!mounted) return;
         ref.read(backupSyncProvider.notifier).reportFailure(
               BackupFailure.unknown,
             );
         return;
       }
-      if (!stillEmpty) return;
+      if (!stillEmpty || !mounted) return;
       await ref.read(backupSyncProvider.notifier).restore(backup);
     } on BackupException catch (e) {
       // Offline, or the rules were never published. Either way the app is
@@ -300,6 +333,8 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       // but the sync card carries the news instead of swallowing it (N14),
       // exactly as a failed upload already does.
       debugPrint('Ather: automatic restore failed -- ${e.failure}');
+      if (!mounted) return;
+      _restoreFailed = true;
       ref.read(backupSyncProvider.notifier).reportFailure(e.failure);
     }
   }
@@ -318,11 +353,15 @@ class _BackupSyncGateState extends ConsumerState<BackupSyncGate>
       // same account, which happens on every token refresh.
       if (now != null && now.id != was?.id) {
         _restoreChecked = false;
+        _restoreFailed = false;
         _restoreIfEmpty(now.id);
       }
       // Signing out clears the guard so the next student on this device gets
       // their own restore check rather than inheriting this one's.
-      if (now == null) _restoreChecked = false;
+      if (now == null) {
+        _restoreChecked = false;
+        _restoreFailed = false;
+      }
     });
 
     return widget.child;

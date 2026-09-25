@@ -107,3 +107,6 @@ public/*.apk
 .worktrees/
 .security-key
 logs/security/
+
+# Kotlin 2.x compiler session data, written next to the Gradle build.
+android/.kotlin/

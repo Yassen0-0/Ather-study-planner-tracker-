@@ -18,7 +18,7 @@ import 'package:ather/domain/entities/study_backup.dart';
 import 'package:ather/domain/entities/subject.dart';
 import 'package:ather/domain/repositories/study_repository.dart';
 import 'package:ather/domain/repositories/backup_repository.dart'
-    show BackupFailure;
+    show BackupFailure, BackupMetadata;
 import 'package:ather/presentation/providers/app_providers.dart';
 import 'package:ather/presentation/providers/auth_providers.dart';
 import 'package:ather/presentation/providers/backup_providers.dart';
@@ -322,10 +322,80 @@ void main() {
     expect(backup.uploadCount, isZero);
   });
 
-  test('a populated record uploads without any marker', () async {
-    // The N4 guard is about *empty* records only: a student who recorded work
-    // offline must sync exactly as before, marker or no marker.
+  // D1: a populated record used to upload "without any marker" -- the test
+  // that stood here pinned exactly that. New phone, slow network, the
+  // automatic restore times out, the student adds one chapter, and the
+  // debounce replaced years of cloud history with it. A device that has never
+  // synced with the cloud now looks before its first upload.
+  BackupMetadata cloudHolding({required int chapters, required int exams}) =>
+      BackupMetadata(
+        updatedAt: DateTime(2026, 7, 1),
+        chapterCount: chapters,
+        examCount: exams,
+        formatVersion: StudyBackup.formatVersion,
+      );
+
+  test('no cloud document: the first upload goes, and marks the device', () async {
     final backup = FakeBackupRepository();
+    final container = await boot(
+      backup: backup,
+      snapshots: Stream<StudySnapshot>.value(snapshotWithChapter()),
+      tasks: Stream<List<DailyTask>>.value(<DailyTask>[task()]),
+      cloudSeen: false,
+    );
+    final preferences = container.read(sharedPreferencesProvider);
+
+    await container.read(backupSyncProvider.notifier).flush();
+
+    expect(backup.metadataReadCount, 1);
+    expect(backup.uploadCount, 1);
+    expect(backup.stored!.chapters, hasLength(1));
+    expect(preferences.getInt(kCloudInSyncKey), isNotNull);
+
+    // Marked: the next flush does not look again.
+    await container.read(backupSyncProvider.notifier).flush();
+    expect(backup.metadataReadCount, 1);
+    expect(backup.uploadCount, 2);
+  });
+
+  test('a cloud copy with more exams is never overwritten by a stranger', () async {
+    // Years of history up there; one fresh chapter down here, and no marker.
+    final backup = FakeBackupRepository(
+      metadata: cloudHolding(chapters: 12, exams: 140),
+    );
+    final container = await boot(
+      backup: backup,
+      snapshots: Stream<StudySnapshot>.value(snapshotWithChapter()),
+      tasks: Stream<List<DailyTask>>.value(<DailyTask>[task()]),
+      cloudSeen: false,
+    );
+    final preferences = container.read(sharedPreferencesProvider);
+
+    await container.read(backupSyncProvider.notifier).flush();
+
+    expect(backup.uploadCount, isZero);
+    expect(preferences.getInt(kCloudInSyncKey), isNull);
+    // Said, on the sync card, rather than swallowed.
+    final sync = container.read(backupSyncProvider);
+    expect(sync.status, SyncStatus.failed);
+    expect(sync.failure, BackupFailure.cloudHasMore);
+
+    // And it stays held: every later flush looks again and holds again.
+    await container.read(backupSyncProvider.notifier).flush();
+    expect(backup.uploadCount, isZero);
+
+    // Only the student's explicit, confirmed choice saves over it.
+    await container
+        .read(backupSyncProvider.notifier)
+        .flush(overwriteCloud: true);
+    expect(backup.uploadCount, 1);
+    expect(preferences.getInt(kCloudInSyncKey), isNotNull);
+  });
+
+  test('more chapters alone is enough to hold', () async {
+    final backup = FakeBackupRepository(
+      metadata: cloudHolding(chapters: 3, exams: 0),
+    );
     final container = await boot(
       backup: backup,
       snapshots: Stream<StudySnapshot>.value(snapshotWithChapter()),
@@ -335,8 +405,91 @@ void main() {
 
     await container.read(backupSyncProvider.notifier).flush();
 
+    expect(backup.uploadCount, isZero);
+    expect(
+      container.read(backupSyncProvider).failure,
+      BackupFailure.cloudHasMore,
+    );
+  });
+
+  test('a legacy install that created its cloud copy keeps backing up', () async {
+    // The upgrade hazard: this device made its cloud document by uploading
+    // and never downloaded, so it carries no marker. Its cloud copy is an
+    // earlier state of itself -- no more than it holds now -- and it must not
+    // stop backing up the day it takes this build.
+    final backup = FakeBackupRepository(
+      metadata: cloudHolding(chapters: 1, exams: 0),
+    );
+    final container = await boot(
+      backup: backup,
+      snapshots: Stream<StudySnapshot>.value(snapshotWithChapter()),
+      tasks: Stream<List<DailyTask>>.value(<DailyTask>[task()]),
+      cloudSeen: false,
+    );
+    final preferences = container.read(sharedPreferencesProvider);
+
+    await container.read(backupSyncProvider.notifier).flush();
+
     expect(backup.uploadCount, 1);
-    expect(backup.stored!.chapters, hasLength(1));
+    expect(container.read(backupSyncProvider).status, SyncStatus.saved);
+    expect(preferences.getInt(kCloudInSyncKey), isNotNull);
+
+    // In sync from here on: later flushes go straight through.
+    await container.read(backupSyncProvider.notifier).flush();
+    expect(backup.metadataReadCount, 1);
+    expect(backup.uploadCount, 2);
+  });
+
+  test('a cloud that cannot be looked at holds the upload and marks nothing',
+      () async {
+    // Offline: the look fails, and "could not look" must never be read as
+    // "nothing there".
+    final backup = FakeBackupRepository.failing();
+    final container = await boot(
+      backup: backup,
+      snapshots: Stream<StudySnapshot>.value(snapshotWithChapter()),
+      tasks: Stream<List<DailyTask>>.value(<DailyTask>[task()]),
+      cloudSeen: false,
+    );
+    final preferences = container.read(sharedPreferencesProvider);
+
+    await container.read(backupSyncProvider.notifier).flush();
+
+    expect(backup.metadataReadCount, 1);
+    expect(backup.uploadCount, isZero, reason: 'upload was never attempted');
+    expect(preferences.getInt(kCloudInSyncKey), isNull);
+    final sync = container.read(backupSyncProvider);
+    expect(sync.status, SyncStatus.failed);
+    expect(sync.failure, BackupFailure.offline);
+  });
+
+  test('a device that has restored before does not look at all', () async {
+    final backup = FakeBackupRepository(
+      metadata: cloudHolding(chapters: 12, exams: 140),
+    );
+    final container = await boot(
+      backup: backup,
+      snapshots: Stream<StudySnapshot>.value(snapshotWithChapter()),
+      tasks: Stream<List<DailyTask>>.value(<DailyTask>[task()]),
+    );
+
+    await container.read(backupSyncProvider.notifier).flush();
+
+    // It downloaded the cloud copy once; what it holds now is the student's
+    // informed record, deletions included.
+    expect(backup.metadataReadCount, isZero);
+    expect(backup.uploadCount, 1);
+  });
+
+  test('wiping the account preferences forgets the in-sync marker', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      kCloudInSyncKey: 1,
+      kLastCloudDownloadKey: 1,
+    });
+    final preferences = await SharedPreferences.getInstance();
+    await wipeAccountPreferences(preferences);
+    expect(preferences.getInt(kCloudInSyncKey), isNull);
+    expect(preferences.getInt(kLastCloudDownloadKey), isNull);
   });
 
   test('a completed restore lets emptiness flow again', () async {

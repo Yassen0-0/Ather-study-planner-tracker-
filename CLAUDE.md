@@ -46,7 +46,7 @@ with no signing key at all. It is not. Before concluding that a release cannot b
 the other worktrees:
 
 ```bash
-ls .claude/worktrees/*/android/key.properties /c/Users/*/keys/*.jks 2>/dev/null
+ls .claude/worktrees/*/android/key.properties ~/keys/*.jks /c/Users/*/keys/*.jks 2>/dev/null
 ```
 
 If a copy exists, copy it in — do not read its contents, it holds passwords — and build the
@@ -56,6 +56,13 @@ Before producing any APK, state which of the four you checked. If you cannot sat
 most often because a release build needs a keystore you do not have — **build nothing and say
 why.** Do not generate a signing key to get past it: the key is the app's identity on Play, and
 a wrong or lost one means the app can never be updated again. A human creates it, once.
+
+**This has already gone wrong once.** The first upload key (SHA-1 `f3eaec08…`) and its password
+were lost in the Windows → Linux → Mac moves, and on 2026-09-25 the owner chose to replace it.
+Every student on `1.9.0+17` or earlier had to uninstall and restore from the cloud to reach
+`1.10.0+18`. The current key is `~/keys/ather-upload-2026.jks`, SHA-1 `4E:A8:66:F7…30:C1`
+(RELEASING.md §1). From here on it is the one and only key: a release that `apksigner` does not
+report with that SHA-1 is not a release.
 
 **Four of these are now checked mechanically.** This rule was prose and nothing else for its
 whole life, and it was broken twice anyway — two debug-signed APKs, and a build carrying

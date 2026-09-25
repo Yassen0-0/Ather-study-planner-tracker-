@@ -168,13 +168,59 @@ final class FakeAuthRepository implements AuthRepository {
     _set(null);
   }
 
-  /// The re-auth retry always succeeds — the fake cannot know the password,
-  /// and the contract under test is "a second attempt goes through", not
-  /// Firebase's credential check.
+  /// How the account re-proves itself. Password unless a test says it is a
+  /// Google account -- the case that used to dead-end after a restart (D4).
+  ReauthMethod reauthMethodValue = ReauthMethod.password;
+
+  /// Whether the sign-in counts as recent. True by default so the tests that
+  /// are not about re-authentication go straight through, as a fresh session
+  /// does.
+  bool recentLogin = true;
+
+  /// Thrown by the next re-authentication of either kind -- `cancelled` for a
+  /// student backing out of the Google sheet, `wrongCredentials` for a
+  /// mistyped password.
+  AuthFailure? nextReauthFailure;
+
+  int googleReauthCount = 0;
+
+  /// Every password handed to [reauthenticateWithPassword], in order.
+  final List<String> reauthPasswords = <String>[];
+
   @override
-  Future<void> deleteAccountWithPassword(String password) async {
-    deleteCount++;
-    _set(null);
+  ReauthMethod? get reauthMethod => _account == null ? null : reauthMethodValue;
+
+  @override
+  Future<bool> hasRecentLogin() async => _account != null && recentLogin;
+
+  /// Called as either re-authentication starts, so a test can look at what
+  /// had already been erased by then -- the whole point of D4 is "nothing".
+  void Function()? onReauth;
+
+  void _maybeThrowReauth() {
+    onReauth?.call();
+    final failure = nextReauthFailure;
+    if (failure != null) {
+      nextReauthFailure = null;
+      throw AuthException(failure);
+    }
+  }
+
+  @override
+  Future<void> reauthenticateWithGoogle() async {
+    _maybeThrowReauth();
+    googleReauthCount++;
+    recentLogin = true;
+  }
+
+  /// Any password succeeds unless [nextReauthFailure] says otherwise — the
+  /// fake cannot know the password, and the contract under test is "a proved
+  /// owner goes through", not Firebase's credential check.
+  @override
+  Future<void> reauthenticateWithPassword(String password) async {
+    _maybeThrowReauth();
+    reauthPasswords.add(password);
+    recentLogin = true;
   }
 
   void dispose() => _controller.close();

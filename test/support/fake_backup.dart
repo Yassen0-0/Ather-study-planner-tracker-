@@ -45,8 +45,13 @@ class FakeBackupRepository implements BackupRepository {
   /// Consulted by [delete] to record the ordering above.
   int Function()? accountDeleteCount;
 
+  /// How often the cloud was *looked at* -- D1's first-upload check reads
+  /// metadata, and a device that already knows the cloud must stop asking.
+  int metadataReadCount = 0;
+
   @override
   Future<BackupMetadata?> readMetadata() async {
+    metadataReadCount++;
     if (failure != null) throw BackupException(failure!);
     return metadata;
   }
