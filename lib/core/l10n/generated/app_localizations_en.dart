@@ -780,6 +780,20 @@ class LEn extends L {
   String get unlockWithPassword => 'Unlock with password';
 
   @override
+  String get lockForgotPassword => 'Forgot the app password?';
+
+  @override
+  String get lockForgotBody =>
+      'Type your account password to remove the app lock. You can set it again in Settings.';
+
+  @override
+  String get lockForgotAccountHint => 'Your account password';
+
+  @override
+  String get lockForgotFailed =>
+      'Could not confirm your account. Check your internet connection and try again.';
+
+  @override
   String get hapticsSetting => 'Haptics';
 
   @override

@@ -1369,6 +1369,30 @@ abstract class L {
   /// **'افتح بكلمة السر'**
   String get unlockWithPassword;
 
+  /// No description provided for @lockForgotPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسيت كلمة سر التطبيق؟'**
+  String get lockForgotPassword;
+
+  /// No description provided for @lockForgotBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب كلمة سر حسابك ليُزال قفل التطبيق. يمكنك تعيينه من جديد من الإعدادات.'**
+  String get lockForgotBody;
+
+  /// No description provided for @lockForgotAccountHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة سر حسابك'**
+  String get lockForgotAccountHint;
+
+  /// No description provided for @lockForgotFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التأكد من حسابك. تأكد من اتصالك بالإنترنت ثم حاول مرة أخرى.'**
+  String get lockForgotFailed;
+
   /// No description provided for @hapticsSetting.
   ///
   /// In ar, this message translates to:

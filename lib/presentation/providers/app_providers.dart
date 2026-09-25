@@ -322,6 +322,8 @@ Future<void> wipeAccountPreferences(SharedPreferences preferences) async {
   await preferences.remove(kLockMethodKey);
   await preferences.remove(kPasscodeHashKey);
   await preferences.remove(kPasscodeDigitsKey);
+  await preferences.remove(kLockFailedAttemptsKey);
+  await preferences.remove(kLockLockedUntilKey);
   // Removed before it is rewritten on the switch path: between the two, flush
   // sees no owner at all and refuses to upload anything -- the safe direction.
   await preferences.remove(kLastAccountUidKey);

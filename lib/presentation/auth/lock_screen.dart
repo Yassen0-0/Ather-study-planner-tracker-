@@ -11,6 +11,9 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/error_banner.dart';
+import '../../core/widgets/pressable.dart';
+import '../../domain/repositories/auth_repository.dart';
+import '../providers/app_providers.dart';
 import '../providers/auth_providers.dart';
 
 /// Covers the app until a fingerprint -- or the app's own password, or either
@@ -42,6 +45,20 @@ import '../providers/auth_providers.dart';
 /// `both` mode; each way in works exactly as it does alone. A wrong answer is
 /// said plainly under the field with a light haptic, and the input is cleared
 /// whichever way the attempt goes. It is never logged.
+///
+/// ## A forgotten password (D2)
+///
+/// A password-only lock offers no OS prompt, so forgetting the password used to
+/// leave exactly one way in: Android's "Clear data", which deletes the SQLite
+/// file and every exam in it. The student's Firebase account is the proof that
+/// replaces it -- "نسيت كلمة سر التطبيق؟" re-authenticates the account in the
+/// form it can answer (the Google sheet, or its own password typed into the
+/// same field) and, on success, removes the app lock outright. That needs a
+/// network, and says so when there is none; nothing is cleared on a failure.
+///
+/// Guessing is slowed rather than capped: see [LockAttemptStore]. The refusal
+/// survives killing the app, and a student locked out of guessing can still
+/// take the account route.
 class LockScreen extends ConsumerStatefulWidget {
   const LockScreen({super.key});
 
@@ -58,9 +75,23 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   /// the student of anything before they have done it.
   String? Function(L)? _message;
 
+  /// The field is taking the *account* password to recover a forgotten app
+  /// password, rather than the app password itself.
+  bool _recovering = false;
+
+  /// An account re-authentication is in flight.
+  bool _verifyingAccount = false;
+
   @override
   void initState() {
     super.initState();
+    // Reopened while the guessing backoff still runs -- after the app was
+    // killed, typically -- the refusal is stated up front rather than after
+    // one more wasted attempt.
+    final attempts = ref.read(lockAttemptStoreProvider);
+    if (attempts.lockedUntil(ref.read(clockProvider).now()) != null) {
+      _message = (l) => l.authErrorTooManyAttempts;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Fires only where there is nothing to type into: the pure-biometric
       // cold start keeps today's behaviour of offering the prompt straight
@@ -143,6 +174,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
 
     if (!mounted) return;
     if (unlocked) {
+      // The owner is back; the guessing count starts over.
+      await ref.read(lockAttemptStoreProvider).reset();
+      if (!mounted) return;
       ref.read(lockStateProvider.notifier).unlock();
     } else {
       setState(() {
@@ -155,21 +189,123 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   /// Checks the typed answer against the stored digest. The comparison is
   /// synchronous and cheap; the input is cleared whichever way it goes and is
   /// never logged anywhere.
-  void _submitPasscode() {
-    final stored = ref.read(appPasscodeProvider);
-    final ok =
-        stored != null && AppPasscode.verify(_passcode.text, stored.hash);
+  ///
+  /// During a backoff the answer is not even checked -- a right guess that
+  /// were still accepted would make the backoff decoration.
+  Future<void> _submitPasscode() async {
+    final attempts = ref.read(lockAttemptStoreProvider);
+    final now = ref.read(clockProvider).now();
+    final typed = _passcode.text;
     _passcode.clear();
 
+    if (attempts.lockedUntil(now) != null) {
+      setState(() => _message = (l) => l.authErrorTooManyAttempts);
+      return;
+    }
+
+    final stored = ref.read(appPasscodeProvider);
+    final ok = stored != null && AppPasscode.verify(typed, stored.hash);
+
     if (ok) {
+      await attempts.reset();
+      if (!mounted) return;
       ref.read(lockStateProvider.notifier).unlock();
       return;
     }
     // Registered-but-wrong: the lightest cue in PH-04's vocabulary.
     AppHaptics.light();
+    await attempts.recordFailure(now);
+    if (!mounted) return;
+    final nowLockedOut = attempts.lockedUntil(now) != null;
     setState(() {
-      _message = (l) => l.wrongPassword;
+      _message = nowLockedOut
+          ? (l) => l.authErrorTooManyAttempts
+          : (l) => l.wrongPassword;
     });
+  }
+
+  /// "نسيت كلمة سر التطبيق؟" -- straight to the Google sheet for a Google
+  /// account; for an email/password account the field changes over to take
+  /// the account's password instead.
+  Future<void> _forgotPassword() async {
+    final auth = ref.read(authRepositoryProvider);
+    if (auth.reauthMethod == ReauthMethod.google) {
+      await _proveAccount(auth.reauthenticateWithGoogle);
+      return;
+    }
+    _passcode.clear();
+    setState(() {
+      _recovering = true;
+      _message = null;
+    });
+  }
+
+  void _cancelRecovery() {
+    _passcode.clear();
+    setState(() {
+      _recovering = false;
+      _message = null;
+    });
+  }
+
+  Future<void> _submitAccountPassword() async {
+    final password = _passcode.text;
+    _passcode.clear();
+    if (password.isEmpty) return;
+    await _proveAccount(
+      () => ref
+          .read(authRepositoryProvider)
+          .reauthenticateWithPassword(password),
+    );
+  }
+
+  /// Re-authenticates the account and, only once that succeeded, removes the
+  /// app lock and opens. A failure clears nothing.
+  Future<void> _proveAccount(Future<void> Function() reauthenticate) async {
+    if (_verifyingAccount) return;
+    setState(() {
+      _verifyingAccount = true;
+      _message = null;
+    });
+    try {
+      await reauthenticate();
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _verifyingAccount = false;
+        _message = switch (e.failure) {
+          // Backing out of the Google sheet is an answer, not an error.
+          AuthFailure.cancelled => null,
+          AuthFailure.wrongCredentials => (l) => l.wrongPassword,
+          AuthFailure.tooManyRequests => (l) => l.authErrorTooManyAttempts,
+          // No network is the likely cause of everything else here, and the
+          // copy names it: a recovery that fails silently offline is the
+          // trap this exists to remove.
+          _ => (l) => l.lockForgotFailed,
+        };
+      });
+      return;
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _verifyingAccount = false;
+        _message = (l) => l.lockForgotFailed;
+      });
+      return;
+    }
+    await _clearAppLock();
+  }
+
+  /// The lock goes entirely -- switch, method, stored password and backoff --
+  /// rather than being half-kept around a password nobody knows. The student
+  /// can set a new one in Settings.
+  Future<void> _clearAppLock() async {
+    await ref.read(appLockEnabledProvider.notifier).set(false);
+    await ref.read(lockMethodProvider.notifier).clear();
+    await ref.read(appPasscodeProvider.notifier).clear();
+    await ref.read(lockAttemptStoreProvider).reset();
+    if (!mounted) return;
+    ref.read(lockStateProvider.notifier).unlock();
   }
 
   @override
@@ -183,7 +319,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     // names a password no one ever set must fall back to the biometric path
     // rather than stand a door nobody has a key to.
     final offersField = method.usesPassword && stored != null;
-    final keyboard = (stored?.digitsOnly ?? false)
+    // The account password is free text whatever shape the app password had.
+    final keyboard = !_recovering && (stored?.digitsOnly ?? false)
         ? const TextInputType.numberWithOptions(decimal: false)
         : TextInputType.text;
 
@@ -225,7 +362,47 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                       // attempt has anything left to tell the student, and that
                       // message takes the space the instructions used to hold.
                       Text(l.appName, style: AppTypography.lockWordmark),
-                      if (offersField) ...<Widget>[
+                      if (offersField && _recovering) ...<Widget>[
+                        const SizedBox(height: AppSpacing.xl),
+                        SizedBox(
+                          width: 260,
+                          child: Text(
+                            l.lockForgotBody,
+                            textAlign: TextAlign.center,
+                            style: AppTypography.body.copyWith(
+                              color: context.colors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        _PasswordField(
+                          // A new key so the field comes back empty and with
+                          // the text keyboard, not the app password's.
+                          key: const ValueKey<String>('account-password'),
+                          controller: _passcode,
+                          hint: l.lockForgotAccountHint,
+                          keyboardType: keyboard,
+                          onSubmitted: (_) => _submitAccountPassword(),
+                        ),
+                        if (_message != null) ...<Widget>[
+                          const SizedBox(height: AppSpacing.md),
+                          ErrorBanner(message: _message!(l)!),
+                        ],
+                        const SizedBox(height: AppSpacing.xxl),
+                        SizedBox(
+                          width: 220,
+                          child: PrimaryButton(
+                            label: l.lockUnlock,
+                            busy: _verifyingAccount,
+                            onTap: _submitAccountPassword,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        QuietPillButton(
+                          label: l.commonCancel,
+                          onTap: _verifyingAccount ? () {} : _cancelRecovery,
+                        ),
+                      ] else if (offersField) ...<Widget>[
                         const SizedBox(height: AppSpacing.xxxl),
                         _PasswordField(
                           controller: _passcode,
@@ -242,6 +419,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                           width: 220,
                           child: PrimaryButton(
                             label: l.unlockWithPassword,
+                            busy: _verifyingAccount,
                             onTap: _submitPasscode,
                           ),
                         ),
@@ -252,6 +430,19 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                             onTap: _prompting ? () {} : _prompt,
                           ),
                         ],
+                        const SizedBox(height: AppSpacing.md),
+                        Pressable(
+                          onTap: _verifyingAccount ? null : _forgotPassword,
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            child: Text(
+                              l.lockForgotPassword,
+                              style: AppTypography.chipLabel.copyWith(
+                                color: context.colors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ),
                       ] else ...<Widget>[
                         if (_message != null) ...<Widget>[
                           const SizedBox(height: AppSpacing.xl),
@@ -283,6 +474,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
 /// carrying the instruction because the wordmark above already owns the page.
 class _PasswordField extends StatelessWidget {
   const _PasswordField({
+    super.key,
     required this.controller,
     required this.hint,
     required this.keyboardType,

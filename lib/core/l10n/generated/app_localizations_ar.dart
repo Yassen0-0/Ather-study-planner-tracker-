@@ -809,6 +809,20 @@ class LAr extends L {
   String get unlockWithPassword => 'افتح بكلمة السر';
 
   @override
+  String get lockForgotPassword => 'نسيت كلمة سر التطبيق؟';
+
+  @override
+  String get lockForgotBody =>
+      'اكتب كلمة سر حسابك ليُزال قفل التطبيق. يمكنك تعيينه من جديد من الإعدادات.';
+
+  @override
+  String get lockForgotAccountHint => 'كلمة سر حسابك';
+
+  @override
+  String get lockForgotFailed =>
+      'تعذّر التأكد من حسابك. تأكد من اتصالك بالإنترنت ثم حاول مرة أخرى.';
+
+  @override
   String get hapticsSetting => 'الاهتزاز';
 
   @override

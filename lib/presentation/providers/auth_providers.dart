@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/platform/secure_window.dart';
 import '../../data/auth/firebase_auth_repository.dart';
@@ -138,6 +139,12 @@ class LockMethodNotifier extends Notifier<LockMethod> {
         .read(sharedPreferencesProvider)
         .setString(kLockMethodKey, method.name);
   }
+
+  /// Back to "never chosen" -- the forgotten-password recovery (D2).
+  Future<void> clear() async {
+    state = LockMethod.biometric;
+    await ref.read(sharedPreferencesProvider).remove(kLockMethodKey);
+  }
 }
 
 final lockMethodProvider = NotifierProvider<LockMethodNotifier, LockMethod>(
@@ -175,7 +182,89 @@ class AppPasscodeNotifier extends Notifier<StoredAppPasscode?> {
     await prefs.setString(kPasscodeHashKey, passcode.hash);
     await prefs.setBool(kPasscodeDigitsKey, passcode.digitsOnly);
   }
+
+  /// Forgets the password entirely -- the forgotten-password recovery (D2).
+  Future<void> clear() async {
+    state = null;
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.remove(kPasscodeHashKey);
+    await prefs.remove(kPasscodeDigitsKey);
+  }
 }
+
+// --- Wrong-password backoff (D2) ---------------------------------------------
+
+const String kLockFailedAttemptsKey = 'lock_failed_attempts';
+const String kLockLockedUntilKey = 'lock_locked_until';
+
+/// Consecutive wrong app passwords, and how long the gate refuses to check
+/// another one.
+///
+/// The password field used to take unlimited guesses at full speed. A 4-digit
+/// floor (see `AppPasscode.minLength`) is ten thousand tries, which a patient
+/// sibling gets through in an afternoon. After [freeAttempts] misses the gate
+/// stops listening for [firstLockout], doubling with every further miss up to
+/// [maxLockout] -- slow enough to make guessing pointless, short enough that a
+/// student who is merely fumbling is back in within a minute.
+///
+/// **Persisted**, both numbers, because a counter in memory is reset by
+/// swiping the app away -- which is the first thing anyone guessing would try.
+/// The stored deadline is a wall-clock instant; moving the phone's clock
+/// forward defeats it, and that is accepted: this is a privacy lock over data
+/// the device's own lock already guards, not a vault.
+///
+/// A right answer (or the fingerprint, or the account recovery) clears both.
+class LockAttemptStore {
+  LockAttemptStore(this._prefs);
+
+  final SharedPreferences _prefs;
+
+  static const int freeAttempts = 5;
+  static const Duration firstLockout = Duration(seconds: 30);
+  static const Duration maxLockout = Duration(minutes: 15);
+
+  /// The refusal that follows the [failures]th consecutive miss.
+  static Duration lockoutAfter(int failures) {
+    if (failures < freeAttempts) return Duration.zero;
+    final doublings = failures - freeAttempts;
+    // 30s * 2^5 already passes the cap; stopping the shift there keeps a
+    // counter in the thousands from overflowing into a negative duration.
+    if (doublings >= 5) return maxLockout;
+    final lockout = firstLockout * (1 << doublings);
+    return lockout > maxLockout ? maxLockout : lockout;
+  }
+
+  int get failures => _prefs.getInt(kLockFailedAttemptsKey) ?? 0;
+
+  /// When the gate will listen again, or null if it is listening now.
+  DateTime? lockedUntil(DateTime now) {
+    final millis = _prefs.getInt(kLockLockedUntilKey);
+    if (millis == null) return null;
+    final until = DateTime.fromMillisecondsSinceEpoch(millis);
+    return until.isAfter(now) ? until : null;
+  }
+
+  Future<void> recordFailure(DateTime now) async {
+    final count = failures + 1;
+    await _prefs.setInt(kLockFailedAttemptsKey, count);
+    final lockout = lockoutAfter(count);
+    if (lockout > Duration.zero) {
+      await _prefs.setInt(
+        kLockLockedUntilKey,
+        now.add(lockout).millisecondsSinceEpoch,
+      );
+    }
+  }
+
+  Future<void> reset() async {
+    await _prefs.remove(kLockFailedAttemptsKey);
+    await _prefs.remove(kLockLockedUntilKey);
+  }
+}
+
+final lockAttemptStoreProvider = Provider<LockAttemptStore>(
+  (ref) => LockAttemptStore(ref.watch(sharedPreferencesProvider)),
+);
 
 final appPasscodeProvider =
     NotifierProvider<AppPasscodeNotifier, StoredAppPasscode?>(
