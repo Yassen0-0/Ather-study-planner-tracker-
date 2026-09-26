@@ -122,7 +122,7 @@
 
   "typography": {
     "fontFamily": "Readex Pro",
-    "fontSource": "Variable font, weight axis 200–700. Google Fonts: https://fonts.google.com/specimen/Readex+Pro (in this repo: assets/fonts/ReadexPro.ttf). Covers Arabic + Latin.",
+    "fontSource": "Variable font, weight axis 200–700. Google Fonts: https://fonts.google.com/specimen/Readex+Pro (bundled beside this file: ReadexPro.ttf). Covers Arabic + Latin.",
     "variableFontNote": "Drive the 'wght' axis explicitly (Flutter: fontVariations: [FontVariation('wght', w)]), otherwise every weight renders the same.",
     "fontFeatures": ["tnum"],
     "weights": { "regular": 400, "medium": 500, "semiBold": 600, "bold": 700 },

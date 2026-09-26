@@ -1,0 +1,446 @@
+/*
+ * Ather visual identity — CSS design tokens.
+ * Mirrors theme.json (same folder). Source of truth: lib/core/theme/ in the Ather app.
+ *
+ * Usage:
+ *   <link rel="stylesheet" href="theme.css">
+ *   <html dir="rtl" lang="ar">              follows the OS light/dark setting
+ *   <html data-theme="dark"> / "light"      forces a theme
+ *
+ * Rules: no shadows (the card is the elevation), no gradients, blue = active,
+ * red = wrong/weak/overdue, green = right/mastered, tabular figures everywhere,
+ * never a weight above 700, spacing only from the 4 · 8 · 12 · 16 · 20 · 24 ladder.
+ */
+
+/* ---------- Font ---------------------------------------------------------- */
+
+@font-face {
+  font-family: "Readex Pro";
+  src: url("ReadexPro.ttf") format("truetype");
+  font-weight: 200 700; /* variable weight axis */
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- Tokens (light is the default) --------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --color-page-background: #EFEFF2;
+  --color-card: #FFFFFF;
+  --color-muted: #F4F4F6;
+  --color-fill: #F1F1F4;
+  --color-track: #E9E9EC;
+
+  /* Text */
+  --color-text-primary: #000000;
+  --color-text-secondary: #63636A;
+  --color-text-tertiary: #7A7A80;
+  --color-text-micro: #7C7C82;
+  --color-text-no-data: #70707A;
+  --color-week-label: #676770;
+
+  /* Actions */
+  --color-action-primary: #000000;
+  --color-on-primary: #FFFFFF;
+  --color-accent: #1B6EF3;
+  --color-on-accent: #FFFFFF;
+  --color-accent-soft: rgb(27 110 243 / 0.12);
+  --color-action-disabled: #E9E9EC;
+
+  /* States */
+  --color-wrong: #FF3B30;
+  --color-wrong-tint: rgb(255 59 48 / 0.10);
+  --color-wrong-text: #C93229;
+  --color-right: #34C759;
+  --color-right-text: #1B7F3B;
+  --color-on-state: #FFFFFF;
+
+  /* Lines and controls */
+  --color-divider: rgb(0 0 0 / 0.06);
+  --color-glass-border: rgb(0 0 0 / 0.07);
+  --color-switch-off: #DCDCE0;
+  --color-switch-knob: #FFFFFF;
+  --color-checkbox-border: #D5D5DA;
+  --color-dashed-border: #C6C6CB;
+  --color-scrim: rgb(0 0 0 / 0.35);
+
+  /* Typography */
+  --font-family: "Readex Pro", system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-md: 12px;
+  --space-xl: 16px;
+  --space-xxl: 20px;
+  --space-xxxl: 24px;
+  --space-optical-inset: 2px;
+  --space-text-gap: 6px;
+  --space-page-margin: 16px;
+  --space-card-padding: 16px;
+  --space-list-gap: 12px;
+
+  /* Radii */
+  --radius-card: 16px;
+  --radius-button: 14px;
+  --radius-input: 12px;
+  --radius-segment: 8px;
+  --radius-sheet: 22px;
+  --radius-pill: 999px;
+
+  /* Sizes */
+  --size-primary-button: 52px;
+  --size-header-button: 36px;
+  --size-input: 46px;
+  --size-input-tall: 50px;
+  --size-big-number-field: 72px;
+  --size-checkbox: 24px;
+  --size-min-target: 48px;
+  --size-bar-track: 8px;
+  --size-bar-track-small: 6px;
+  --size-tab-bar: 64px;
+  --size-tab-bar-lift: 12px;
+
+  /* Glass (tab bar only) */
+  --glass-blur: 24px;
+  --glass-tint: 0.85;
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-press: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --ease-sheet: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-celebration: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-value: cubic-bezier(0.215, 0.61, 0.355, 1);
+
+  --duration-flood: 120ms;
+  --duration-press: 140ms;
+  --duration-nav: 150ms;
+  --duration-micro-out: 150ms;
+  --duration-micro: 180ms;
+  --duration-exit: 200ms;
+  --duration-step: 200ms;
+  --duration-pop: 200ms;
+  --duration-page: 220ms;
+  --duration-tick: 220ms;
+  --duration-segment: 250ms;
+  --duration-enter: 260ms;
+  --duration-sheet: 280ms;
+  --duration-celebration: 500ms;
+  --duration-value: 600ms;
+  --duration-toast: 2200ms;
+  --stagger: 40ms;
+
+  --press-scale: 0.97;
+  --rise-page: 8px;
+  --rise-enter: 12px;
+  --rise-step: 10px;
+  --rise-micro: 6px;
+}
+
+/* Dark: a re-mapping of light. wrong/right keep their exact values. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-page-background: #000000;
+    --color-card: #1C1C1E;
+    --color-muted: #161618;
+    --color-fill: #2A2A2E;
+    --color-track: #2C2C2E;
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: #A1A1A8;
+    --color-text-tertiary: #88888E;
+    --color-text-micro: #8E8E94;
+    --color-text-no-data: #5A5A60;
+    --color-week-label: #8E8E94;
+    --color-action-primary: #FFFFFF;
+    --color-on-primary: #000000;
+    --color-accent: #4D9BFF;
+    --color-on-accent: #04203F;
+    --color-accent-soft: rgb(77 155 255 / 0.18);
+    --color-action-disabled: #2C2C2E;
+    --color-wrong-tint: rgb(255 59 48 / 0.15);
+    --color-wrong-text: #FF3B30;
+    --color-right-text: #34C759;
+    --color-divider: rgb(255 255 255 / 0.08);
+    --color-glass-border: rgb(255 255 255 / 0.10);
+    --color-switch-off: #3A3A3E;
+    --color-switch-knob: #F2F2F5;
+    --color-checkbox-border: #48484C;
+    --color-dashed-border: #48484C;
+    --color-scrim: rgb(0 0 0 / 0.55);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-page-background: #000000;
+  --color-card: #1C1C1E;
+  --color-muted: #161618;
+  --color-fill: #2A2A2E;
+  --color-track: #2C2C2E;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A1A1A8;
+  --color-text-tertiary: #88888E;
+  --color-text-micro: #8E8E94;
+  --color-text-no-data: #5A5A60;
+  --color-week-label: #8E8E94;
+  --color-action-primary: #FFFFFF;
+  --color-on-primary: #000000;
+  --color-accent: #4D9BFF;
+  --color-on-accent: #04203F;
+  --color-accent-soft: rgb(77 155 255 / 0.18);
+  --color-action-disabled: #2C2C2E;
+  --color-wrong-tint: rgb(255 59 48 / 0.15);
+  --color-wrong-text: #FF3B30;
+  --color-right-text: #34C759;
+  --color-divider: rgb(255 255 255 / 0.08);
+  --color-glass-border: rgb(255 255 255 / 0.10);
+  --color-switch-off: #3A3A3E;
+  --color-switch-knob: #F2F2F5;
+  --color-checkbox-border: #48484C;
+  --color-dashed-border: #48484C;
+  --color-scrim: rgb(0 0 0 / 0.55);
+}
+
+/* ---------- Base ------------------------------------------------------------ */
+
+html {
+  font-family: var(--font-family);
+  font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page-background);
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar { display: none; }
+
+/* ---------- Type scale (size / weight / line-height / letter-spacing) ------- */
+
+.t-result-number      { font-size: 56px;   font-weight: 700; line-height: 1;    letter-spacing: -2px; }
+.t-celebration-number { font-size: 44px;   font-weight: 700; line-height: 1.1;  letter-spacing: -1.5px; }
+.t-lock-wordmark      { font-size: 38px;   font-weight: 700; line-height: 1.1;  letter-spacing: -0.6px; }
+.t-lesson-number      { font-size: 34px;   font-weight: 700; line-height: 1.1;  letter-spacing: -0.5px; }
+.t-today              { font-size: 32px;   font-weight: 700; line-height: 1.2;  letter-spacing: -0.5px; }
+.t-card-number        { font-size: 30px;   font-weight: 700; line-height: 1.1;  letter-spacing: -0.5px; }
+.t-input-large        { font-size: 28px;   font-weight: 700; line-height: 1.2; }
+.t-step-title         { font-size: 26px;   font-weight: 700; line-height: 1.25; letter-spacing: -0.4px; }
+.t-section-title      { font-size: 22px;   font-weight: 700; line-height: 1.3;  letter-spacing: -0.3px; }
+.t-screen-title       { font-size: 20px;   font-weight: 700; line-height: 1.3;  letter-spacing: -0.3px; }
+.t-row-number         { font-size: 19px;   font-weight: 700; line-height: 1.2; }
+.t-row-number-small   { font-size: 18px;   font-weight: 700; line-height: 1.2; }
+.t-empty-title        { font-size: 18px;   font-weight: 700; line-height: 1.3; }
+.t-row-title          { font-size: 17px;   font-weight: 700; line-height: 1.3; }
+.t-input              { font-size: 17px;   font-weight: 700; line-height: 1.2; }
+.t-row-title-small    { font-size: 16.5px; font-weight: 700; line-height: 1.3; }
+.t-card-title         { font-size: 16px;   font-weight: 700; line-height: 1.3; }
+.t-card-label         { font-size: 16px;   font-weight: 600; line-height: 1.3; }
+.t-button             { font-size: 16px;   font-weight: 700; line-height: 1.2; }
+.t-row-number-compact { font-size: 16px;   font-weight: 700; line-height: 1.2; }
+.t-body               { font-size: 15px;   font-weight: 500; line-height: 1.5; }
+.t-list-title         { font-size: 15px;   font-weight: 600; line-height: 1.3; }
+.t-item-label         { font-size: 15px;   font-weight: 500; line-height: 1.3; }
+.t-control-label      { font-size: 14px;   font-weight: 700; line-height: 1.2; }
+.t-pill-label         { font-size: 14px;   font-weight: 700; line-height: 1.2;  color: var(--color-on-accent); }
+.t-row-status         { font-size: 14px;   font-weight: 500; line-height: 1.4; }
+.t-stat-label         { font-size: 14px;   font-weight: 600; line-height: 1.3; }
+.t-secondary          { font-size: 14px;   font-weight: 500; line-height: 1.5;  color: var(--color-text-secondary); }
+.t-secondary-strong   { font-size: 14px;   font-weight: 600; line-height: 1.5;  color: var(--color-text-secondary); }
+.t-toast-message      { font-size: 14px;   font-weight: 600; line-height: 1.35; color: var(--color-on-primary); }
+.t-status-line        { font-size: 13px;   font-weight: 600; line-height: 1.4; }
+.t-chip-label         { font-size: 13px;   font-weight: 700; line-height: 1.2; }
+.t-sublabel           { font-size: 13px;   font-weight: 500; line-height: 1.5;  color: var(--color-text-secondary); }
+.t-group-heading      { font-size: 13px;   font-weight: 600; line-height: 1.3;  color: var(--color-text-secondary); }
+.t-stat-denominator   { font-size: 13px;   font-weight: 600; line-height: 1.2;  color: var(--color-text-secondary); }
+.t-day-label          { font-size: 13px;   font-weight: 600; line-height: 1.2;  color: var(--color-week-label); }
+.t-chart-value        { font-size: 12px;   font-weight: 700; line-height: 1.2; }
+.t-small              { font-size: 12px;   font-weight: 500; line-height: 1.4;  color: var(--color-text-secondary); }
+.t-small-strong       { font-size: 12px;   font-weight: 700; line-height: 1.35; color: var(--color-text-secondary); }
+.t-field-label        { font-size: 12px;   font-weight: 600; line-height: 1.3;  color: var(--color-text-secondary); }
+.t-tab-label          { font-size: 11px;   font-weight: 700; line-height: 1.2; }
+.t-badge-label        { font-size: 11px;   font-weight: 700; line-height: 1.2; }
+.t-chart-label        { font-size: 11px;   font-weight: 600; line-height: 1.2;  color: var(--color-text-secondary); }
+.t-micro              { font-size: 11px;   font-weight: 400; line-height: 1.5;  color: var(--color-text-micro); }
+.t-badge-count        { font-size: 10px;   font-weight: 700; line-height: 1.2; }
+
+/* ---------- Components ------------------------------------------------------ */
+
+.card {
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  padding: var(--space-card-padding);
+}
+
+.card + .card { margin-top: var(--space-list-gap); }
+
+.divider {
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: var(--color-divider);
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--size-primary-button);
+  padding: 0 var(--space-xl);
+  border: 0;
+  border-radius: var(--radius-button);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: transform var(--duration-press) var(--ease-press);
+}
+
+.btn-primary:disabled,
+.btn-primary[aria-disabled="true"] {
+  background: var(--color-action-disabled);
+  color: var(--color-text-secondary);
+}
+
+.btn-text {
+  border: 0;
+  background: none;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pressable { transition: transform var(--duration-press) var(--ease-press); }
+.pressable:active,
+.btn-primary:active { transform: scale(var(--press-scale)); }
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--size-input);
+  padding: var(--space-md) var(--space-xl);
+  border: 0;
+  border-radius: var(--radius-input);
+  background: var(--color-muted);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.input::placeholder { color: var(--color-text-tertiary); }
+.input:focus { box-shadow: inset 0 0 0 1.5px var(--color-accent); }
+.input[aria-invalid="true"] { box-shadow: inset 0 0 0 1px var(--color-wrong); }
+.input[aria-invalid="true"]:focus { box-shadow: inset 0 0 0 1.5px var(--color-wrong); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-text-gap) var(--space-md);
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.chip[aria-selected="true"],
+.chip.is-selected {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.progress {
+  height: var(--size-bar-track);
+  border-radius: var(--radius-pill);
+  background: var(--color-track);
+  overflow: hidden;
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent); /* neutral; use --color-wrong < 50%, --color-right >= 90% */
+  transition: width var(--duration-value) var(--ease-value);
+}
+
+.sheet {
+  background: var(--color-card);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 5px;
+  margin: var(--space-xs) auto;
+  border-radius: var(--radius-pill);
+  background: var(--color-switch-off);
+}
+
+.scrim { background: var(--color-scrim); }
+
+.toast {
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-button);
+  background: var(--color-action-primary);
+  color: var(--color-on-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.error-banner {
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-input);
+  background: var(--color-wrong-tint);
+  color: var(--color-wrong-text);
+}
+
+/* The one glass surface in the app: the floating tab bar. */
+.tab-bar {
+  height: var(--size-tab-bar);
+  margin: var(--size-tab-bar-lift) var(--space-page-margin);
+  border: 1px solid var(--color-glass-border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-card) 85%, transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.tab-bar .tab { color: var(--color-text-tertiary); transition: color var(--duration-nav) var(--ease-standard); }
+.tab-bar .tab[aria-current="page"] { color: var(--color-accent); }
+
+/* Mastery number colours */
+.is-no-data { color: var(--color-text-no-data); }
+.is-wrong   { color: var(--color-wrong-text); }
+.is-right   { color: var(--color-right-text); }
+
+/* ---------- Reduced motion ------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
